@@ -2,113 +2,67 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Gerenciar Menu Global</title>
-    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
-    
     <link rel="stylesheet" href="style.css">
-    
     <style>
-        #main-content { 
-            margin-top: 80px; padding: 20px; width: 100%; max-width: 1000px; margin-left: auto; margin-right: auto;
-            transition: margin-left 0.3s ease; 
-        }
-        @media (min-width: 900px) { #main-content.shifted { margin-left: 280px; width: calc(100% - 280px); } }
-
-        .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; box-shadow: var(--shadow-card); border: 1px solid var(--border-card); }
-        .header-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 20px; color: var(--text-title); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
+        #main-content { margin-top: 80px; padding: 20px; max-width: 1000px; margin: 80px auto; }
+        .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; }
+        .header-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; cursor: move; }
+        .subitem-row { display: grid; grid-template-columns: 80px 1fr 1fr 1fr auto; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); cursor: move; }
+        .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #333; }
         
-        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: inset 0 2px 5px rgba(0,0,0,0.02); }
-        .cat-header { display: flex; gap: 10px; margin-bottom: 15px; align-items: center; flex-wrap: wrap;}
-        .cat-header input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border-input); background: var(--bg-input); color: var(--text-main); font-weight: bold;}
-        
-        .subitem-row { display: grid; grid-template-columns: 80px 1fr 1fr 1fr auto; gap: 10px; background: var(--bg-card); padding: 12px; border-radius: 6px; margin-bottom: 10px; border: 1px solid var(--border-card); align-items: center;}
-        .subitem-row input, .subitem-row select { padding: 8px; border-radius: 4px; border: 1px solid var(--border-input); background: var(--bg-input); color: var(--text-main); font-size: 0.85rem;}
-        
-        .btn { padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.1);}
-        .btn-green { background-color: var(--accent-green); }
-        .btn-green:hover { background-color: #008f45; transform: translateY(-2px);}
-        .btn-blue { background-color: var(--accent-blue); font-size: 1rem; padding: 10px 20px;}
-        .btn-blue:hover { background-color: #2968c8; transform: translateY(-2px);}
-        .btn-red { background-color: var(--accent-red); padding: 8px 12px; }
-        .btn-dark { background-color: #475569; }
-
-        /* Auth Overlay (Login) */
-        .auth-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 18px; }
-        [data-theme="light"] .auth-overlay { background: rgba(241, 245, 249, 0.95); }
-        .auth-box { width: 100%; max-width: 390px; background-color: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 25px; text-align: center; box-shadow: var(--shadow-card); }
-        .auth-box input { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-input); border-radius: 7px; padding: 12px; outline: none; font-size: 1rem; margin-bottom: 12px; text-align: center; font-weight: 900; }
-        .auth-error { color: var(--accent-red); font-size: .85rem; font-weight: 900; margin-top: 10px; min-height: 18px; }
+        .drag-over { border: 2px dashed var(--accent-blue) !important; opacity: 0.5; }
     </style>
 </head>
 <body data-theme="light">
-
-    <div class="auth-overlay" id="authOverlay">
-        <div class="auth-box">
-            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" style="height: 38px; margin-bottom: 14px;">
-            <h2 style="color: var(--text-title); font-size: 1.2rem; font-weight: 900; margin-bottom: 8px;">Acesso ao Admin</h2>
-            <p style="color: var(--text-muted); font-size: .85rem; font-weight: 700; margin-bottom: 14px;">Digite a senha temporária para gerenciar o Menu Global.</p>
-            <input type="password" id="senhaInput" placeholder="Senha de acesso" autocomplete="off" onkeydown="if(event.key==='Enter') validarAdmin()">
-            <button class="btn btn-blue" style="width: 100%;" onclick="validarAdmin()">Entrar</button>
-            <div class="auth-error" id="authError"></div>
-        </div>
-    </div>
-
     <!-- SCRIPTS CORE -->
     <script src="js/firebase.config.js"></script>
     <script src="menu.js"></script>
 
     <div id="main-content">
         <div class="admin-container">
-            <div class="header-title">
-                ⚙️ Gerenciador de Menus
-                <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar no Firebase</button>
+            <h2 style="margin-bottom: 15px;">⚙️ Gerenciador de Menus</h2>
+            
+            <div class="header-actions">
+                <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar (Firebase)</button>
+                <button class="btn btn-dark" onclick="exportarJSON()">⬇️ Baixar JSON Atual</button>
+                <input type="file" id="fileJSON" accept=".json" style="display: none;" onchange="importarJSON(event)">
+                <button class="btn btn-green" onclick="document.getElementById('fileJSON').click()">⬆️ Subir JSON</button>
             </div>
-            <p style="color: var(--text-muted); margin-bottom: 25px; font-size: 0.95rem;">Crie Categorias (ex: "Insumos"). O menu lateral se organizará automaticamente e salvará a configuração para todas as telas do sistema.</p>
 
             <div id="categorias-container"></div>
-
-            <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; padding: 15px; font-size: 1.1rem; margin-top: 10px;">+ Adicionar Nova Categoria de Menu</button>
+            <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px;">+ Adicionar Nova Categoria</button>
         </div>
     </div>
 
     <script>
-        if (localStorage.getItem('themePreference') === 'dark') document.body.setAttribute('data-theme', 'dark');
-
-        function validarAdmin() {
-            const senha = document.getElementById('senhaInput').value;
-            if (senha === "159159") {
-                document.getElementById('authOverlay').style.display = 'none';
-                carregarDadosAdmin();
-            } else {
-                document.getElementById('authError').innerText = "Senha incorreta!";
-                document.getElementById('senhaInput').value = '';
-            }
-        }
-
+        const ICONS_LIST = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚚", "📦", "📊", "🔗", "📑"];
+        
         let menuData = { categorias: [] };
+        let draggedElement = null;
 
         async function carregarDadosAdmin() {
+            // Verifica permissão (integrado com o sistema de roles no menu.js)
+            if(currentUserRole !== 'admin') {
+                document.getElementById('main-content').innerHTML = "<h2 style='text-align:center; color:red;'>Acesso Negado. Faça login como Admin.</h2>";
+                return;
+            }
             try {
-                if(typeof FIREBASE_URL !== 'undefined') {
-                    const res = await fetch(`${FIREBASE_URL}menu_global.json`);
-                    const data = await res.json();
-                    if(data && data.categorias) {
-                        menuData = data;
-                    } else {
-                        menuData = { categorias: DEFAULT_MENU }; // Vem do menu.js
-                    }
-                }
-            } catch (e) { console.error("Erro ao puxar dados", e); menuData = { categorias: DEFAULT_MENU }; }
+                const res = await fetch(`${FIREBASE_URL}menu_global.json`);
+                const data = await res.json();
+                menuData = data && data.categorias ? data : { categorias: [] };
+            } catch (e) { console.log(e); }
             renderizarAdmin();
         }
 
+        // Simula o Admin estando logado temporariamente para você editar direto
+        currentUserRole = 'admin'; 
+        carregarDadosAdmin();
+
         function getIconsOptions(selectedIcon) {
-            let opts = "";
-            ICONS_LIST.forEach(ico => {
-                opts += `<option value="${ico}" ${ico === selectedIcon ? 'selected' : ''}>${ico}</option>`;
-            });
-            return opts;
+            return ICONS_LIST.map(ico => `<option value="${ico}" ${ico === selectedIcon ? 'selected' : ''}>${ico}</option>`).join('');
         }
 
         function renderizarAdmin() {
@@ -116,63 +70,85 @@
             container.innerHTML = '';
 
             menuData.categorias.forEach((cat, catIndex) => {
-                let itemsHtml = '';
-                if(!cat.items) cat.items = [];
+                let itemsHtml = (cat.items || []).map((item, itemIndex) => `
+                    <div class="subitem-row" draggable="true" ondragstart="drag(event, 'item', ${catIndex}, ${itemIndex})" ondrop="drop(event, 'item', ${catIndex}, ${itemIndex})" ondragover="allowDrop(event)">
+                        <select onchange="updateItem(${catIndex}, ${itemIndex}, 'icon', this.value)">${getIconsOptions(item.icon)}</select>
+                        <input type="text" value="${item.title || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'title', this.value)">
+                        <input type="text" value="${item.desc || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'desc', this.value)">
+                        <input type="text" value="${item.url || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'url', this.value)">
+                        <button class="btn btn-red" onclick="removerItem(${catIndex}, ${itemIndex})">✖</button>
+                    </div>
+                `).join('');
 
-                cat.items.forEach((item, itemIndex) => {
-                    itemsHtml += `
-                        <div class="subitem-row">
-                            <select onchange="updateItem(${catIndex}, ${itemIndex}, 'icon', this.value)">
-                                ${getIconsOptions(item.icon)}
-                            </select>
-                            <input type="text" placeholder="Título (ex: Contagem Insumos)" value="${item.title || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'title', this.value)">
-                            <input type="text" placeholder="Descrição (ex: Estoque físico)" value="${item.desc || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'desc', this.value)">
-                            <input type="text" placeholder="URL (ex: contagem_insumos.html)" value="${item.url || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'url', this.value)">
-                            <button class="btn btn-red" onclick="removerItem(${catIndex}, ${itemIndex})" title="Excluir Submenu">✖</button>
+                container.innerHTML += `
+                    <div class="cat-card" draggable="true" ondragstart="drag(event, 'cat', ${catIndex}, null)" ondrop="drop(event, 'cat', ${catIndex}, null)" ondragover="allowDrop(event)">
+                        <div style="display:flex; gap:10px; margin-bottom:15px;">
+                            <span style="font-size:1.5rem;">🔀</span>
+                            <input type="text" value="${cat.category || ''}" onchange="updateCat(${catIndex}, 'category', this.value)" style="flex:1; padding:8px;">
+                            <button class="btn btn-red" onclick="removerCategoria(${catIndex})">Excluir</button>
                         </div>
-                    `;
-                });
-
-                const html = `
-                    <div class="cat-card">
-                        <div class="cat-header">
-                            <input type="text" placeholder="Nome da Categoria Pai (Ex: Insumos e Estoque)" value="${cat.category || ''}" onchange="updateCat(${catIndex}, 'category', this.value)">
-                            <button class="btn btn-red" onclick="removerCategoria(${catIndex})">Excluir Categoria</button>
-                        </div>
-                        
-                        <div style="margin-bottom: 10px; font-weight: 800; font-size: 0.85rem; color: var(--text-muted);">Itens (Submenus):</div>
                         ${itemsHtml}
-                        
-                        <button class="btn btn-dark" style="margin-top: 10px;" onclick="adicionarItem(${catIndex})">+ Adicionar Submenu</button>
+                        <button class="btn btn-dark" style="margin-top:10px;" onclick="adicionarItem(${catIndex})">+ Submenu</button>
                     </div>
                 `;
-                container.innerHTML += html;
             });
         }
 
-        function adicionarCategoria() { menuData.categorias.push({ category: "Nova Categoria", items: [] }); renderizarAdmin(); }
-        function removerCategoria(idx) { if(confirm("Apagar categoria inteira?")) { menuData.categorias.splice(idx, 1); renderizarAdmin(); } }
-        function updateCat(idx, field, value) { menuData.categorias[idx][field] = value; }
+        /* Funções JSON Import/Export */
+        function exportarJSON() {
+            const blob = new Blob([JSON.stringify(menuData, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url; a.download = "menu_atual.json"; a.click();
+        }
+        
+        function importarJSON(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    menuData = JSON.parse(e.target.result);
+                    renderizarAdmin();
+                    alert("Menu carregado! Salve no Firebase para aplicar globalmente.");
+                } catch(err) { alert("Arquivo JSON inválido."); }
+            };
+            reader.readAsText(file);
+        }
 
-        function adicionarItem(catIdx) { menuData.categorias[catIdx].items.push({ icon: "📄", title: "Novo Item", desc: "Descrição", url: "pagina.html" }); renderizarAdmin(); }
+        /* Funções de Edição */
+        function adicionarCategoria() { menuData.categorias.push({ category: "Nova Categoria", items: [] }); renderizarAdmin(); }
+        function removerCategoria(idx) { menuData.categorias.splice(idx, 1); renderizarAdmin(); }
+        function updateCat(idx, field, value) { menuData.categorias[idx][field] = value; }
+        function adicionarItem(catIdx) { if(!menuData.categorias[catIdx].items) menuData.categorias[catIdx].items = []; menuData.categorias[catIdx].items.push({ icon: "📦", title: "Novo Item", desc: "Desc", url: "#" }); renderizarAdmin(); }
         function removerItem(catIdx, itemIdx) { menuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); }
         function updateItem(catIdx, itemIdx, field, value) { menuData.categorias[catIdx].items[itemIdx][field] = value; }
 
-        async function salvarNoFirebase() {
-            const btn = document.querySelector('.header-title .btn-blue');
-            btn.innerText = "⏳ Salvando...";
-            try {
-                await fetch(`${FIREBASE_URL}menu_global.json`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(menuData)
-                });
-                alert("Menu salvo com sucesso! O menu lateral será atualizado em todas as páginas.");
-                window.location.reload(); // Recarrega para o menu.js puxar o novo
-            } catch(e) {
-                alert("Erro ao salvar.");
+        /* Drag & Drop Lógica Simples */
+        let dragInfo = null;
+        function allowDrop(ev) { ev.preventDefault(); }
+        function drag(ev, type, catIdx, itemIdx) { dragInfo = { type, catIdx, itemIdx }; }
+        function drop(ev, targetType, targetCatIdx, targetItemIdx) {
+            ev.preventDefault();
+            if(!dragInfo || dragInfo.type !== targetType) return;
+            
+            if(dragInfo.type === 'cat') {
+                const temp = menuData.categorias[dragInfo.catIdx];
+                menuData.categorias.splice(dragInfo.catIdx, 1);
+                menuData.categorias.splice(targetCatIdx, 0, temp);
+            } else if(dragInfo.type === 'item' && dragInfo.catIdx === targetCatIdx) {
+                const temp = menuData.categorias[dragInfo.catIdx].items[dragInfo.itemIdx];
+                menuData.categorias[dragInfo.catIdx].items.splice(dragInfo.itemIdx, 1);
+                menuData.categorias[dragInfo.catIdx].items.splice(targetItemIdx, 0, temp);
             }
-            btn.innerText = "💾 Salvar no Firebase";
+            renderizarAdmin();
+        }
+
+        async function salvarNoFirebase() {
+            try {
+                await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(menuData) });
+                alert("Salvo com sucesso!");
+            } catch(e) { alert("Erro ao salvar."); }
         }
     </script>
 </body>
