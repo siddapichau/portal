@@ -1,5 +1,8 @@
-// ====== COLE A SUA URL GERADA NO GOOGLE APPS SCRIPT AQUI ======
-const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDerQam4lmNYOSsBLpFRdAAjBvjzCVBSzINfpGdtVU-1cV9Y2DTP8ui_O58715vFJPtA/exec";
+// ====== SUA URL DO GOOGLE APPS SCRIPT ======
+const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_sTNezCL8q2W-PF38H4HQk_17r64f6sH13YN5xuMMuD1ZkxKwazRh7EozhwMsqiV2sw/exec";
+
+// ====== SUA URL DO FIREBASE (ONDE SALVA OS MENUS) ======
+const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
 
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
@@ -80,6 +83,13 @@ async function carregarMenuGlobal() {
     } catch (error) { console.error("Erro Menu", error); }
 }
 
+function temPermissao(rolesStr) {
+    if(!rolesStr) return true; // Se não tem regra, é público
+    let roles = rolesStr.split(',').map(r => r.trim().toLowerCase());
+    let userRole = currentUser ? currentUser.cargo.toLowerCase() : 'guest';
+    return roles.includes(userRole);
+}
+
 function toggleMenu() {
     document.querySelector('.sidebar-wrapper').classList.toggle('open');
     document.querySelector('.sidebar-overlay').classList.toggle('active');
@@ -89,9 +99,11 @@ function renderizarMenuEsquerdo() {
     const container = document.getElementById('cat-list-container');
     container.innerHTML = '';
     menuData.categorias.forEach((cat, idx) => {
-        container.innerHTML += `<div class="cat-item" onclick="abrirSubmenu(${idx}, this)">
-            ${cat.category} <span>></span>
-        </div>`;
+        if(temPermissao(cat.viewRoles)) {
+            container.innerHTML += `<div class="cat-item" onclick="abrirSubmenu(${idx}, this)">
+                ${cat.icon || '📂'} ${cat.category} <span>></span>
+            </div>`;
+        }
     });
 }
 
@@ -107,15 +119,23 @@ function abrirSubmenu(catIdx, element) {
     let html = '';
     const items = menuData.categorias[catIdx].items || [];
     items.forEach(item => {
-        const isFav = userFavs.includes(item.title);
-        html += `
-            <div class="subitem-link">
-                <a href="${item.url}" style="text-decoration:none; color:inherit; flex:1;">${item.title}</a>
-                <span class="fav-star ${isFav ? 'active' : ''}" onclick="toggleFavorito('${item.title}', this)">★</span>
-            </div>
-        `;
+        if(temPermissao(item.viewRoles)) {
+            const isFav = userFavs.includes(item.title);
+            html += `
+                <div class="subitem-link">
+                    <a href="${item.url}" style="text-decoration:none; color:inherit; flex:1; display:flex; gap:10px; align-items:center;">
+                        <span>${item.icon || '📄'}</span> 
+                        <div>
+                            <div>${item.title}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">${item.desc || ''}</div>
+                        </div>
+                    </a>
+                    <span class="fav-star ${isFav ? 'active' : ''}" onclick="toggleFavorito('${item.title}', this)">★</span>
+                </div>
+            `;
+        }
     });
-    panel.innerHTML = html || '<div style="padding:20px;">Vazio</div>';
+    panel.innerHTML = html || '<div style="padding:20px;">Nenhum item disponível para o seu nível de acesso.</div>';
 }
 
 function switchTab(tab) {
@@ -140,15 +160,23 @@ function switchTab(tab) {
         let favHtml = '';
         
         menuData.categorias.forEach(cat => {
-            (cat.items || []).forEach(item => {
-                if(userFavs.includes(item.title)) {
-                    favHtml += `
-                    <div class="subitem-link">
-                        <a href="${item.url}" style="text-decoration:none; color:inherit; flex:1;">${item.title} <br><small style="color:#aaa;">${cat.category}</small></a>
-                        <span class="fav-star active" onclick="toggleFavorito('${item.title}', this, true)">★</span>
-                    </div>`;
-                }
-            });
+            if(temPermissao(cat.viewRoles)) {
+                (cat.items || []).forEach(item => {
+                    if(temPermissao(item.viewRoles) && userFavs.includes(item.title)) {
+                        favHtml += `
+                        <div class="subitem-link">
+                            <a href="${item.url}" style="text-decoration:none; color:inherit; flex:1; display:flex; gap:10px; align-items:center;">
+                                <span>${item.icon || '📄'}</span> 
+                                <div>
+                                    <div>${item.title}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">${cat.category}</div>
+                                </div>
+                            </a>
+                            <span class="fav-star active" onclick="toggleFavorito('${item.title}', this, true)">★</span>
+                        </div>`;
+                    }
+                });
+            }
         });
         panel.innerHTML = favHtml || '<div style="padding:20px; text-align:center;">Nenhum favorito ainda.</div>';
     }
@@ -183,6 +211,8 @@ async function fazerRegistro() {
     try {
         const res = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            redirect: "follow",
             body: JSON.stringify({ action: "register", usuario: user, email: email, senha: p1 })
         });
         const data = await res.json();
@@ -191,6 +221,7 @@ async function fazerRegistro() {
         if(data.success) mudarAuthModo('login');
     } catch(e) {
         alert("Erro ao conectar com a planilha.");
+        console.error(e);
     } finally {
         btn.innerText = "Registrar";
         btn.disabled = false;
@@ -210,6 +241,8 @@ async function fazerLogin() {
     try {
         const res = await fetch(APP_SCRIPT_URL, {
             method: 'POST',
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            redirect: "follow",
             body: JSON.stringify({ action: "login", usuario: user, senha: pass })
         });
         const data = await res.json();
@@ -225,11 +258,13 @@ async function fazerLogin() {
                 alert(`Bem-vindo, ${currentUser.usuario}! Cargo: ${currentUser.cargo}`);
                 fecharAuthModal();
                 verificarAcesso();
+                renderizarMenuEsquerdo(); // Refaz o menu baseado no cargo atual
                 switchTab('todos');
             }
         }
     } catch(e) {
         alert("Erro ao conectar com a planilha.");
+        console.error(e);
     } finally {
         btn.innerText = "Entrar";
         btn.disabled = false;
@@ -255,11 +290,11 @@ async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
     try {
         await fetch(APP_SCRIPT_URL, {
             method: 'POST',
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            redirect: "follow",
             body: JSON.stringify({ action: "updateFav", usuario: currentUser.usuario, favoritos: currentUser.favorito })
         });
-    } catch(e) {
-        console.error("Erro ao salvar favorito", e);
-    }
+    } catch(e) { console.error("Erro ao salvar favorito", e); }
 }
 
 function verificarAcesso() {
