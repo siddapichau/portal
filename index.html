@@ -9,115 +9,63 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
-        :root {
-            --bg-gradient: radial-gradient(circle at top right, #1e3c72 0%, #0f172a 40%, #050505 100%);
-        }
-        [data-theme="light"] {
-            --bg-gradient: radial-gradient(circle at top right, #a1c4fd 0%, #e2ebf0 40%, #f1f5f9 100%);
-        }
-        body {
-            background: var(--bg-gradient);
-            background-attachment: fixed;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
+        :root { --bg-gradient: radial-gradient(circle at top right, #1e3c72 0%, #0f172a 40%, #050505 100%); }
+        [data-theme="light"] { --bg-gradient: radial-gradient(circle at top right, #a1c4fd 0%, #e2ebf0 40%, #f1f5f9 100%); }
+        
+        body { background: var(--bg-gradient); background-attachment: fixed; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-y: hidden; /* Evita rolagem dupla com o iframe */ }
+        
+        #main-content { margin-top: 80px; width: 100%; max-width: 1400px; display: flex; flex-direction: column; align-items: center; padding: 0 20px; flex: 1; transition: 0.3s; }
 
-        #main-content {
-            margin-top: 120px; 
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0 20px;
-        }
+        .main-title { font-size: 2.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; position: relative; padding-bottom: 12px; text-align: center; }
+        .main-title::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 4px; background-color: var(--accent-blue); border-radius: 2px; }
 
-        .main-title {
-            font-size: 2.2rem;
-            font-weight: 900;
-            color: var(--text-title);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 30px;
-            position: relative;
-            padding-bottom: 12px;
-            text-align: center;
-        }
-        .main-title::after {
-            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 4px; background-color: var(--accent-blue); border-radius: 2px;
-        }
-
-        .quote-container {
-            background: var(--bg-card);
-            border-left: 4px solid var(--accent-blue);
-            border-radius: 8px;
-            padding: 15px 25px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            max-width: 600px;
-            width: 100%;
-            margin-bottom: 40px;
-            position: relative;
-            overflow: hidden;
-            text-align: center;
-        }
+        .quote-container { background: var(--bg-card); border-left: 4px solid var(--accent-blue); border-radius: 8px; padding: 15px 25px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05); max-width: 600px; width: 100%; margin-bottom: 30px; position: relative; overflow: hidden; text-align: center; }
         .quote-text { font-size: 1rem; color: var(--text-main); font-style: italic; font-weight: 600; transition: opacity 0.5s ease; }
         .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-blue); width: 0%; }
 
-        /* Nova caixa de Em Construção */
-        .construction-box {
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 2px dashed var(--accent-blue);
-            border-radius: 12px;
-            padding: 40px 20px;
-            max-width: 600px;
-            width: 100%;
-            text-align: center;
-            color: var(--text-main);
-        }
+        .construction-box { background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 2px dashed var(--accent-blue); border-radius: 12px; padding: 40px 20px; max-width: 600px; width: 100%; text-align: center; color: var(--text-main); }
         [data-theme="dark"] .construction-box { background: rgba(0, 0, 0, 0.2); }
+
+        /* O IFRAME QUE VAI CARREGAR AS PÁGINAS */
+        #app-frame {
+            display: none; width: 100%; height: calc(100vh - 100px); border: none; border-radius: 12px; background: var(--bg-body); box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body data-theme="light">
 
-    <!-- SCRIPT QUE INJETA O MENU LATERAL E A BARRA SUPERIOR -->
+    <!-- SCRIPT DO MENU -->
     <script src="menu.js"></script>
 
     <div id="main-content">
-        <h1 class="main-title">Portal de Controles Internos</h1>
+        <h1 class="main-title" id="page-title">Portal de Controles Internos</h1>
 
-        <!-- Mensagem Animada -->
-        <div class="quote-container">
+        <div class="quote-container" id="quote-box">
             <span id="animated-quote" class="quote-text">"Carregando a missão do dia..."</span>
             <div class="progress-bar" id="progress-bar"></div>
         </div>
 
-        <!-- Área Central em Construção -->
-        <div class="construction-box">
+        <div class="construction-box" id="home-view">
             <div style="font-size: 3rem; margin-bottom: 15px;">🚧</div>
             <h2 style="margin-bottom: 10px;">Área Central em Construção</h2>
             <p style="font-size: 1.1rem; color: var(--text-muted);">
-                Por favor, utilize o <strong>Menu Lateral (☰)</strong> no canto superior esquerdo para acessar os painéis e relatórios.
+                Por favor, utilize o <strong>Menu Lateral (☰)</strong> para acessar os painéis.
             </p>
         </div>
+
+        <!-- ONDE AS PÁGINAS VÃO ABRIR -->
+        <iframe id="app-frame" src=""></iframe>
     </div>
 
-    <!-- Script da Mensagem Animada -->
     <script>
-        const messages = [
-            "O talento vence jogos, mas o trabalho em equipe e a inteligência vencem campeonatos.",
-            "Um inventário preciso é o coração da nossa logística.",
-            "No Mercado Livre, não entregamos apenas pacotes, entregamos propósitos.",
-            "Nossa força está na união. Juntos, fazemos do nosso inventário um modelo de eficiência."
-        ];
+        const messages = [ "O talento vence jogos, mas o trabalho em equipe e a inteligência vencem campeonatos.", "Um inventário preciso é o coração da nossa logística.", "No Mercado Livre, não entregamos apenas pacotes, entregamos propósitos.", "Nossa força está na união. Juntos, fazemos do nosso inventário um modelo de eficiência." ];
         let msgIndex = 0;
         const quoteEl = document.getElementById('animated-quote');
         const progressBar = document.getElementById('progress-bar');
         const INTERVAL_MS = 10000;
 
         function startMessageCycle() {
+            if(!quoteEl) return;
             quoteEl.innerText = messages[msgIndex];
             animateProgressBar();
             setInterval(() => {
@@ -138,7 +86,6 @@
             progressBar.style.transition = `width ${INTERVAL_MS}ms linear`;
             progressBar.style.width = '100%';
         }
-        
         setTimeout(startMessageCycle, 500);
     </script>
 </body>
