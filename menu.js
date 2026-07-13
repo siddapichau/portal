@@ -83,10 +83,16 @@ async function carregarMenuGlobal() {
     } catch (error) { console.error("Erro Menu", error); }
 }
 
+// CORREÇÃO AQUI: Permite visitantes verem os menus
 function temPermissao(rolesStr) {
-    if(!rolesStr) return true; // Se não tem regra, é público
+    if(!rolesStr) return true; 
     let roles = rolesStr.split(',').map(r => r.trim().toLowerCase());
-    let userRole = currentUser ? currentUser.cargo.toLowerCase() : 'guest';
+    let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
+    
+    // Se a pessoa não estiver logada, mas o menu for "view", ela pode ver.
+    if (userRole === 'guest' && (roles.includes('view') || roles.includes('guest'))) {
+        return true;
+    }
     return roles.includes(userRole);
 }
 
@@ -182,7 +188,7 @@ function switchTab(tab) {
     }
 }
 
-/* SISTEMA DE AUTH (Conectado à Planilha do Google) */
+/* SISTEMA DE AUTH */
 function abrirAuthModal() { document.getElementById('authModal').classList.add('active'); }
 function fecharAuthModal() { document.getElementById('authModal').classList.remove('active'); }
 function mudarAuthModo(modo) {
@@ -221,7 +227,6 @@ async function fazerRegistro() {
         if(data.success) mudarAuthModo('login');
     } catch(e) {
         alert("Erro ao conectar com a planilha.");
-        console.error(e);
     } finally {
         btn.innerText = "Registrar";
         btn.disabled = false;
@@ -258,13 +263,12 @@ async function fazerLogin() {
                 alert(`Bem-vindo, ${currentUser.usuario}! Cargo: ${currentUser.cargo}`);
                 fecharAuthModal();
                 verificarAcesso();
-                renderizarMenuEsquerdo(); // Refaz o menu baseado no cargo atual
+                renderizarMenuEsquerdo();
                 switchTab('todos');
             }
         }
     } catch(e) {
         alert("Erro ao conectar com a planilha.");
-        console.error(e);
     } finally {
         btn.innerText = "Entrar";
         btn.disabled = false;
@@ -294,7 +298,7 @@ async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
             redirect: "follow",
             body: JSON.stringify({ action: "updateFav", usuario: currentUser.usuario, favoritos: currentUser.favorito })
         });
-    } catch(e) { console.error("Erro ao salvar favorito", e); }
+    } catch(e) {}
 }
 
 function verificarAcesso() {
