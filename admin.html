@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Gerenciar Menu Global</title>
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { padding: 40px 20px; }
+        .admin-container { max-width: 900px; width: 100%; margin: 0 auto; background: var(--bg-card); padding: 30px; border-radius: 12px; box-shadow: var(--shadow-card); border: 1px solid var(--border-card); }
+        .header-title { font-size: 1.8rem; font-weight: 900; margin-bottom: 20px; color: var(--text-title); display: flex; justify-content: space-between; align-items: center;}
+        
+        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .cat-header { display: flex; gap: 10px; margin-bottom: 15px; align-items: center;}
+        .cat-header input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border-input); background: var(--bg-input); color: var(--text-main); font-weight: bold;}
+        .cat-header input.icon-input { flex: 0 0 60px; text-align: center; }
+        
+        .subitem-row { display: grid; grid-template-columns: 50px 1fr 1fr 1fr auto; gap: 10px; background: rgba(0,0,0,0.03); padding: 10px; border-radius: 6px; margin-bottom: 10px; border: 1px solid rgba(0,0,0,0.05);}
+        [data-theme="dark"] .subitem-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); }
+        .subitem-row input { padding: 8px; border-radius: 4px; border: 1px solid var(--border-input); background: var(--bg-input); color: var(--text-main); font-size: 0.85rem;}
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s;}
+        .btn-green { background-color: var(--accent-green); }
+        .btn-green:hover { background-color: #008f45; }
+        .btn-blue { background-color: var(--accent-blue); font-size: 1.1rem; padding: 12px 24px;}
+        .btn-blue:hover { background-color: #2968c8; transform: translateY(-2px);}
+        .btn-red { background-color: var(--accent-red); padding: 8px; }
+        .btn-dark { background-color: #475569; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <!-- Carrega variável FIREBASE_URL -->
+    <script src="js/firebase.config.js"></script>
+
+    <div class="admin-container">
+        <div class="header-title">
+            ⚙️ Gerenciador de Menus
+            <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar no Firebase</button>
+        </div>
+        <p style="color: var(--text-muted); margin-bottom: 30px;">Crie Categorias (ex: "Insumos"). Ao passar o mouse nelas, os submenus (ex: "Dashboard de Insumos") irão aparecer.</p>
+
+        <div id="categorias-container">
+            <!-- As categorias serão injetadas aqui pelo JS -->
+        </div>
+
+        <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; padding: 15px; font-size: 1.1rem;">+ Adicionar Nova Categoria de Menu</button>
+    </div>
+
+    <script>
+        let menuData = { categorias: [] };
+
+        window.onload = async function() {
+            try {
+                const res = await fetch(`${FIREBASE_URL}menu_global.json`);
+                const data = await res.json();
+                if(data && data.categorias) {
+                    menuData = data;
+                }
+            } catch (e) { console.error("Erro ao puxar dados", e); }
+            renderizarAdmin();
+        };
+
+        function renderizarAdmin() {
+            const container = document.getElementById('categorias-container');
+            container.innerHTML = '';
+
+            menuData.categorias.forEach((cat, catIndex) => {
+                let itemsHtml = '';
+                
+                if(!cat.items) cat.items = [];
+
+                cat.items.forEach((item, itemIndex) => {
+                    itemsHtml += `
+                        <div class="subitem-row">
+                            <input type="text" placeholder="Ícone" value="${item.icon || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'icon', this.value)" style="text-align: center;">
+                            <input type="text" placeholder="Título (ex: Visão Insumos)" value="${item.title || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'title', this.value)">
+                            <input type="text" placeholder="Descrição curta" value="${item.desc || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'desc', this.value)">
+                            <input type="text" placeholder="Link (ex: insumos.html)" value="${item.url || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'url', this.value)">
+                            <button class="btn btn-red" onclick="removerItem(${catIndex}, ${itemIndex})" title="Excluir Submenu">✖</button>
+                        </div>
+                    `;
+                });
+
+                const html = `
+                    <div class="cat-card">
+                        <div class="cat-header">
+                            <input type="text" class="icon-input" placeholder="Ícone" value="${cat.icon || ''}" onchange="updateCat(${catIndex}, 'icon', this.value)">
+                            <input type="text" placeholder="Nome da Categoria Pai (Ex: 📦 Insumos)" value="${cat.title || ''}" onchange="updateCat(${catIndex}, 'title', this.value)">
+                            <button class="btn btn-red" onclick="removerCategoria(${catIndex})">Excluir Categoria</button>
+                        </div>
+                        
+                        <div style="margin-bottom: 10px; font-weight: bold; font-size: 0.85rem; color: var(--text-muted);">Itens dentro desta categoria:</div>
+                        ${itemsHtml}
+                        
+                        <button class="btn btn-dark" style="margin-top: 10px;" onclick="adicionarItem(${catIndex})">+ Adicionar Submenu</button>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        // Funções de CRUD na Memória
+        function adicionarCategoria() { menuData.categorias.push({ icon: "📁", title: "Nova Categoria", items: [] }); renderizarAdmin(); }
+        function removerCategoria(idx) { if(confirm("Apagar categoria inteira?")) { menuData.categorias.splice(idx, 1); renderizarAdmin(); } }
+        function updateCat(idx, field, value) { menuData.categorias[idx][field] = value; }
+
+        function adicionarItem(catIdx) { menuData.categorias[catIdx].items.push({ icon: "📄", title: "Novo Item", desc: "Descrição", url: "#" }); renderizarAdmin(); }
+        function removerItem(catIdx, itemIdx) { menuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); }
+        function updateItem(catIdx, itemIdx, field, value) { menuData.categorias[catIdx].items[itemIdx][field] = value; }
+
+        // Salvar na Nuvem
+        async function salvarNoFirebase() {
+            const btn = document.querySelector('.header-title .btn-blue');
+            btn.innerText = "⏳ Salvando...";
+            try {
+                await fetch(`${FIREBASE_URL}menu_global.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(menuData)
+                });
+                alert("Menu salvo com sucesso! Atualize a página index para ver.");
+            } catch(e) {
+                alert("Erro ao salvar.");
+            }
+            btn.innerText = "💾 Salvar no Firebase";
+        }
+    </script>
+</body>
+</html>
