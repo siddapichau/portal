@@ -3,43 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Controles Internos - Logística</title>
-    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <title>Portal de Controles Internos</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        #main-content { margin-top: 80px; padding: 30px; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        #main-content { padding: 100px 20px 40px; display: flex; flex-direction: column; align-items: center; text-align: center; }
         .welcome-box { background: var(--bg-card); border-radius: 12px; padding: 40px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid var(--border-card); max-width: 800px; width: 100%; }
-        .restricted-content { display: none; margin-top: 20px; padding: 20px; background: rgba(52, 131, 250, 0.1); border-radius: 8px; border: 1px solid var(--accent-blue); }
     </style>
 </head>
 <body data-theme="light">
-
     <!-- SCRIPTS CORE -->
     <script src="js/firebase.config.js"></script>
     <script src="menu.js"></script>
 
     <div id="main-content">
         <div class="welcome-box">
-            <h1 style="color: var(--text-title); margin-bottom: 10px;">Portal Central de Logística</h1>
-            <p>Todo o conteúdo público está visível aqui. Faça login no canto superior direito para acessar recursos avançados.</p>
-            
-            <div id="conteudoRestrito" class="restricted-content">
-                <h3>Área Restrita (Admin/Editor)</h3>
-                <p>Aqui você poderá subir planilhas e editar arquivos. Este bloco só aparece pós-login!</p>
-            </div>
+            <h1 style="color: var(--text-title); margin-bottom: 10px;">Bem-vindo ao Portal</h1>
+            <p style="color: var(--text-muted);">Use o botão ☰ no canto superior esquerdo para navegar e marcar seus favoritos!</p>
         </div>
     </div>
-
-    <script>
-        // Restaura tema salvo
-        if (localStorage.getItem('themePreference') === 'dark') document.body.setAttribute('data-theme', 'dark');
-        
-        // Verifica ciclo de login para mostrar blocos restritos no index
-        setInterval(() => {
-            if(typeof currentUserRole !== 'undefined' && (currentUserRole === 'admin' || currentUserRole === 'editor')) {
-                document.getElementById('conteudoRestrito').style.display = 'block';
-            }
-        }, 1000);
-    </script>
 </body>
 </html>
