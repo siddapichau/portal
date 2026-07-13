@@ -6,55 +6,28 @@
     <title>Portal de Controles Internos - Mercado Livre</title>
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     
-    <!-- CSS GLOBAL -->
     <link rel="stylesheet" href="style.css">
 
     <style>
-        /* =========================================
-           ESTILOS DO MENU LATERAL (SIDEBAR)
-           ========================================= */
-        .top-bar-wrapper {
-            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-            background-color: #FFE600; padding: 0 20px; z-index: 1000;
-            display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
+        /* CSS do Layout da Página Principal */
+        body { align-items: center; padding: 0 0 40px 0; display: flex; flex-direction: column; }
+        
+        .top-bar-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 60px; background-color: #FFE600; padding: 0 20px; z-index: 1000; display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .top-nav { width: 100%; display: flex; justify-content: space-between; align-items: center; }
         .nav-left { display: flex; align-items: center; gap: 15px; }
         .ml-logo { height: 32px; cursor: pointer; }
         .hamburger-btn { background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; }
         .hamburger-btn svg { width: 26px; height: 26px; transition: 0.3s; }
 
-        /* A BARRA LATERAL (Inspirada na Imagem) */
-        .sidebar {
-            position: fixed; top: 60px; left: -320px; /* Escondido por padrão */
-            width: 320px; height: calc(100vh - 60px);
-            background-color: #2a2a2a; color: #fff;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.2);
-            transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-            z-index: 999; overflow-y: auto; overflow-x: hidden;
-        }
-        .sidebar.open { left: 0; } /* Mostra o menu */
-
-        /* Abas Superiores (Todos / Favoritos) */
+        .sidebar { position: fixed; top: 60px; left: -320px; width: 320px; height: calc(100vh - 60px); background-color: #2a2a2a; color: #fff; box-shadow: 4px 0 15px rgba(0,0,0,0.2); transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1); z-index: 999; overflow-y: auto; overflow-x: hidden; }
+        .sidebar.open { left: 0; } 
         .sidebar-tabs { display: flex; padding: 15px 20px 5px 20px; gap: 10px; }
-        .tab {
-            flex: 1; text-align: center; padding: 8px 0; border-radius: 20px;
-            font-size: 0.85rem; font-weight: 800; cursor: pointer; transition: 0.2s;
-        }
+        .tab { flex: 1; text-align: center; padding: 8px 0; border-radius: 20px; font-size: 0.85rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .tab.active { background-color: #fff; color: #2a2a2a; }
         .tab.inactive { color: #aaaaaa; }
         .tab.inactive:hover { color: #fff; }
-
-        /* Lista de Botões do Menu */
         .sidebar-links { padding: 10px 0; display: flex; flex-direction: column; }
-        
-        .side-btn {
-            display: flex; align-items: center; padding: 12px 20px;
-            text-decoration: none; color: #EBEBEB; border-bottom: 1px solid rgba(255,255,255,0.05);
-            transition: background 0.2s;
-        }
-        .side-btn:hover { background-color: #3d3d3d; }
-        
+        .side-btn { display: flex; align-items: center; padding: 12px 20px; text-decoration: none; color: #EBEBEB; transition: background 0.2s; }
         .side-icon { font-size: 1.4rem; margin-right: 15px; display: flex; align-items: center; justify-content: center; width: 30px; }
         .side-text { flex: 1; display: flex; flex-direction: column; }
         .side-title { font-weight: 800; font-size: 0.95rem; margin-bottom: 2px; }
@@ -62,53 +35,35 @@
         .side-arrow { font-size: 1.5rem; color: #777; font-weight: 300; }
         .side-btn:hover .side-arrow { color: #3483FA; transform: translateX(3px); transition: 0.2s; }
 
-        /* =========================================
-           ÁREA CENTRAL (Onde entra o conteúdo futuro)
-           ========================================= */
-        #main-content {
-            margin-top: 60px; /* Compensa a barra fixa */
-            padding: 30px;
-            width: 100%;
-            transition: margin-left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
-        }
+        #main-content { margin-top: 60px; padding: 30px; width: 100%; transition: margin-left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1); display: flex; flex-direction: column; align-items: center; }
+        @media (min-width: 900px) { #main-content.shifted { margin-left: 320px; width: calc(100% - 320px); } }
 
-        /* Quando o menu abre, empurra o conteúdo para a direita no Desktop */
-        @media (min-width: 900px) {
-            #main-content.shifted { margin-left: 320px; width: calc(100% - 320px); }
-        }
+        .main-title { font-size: 2.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 40px; position: relative; padding-bottom: 12px; }
+        .main-title::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 4px; background-color: var(--accent-blue); border-radius: 2px; }
 
-        .welcome-box {
-            background: var(--bg-card);
-            border: 1px solid var(--border-card);
-            border-radius: 12px;
-            padding: 40px;
-            text-align: center;
-            box-shadow: var(--shadow-card);
-            max-width: 800px;
-            margin: 40px auto;
-        }
-        .welcome-box h1 { font-size: 2rem; color: var(--text-title); margin-bottom: 10px; }
-        .welcome-box p { color: var(--text-muted); font-size: 1.1rem; line-height: 1.5;}
+        .welcome-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 40px; text-align: center; box-shadow: var(--shadow-card); max-width: 800px; width: 100%; }
+        .welcome-box p { color: var(--text-muted); font-size: 1.1rem; line-height: 1.5; margin-bottom: 15px;}
     </style>
-
 </head>
 <body data-theme="light">
 
-    <!-- O Menu e o Topo serão Injetados Aqui pelo Javascript -->
+    <!-- SCRIPTS CORE -->
+    <script src="js/firebase.config.js"></script>
+    <script src="menu.js"></script>
 
-    <!-- CONTEÚDO PRINCIPAL DA PÁGINA INDEX -->
     <div id="main-content">
+        <h1 class="main-title">Portal de Controles Internos</h1>
+        
         <div class="welcome-box">
-            <h1>Portal de Controles Internos</h1>
-            <p>Seja bem-vindo. <br>Para acessar os relatórios e painéis, <strong>clique no ícone de menu (☰) no canto superior esquerdo</strong> e navegue pela barra lateral.</p>
-            <p style="margin-top: 20px; font-size: 0.9rem; color: var(--accent-blue); font-weight: bold;">(Futuramente, novas informações e gráficos globais aparecerão aqui!)</p>
+            <h2 style="font-size: 1.8rem; margin-bottom: 15px; color: var(--text-title);">Bem-vindo ao Novo Portal</h2>
+            <p>O menu agora é unificado e gerenciado pelo banco de dados!<br>Para acessar os relatórios e painéis, <strong>passe o mouse sobre as categorias no menu lateral (☰)</strong>.</p>
+            
+            <a href="admin.html" style="display: inline-block; margin-top: 20px; padding: 12px 24px; background: var(--accent-blue); color: #fff; text-decoration: none; border-radius: 8px; font-weight: bold; box-shadow: 0 4px 10px rgba(52, 131, 250, 0.4);">
+                ⚙️ Acessar Painel Admin (Gerenciar Menus)
+            </a>
         </div>
     </div>
 
-    <!-- CHAMA O ARQUIVO DO MENU -->
-    <script src="menu.js"></script>
-
-    <!-- SCRIPT DO TEMA (Se preferir, pode colocar no seu app.js global) -->
     <script>
         function toggleTheme() {
             const body = document.body;
@@ -117,11 +72,7 @@
             localStorage.setItem('themePreference', newMode);
             document.getElementById('themeIcon').innerText = newMode === 'light' ? '🌙' : '☀️';
         }
-        
-        // Aplica o tema salvo ao abrir
-        if (localStorage.getItem('themePreference') === 'dark') {
-            document.body.setAttribute('data-theme', 'dark');
-        }
+        if (localStorage.getItem('themePreference') === 'dark') document.body.setAttribute('data-theme', 'dark');
     </script>
 </body>
 </html>
