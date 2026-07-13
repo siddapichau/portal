@@ -8,6 +8,7 @@
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="style.css">
 
     <style>
         /* =========================================
@@ -33,7 +34,7 @@
         }
 
         [data-theme="light"] {
-            --bg-gradient: radial-gradient(circle at top right, #a1c4fd 0%, #e2ebf0 40%, #f1f5f9 100%);
+            --bg-gradient: #ffffff; /* Fundo sólido branco no tema claro */
             --bg-card: rgba(255, 255, 255, 0.7);
             --bg-header: rgba(255, 255, 255, 0.9);
             --bg-input: rgba(255, 255, 255, 0.9);
@@ -41,14 +42,10 @@
             --text-main: #334155;
             --text-muted: #64748b;
             --text-title: #1e293b;
-            --accent-yellow: #B48B00;
-            --accent-blue: #3483FA;
-            --accent-green: #00A650;
-            --accent-red: #E91E63;
-            --accent-warn: #B48B00;
             --border-card: rgba(255, 255, 255, 0.5);
             --border-light: rgba(0, 0, 0, 0.1);
             --shadow-card: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            /* As cores dos botões não mudam no tema claro */
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -60,40 +57,6 @@
             color: var(--text-main); padding: 8px; transition: background .5s ease, color .3s ease;
         }
 
-        /* SOBREPOSIÇÃO DE LOGIN */
-        .auth-overlay {
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95);
-            z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 18px;
-        }
-        [data-theme="light"] .auth-overlay { background: rgba(241, 245, 249, 0.95); }
-
-        .auth-box {
-            width: 100%; max-width: 390px; background-color: var(--bg-card);
-            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-card); border-radius: 12px;
-            padding: 22px; text-align: center; box-shadow: var(--shadow-card);
-        }
-
-        .auth-logo { height: 38px; margin-bottom: 14px; }
-        .auth-box h2 { color: var(--text-title); font-size: 1.1rem; font-weight: 900; margin-bottom: 8px; }
-        .auth-box p { color: var(--text-muted); font-size: .85rem; font-weight: 700; margin-bottom: 14px; line-height: 1.4; }
-        
-        .auth-box input {
-            width: 100%; background: var(--bg-input); color: var(--text-main);
-            border: 1px solid var(--border-light); border-radius: 7px;
-            padding: 12px; outline: none; font-family: 'Inter', sans-serif;
-            font-size: 1rem; margin-bottom: 12px; text-align: center; font-weight: 900;
-        }
-
-        .btn-auth {
-            width: 100%; background: var(--accent-blue); color: #fff;
-            border: none; border-radius: 7px; padding: 12px; font-weight: 900;
-            cursor: pointer; font-size: .95rem; font-family: 'Inter', sans-serif;
-            transition: transform 0.2s;
-        }
-        .btn-auth:hover { transform: translateY(-2px); }
-        .auth-error { color: var(--accent-red); font-size: .8rem; font-weight: 900; margin-top: 10px; min-height: 18px; }
-
         /* HEADER E BOTÕES (Menu V2) */
         .top-header {
             background-color: #FFF159 !important; backdrop-filter: none; -webkit-backdrop-filter: none;
@@ -103,8 +66,7 @@
         }
 
         .header-left { display: flex; align-items: center; }
-        .ml-logo { height: 28px; object-fit: contain; cursor: pointer; transition: transform 0.2s; }
-        .ml-logo:hover { transform: scale(1.05); }
+        .ml-logo { height: 28px; object-fit: contain; }
 
         .header-center {
             text-align: center; font-size: 0.95rem; font-weight: 900; color: #2D3277 !important; 
@@ -165,7 +127,7 @@
         .summary-title { color: var(--text-muted); font-size: .72rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
         .summary-value { color: var(--text-title); font-size: 1.35rem; font-weight: 900; }
 
-        /* CARTÃO DE ITEM E CAIXAS DE INFORMAÇÃO (V1) */
+        /* CARTÃO DE ITEM E CAIXAS DE INFORMAÇÃO */
         .items-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 10px; }
 
         .item-card {
@@ -190,7 +152,6 @@
         .info-label { color: var(--text-muted); font-size: .64rem; font-weight: 900; text-transform: uppercase; margin-bottom: 2px; }
         .info-value { color: var(--text-main); font-size: .8rem; font-weight: 800; word-break: break-word; }
 
-        /* LÓGICA DE CORES DO SEMÁFORO DO ESTOQUE ATUAL */
         .info.bg-ok { background: rgba(0, 166, 80, 0.15); border-color: rgba(0, 166, 80, 0.3); }
         .info.bg-ok .info-value { color: var(--accent-green); font-size: 0.9rem;}
         
@@ -276,27 +237,13 @@
 </head>
 
 <body>
-    <div class="auth-overlay" id="authOverlay">
-        <div class="auth-box">
-            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="auth-logo" alt="Mercado Livre">
-            <h2>Acesso à Contagem de Insumos</h2>
-            <p>Digite a senha para visualizar e editar os itens.</p>
-            <input type="password" id="senhaInput" placeholder="Senha de acesso" autocomplete="off">
-            <button class="btn-auth" onclick="validarSenha()">Entrar</button>
-            <div class="auth-error" id="authError"></div>
-            <div style="margin-top:12px; font-size:0.75rem; font-weight:700;">
-                <a href="#" onclick="abrirModalTrocarSenha()" style="color:var(--accent-blue); text-decoration:none;">Trocar senha</a>
-            </div>
-        </div>
-    </div>
-
     <div class="top-header">
         <div class="header-left">
-            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre" onclick="window.location.href='index.html'">
+            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre">
         </div>
         <div class="header-center">CONTAGEM DE INSUMOS</div>
         <div class="header-right">
-            <span class="status-badge" id="data-status">Aguardando senha...</span>
+            <span class="status-badge" id="data-status">Conectando...</span>
             <button class="theme-toggle" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
@@ -305,7 +252,7 @@
             <button class="theme-toggle" onclick="toggleTheme()" id="themeText">Mudar Tema</button>
             <a href="insumos.html" class="btn btn-blue">Visão Crítica</a>
             <button class="btn btn-dark" onclick="carregarDoFirebase()">Sync</button>
-            <button class="btn btn-green" onclick="abrirModalAdicionar()">+ Novo Item</button>
+            <button class="btn btn-green" id="btn-novo-item" onclick="abrirModalAdicionar()">+ Novo Item</button>
         </div>
     </div>
 
@@ -322,7 +269,7 @@
     </div>
 
     <div class="items-list" id="items-list">
-        <div class="empty">Digite a senha para carregar os itens.</div>
+        <div class="empty">Carregando itens...</div>
     </div>
 
     <div class="modal-overlay" id="edit-modal">
@@ -379,117 +326,26 @@
         </div>
     </div>
 
-    <div class="modal-overlay" id="change-password-modal">
-        <div class="modal" style="max-width:420px;">
-            <div class="modal-header"><div class="modal-title">Trocar Senha</div><button class="modal-close" onclick="fecharModal('change-password-modal')">×</button></div>
-            <div class="modal-body">
-                <div class="modal-fields" style="grid-template-columns: 1fr;">
-                    <div class="field"><label>Senha Atual</label><input type="password" id="senha-atual" placeholder="Digite a senha atual"></div>
-                    <div class="field"><label>Nova Senha</label><input type="password" id="nova-senha" placeholder="Digite a nova senha"></div>
-                    <div class="field"><label>Confirmar Nova Senha</label><input type="password" id="confirma-senha" placeholder="Confirme a nova senha"></div>
-                    <div id="change-password-error" style="color:var(--accent-red); font-size:0.8rem; font-weight:800; min-height:18px;"></div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-dark" onclick="fecharModal('change-password-modal')">Cancelar</button>
-                <button class="btn btn-blue" onclick="salvarNovaSenha()">Alterar Senha</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const FIREBASE_NODE = "insumos";
-        const SESSION_KEY = "ml_insumos_auth_time";
-        const SESSION_DURATION = 30 * 60 * 1000; // 30 minutos
-        
         const placeholderImg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzc3Nzc3NyI+U2VtIEZvdG88L3RleHQ+PC9zdmc+";
 
-        let acessoLiberado = false;
+        const $ = (s) => document.querySelector(s);
+
         let ALL_ITEMS = [];
         let ITEM_KEYS = [];
         let editingIndex = null;
         let editingKey = null;
         let isAdding = false;
 
-        const $ = (s) => document.querySelector(s);
+        // ============ PERMISSÕES GLOBAIS ============
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
+        let canEdit = ['editor', 'admin'].includes(userRole);
 
-        // ============ SESSÃO E SENHA ============
-        function checarSessao() {
-            const savedTime = localStorage.getItem(SESSION_KEY);
-            if (savedTime && (Date.now() - parseInt(savedTime)) < SESSION_DURATION) {
-                acessoLiberado = true;
-                $('#authOverlay').style.display = 'none';
-                setStatus('Restaurando sessão...', '#3483FA');
-                localStorage.setItem(SESSION_KEY, Date.now()); 
-                carregarDoFirebase();
-            } else {
-                localStorage.removeItem(SESSION_KEY);
-                setTimeout(() => { $('#senhaInput').focus(); }, 300);
-            }
-        }
-
-        async function obterSenha() {
-            try {
-                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/senha.json`);
-                const senha = await response.json();
-                if (senha === null) {
-                    await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/senha.json`, {
-                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify('melancia')
-                    });
-                    return 'melancia';
-                }
-                return String(senha);
-            } catch (e) {
-                console.error('Erro ao obter senha:', e); return null;
-            }
-        }
-
-        async function validarSenha() {
-            const senhaDigitada = $('#senhaInput').value.trim();
-            const erro = $('#authError');
-            if (!senhaDigitada) { erro.innerText = 'Digite a senha.'; return; }
-            
-            const senhaArmazenada = await obterSenha();
-            if (senhaArmazenada === null) { erro.innerText = 'Erro ao verificar senha.'; return; }
-            
-            if (senhaDigitada === senhaArmazenada) {
-                acessoLiberado = true;
-                localStorage.setItem(SESSION_KEY, Date.now());
-                $('#authOverlay').style.display = 'none';
-                setStatus('Conectando...', '#3483FA');
-                carregarDoFirebase();
-            } else {
-                erro.innerText = 'Senha incorreta.';
-                $('#senhaInput').value = ''; $('#senhaInput').focus();
-            }
-        }
-
-        function abrirModalTrocarSenha() {
-            $('#change-password-modal').classList.add('active');
-            $('#senha-atual').value = ''; $('#nova-senha').value = ''; $('#confirma-senha').value = ''; $('#change-password-error').innerText = '';
-        }
-
-        async function salvarNovaSenha() {
-            const atual = $('#senha-atual').value.trim();
-            const nova = $('#nova-senha').value.trim();
-            const confirma = $('#confirma-senha').value.trim();
-            const erroEl = $('#change-password-error');
-
-            if (!atual || !nova || !confirma) { erroEl.innerText = 'Preencha todos os campos.'; return; }
-            if (nova !== confirma) { erroEl.innerText = 'As novas senhas não conferem.'; return; }
-            if (nova.length < 4) { erroEl.innerText = 'A nova senha deve ter pelo menos 4 caracteres.'; return; }
-
-            const senhaArmazenada = await obterSenha();
-            if (atual !== senhaArmazenada) { erroEl.innerText = 'Senha atual incorreta.'; return; }
-
-            try {
-                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/senha.json`, {
-                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nova)
-                });
-                fecharModal('change-password-modal');
-                alert('Senha alterada com sucesso!');
-            } catch (e) { erroEl.innerText = 'Erro ao salvar nova senha.'; }
+        if(!canEdit) {
+            $('#btn-novo-item').style.display = 'none';
         }
 
         // ============ UTILIDADES ============
@@ -507,15 +363,13 @@
             return agora.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }
 
-        // Lógica de Cores do Estoque
         function semaforoBgClass(atual, seguranca) {
             let a = parseFloat(atual) || 0;
             let s = parseFloat(seguranca) || 0;
-            
             if (s <= 0) return a > 0 ? 'bg-ok' : 'bg-bad';
-            if (a > s) return 'bg-ok'; // Acima do seguro
-            if (a >= (s * 0.3) && a > 0) return 'bg-warn'; // Até 30% da margem é amarelo
-            return 'bg-bad'; // Abaixo de 30% ou zero
+            if (a > s) return 'bg-ok'; 
+            if (a >= (s * 0.3) && a > 0) return 'bg-warn'; 
+            return 'bg-bad'; 
         }
 
         function getValue(item, keys, fallback = '') {
@@ -552,7 +406,6 @@
 
         // ============ CARREGAR DADOS ============
         async function carregarDoFirebase() {
-            if (!acessoLiberado) return;
             setStatus('Conectando...', '#3483FA');
 
             try {
@@ -613,6 +466,16 @@
                 
                 const bgStockClass = semaforoBgClass(item.Estoque_atual, item.estoque_segurança);
 
+                let actionsHtml = '';
+                if (canEdit) {
+                    actionsHtml = `
+                        <div class="card-actions">
+                            <button class="btn btn-blue" onclick="abrirModal(${index})">Ajuste Rápido</button>
+                            <button class="btn btn-dark" onclick="abrirModalCompleto(${index})">Editar Tudo</button>
+                        </div>
+                    `;
+                }
+
                 html += `
                     <div class="item-card">
                         <div class="photo-box">${fotoHtml}</div>
@@ -627,10 +490,7 @@
                                 <div class="info"><div class="info-label">Tamanho</div><div class="info-value">${escapeHtml(item.tamanho || '-')}</div></div>
                                 <div class="info"><div class="info-label">Última contagem</div><div class="info-value">${escapeHtml(item["Ultima contagem"] || '-')}</div></div>
                             </div>
-                            <div class="card-actions">
-                                <button class="btn btn-blue" onclick="abrirModal(${index})">Ajuste Rápido</button>
-                                <button class="btn btn-dark" onclick="abrirModalCompleto(${index})">Editar Tudo</button>
-                            </div>
+                            ${actionsHtml}
                         </div>
                     </div>`;
             }
@@ -640,9 +500,8 @@
         // ============ AÇÕES DOS MODAIS ============
         function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
 
-        // Modal 1: Ajuste Rápido
         function abrirModal(index) {
-            if (!acessoLiberado) return;
+            if (!canEdit) return alert('Sem permissão para editar.');
             editingIndex = index; editingKey = ITEM_KEYS[index];
             const item = ALL_ITEMS[index];
 
@@ -656,13 +515,12 @@
         }
 
         async function salvarEdicaoRapida() {
-            if (!acessoLiberado || editingIndex === null) return;
+            if (!canEdit || editingIndex === null) return;
             const itemAtualizado = { ...ALL_ITEMS[editingIndex], Foto: $('#modal-foto').value.trim(), Estoque_atual: $('#modal-estoque').value, "Ultima contagem": dataHoraAgora() };
             await commitarEdicaoFirebase(itemAtualizado);
             fecharModal('edit-modal');
         }
 
-        // Modal 2: Edição Completa e Adicionar
         function preencherFullModal(i) {
             $('#full-id').value = i.id_material || ''; $('#full-nome').value = i.nome_material || '';
             $('#full-categoria').value = i.categoria_material || ''; $('#full-unidade').value = i.unidade || '';
@@ -683,7 +541,7 @@
         }
 
         function abrirModalCompleto(index) {
-            if (!acessoLiberado) return;
+            if (!canEdit) return alert('Sem permissão para editar.');
             isAdding = false; editingIndex = index; editingKey = ITEM_KEYS[index];
             $('#full-modal-title').innerText = "Editar Todas as Informações";
             preencherFullModal(ALL_ITEMS[index]);
@@ -692,7 +550,7 @@
         }
 
         function abrirModalAdicionar() {
-            if (!acessoLiberado) return;
+            if (!canEdit) return alert('Sem permissão para adicionar.');
             isAdding = true; editingIndex = null; editingKey = null;
             $('#full-modal-title').innerText = "Adicionar Novo Item";
             preencherFullModal({});
@@ -701,7 +559,7 @@
         }
 
         async function salvarEdicaoCompleta() {
-            if (!acessoLiberado) return;
+            if (!canEdit) return;
             const obj = obterObjetoFull();
             if (!obj.nome_material) { alert("O nome do material é obrigatório!"); return; }
 
@@ -727,14 +585,11 @@
                 
                 ALL_ITEMS[editingIndex] = item; renderLista(); 
                 setStatus(item["Ultima contagem"], '#00A650');
-                localStorage.setItem(SESSION_KEY, Date.now()); // renova tempo
             } catch(error) { setStatus('Erro ao salvar.', '#FF5252'); }
         }
 
         async function excluirItem() {
-            if (editingIndex === null || editingKey === null) return;
-            const senha = prompt('Digite a senha para excluir este item:'); if (senha === null) return;
-            const senhaArmazenada = await obterSenha(); if (senha !== senhaArmazenada) { alert('Senha incorreta. Cancelado.'); return; }
+            if (editingIndex === null || editingKey === null || !canEdit) return;
             if (!confirm(`Deseja realmente excluir o item "${ALL_ITEMS[editingIndex].nome_material}"?`)) return;
 
             setStatus('Excluindo...', '#FF5252');
@@ -750,7 +605,6 @@
         function limparFiltros() { $('#filter-categoria').value = 'Todos'; $('#search-input').value = ''; renderLista(); }
         $('#filter-categoria').addEventListener('change', renderLista); $('#search-input').addEventListener('input', renderLista);
         $('#modal-foto').addEventListener('input', function() { $('#modal-preview').src = this.value || placeholderImg; });
-        $('#senhaInput').addEventListener('keydown', function(event) { if (event.key === 'Enter') validarSenha(); });
 
         function initTheme() {
             try { if (localStorage.getItem('themePreference') === 'light') { document.body.setAttribute('data-theme', 'light'); } } catch(e){}
@@ -763,16 +617,16 @@
 
         // EXPORTAÇÃO 4K
         function baixarDashboardComoImagem() {
-            if (!acessoLiberado || !ALL_ITEMS || ALL_ITEMS.length === 0) return alert("Nenhum dado para exportar.");
+            if (!ALL_ITEMS || ALL_ITEMS.length === 0) return alert("Nenhum dado para exportar.");
             const s = $('#data-status'); const orig = s.innerText; const cor = s.style.color;
             s.innerText = 'Processando UHD 4K...'; s.style.color = '#3483FA';
             
             const style = document.createElement('style'); style.id = 'temp-capture';
-            style.innerHTML = `#btnExportar, #themeToggle, .btn-action, .filters-card, .auth-overlay, .card-actions { display: none !important; } ::-webkit-scrollbar { display: none !important; } body { overflow: visible !important; height: auto !important; } .items-list { overflow: visible !important; }`;
+            style.innerHTML = `#btnExportar, #themeToggle, .btn-action, .filters-card, .card-actions { display: none !important; } ::-webkit-scrollbar { display: none !important; } body { overflow: visible !important; height: auto !important; } .items-list { overflow: visible !important; }`;
             document.head.appendChild(style);
 
             setTimeout(() => {
-                html2canvas(document.body, { scale: 3, useCORS: true, backgroundColor: document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f' }).then(c => {
+                html2canvas(document.body, { scale: 3, useCORS: true, backgroundColor: document.body.getAttribute('data-theme') === 'light' ? '#ffffff' : '#0b121f' }).then(c => {
                     document.head.removeChild(style); s.innerText = orig; s.style.color = cor;
                     const a = document.createElement('a'); a.download = `Contagem_Insumos_${new Date().toISOString().slice(0,10)}.png`; a.href = c.toDataURL('image/png'); a.click();
                 }).catch(e => { document.head.removeChild(style); s.innerText = 'Erro captura'; s.style.color = '#FF5252'; });
@@ -780,7 +634,8 @@
         }
 
         // Init
-        initTheme(); checarSessao();
+        initTheme(); 
+        carregarDoFirebase();
     </script>
 </body>
 </html>
