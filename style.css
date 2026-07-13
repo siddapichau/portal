@@ -1,105 +1,108 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
 
-/* =========================================
-   SISTEMA DE TEMAS E VARIÁVEIS GLOBAIS
-   ========================================= */
 :root {
     --bg-body: #f1f5f9;
-    --bg-card: rgba(255, 255, 255, 0.95);
+    --bg-card: #ffffff;
     --border-card: rgba(0, 0, 0, 0.1);
     --text-main: #334155;
     --text-muted: #64748b;
     --text-title: #0f172a;
     
-    --accent-yellow: #FFE600; /* Amarelo Mercado Livre */
+    --accent-yellow: #FFE600; 
     --accent-blue: #3483FA; 
     --accent-green: #00A650;
     
-    --btn-minimal-bg: #FFF9D2; /* Fundo do botão minimalista */
-    --btn-minimal-border: #E5D587; /* Borda do botão minimalista */
-    --btn-minimal-icon: #2D3277; /* Cor do ícone */
+    --btn-minimal-bg: rgba(255, 255, 255, 0.5); 
+    --btn-minimal-border: rgba(0, 0, 0, 0.1); 
+    --btn-minimal-icon: #2D3277; 
 }
 
 [data-theme="dark"] {
     --bg-body: #0f172a;
-    --bg-card: rgba(30, 41, 59, 0.9); 
+    --bg-card: #1e293b; 
     --border-card: rgba(255, 255, 255, 0.1);
     --text-main: #cbd5e1;
     --text-muted: #94a3b8;
     --text-title: #ffffff;
     
-    --btn-minimal-bg: rgba(255, 255, 255, 0.1);
-    --btn-minimal-border: rgba(255, 255, 255, 0.2);
-    --btn-minimal-icon: #FFE600;
+    /* Botões menos transparentes no modo escuro para não sumirem */
+    --btn-minimal-bg: rgba(255, 255, 255, 0.25);
+    --btn-minimal-border: rgba(255, 255, 255, 0.4);
+    --btn-minimal-icon: #FFF159;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); min-height: 100vh; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+body { background-color: var(--bg-body); color: var(--text-main); min-height: 100vh; overflow-x: hidden; }
 
-/* =========================================
-   TOP BAR E BOTÕES MINIMALISTAS (Fixo nos Cantos)
-   ========================================= */
+/* BARRA SUPERIOR */
 .top-bar-wrapper {
-    position: fixed; /* Fixo na tela */
-    top: 0; left: 0; right: 0;
+    position: fixed; top: 0; left: 0; right: 0; height: 60px;
     background-color: var(--accent-yellow);
-    height: 60px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 20px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 20px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
-
 .nav-left { display: flex; align-items: center; gap: 15px; }
-.ml-logo { height: 32px; cursor: pointer; }
+.ml-logo { height: 36px; cursor: pointer; }
 
-/* Grupo de Botões à Direita */
+/* Botão Hambúrguer (Igual Imagem 2) */
+.btn-hamb {
+    background: transparent; border: none; cursor: pointer;
+    display: flex; flex-direction: column; gap: 5px; padding: 5px;
+}
+.btn-hamb span { display: block; width: 24px; height: 3px; background-color: #2D3277; border-radius: 2px; }
+
+/* Botões da Direita */
 .nav-right { display: flex; gap: 10px; align-items: center; }
-
-/* Estilo Minimalista Baseado na Imagem Referência */
 .btn-minimal {
-    background: var(--btn-minimal-bg);
-    border: 1px solid var(--btn-minimal-border);
-    color: var(--btn-minimal-icon);
-    border-radius: 8px;
-    width: 38px;
-    height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 1.1rem;
+    background: var(--btn-minimal-bg); border: 1px solid var(--btn-minimal-border);
+    color: var(--btn-minimal-icon); border-radius: 8px; width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
 }
-
-.btn-minimal:hover {
-    background: rgba(255, 255, 255, 0.5);
-    transform: translateY(-2px);
-}
+.btn-minimal:hover { background: rgba(255,255,255,0.6); }
 .btn-minimal svg { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; }
 
 /* =========================================
-   MODAL DE LOGIN / REGISTRO
+   NOVO MENU LATERAL DUPLO (Igual Imagem 3)
    ========================================= */
-.auth-modal {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-    z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px;
+.sidebar-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 998;
+    display: none; transition: 0.3s;
 }
+.sidebar-overlay.active { display: block; }
+
+.sidebar-wrapper {
+    position: fixed; top: 60px; left: -600px; height: calc(100vh - 60px);
+    display: flex; z-index: 999; transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+}
+.sidebar-wrapper.open { left: 0; }
+
+/* Painel Esquerdo (Escuro) */
+.sidebar-left { width: 260px; background-color: #2a2a2a; color: #fff; overflow-y: auto; display: flex; flex-direction: column; }
+.sidebar-tabs { display: flex; padding: 15px; gap: 10px; border-bottom: 1px solid #444; }
+.tab-btn { flex: 1; padding: 8px 0; border-radius: 20px; font-size: 0.85rem; font-weight: 800; border: none; cursor: pointer; transition: 0.2s; background: transparent; color: #aaa; display: flex; align-items: center; justify-content: center; gap: 5px; }
+.tab-btn.active { background-color: #fff; color: #2a2a2a; }
+.tab-btn:hover:not(.active) { color: #fff; }
+
+.cat-item { padding: 15px 20px; font-weight: 600; cursor: pointer; color: #ccc; display: flex; justify-content: space-between; transition: 0.2s; border-radius: 0 20px 20px 0; margin-right: 10px; margin-top: 5px;}
+.cat-item:hover, .cat-item.active { background-color: var(--accent-blue); color: #fff; }
+
+/* Painel Direito (Claro) */
+.sidebar-right { width: 300px; background-color: var(--bg-card); border-right: 1px solid var(--border-card); overflow-y: auto; display: none; flex-direction: column; box-shadow: 5px 0 15px rgba(0,0,0,0.05); }
+.sidebar-right.active { display: flex; }
+.subitem-link { padding: 15px 20px; color: var(--text-main); text-decoration: none; font-size: 0.9rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); transition: 0.2s; }
+.subitem-link:hover { background-color: var(--bg-body); }
+.fav-star { font-size: 1.2rem; cursor: pointer; color: #ccc; transition: 0.2s; }
+.fav-star.active { color: #FFB000; }
+
+/* =========================================
+   MODAL DE AUTENTICAÇÃO E REGISTRO
+   ========================================= */
+.auth-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px; }
 .auth-modal.active { display: flex; }
-.auth-box {
-    background: var(--bg-card); width: 100%; max-width: 400px;
-    border-radius: 12px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    border: 1px solid var(--border-card); text-align: center;
-}
-.auth-box h2 { color: var(--text-title); margin-bottom: 20px; }
-.auth-box input {
-    width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 6px;
-    border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);
-}
-.btn-auth {
-    width: 100%; padding: 12px; background: var(--accent-blue); color: #fff;
-    border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 10px;
-}
-.auth-toggle { font-size: 0.85rem; color: var(--accent-blue); cursor: pointer; }
+.auth-box { background: var(--bg-card); width: 100%; max-width: 400px; border-radius: 12px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--border-card); }
+.auth-box h2 { color: var(--text-title); margin-bottom: 20px; text-align: center; }
+.input-group { position: relative; margin-bottom: 15px; }
+.auth-box input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); font-weight: 600;}
+.eye-icon { position: absolute; right: 10px; top: 12px; cursor: pointer; color: var(--text-muted); }
+.btn-auth { width: 100%; padding: 12px; background: var(--accent-blue); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+.auth-toggle { font-size: 0.85rem; color: var(--accent-blue); cursor: pointer; text-align: center; font-weight: 600; }
