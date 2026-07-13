@@ -1,5 +1,5 @@
 // ====== SUA URL DO GOOGLE APPS SCRIPT ======
-const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDerQam4lmNYOSsBLpFRdAAjBvjzCVBSzINfpGdtVU-1cV9Y2DTP8ui_O58715vFJPtA/exec";
+const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_sTNezCL8q2W-PF38H4HQk_17r64f6sH13YN5xuMMuD1ZkxKwazRh7EozhwMsqiV2sw/exec";
 
 // ====== SUA URL DO FIREBASE (ONDE SALVA OS MENUS) ======
 const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
@@ -37,7 +37,7 @@ async function carregarMenuGlobal() {
                 <div id="cat-list-container" style="flex:1; overflow-y:auto; padding-bottom:20px;"></div>
             </div>
             <div class="sidebar-right" id="subitem-panel">
-                <div style="padding: 20px; color: var(--text-muted); text-align:center;">Selecione uma categoria</div>
+                <div style="padding: 20px; color: var(--text-muted); text-align:center;">Passe o mouse em uma categoria</div>
             </div>
         </div>
 
@@ -83,13 +83,13 @@ async function carregarMenuGlobal() {
     } catch (error) { console.error("Erro Menu", error); }
 }
 
-// CORREÇÃO AQUI: Permite visitantes verem os menus
+// PERMISSÕES: Se a pessoa não está logada (guest), ela age como 'view'
 function temPermissao(rolesStr) {
     if(!rolesStr) return true; 
     let roles = rolesStr.split(',').map(r => r.trim().toLowerCase());
     let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
     
-    // Se a pessoa não estiver logada, mas o menu for "view", ela pode ver.
+    // Se for guest, permite ver caso o menu aceite 'view' ou 'guest'
     if (userRole === 'guest' && (roles.includes('view') || roles.includes('guest'))) {
         return true;
     }
@@ -106,7 +106,8 @@ function renderizarMenuEsquerdo() {
     container.innerHTML = '';
     menuData.categorias.forEach((cat, idx) => {
         if(temPermissao(cat.viewRoles)) {
-            container.innerHTML += `<div class="cat-item" onclick="abrirSubmenu(${idx}, this)">
+            // ATUALIZAÇÃO: onmouseenter em vez de onclick para abrir ao passar o mouse
+            container.innerHTML += `<div class="cat-item" onmouseenter="abrirSubmenu(${idx}, this)" onclick="abrirSubmenu(${idx}, this)">
                 ${cat.icon || '📂'} ${cat.category} <span>></span>
             </div>`;
         }
@@ -152,7 +153,7 @@ function switchTab(tab) {
     const panel = document.getElementById('subitem-panel');
     if(tab === 'todos') {
         renderizarMenuEsquerdo();
-        panel.innerHTML = '<div style="padding: 20px; color: var(--text-muted); text-align:center;">Selecione uma categoria</div>';
+        panel.innerHTML = '<div style="padding: 20px; color: var(--text-muted); text-align:center;">Passe o mouse em uma categoria</div>';
     } else {
         document.getElementById('cat-list-container').innerHTML = '<div style="padding:20px; color:#aaa; font-size:0.85rem;">Exibindo seus favoritos...</div>';
         panel.classList.add('active');
