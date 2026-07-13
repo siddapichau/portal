@@ -6,14 +6,17 @@
     <link rel="stylesheet" href="style.css">
     <style>
         #main-content { margin-top: 80px; padding: 20px; max-width: 1000px; margin: 80px auto; }
-        .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; }
-        .header-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; cursor: move; }
-        .subitem-row { display: grid; grid-template-columns: 80px 1fr 1fr 1fr auto; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); cursor: move; }
-        .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
-        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #333; }
+        .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border-card); }
+        .header-actions { display: flex; gap: 10px; margin-bottom: 20px; }
+        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         
-        .drag-over { border: 2px dashed var(--accent-blue) !important; opacity: 0.5; }
+        /* Layout Submenus */
+        .subitem-row { display: grid; grid-template-columns: 30px 1fr 1fr 1fr auto; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; cursor: grab; align-items: center; }
+        .subitem-row:active { cursor: grabbing; opacity: 0.8; }
+        .subitem-row input { padding: 8px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); border-radius: 4px; }
+        
+        .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
+        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; }
     </style>
 </head>
 <body data-theme="light">
@@ -22,131 +25,109 @@
     <script src="menu.js"></script>
 
     <div id="main-content">
-        <div class="admin-container">
-            <h2 style="margin-bottom: 15px;">⚙️ Gerenciador de Menus</h2>
+        <div class="admin-container" id="adminPanel" style="display:none;">
+            <h2 style="margin-bottom: 15px; color: var(--text-title);">⚙️ Gerenciador de Menus</h2>
             
             <div class="header-actions">
-                <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar (Firebase)</button>
-                <button class="btn btn-dark" onclick="exportarJSON()">⬇️ Baixar JSON Atual</button>
-                <input type="file" id="fileJSON" accept=".json" style="display: none;" onchange="importarJSON(event)">
-                <button class="btn btn-green" onclick="document.getElementById('fileJSON').click()">⬆️ Subir JSON</button>
+                <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar na Nuvem</button>
             </div>
 
             <div id="categorias-container"></div>
             <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px;">+ Adicionar Nova Categoria</button>
         </div>
+        
+        <div id="acessoNegado" style="display:none; text-align:center; padding: 50px;">
+            <h2 style="color: #FF5252;">Acesso Negado 🛑</h2>
+            <p>Você precisa estar logado com cargo de 'admin' para acessar esta página.</p>
+        </div>
     </div>
 
     <script>
-        const ICONS_LIST = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚚", "📦", "📊", "🔗", "📑"];
-        
-        let menuData = { categorias: [] };
-        let draggedElement = null;
+        let adMenuData = { categorias: [] };
+        let draggedItem = null;
 
-        async function carregarDadosAdmin() {
-            // Verifica permissão (integrado com o sistema de roles no menu.js)
-            if(currentUserRole !== 'admin') {
-                document.getElementById('main-content').innerHTML = "<h2 style='text-align:center; color:red;'>Acesso Negado. Faça login como Admin.</h2>";
-                return;
-            }
+        window.onload = async () => {
+            // VERIFICAÇÃO DE SEGURANÇA
+            const userStr = localStorage.getItem('loggedUser');
+            if(!userStr) { document.getElementById('acessoNegado').style.display = 'block'; return; }
+            const user = JSON.parse(userStr);
+            if(user.cargo !== 'admin') { document.getElementById('acessoNegado').style.display = 'block'; return; }
+
+            document.getElementById('adminPanel').style.display = 'block';
+
+            // Carrega dados
             try {
                 const res = await fetch(`${FIREBASE_URL}menu_global.json`);
                 const data = await res.json();
-                menuData = data && data.categorias ? data : { categorias: [] };
+                adMenuData = data && data.categorias ? data : { categorias: [] };
             } catch (e) { console.log(e); }
             renderizarAdmin();
-        }
-
-        // Simula o Admin estando logado temporariamente para você editar direto
-        currentUserRole = 'admin'; 
-        carregarDadosAdmin();
-
-        function getIconsOptions(selectedIcon) {
-            return ICONS_LIST.map(ico => `<option value="${ico}" ${ico === selectedIcon ? 'selected' : ''}>${ico}</option>`).join('');
-        }
+        };
 
         function renderizarAdmin() {
             const container = document.getElementById('categorias-container');
             container.innerHTML = '';
 
-            menuData.categorias.forEach((cat, catIndex) => {
-                let itemsHtml = (cat.items || []).map((item, itemIndex) => `
-                    <div class="subitem-row" draggable="true" ondragstart="drag(event, 'item', ${catIndex}, ${itemIndex})" ondrop="drop(event, 'item', ${catIndex}, ${itemIndex})" ondragover="allowDrop(event)">
-                        <select onchange="updateItem(${catIndex}, ${itemIndex}, 'icon', this.value)">${getIconsOptions(item.icon)}</select>
-                        <input type="text" value="${item.title || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'title', this.value)">
-                        <input type="text" value="${item.desc || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'desc', this.value)">
-                        <input type="text" value="${item.url || ''}" onchange="updateItem(${catIndex}, ${itemIndex}, 'url', this.value)">
-                        <button class="btn btn-red" onclick="removerItem(${catIndex}, ${itemIndex})">✖</button>
-                    </div>
-                `).join('');
+            adMenuData.categorias.forEach((cat, catIdx) => {
+                let itemsHtml = '';
+                (cat.items || []).forEach((item, itemIdx) => {
+                    itemsHtml += `
+                        <div class="subitem-row" draggable="true" ondragstart="dragStart(event, ${catIdx}, ${itemIdx})" ondragover="dragOver(event)" ondrop="drop(event, ${catIdx}, ${itemIdx})">
+                            <span style="color:#888;">↕️</span>
+                            <input type="text" placeholder="Título" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)">
+                            <input type="text" placeholder="Descrição" value="${item.desc || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'desc', this.value)">
+                            <input type="text" placeholder="URL" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)">
+                            <button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖</button>
+                        </div>
+                    `;
+                });
 
                 container.innerHTML += `
-                    <div class="cat-card" draggable="true" ondragstart="drag(event, 'cat', ${catIndex}, null)" ondrop="drop(event, 'cat', ${catIndex}, null)" ondragover="allowDrop(event)">
+                    <div class="cat-card">
                         <div style="display:flex; gap:10px; margin-bottom:15px;">
-                            <span style="font-size:1.5rem;">🔀</span>
-                            <input type="text" value="${cat.category || ''}" onchange="updateCat(${catIndex}, 'category', this.value)" style="flex:1; padding:8px;">
-                            <button class="btn btn-red" onclick="removerCategoria(${catIndex})">Excluir</button>
+                            <input type="text" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; padding:10px; font-weight:bold; border: 1px solid var(--border-card); border-radius:4px; background: var(--bg-body); color: var(--text-main);">
+                            <button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir Categoria</button>
                         </div>
+                        <div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem;">Submenus (Arraste para reordenar):</div>
                         ${itemsHtml}
-                        <button class="btn btn-dark" style="margin-top:10px;" onclick="adicionarItem(${catIndex})">+ Submenu</button>
+                        <button class="btn" style="background:#444; margin-top:10px;" onclick="adicionarItem(${catIdx})">+ Adicionar Submenu</button>
                     </div>
                 `;
             });
         }
 
-        /* Funções JSON Import/Export */
-        function exportarJSON() {
-            const blob = new Blob([JSON.stringify(menuData, null, 2)], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url; a.download = "menu_atual.json"; a.click();
+        /* LÓGICA DE DRAG AND DROP CONFIÁVEL PARA SUBMENUS */
+        function dragStart(e, catIdx, itemIdx) {
+            draggedItem = { catIdx, itemIdx };
+            e.dataTransfer.effectAllowed = 'move';
         }
-        
-        function importarJSON(event) {
-            const file = event.target.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    menuData = JSON.parse(e.target.result);
-                    renderizarAdmin();
-                    alert("Menu carregado! Salve no Firebase para aplicar globalmente.");
-                } catch(err) { alert("Arquivo JSON inválido."); }
-            };
-            reader.readAsText(file);
-        }
-
-        /* Funções de Edição */
-        function adicionarCategoria() { menuData.categorias.push({ category: "Nova Categoria", items: [] }); renderizarAdmin(); }
-        function removerCategoria(idx) { menuData.categorias.splice(idx, 1); renderizarAdmin(); }
-        function updateCat(idx, field, value) { menuData.categorias[idx][field] = value; }
-        function adicionarItem(catIdx) { if(!menuData.categorias[catIdx].items) menuData.categorias[catIdx].items = []; menuData.categorias[catIdx].items.push({ icon: "📦", title: "Novo Item", desc: "Desc", url: "#" }); renderizarAdmin(); }
-        function removerItem(catIdx, itemIdx) { menuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); }
-        function updateItem(catIdx, itemIdx, field, value) { menuData.categorias[catIdx].items[itemIdx][field] = value; }
-
-        /* Drag & Drop Lógica Simples */
-        let dragInfo = null;
-        function allowDrop(ev) { ev.preventDefault(); }
-        function drag(ev, type, catIdx, itemIdx) { dragInfo = { type, catIdx, itemIdx }; }
-        function drop(ev, targetType, targetCatIdx, targetItemIdx) {
-            ev.preventDefault();
-            if(!dragInfo || dragInfo.type !== targetType) return;
+        function dragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+        function drop(e, targetCatIdx, targetItemIdx) {
+            e.preventDefault();
+            if (!draggedItem || draggedItem.catIdx !== targetCatIdx) return; // Só move dentro da mesma categoria por segurança
             
-            if(dragInfo.type === 'cat') {
-                const temp = menuData.categorias[dragInfo.catIdx];
-                menuData.categorias.splice(dragInfo.catIdx, 1);
-                menuData.categorias.splice(targetCatIdx, 0, temp);
-            } else if(dragInfo.type === 'item' && dragInfo.catIdx === targetCatIdx) {
-                const temp = menuData.categorias[dragInfo.catIdx].items[dragInfo.itemIdx];
-                menuData.categorias[dragInfo.catIdx].items.splice(dragInfo.itemIdx, 1);
-                menuData.categorias[dragInfo.catIdx].items.splice(targetItemIdx, 0, temp);
-            }
+            const cat = adMenuData.categorias[targetCatIdx];
+            const itemToMove = cat.items.splice(draggedItem.itemIdx, 1)[0];
+            cat.items.splice(targetItemIdx, 0, itemToMove);
             renderizarAdmin();
         }
 
+        /* FUNÇÕES DE EDIÇÃO */
+        function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", items: [] }); renderizarAdmin(); }
+        function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); }
+        function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; }
+        
+        function adicionarItem(catIdx) { 
+            if(!adMenuData.categorias[catIdx].items) adMenuData.categorias[catIdx].items = []; 
+            adMenuData.categorias[catIdx].items.push({ title: "Novo Link", desc: "", url: "#" }); 
+            renderizarAdmin(); 
+        }
+        function removerItem(catIdx, itemIdx) { adMenuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); }
+        function updateItem(catIdx, itemIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx][field] = value; }
+
         async function salvarNoFirebase() {
             try {
-                await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(menuData) });
+                await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) });
                 alert("Salvo com sucesso!");
             } catch(e) { alert("Erro ao salvar."); }
         }
