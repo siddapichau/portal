@@ -1,5 +1,5 @@
 // ====== SUA URL DO GOOGLE APPS SCRIPT ======
-const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw_sTNezCL8q2W-PF38H4HQk_17r64f6sH13YN5xuMMuD1ZkxKwazRh7EozhwMsqiV2sw/exec";
+const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDerQam4lmNYOSsBLpFRdAAjBvjzCVBSzINfpGdtVU-1cV9Y2DTP8ui_O58715vFJPtA/exec";
 const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
 
 let menuData = { categorias: [] };
