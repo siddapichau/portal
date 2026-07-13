@@ -3,23 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Controles Internos</title>
+    <title>Portal de Reportes - Mercado Livre</title>
+    
+    <!-- FAVICON RESTAURADO AQUI -->
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    
+    <!-- ESTILOS GLOBAIS (MENU, TOP BAR, CORES) -->
     <link rel="stylesheet" href="style.css">
+
     <style>
-        #main-content { padding: 100px 20px 40px; display: flex; flex-direction: column; align-items: center; text-align: center; }
-        .welcome-box { background: var(--bg-card); border-radius: 12px; padding: 40px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid var(--border-card); max-width: 800px; width: 100%; }
+        /* ESTILOS ESPECÍFICOS DO INDEX ANTIGO (Fundo, Título e Animação) */
+        :root {
+            --bg-gradient: radial-gradient(circle at top right, #1e3c72 0%, #0f172a 40%, #050505 100%);
+        }
+        [data-theme="light"] {
+            --bg-gradient: radial-gradient(circle at top right, #a1c4fd 0%, #e2ebf0 40%, #f1f5f9 100%);
+        }
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #main-content {
+            margin-top: 100px; /* Evita que a Top Bar injetada cubra o título */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .main-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--text-title);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 30px;
+            position: relative;
+            padding-bottom: 12px;
+            text-align: center;
+        }
+        .main-title::after {
+            content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 4px; background-color: var(--accent-blue); border-radius: 2px;
+        }
+
+        /* Caixa de Mensagem Animada do seu Index Antigo */
+        .quote-container {
+            background: var(--bg-card);
+            border-left: 4px solid var(--accent-blue);
+            border-radius: 8px;
+            padding: 15px 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            max-width: 600px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+        }
+        .quote-text { font-size: 1rem; color: var(--text-main); font-style: italic; font-weight: 600; transition: opacity 0.5s ease; }
+        .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-blue); width: 0%; }
+
+        /* Grid Central Antigo (Opcional, pois agora os links estão na barra lateral) */
+        .dashboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; max-width: 1250px; padding: 0 20px; margin-bottom: 50px;}
+        .dash-btn { background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 16px; padding: 30px 20px; display: flex; flex-direction: column; align-items: center; text-align: center; text-decoration: none; color: var(--text-main); transition: 0.4s; box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+        .dash-btn:hover { transform: translateY(-8px) scale(1.02); border-color: var(--accent-blue); background: var(--bg-body); }
+        .icon-wrapper { color: var(--text-muted); margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
+        .dash-btn:hover .icon-wrapper { color: var(--accent-blue); }
+        .btn-title { font-size: 1.25rem; font-weight: 800; margin-bottom: 10px; color: var(--text-title); }
+        .btn-desc { font-size: 0.85rem; color: var(--text-muted); }
+        @media (max-width: 1100px) { .dashboard-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .dashboard-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body data-theme="light">
-    <!-- SCRIPTS CORE -->
-    <script src="js/firebase.config.js"></script>
+
+    <!-- SCRIPT QUE INJETA O MENU LATERAL E A BARRA SUPERIOR -->
     <script src="menu.js"></script>
 
     <div id="main-content">
-        <div class="welcome-box">
-            <h1 style="color: var(--text-title); margin-bottom: 10px;">Bem-vindo ao Portal</h1>
-            <p style="color: var(--text-muted);">Use o botão ☰ no canto superior esquerdo para navegar e marcar seus favoritos!</p>
+        <h1 class="main-title">Portal de Controles Internos</h1>
+
+        <!-- Mensagem Animada -->
+        <div class="quote-container">
+            <span id="animated-quote" class="quote-text">"Carregando a missão do dia..."</span>
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+
+        <!-- Seus Botões Centrais (Mantidos do Index Antigo) -->
+        <div class="dashboard-grid">
+            <a href="insumos.html" class="dash-btn">
+                <div class="icon-wrapper">📦</div>
+                <div class="btn-title">Insumos Operacionais</div>
+                <div class="btn-desc">Gestão de materiais e suprimentos.</div>
+            </a>
+            <a href="contagem_insumos.html" class="dash-btn">
+                <div class="icon-wrapper">📋</div>
+                <div class="btn-title">Controle Insumos</div>
+                <div class="btn-desc">Painel de contagem e estoque.</div>
+            </a>
+            <a href="equipamentos.html" class="dash-btn">
+                <div class="icon-wrapper">🖨️</div>
+                <div class="btn-title">Controle Equipamentos</div>
+                <div class="btn-desc">Inventário de ativos físicos.</div>
+            </a>
         </div>
     </div>
+
+    <!-- Script da Mensagem Animada -->
+    <script>
+        const messages = [
+            "O talento vence jogos, mas o trabalho em equipe e a inteligência vencem campeonatos.",
+            "Um inventário preciso é o coração da nossa logística.",
+            "No Mercado Livre, não entregamos apenas pacotes, entregamos propósitos.",
+            "Nossa força está na união. Juntos, fazemos do nosso inventário um modelo de eficiência."
+        ];
+        let msgIndex = 0;
+        const quoteEl = document.getElementById('animated-quote');
+        const progressBar = document.getElementById('progress-bar');
+        const INTERVAL_MS = 10000;
+
+        function startMessageCycle() {
+            quoteEl.innerText = messages[msgIndex];
+            animateProgressBar();
+            setInterval(() => {
+                quoteEl.style.opacity = 0;
+                setTimeout(() => {
+                    msgIndex = (msgIndex + 1) % messages.length;
+                    quoteEl.innerText = messages[msgIndex];
+                    quoteEl.style.opacity = 1;
+                    animateProgressBar();
+                }, 500);
+            }, INTERVAL_MS);
+        }
+
+        function animateProgressBar() {
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0%';
+            void progressBar.offsetWidth; 
+            progressBar.style.transition = `width ${INTERVAL_MS}ms linear`;
+            progressBar.style.width = '100%';
+        }
+        
+        // Aguarda carregar tudo e inicia a mensagem
+        setTimeout(startMessageCycle, 500);
+    </script>
 </body>
 </html>
