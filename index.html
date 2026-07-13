@@ -3,368 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Reportes - Mercado Livre</title>
+    <title>Portal de Controles Internos - Mercado Livre</title>
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     
-    <!-- CHAMANDO O NOVO ESTILO GLOBAL -->
+    <!-- CSS GLOBAL -->
     <link rel="stylesheet" href="style.css">
 
     <style>
-        /* Estilos específicos apenas para o index (Títulos) */
-        body {
-            align-items: center;
-            padding: 0 0 40px 0;
-            display: flex;
-            flex-direction: column;
+        /* =========================================
+           ESTILOS DO MENU LATERAL (SIDEBAR)
+           ========================================= */
+        .top-bar-wrapper {
+            position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+            background-color: #FFE600; padding: 0 20px; z-index: 1000;
+            display: flex; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+        .top-nav { width: 100%; display: flex; justify-content: space-between; align-items: center; }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .ml-logo { height: 32px; cursor: pointer; }
+        .hamburger-btn { background: transparent; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 5px; }
+        .hamburger-btn svg { width: 26px; height: 26px; transition: 0.3s; }
 
-        .header-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
+        /* A BARRA LATERAL (Inspirada na Imagem) */
+        .sidebar {
+            position: fixed; top: 60px; left: -320px; /* Escondido por padrão */
+            width: 320px; height: calc(100vh - 60px);
+            background-color: #2a2a2a; color: #fff;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.2);
+            transition: left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+            z-index: 999; overflow-y: auto; overflow-x: hidden;
+        }
+        .sidebar.open { left: 0; } /* Mostra o menu */
+
+        /* Abas Superiores (Todos / Favoritos) */
+        .sidebar-tabs { display: flex; padding: 15px 20px 5px 20px; gap: 10px; }
+        .tab {
+            flex: 1; text-align: center; padding: 8px 0; border-radius: 20px;
+            font-size: 0.85rem; font-weight: 800; cursor: pointer; transition: 0.2s;
+        }
+        .tab.active { background-color: #fff; color: #2a2a2a; }
+        .tab.inactive { color: #aaaaaa; }
+        .tab.inactive:hover { color: #fff; }
+
+        /* Lista de Botões do Menu */
+        .sidebar-links { padding: 10px 0; display: flex; flex-direction: column; }
+        
+        .side-btn {
+            display: flex; align-items: center; padding: 12px 20px;
+            text-decoration: none; color: #EBEBEB; border-bottom: 1px solid rgba(255,255,255,0.05);
+            transition: background 0.2s;
+        }
+        .side-btn:hover { background-color: #3d3d3d; }
+        
+        .side-icon { font-size: 1.4rem; margin-right: 15px; display: flex; align-items: center; justify-content: center; width: 30px; }
+        .side-text { flex: 1; display: flex; flex-direction: column; }
+        .side-title { font-weight: 800; font-size: 0.95rem; margin-bottom: 2px; }
+        .side-desc { font-size: 0.75rem; color: #999; font-weight: 400; line-height: 1.3; }
+        .side-arrow { font-size: 1.5rem; color: #777; font-weight: 300; }
+        .side-btn:hover .side-arrow { color: #3483FA; transform: translateX(3px); transition: 0.2s; }
+
+        /* =========================================
+           ÁREA CENTRAL (Onde entra o conteúdo futuro)
+           ========================================= */
+        #main-content {
+            margin-top: 60px; /* Compensa a barra fixa */
+            padding: 30px;
             width: 100%;
-            position: relative;
-            z-index: 1;
-            padding: 0 20px;
+            transition: margin-left 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
         }
 
-        .main-title {
-            font-size: 2.2rem;
-            font-weight: 900;
-            color: var(--text-title);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 40px;
-            position: relative;
-            padding-bottom: 12px;
-            transition: color 0.3s;
+        /* Quando o menu abre, empurra o conteúdo para a direita no Desktop */
+        @media (min-width: 900px) {
+            #main-content.shifted { margin-left: 320px; width: calc(100% - 320px); }
         }
 
-        .main-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 70px;
-            height: 4px;
-            background-color: var(--accent-blue);
-            border-radius: 2px;
+        .welcome-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: var(--shadow-card);
+            max-width: 800px;
+            margin: 40px auto;
         }
-
-        @media (max-width: 768px) {
-            .main-title { font-size: 1.6rem; }
-        }
+        .welcome-box h1 { font-size: 2rem; color: var(--text-title); margin-bottom: 10px; }
+        .welcome-box p { color: var(--text-muted); font-size: 1.1rem; line-height: 1.5;}
     </style>
+
 </head>
 <body data-theme="light">
 
-    <div class="top-bar-wrapper">
-        <div class="top-nav">
-            <div class="nav-left">
-                <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
-                
-                <div class="quote-container">
-                    <span id="animated-quote" class="quote-text">
-                        "Carregando a missão do dia..."
-                    </span>
-                    <div class="progress-bar" id="progress-bar"></div>
-                </div>
-            </div>
+    <!-- O Menu e o Topo serão Injetados Aqui pelo Javascript -->
 
-            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Alternar Modo Claro/Escuro">
-                <svg id="themeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                </svg>
-                <span id="themeText">Escuro</span>
-            </button>
+    <!-- CONTEÚDO PRINCIPAL DA PÁGINA INDEX -->
+    <div id="main-content">
+        <div class="welcome-box">
+            <h1>Portal de Controles Internos</h1>
+            <p>Seja bem-vindo. <br>Para acessar os relatórios e painéis, <strong>clique no ícone de menu (☰) no canto superior esquerdo</strong> e navegue pela barra lateral.</p>
+            <p style="margin-top: 20px; font-size: 0.9rem; color: var(--accent-blue); font-weight: bold;">(Futuramente, novas informações e gráficos globais aparecerão aqui!)</p>
         </div>
     </div>
 
-    <div class="header-container">
-        <h1 class="main-title">Portal de Controles Internos</h1>
-    </div>
+    <!-- CHAMA O ARQUIVO DO MENU -->
+    <script src="menu.js"></script>
 
-    <div class="dashboard-grid">
-        
-        <a href="insumos.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                </svg>
-            </div>
-            <div class="btn-title">Insumos Operacionais</div>
-            <div class="btn-desc">Gestão de materiais e suprimentos da operação.</div>
-        </a>
-
-        <a href="contagem_insumos.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="9" y1="3" x2="9" y2="21"></line>
-                    <line x1="15" y1="3" x2="15" y2="21"></line>
-                    <line x1="3" y1="9" x2="21" y2="9"></line>
-                    <line x1="3" y1="15" x2="21" y2="15"></line>
-                </svg>
-            </div>
-            <div class="btn-title">Controle Insumos</div>
-            <div class="btn-desc">Painel de contagem e estoque físico de insumos.</div>
-        </a>
-
-        <a href="equipamentos.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
-                </svg>
-            </div>
-            <div class="btn-title">Controle Equipamentos</div>
-            <div class="btn-desc">Inventário, rastreamento e controle de ativos físicos.</div>
-        </a>
-
-        <a href="aging-devolucao.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                    <path d="M12 14v4l2 2"></path>
-                </svg>
-            </div>
-            <div class="btn-title">Aging Devolução</div>
-            <div class="btn-desc">Controle de tempo e status de pacotes retornados.</div>
-        </a>
-
-        <a href="parado_percurso.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-            </div>
-            <div class="btn-title">Parado no Percurso</div>
-            <div class="btn-desc">Controle diário, cruzamento e aging de pacotes estancados.</div>
-        </a>
-
-        <a href="aderencia.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 3h18v18H3z"></path>
-                    <path d="M21 9H3M21 15H3M12 3v18"></path>
-                </svg>
-            </div>
-            <div class="btn-title">Aderência Tabela</div>
-            <div class="btn-desc">Análise quantitativa consolidada dos dados de inventário.</div>
-        </a>
-
-        <a href="aderencia2.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"></line>
-                    <line x1="12" y1="20" x2="12" y2="4"></line>
-                    <line x1="6" y1="20" x2="6" y2="14"></line>
-                    <circle cx="18" cy="4" r="2"></circle>
-                </svg>
-            </div>
-            <div class="btn-title">Aderência Ofensores</div>
-            <div class="btn-desc">Detalhamento analítico e motivos de pacotes pendentes.</div>
-        </a>
-
-        <a href="avarias-diario.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="12" y1="18" x2="12" y2="12"></line>
-                    <line x1="12" y1="22" x2="12.01" y2="22"></line>
-                </svg>
-            </div>
-            <div class="btn-title">Avaria Diário</div>
-            <div class="btn-desc">Acompanhamento diário de avarias e detalhamentos.</div>
-        </a>
-
-        <a href="poka-avaria.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
-                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
-                </svg>
-            </div>
-            <div class="btn-title">Avarias Mensal</div>
-            <div class="btn-desc">Visão macro e histórico consolidado pelo Poka.</div>
-        </a>
-
-        <a href="pendencias_cftv.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                    <circle cx="12" cy="13" r="4"></circle>
-                </svg>
-            </div>
-            <div class="btn-title">Pendências CFTV</div>
-            <div class="btn-desc">Monitoramento analítico e resolução do time de segurança.</div>
-        </a>
-
-        <a href="salvados_procurar.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    <line x1="8" y1="11" x2="14" y2="11"></line>
-                    <line x1="11" y1="8" x2="11" y2="14"></line>
-                </svg>
-            </div>
-            <div class="btn-title">Busca Global (Sauron)</div>
-            <div class="btn-desc">Busca inteligente cruzada em todos os bancos de salvados.</div>
-        </a>
-
-        <a href="salvados_recuperados.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                    <path d="M9 12l2 2 4-4"></path>
-                </svg>
-            </div>
-            <div class="btn-title">Salvados Recuperados</div>
-            <div class="btn-desc">Controle diário de volumes e valores financeiros recuperados.</div>
-        </a>
-
-        <a href="expedir_devolucao.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="1" y="3" width="15" height="13"></rect>
-                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon>
-                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
-                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
-                </svg>
-            </div>
-            <div class="btn-title">Expedir Devolução</div>
-            <div class="btn-desc">Processamento e expedição de pacotes devolvidos.</div>
-        </a>
-
-        <a href="pendentes_inventariov2.html" target="_blank" rel="noopener noreferrer" class="dash-btn">
-            <div class="icon-wrapper">
-                <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                    <line x1="12" y1="11" x2="12" y2="17"></line>
-                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                </svg>
-            </div>
-            <div class="btn-title">Pendentes Inventário</div>
-            <div class="btn-desc">Consulta e tratamento de pendências no inventário físico.</div>
-        </a>
-
-    </div>
-
+    <!-- SCRIPT DO TEMA (Se preferir, pode colocar no seu app.js global) -->
     <script>
-        // ==========================================
-        // MENSAGENS ANIMADAS DE LIDERANÇA
-        // ==========================================
-        const messages = [
-            "O talento vence jogos, mas o trabalho em equipe e a inteligência vencem campeonatos.",
-            "Um inventário preciso é o coração da nossa logística. Cada bip conta!",
-            "Não entregamos apenas pacotes, entregamos propósitos.",
-            "A excelência no controle de inventário reflete o nosso compromisso diário.",
-            "Nossa força está na união. Uma equipe alinhada transforma desafios em recordes!",
-            "Cada detalhe importa. A precisão constrói a confiança na América Latina.",
-            "Trabalhar em equipe é multiplicar forças rumo à eficiência e inovação.",
-            "O DNA amarelo pulsa em cada processo! Cuidar do estoque é cuidar de promessas.",
-            "Auditoria e controle: os pilares que sustentam a nossa operação.",
-            "A sinergia transforma o complexo em simples. Vamos fazer história na logística!"
-        ];
-
-        let msgIndex = 0;
-        const quoteEl = document.getElementById('animated-quote');
-        const progressBar = document.getElementById('progress-bar');
-        const INTERVAL_MS = 15000;
-
-        function startMessageCycle() {
-            quoteEl.innerText = messages[msgIndex];
-            animateProgressBar();
-
-            setInterval(() => {
-                quoteEl.style.opacity = 0;
-                quoteEl.style.transform = "translateY(10px)";
-                
-                setTimeout(() => {
-                    msgIndex = (msgIndex + 1) % messages.length;
-                    quoteEl.innerText = messages[msgIndex];
-                    quoteEl.style.opacity = 1;
-                    quoteEl.style.transform = "translateY(0)";
-                    animateProgressBar();
-                }, 500);
-            }, INTERVAL_MS);
-        }
-
-        function animateProgressBar() {
-            progressBar.style.transition = 'none';
-            progressBar.style.width = '0%';
-            void progressBar.offsetWidth; 
-            progressBar.style.transition = `width ${INTERVAL_MS}ms linear`;
-            progressBar.style.width = '100%';
-        }
-
-        // ==========================================
-        // RECUPERAÇÃO DO TEMA SALVO (PADRÃO CLARO)
-        // ==========================================
-        function initTheme() {
-            try {
-                const savedTheme = localStorage.getItem('themePreference');
-                // Alterado: O padrão agora é 'light' se não houver 'dark' salvo.
-                if (savedTheme === 'dark') {
-                    document.body.setAttribute('data-theme', 'dark');
-                    updateThemeUI('dark');
-                } else {
-                    document.body.setAttribute('data-theme', 'light');
-                    updateThemeUI('light');
-                }
-            } catch(e) {
-                document.body.setAttribute('data-theme', 'light');
-                updateThemeUI('light');
-            }
-        }
-
         function toggleTheme() {
             const body = document.body;
-            let newMode = 'dark';
-            
-            if (body.getAttribute('data-theme') !== 'dark') {
-                body.setAttribute('data-theme', 'dark');
-                newMode = 'dark';
-            } else {
-                body.setAttribute('data-theme', 'light');
-                newMode = 'light';
-            }
-            
-            try {
-                localStorage.setItem('themePreference', newMode);
-            } catch(e) {}
-            
-            updateThemeUI(newMode);
+            let newMode = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            body.setAttribute('data-theme', newMode);
+            localStorage.setItem('themePreference', newMode);
+            document.getElementById('themeIcon').innerText = newMode === 'light' ? '🌙' : '☀️';
         }
-
-        function updateThemeUI(mode) {
-            const themeText = document.getElementById('themeText');
-            const themeIcon = document.getElementById('themeIcon');
-            
-            if (mode === 'light') {
-                themeText.innerText = 'Escuro';
-                // Ícone da Lua
-                themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>`; 
-            } else {
-                themeText.innerText = 'Claro';
-                // Ícone do Sol
-                themeIcon.innerHTML = `<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>`; 
-            }
+        
+        // Aplica o tema salvo ao abrir
+        if (localStorage.getItem('themePreference') === 'dark') {
+            document.body.setAttribute('data-theme', 'dark');
         }
-
-        initTheme();
-        startMessageCycle();
     </script>
 </body>
 </html>
