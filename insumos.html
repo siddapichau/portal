@@ -6,8 +6,8 @@
     <title>Estoque de Insumos - Mercado Livre</title>
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="style.css">
 
     <style>
         /* =========================================
@@ -33,7 +33,7 @@
         }
 
         [data-theme="light"] {
-            --bg-gradient: radial-gradient(circle at top right, #a1c4fd 0%, #e2ebf0 40%, #f1f5f9 100%);
+            --bg-gradient: #ffffff; /* Fundo sólido branco no tema claro */
             --bg-card: rgba(255, 255, 255, 0.7);
             --bg-header: rgba(255, 255, 255, 0.9);
             --bg-input: rgba(255, 255, 255, 0.9);
@@ -41,14 +41,10 @@
             --text-main: #334155;
             --text-muted: #64748b;
             --text-title: #1e293b;
-            --accent-yellow: #B48B00;
-            --accent-blue: #3483FA;
-            --accent-green: #00A650;
-            --accent-red: #E91E63;
-            --accent-warn: #B48B00;
             --border-card: rgba(255, 255, 255, 0.5);
             --border-light: rgba(0, 0, 0, 0.1);
             --shadow-card: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            /* As cores dos botões não mudam no tema claro */
         }
 
         * {
@@ -94,10 +90,7 @@
         .ml-logo {
             height: 28px;
             object-fit: contain;
-            cursor: pointer;
-            transition: transform 0.2s;
         }
-        .ml-logo:hover { transform: scale(1.05); }
 
         .header-center {
             text-align: center;
@@ -168,7 +161,7 @@
             color: #fff;
             border: none;
         }
-        .btn-blue:hover { background: #2968c8; transform: translateY(-2px); }
+        .btn-blue:hover { filter: brightness(1.1); transform: translateY(-2px); }
 
         .btn-dark {
             background: rgba(255, 255, 255, 0.15);
@@ -328,7 +321,6 @@
             box-shadow: 0 0 10px rgba(255,82,82,.75);
         }
 
-        /* Scrollbar estilizada */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-header); }
         ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
@@ -407,7 +399,7 @@
 <body>
     <div class="top-header">
         <div class="header-left">
-            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre" onclick="window.location.href='index.html'">
+            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre">
         </div>
 
         <div class="header-center" id="main-title">
@@ -492,7 +484,6 @@
             return `${dia}/${mes}/${ano}`;
         }
         
-        // Função auxiliar para extrair apenas a data de uma string "DD/MM/YYYY, HH:MM:SS"
         function extrairApenasData(dataCompleta) {
             if (!dataCompleta) return '-';
             return dataCompleta.split(' ')[0].replace(',', '');
@@ -797,7 +788,6 @@
             statusBadge.innerText = 'Processando UHD 4K...';
             statusBadge.style.color = '#3483FA';
 
-            // Oculta botões e áreas não relevantes para a foto
             const overrideStyle = document.createElement('style');
             overrideStyle.id = 'temp-capture-rules';
             overrideStyle.innerHTML = `
@@ -813,7 +803,7 @@
                     scale: 3, 
                     useCORS: true,
                     allowTaint: true,
-                    backgroundColor: document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f', 
+                    backgroundColor: document.body.getAttribute('data-theme') === 'light' ? '#ffffff' : '#0b121f', 
                     logging: false
                 }).then(canvas => {
                     if (document.getElementById('temp-capture-rules')) document.head.removeChild(overrideStyle);
