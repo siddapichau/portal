@@ -8,15 +8,17 @@
         #main-content { margin-top: 80px; padding: 20px; max-width: 1200px; margin: 80px auto; }
         .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border-card); }
         .header-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; cursor: move; }
         
+        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; cursor: move; }
         .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; cursor: move; align-items: center; }
         .subitem-row > input, .subitem-row > select { flex: 1; min-width: 120px; padding: 8px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); border-radius: 4px; font-size: 0.85rem;}
         
         .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
         .btn:hover { transform: translateY(-2px); }
         .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #334155; }
-        .perm-label { font-size: 0.75rem; color: var(--text-muted); width: 100%; margin-bottom: -5px; margin-top: 5px; }
+        
+        /* Estilos Drag and Drop visual */
+        .drag-over { border: 2px dashed var(--accent-blue) !important; opacity: 0.6; }
     </style>
 </head>
 <body data-theme="light">
@@ -49,7 +51,7 @@
             "📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", 
             "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", 
             "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", 
-            "🚚", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑"
+            "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑"
         ];
 
         let adMenuData = { categorias: [] };
@@ -62,14 +64,15 @@
             if(user.cargo !== 'admin') { document.getElementById('acessoNegado').style.display = 'block'; return; }
 
             document.getElementById('adminPanel').style.display = 'block';
+            
+            // ATUALIZAÇÃO: Agora puxa estritamente da URL correta do Firebase
             try {
-                const res = await fetch(APP_SCRIPT_URL + "?action=getMenu"); // Caso tenha API para buscar, se não usar Firebase
-                // Se usar firebase: const res = await fetch(`${FIREBASE_URL}menu_global.json`);
-                // Como não informou a URL de get, vamos assumir firebase. Adapte se necessário.
-                const firebaseRes = await fetch(`https://reportes-bdb0a-default-rtdb.firebaseio.com/menu_global.json`);
-                const data = await firebaseRes.json();
+                const res = await fetch(`https://reportes-bdb0a-default-rtdb.firebaseio.com/menu_global.json`);
+                const data = await res.json();
                 adMenuData = data && data.categorias ? data : { categorias: [] };
-            } catch (e) {}
+            } catch (e) {
+                console.error("Erro ao puxar dados", e);
+            }
             renderizarAdmin();
         };
 
@@ -86,33 +89,40 @@
                 (cat.items || []).forEach((item, itemIdx) => {
                     itemsHtml += `
                         <div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="allowDrop(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})">
-                            <span style="color:#888; cursor: grab;">↕️</span>
-                            <select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)">${getIconOptions(item.icon)}</select>
-                            <input type="text" placeholder="Título" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)">
-                            <input type="text" placeholder="URL" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)">
+                            <span style="color:#888; cursor: grab; font-size:1.2rem;">↕️</span>
+                            <select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)" style="flex: 0 1 60px;">${getIconOptions(item.icon)}</select>
+                            <input type="text" placeholder="Nome do Menu" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)">
+                            <input type="text" placeholder="URL da Página" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)">
                             
-                            <div style="flex-basis: 100%; height: 0;"></div> <!-- Quebra de linha -->
+                            <div style="flex-basis: 100%; height: 0; margin: 0;"></div> <!-- Quebra de linha visual -->
                             
                             <input type="text" placeholder="Descrição do menu" value="${item.desc || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'desc', this.value)" style="flex: 2;">
                             <input type="text" placeholder="Ver (ex: view,editor,admin)" title="Cargos que podem visualizar" value="${item.viewRoles || 'view,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)">
                             <input type="text" placeholder="Upload (ex: editor,admin)" title="Cargos que podem fazer upload" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)">
                             
-                            <button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖</button>
+                            <button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})" title="Remover Submenu">✖</button>
                         </div>
                     `;
                 });
 
                 container.innerHTML += `
                     <div class="cat-card" draggable="true" ondragstart="dragStart(event, 'cat', ${catIdx}, null)" ondragover="allowDrop(event)" ondrop="drop(event, 'cat', ${catIdx}, null)">
-                        <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center;">
+                        <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap;">
                             <span style="font-size:1.5rem; cursor: grab;">🔀</span>
-                            <select onchange="updateCat(${catIdx}, 'icon', this.value)">${getIconOptions(cat.icon)}</select>
-                            <input type="text" placeholder="Nome da Categoria" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; padding:10px; font-weight:bold; border-radius:4px;">
-                            <input type="text" placeholder="Ver (ex: view,editor,admin)" title="Cargos que veem a categoria" value="${cat.viewRoles || 'view,editor,admin'}" onchange="updateCat(${catIdx}, 'viewRoles', this.value)" style="padding:10px; border-radius:4px;">
-                            <button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir</button>
+                            <select onchange="updateCat(${catIdx}, 'icon', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">${getIconOptions(cat.icon)}</select>
+                            
+                            <input type="text" placeholder="Nome da Categoria Principal" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; min-width: 200px; padding:10px; font-weight:bold; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">
+                            
+                            <input type="text" placeholder="Ver (ex: view,editor,admin)" title="Cargos que veem a Categoria" value="${cat.viewRoles || 'view,editor,admin'}" onchange="updateCat(${catIdx}, 'viewRoles', this.value)" style="padding:10px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">
+                            
+                            <input type="text" placeholder="Upload (ex: editor,admin)" title="Cargos que fazem upload na Categoria" value="${cat.uploadRoles || 'editor,admin'}" onchange="updateCat(${catIdx}, 'uploadRoles', this.value)" style="padding:10px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">
+
+                            <button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir Categoria</button>
                         </div>
-                        <div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem;">Submenus:</div>
+                        <div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem; color: var(--text-muted);">Submenus correspondentes a esta categoria:</div>
+                        
                         ${itemsHtml}
+                        
                         <button class="btn" style="background:#444; margin-top:10px;" onclick="adicionarItem(${catIdx})">+ Adicionar Submenu</button>
                     </div>
                 `;
@@ -124,7 +134,9 @@
             draggedItemInfo = { type, catIdx, itemIdx };
             e.stopPropagation();
         }
-        function allowDrop(e) { e.preventDefault(); }
+        function allowDrop(e) { 
+            e.preventDefault(); 
+        }
         function drop(e, targetType, targetCatIdx, targetItemIdx) {
             e.preventDefault();
             e.stopPropagation();
@@ -134,6 +146,7 @@
                 const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0];
                 adMenuData.categorias.splice(targetCatIdx, 0, temp);
             } else if (targetType === 'item' && draggedItemInfo.catIdx === targetCatIdx) {
+                // Impede que um submenu seja arrastado para uma categoria diferente (evita bugs)
                 const cat = adMenuData.categorias[targetCatIdx];
                 const temp = cat.items.splice(draggedItemInfo.itemIdx, 1)[0];
                 cat.items.splice(targetItemIdx, 0, temp);
@@ -162,7 +175,7 @@
                     if(parsed.categorias) {
                         adMenuData = parsed;
                         renderizarAdmin();
-                        alert("Arquivo JSON carregado! Clique em 'Salvar na Nuvem' para aplicar aos usuários.");
+                        alert("Arquivo JSON carregado! Clique em 'Salvar na Nuvem' para aplicar as mudanças ao site.");
                     } else alert("Estrutura do JSON inválida.");
                 } catch (err) { alert("Erro ao ler JSON."); }
             };
@@ -170,7 +183,7 @@
         }
 
         /* FUNÇÕES DE MANIPULAÇÃO DE ARRAY */
-        function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,editor,admin", items: [] }); renderizarAdmin(); }
+        function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,editor,admin", uploadRoles: "editor,admin", items: [] }); renderizarAdmin(); }
         function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); }
         function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; }
         
@@ -184,7 +197,6 @@
 
         async function salvarNoFirebase() {
             try {
-                // Adapte para a URL do seu BD
                 await fetch(`https://reportes-bdb0a-default-rtdb.firebaseio.com/menu_global.json`, { 
                     method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) 
                 });
