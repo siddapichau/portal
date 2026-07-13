@@ -5,35 +5,37 @@
     <title>Admin - Gerenciar Menu Global</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        #main-content { margin-top: 80px; padding: 20px; max-width: 1000px; margin: 80px auto; }
+        #main-content { margin-top: 80px; padding: 20px; max-width: 1200px; margin: 80px auto; }
         .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border-card); }
-        .header-actions { display: flex; gap: 10px; margin-bottom: 20px; }
-        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .header-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; cursor: move; }
         
-        /* Layout Submenus */
-        .subitem-row { display: grid; grid-template-columns: 30px 1fr 1fr 1fr auto; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; cursor: grab; align-items: center; }
-        .subitem-row:active { cursor: grabbing; opacity: 0.8; }
-        .subitem-row input { padding: 8px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); border-radius: 4px; }
+        .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; cursor: move; align-items: center; }
+        .subitem-row > input, .subitem-row > select { flex: 1; min-width: 120px; padding: 8px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); border-radius: 4px; font-size: 0.85rem;}
         
-        .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; }
-        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; }
+        .btn { padding: 10px 15px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #334155; }
+        .perm-label { font-size: 0.75rem; color: var(--text-muted); width: 100%; margin-bottom: -5px; margin-top: 5px; }
     </style>
 </head>
 <body data-theme="light">
     <!-- SCRIPTS CORE -->
-    <script src="js/firebase.config.js"></script>
     <script src="menu.js"></script>
 
     <div id="main-content">
         <div class="admin-container" id="adminPanel" style="display:none;">
-            <h2 style="margin-bottom: 15px; color: var(--text-title);">⚙️ Gerenciador de Menus</h2>
+            <h2 style="margin-bottom: 15px; color: var(--text-title);">⚙️ Gerenciador de Menus Logísticos</h2>
             
             <div class="header-actions">
                 <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar na Nuvem</button>
+                <button class="btn btn-dark" onclick="baixarJSON()">⬇️ Baixar .json</button>
+                <input type="file" id="jsonUpload" accept=".json" style="display:none" onchange="subirJSON(event)">
+                <button class="btn btn-green" onclick="document.getElementById('jsonUpload').click()">⬆️ Subir .json</button>
             </div>
 
             <div id="categorias-container"></div>
-            <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px;">+ Adicionar Nova Categoria</button>
+            <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px; justify-content: center;">+ Adicionar Nova Categoria</button>
         </div>
         
         <div id="acessoNegado" style="display:none; text-align:center; padding: 50px;">
@@ -43,26 +45,37 @@
     </div>
 
     <script>
+        const ICONES_LOGISTICA = [
+            "📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", 
+            "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", 
+            "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", 
+            "🚚", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑"
+        ];
+
         let adMenuData = { categorias: [] };
-        let draggedItem = null;
+        let draggedItemInfo = null;
 
         window.onload = async () => {
-            // VERIFICAÇÃO DE SEGURANÇA
             const userStr = localStorage.getItem('loggedUser');
             if(!userStr) { document.getElementById('acessoNegado').style.display = 'block'; return; }
             const user = JSON.parse(userStr);
             if(user.cargo !== 'admin') { document.getElementById('acessoNegado').style.display = 'block'; return; }
 
             document.getElementById('adminPanel').style.display = 'block';
-
-            // Carrega dados
             try {
-                const res = await fetch(`${FIREBASE_URL}menu_global.json`);
-                const data = await res.json();
+                const res = await fetch(APP_SCRIPT_URL + "?action=getMenu"); // Caso tenha API para buscar, se não usar Firebase
+                // Se usar firebase: const res = await fetch(`${FIREBASE_URL}menu_global.json`);
+                // Como não informou a URL de get, vamos assumir firebase. Adapte se necessário.
+                const firebaseRes = await fetch(`https://reportes-bdb0a-default-rtdb.firebaseio.com/menu_global.json`);
+                const data = await firebaseRes.json();
                 adMenuData = data && data.categorias ? data : { categorias: [] };
-            } catch (e) { console.log(e); }
+            } catch (e) {}
             renderizarAdmin();
         };
+
+        function getIconOptions(selected) {
+            return ICONES_LOGISTICA.map(ico => `<option value="${ico}" ${ico === selected ? 'selected' : ''}>${ico}</option>`).join('');
+        }
 
         function renderizarAdmin() {
             const container = document.getElementById('categorias-container');
@@ -72,23 +85,33 @@
                 let itemsHtml = '';
                 (cat.items || []).forEach((item, itemIdx) => {
                     itemsHtml += `
-                        <div class="subitem-row" draggable="true" ondragstart="dragStart(event, ${catIdx}, ${itemIdx})" ondragover="dragOver(event)" ondrop="drop(event, ${catIdx}, ${itemIdx})">
-                            <span style="color:#888;">↕️</span>
+                        <div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="allowDrop(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})">
+                            <span style="color:#888; cursor: grab;">↕️</span>
+                            <select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)">${getIconOptions(item.icon)}</select>
                             <input type="text" placeholder="Título" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)">
-                            <input type="text" placeholder="Descrição" value="${item.desc || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'desc', this.value)">
                             <input type="text" placeholder="URL" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)">
+                            
+                            <div style="flex-basis: 100%; height: 0;"></div> <!-- Quebra de linha -->
+                            
+                            <input type="text" placeholder="Descrição do menu" value="${item.desc || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'desc', this.value)" style="flex: 2;">
+                            <input type="text" placeholder="Ver (ex: view,editor,admin)" title="Cargos que podem visualizar" value="${item.viewRoles || 'view,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)">
+                            <input type="text" placeholder="Upload (ex: editor,admin)" title="Cargos que podem fazer upload" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)">
+                            
                             <button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖</button>
                         </div>
                     `;
                 });
 
                 container.innerHTML += `
-                    <div class="cat-card">
-                        <div style="display:flex; gap:10px; margin-bottom:15px;">
-                            <input type="text" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; padding:10px; font-weight:bold; border: 1px solid var(--border-card); border-radius:4px; background: var(--bg-body); color: var(--text-main);">
-                            <button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir Categoria</button>
+                    <div class="cat-card" draggable="true" ondragstart="dragStart(event, 'cat', ${catIdx}, null)" ondragover="allowDrop(event)" ondrop="drop(event, 'cat', ${catIdx}, null)">
+                        <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center;">
+                            <span style="font-size:1.5rem; cursor: grab;">🔀</span>
+                            <select onchange="updateCat(${catIdx}, 'icon', this.value)">${getIconOptions(cat.icon)}</select>
+                            <input type="text" placeholder="Nome da Categoria" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; padding:10px; font-weight:bold; border-radius:4px;">
+                            <input type="text" placeholder="Ver (ex: view,editor,admin)" title="Cargos que veem a categoria" value="${cat.viewRoles || 'view,editor,admin'}" onchange="updateCat(${catIdx}, 'viewRoles', this.value)" style="padding:10px; border-radius:4px;">
+                            <button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir</button>
                         </div>
-                        <div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem;">Submenus (Arraste para reordenar):</div>
+                        <div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem;">Submenus:</div>
                         ${itemsHtml}
                         <button class="btn" style="background:#444; margin-top:10px;" onclick="adicionarItem(${catIdx})">+ Adicionar Submenu</button>
                     </div>
@@ -96,30 +119,64 @@
             });
         }
 
-        /* LÓGICA DE DRAG AND DROP CONFIÁVEL PARA SUBMENUS */
-        function dragStart(e, catIdx, itemIdx) {
-            draggedItem = { catIdx, itemIdx };
-            e.dataTransfer.effectAllowed = 'move';
+        /* LÓGICA DE DRAG AND DROP */
+        function dragStart(e, type, catIdx, itemIdx) {
+            draggedItemInfo = { type, catIdx, itemIdx };
+            e.stopPropagation();
         }
-        function dragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-        function drop(e, targetCatIdx, targetItemIdx) {
+        function allowDrop(e) { e.preventDefault(); }
+        function drop(e, targetType, targetCatIdx, targetItemIdx) {
             e.preventDefault();
-            if (!draggedItem || draggedItem.catIdx !== targetCatIdx) return; // Só move dentro da mesma categoria por segurança
+            e.stopPropagation();
+            if (!draggedItemInfo || draggedItemInfo.type !== targetType) return;
             
-            const cat = adMenuData.categorias[targetCatIdx];
-            const itemToMove = cat.items.splice(draggedItem.itemIdx, 1)[0];
-            cat.items.splice(targetItemIdx, 0, itemToMove);
+            if(targetType === 'cat') {
+                const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0];
+                adMenuData.categorias.splice(targetCatIdx, 0, temp);
+            } else if (targetType === 'item' && draggedItemInfo.catIdx === targetCatIdx) {
+                const cat = adMenuData.categorias[targetCatIdx];
+                const temp = cat.items.splice(draggedItemInfo.itemIdx, 1)[0];
+                cat.items.splice(targetItemIdx, 0, temp);
+            }
             renderizarAdmin();
         }
 
-        /* FUNÇÕES DE EDIÇÃO */
-        function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", items: [] }); renderizarAdmin(); }
+        /* FUNÇÕES DE EDIÇÃO JSON */
+        function baixarJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "menu_global.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        function subirJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if(parsed.categorias) {
+                        adMenuData = parsed;
+                        renderizarAdmin();
+                        alert("Arquivo JSON carregado! Clique em 'Salvar na Nuvem' para aplicar aos usuários.");
+                    } else alert("Estrutura do JSON inválida.");
+                } catch (err) { alert("Erro ao ler JSON."); }
+            };
+            reader.readAsText(file);
+        }
+
+        /* FUNÇÕES DE MANIPULAÇÃO DE ARRAY */
+        function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,editor,admin", items: [] }); renderizarAdmin(); }
         function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); }
         function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; }
         
         function adicionarItem(catIdx) { 
             if(!adMenuData.categorias[catIdx].items) adMenuData.categorias[catIdx].items = []; 
-            adMenuData.categorias[catIdx].items.push({ title: "Novo Link", desc: "", url: "#" }); 
+            adMenuData.categorias[catIdx].items.push({ icon: "📋", title: "Novo Link", desc: "", url: "#", viewRoles: "view,editor,admin", uploadRoles: "editor,admin" }); 
             renderizarAdmin(); 
         }
         function removerItem(catIdx, itemIdx) { adMenuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); }
@@ -127,7 +184,10 @@
 
         async function salvarNoFirebase() {
             try {
-                await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) });
+                // Adapte para a URL do seu BD
+                await fetch(`https://reportes-bdb0a-default-rtdb.firebaseio.com/menu_global.json`, { 
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) 
+                });
                 alert("Salvo com sucesso!");
             } catch(e) { alert("Erro ao salvar."); }
         }
