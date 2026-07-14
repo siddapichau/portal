@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aging Devolução - Dashboard</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'aging-devolucao.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Bibliotecas -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- CSS GLOBAL -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Variáveis Específicas do Painel */
+        :root {
+            --bg-header: rgba(15, 23, 42, 0.6);
+            --border-light: rgba(255, 255, 255, 0.2);
+        }
+        [data-theme="light"] {
+            --bg-header: rgba(255, 255, 255, 0.9);
+            --border-light: rgba(0, 0, 0, 0.1);
+        }
+
+        body { padding: 10px; display: flex; flex-direction: column; gap: 10px; height: 100vh; overflow: hidden; background: transparent !important; }
+        
+        .header { background-color: #FFF159 !important; color: #2D3277; padding: 8px 16px; font-size: 1.1rem; font-weight: 800; border-radius: 6px; flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .header-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
+        .ml-logo { height: 28px; width: auto; object-fit: contain; }
+        .header-title-wrapper { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; color: #2D3277; white-space: nowrap; }
+        .header-controls { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+        
+        .status-badge { font-size: 0.8rem; background: rgba(0,0,0,0.1); padding: 6px 10px; border-radius: 4px; color: #2D3277; font-weight: 800; }
+
+        .btn-header { background: transparent; border: 2px solid #2D3277; color: #2D3277; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .2s ease; }
+        .btn-header:hover { background: #2D3277; color: var(--accent-yellow); }
+
+        .upload-btn-wrapper { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .btn-upload { border: 2px solid #2D3277; color: #2D3277; background-color: transparent; width: 34px; height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; padding: 0; }
+        .btn-upload:hover { background-color: #2D3277; color: var(--accent-yellow); }
+        .upload-btn-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+        /* LAYOUT GERAL */
+        .row { display: flex; gap: 10px; flex: 1; min-height: 0; width: 100%; }
+        .sidebar { flex: 0 0 250px; display: flex; flex-direction: column; gap: 10px; }
+        .main-content { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+        .chart-card, .kpi-card { background-color: var(--bg-card); border-radius: 6px; padding: 15px; box-shadow: var(--shadow-card); border: 1px solid var(--border-card); transition: 0.3s; }
+        .chart-card { flex: 1; display: flex; flex-direction: column; }
+        
+        .kpi-card { display: flex; flex-direction: column; justify-content: center; align-items: center; border-left: 4px solid var(--accent-blue); background-color: var(--bg-header); }
+        .kpi-title { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; text-align: center; }
+        .kpi-value { font-size: 2.2rem; font-weight: 900; color: var(--accent-green); }
+
+        .info-card { background-color: var(--bg-header); border-left: 4px solid var(--accent-yellow); padding: 20px; flex: 1; border-radius: 6px; display: flex; flex-direction: column; gap: 12px; color: var(--text-main); border: 1px solid var(--border-card); transition: 0.3s;}
+        .info-title { font-size: 1rem; font-style: italic; color: var(--text-muted); border-bottom: 1px solid var(--border-card); padding-bottom: 8px; margin-bottom: 5px; }
+        .info-item { font-size: 0.9rem; line-height: 1.4; }
+        .info-label { color: var(--text-muted); font-weight: 800; }
+
+        /* TABELA */
+        .table-wrapper { flex: 1.5; overflow-y: auto; overflow-x: auto; border-radius: 6px; background-color: var(--bg-card); box-shadow: var(--shadow-card); border: 1px solid var(--border-card); transition: 0.3s; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
+        thead { background-color: var(--bg-header); color: var(--text-title); position: sticky; top: 0; z-index: 1; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid var(--border-card); white-space: nowrap; }
+        th { font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
+        tbody tr:nth-child(even) { background-color: rgba(0,0,0,0.05); }
+        tbody tr:hover { background-color: rgba(52, 131, 250, 0.05); }
+        .col-valor { font-weight: 800; color: var(--accent-green); }
+
+        .td-id { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 800; }
+        .btn-detalhes { color: var(--accent-blue); background: transparent; border: none; cursor: pointer; transition: 0.2s; display: flex; align-items: center; padding: 2px; border-radius: 4px;}
+        .btn-detalhes:hover { background: rgba(52, 131, 250, 0.2); transform: scale(1.1); }
+
+        .chart-title { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-wrapper { flex: 1; min-height: 0; width: 100%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 0.85rem; }
+
+        /* Esconder UI na hora da foto */
+        .exporting .header-controls { display: none !important; }
+        .exporting .table-wrapper { overflow: hidden !important; } 
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-header); }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <!-- CABEÇALHO ML -->
+    <div class="header">
+        <div class="header-left"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
+        <div class="header-title-wrapper"><span id="main-title">Aging Devolução - Carregando...</span></div>
+        
+        <div class="header-controls">
+            <span class="status-badge" id="data-status">Conectando ao banco...</span>
+            
+            <button class="btn-header" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> Exportar 4K
+            </button>
+
+            <!-- BOTÃO DE UPLOAD MANUAL -->
+            <div class="upload-btn-wrapper" id="btnUploadArea" style="display:none;" title="Carregar Planilha Local (CSV)">
+                <button class="btn-upload">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </button>
+                <input type="file" id="csvFileInput" accept=".csv" />
+            </div>
+        </div>
+    </div>
+
+    <!-- LAYOUT PRINCIPAL -->
+    <div class="row" id="dashboard-container">
+        
+        <!-- SIDEBAR (ESQUERDA) -->
+        <div class="sidebar">
+            <div class="kpi-card">
+                <div class="kpi-title">Pacotes Pendentes</div>
+                <div class="kpi-value" id="kpi-qtd">0</div>
+            </div>
+            
+            <div class="info-card">
+                <div class="info-title">Diário de Bordo:</div>
+                <div class="info-item" id="info-data">Devolução: --/--</div>
+                <div class="info-item" id="info-prep"><span class="info-label">Preparação:</span><br>-</div>
+                <div class="info-item" id="info-sup"><span class="info-label">Suporte:</span> -</div>
+                <div class="info-item" id="info-ana"><span class="info-label">Análise:</span> -</div>
+            </div>
+        </div>
+
+        <!-- CONTEÚDO PRINCIPAL (DIREITA) -->
+        <div class="main-content">
+            <div class="table-wrapper">
+                <table id="data-table">
+                    <thead><tr><th>ID do envio</th><th>Substatus do envio</th><th>Aging Sorting</th><th>Aging Devolução</th><th>Valor declarado</th></tr></thead>
+                    <tbody><tr><td colspan="5" style="text-align:center; padding: 20px;">Carregando dados na nuvem...</td></tr></tbody>
+                </table>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-title">Sub Status de Envio</div>
+                <div id="chart-substatus" class="chart-wrapper">Aguardando dados...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+
+        let globalData = [];
+        let chartInst = null;
+
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { 
+            if (event.data.type === 'THEME_CHANGED') { 
+                document.body.setAttribute('data-theme', event.data.theme); 
+                if(globalData.length > 0) renderizarDashboard(); // Recria gráfico com cor certa
+            } 
+        });
+
+        // ============ PERMISSÕES GLOBAIS E LOGS ============
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        
+        const paginaNome = window.location.pathname.split('/').pop() || 'aging-devolucao.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        
+        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'flex'; }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        // ============ EXPORTAÇÃO 4K ============
+        function baixarDashboardComoImagem() {
+            const btn = document.getElementById('btnExportar');
+            const statusBadge = document.getElementById('data-status');
+            const txtOriginal = statusBadge.innerText;
+            
+            statusBadge.innerText = 'Processando em 4K...';
+            btn.disabled = true;
+            document.body.classList.add('exporting');
+
+            setTimeout(() => {
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f';
+
+                html2canvas(document.body, { scale: 3, useCORS: true, backgroundColor: bgCor, logging: false }).then(canvas => {
+                    document.body.classList.remove('exporting');
+                    btn.disabled = false;
+                    statusBadge.innerText = txtOriginal;
+                    
+                    const hoje = new Date();
+                    const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${hoje.getFullYear()}`;
+                    const link = document.createElement('a');
+                    link.download = `Aging_Devolucao_${dataFormatada}_4K.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }).catch(() => {
+                    document.body.classList.remove('exporting');
+                    btn.disabled = false;
+                    statusBadge.innerText = 'Erro na captura';
+                });
+            }, 150);
+        }
+
+        function obterDatas() {
+            const hoje = new Date();
+            const dia = String(hoje.getDate()).padStart(2, '0');
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            const ano = hoje.getFullYear();
+            return { completa: `${dia}/${mes}/${ano}`, curta: `${dia}/${mes}` };
+        }
+
+        const datasHoje = obterDatas();
+        document.getElementById('info-data').innerText = `Devolução: ${datasHoje.curta}`;
+        document.getElementById('main-title').innerText = `Aging Devolução (${datasHoje.completa}) - Aguardando Arquivo`;
+
+        window.onload = async function() {
+            const statusBadge = document.getElementById('data-status');
+            try {
+                const response = await fetch(`${FIREBASE_URL}devolucao.json`);
+                const dbData = await response.json();
+                
+                if(dbData && dbData.lista) {
+                    iniciarDashboard(dbData.lista);
+                    statusBadge.innerText = "Online (Firebase Nuvem)";
+                } else {
+                    definirEstadoVazio("Banco Vazio. Faça Upload.");
+                }
+            } catch(e) {
+                definirEstadoVazio("Offline (Aguardando CSV)");
+            }
+        };
+
+        function definirEstadoVazio(mensagem) {
+            const statusBadge = document.getElementById('data-status');
+            statusBadge.innerText = mensagem;
+            document.querySelector('#data-table tbody').innerHTML = "<tr><td colspan='5' style='text-align:center; padding: 20px;'>Nenhum dado ativo. Carregue um CSV local.</td></tr>";
+        }
+
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            if(!canEdit) return;
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const statusBadge = document.getElementById('data-status');
+            statusBadge.innerText = 'Gravando na nuvem...';
+
+            Papa.parse(file, {
+                header: true, skipEmptyLines: true,
+                complete: async function(results) {
+                    if (results.data && results.data.length > 0) {
+                        const dadosFiltrados = results.data.filter(row => Object.values(row).some(val => val !== null && val.trim() !== ''));
+                        iniciarDashboard(dadosFiltrados);
+
+                        const dadosFirebase = dadosFiltrados.map(row => {
+                            let obj = {};
+                            for(let k in row) {
+                                let safeKey = String(k).replace(/[\.\#\$\/\[\]]/g, '_').trim();
+                                if(!safeKey) safeKey = "coluna_vazia"; 
+                                obj[safeKey] = (row[k] === null || row[k] === undefined) ? "" : String(row[k]);
+                            }
+                            return obj;
+                        });
+
+                        try {
+                            const response = await fetch(`${FIREBASE_URL}devolucao.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lista: dadosFirebase }) });
+                            await registrarLogFirebase("Aging Devolução", `Atualizou a base de dados via CSV (${dadosFirebase.length} pacotes).`);
+                            if(response.ok) { statusBadge.innerText = 'Salvo com sucesso (Nuvem)!'; } 
+                        } catch(err) { statusBadge.innerText = 'Arquivo Carregado (Local)'; }
+                    }
+                }
+            });
+            event.target.value = ''; 
+        });
+
+        function iniciarDashboard(dados) {
+            globalData = dados;
+            renderizarDashboard();
+        }
+
+        function renderizarDashboard() {
+            if(globalData.length === 0) return;
+
+            let currentMode = document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            let labelColor = currentMode === 'light' ? '#333333' : '#EBEBEB'; 
+            let chartBgColor = currentMode === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'; 
+
+            let colunas = Object.keys(globalData[0]);
+            let colId = colunas.find(k => k.toLowerCase().includes('id do envio') || k.toLowerCase().includes('id')) || colunas[0];
+            let colSubstatus = colunas.find(k => k.toLowerCase().includes('substatus') || k.toLowerCase().includes('subtatus') || k.toLowerCase().includes('sub status'));
+            
+            if(!colSubstatus) colSubstatus = colunas.find(k => k.toLowerCase().includes('status'));
+            if(!colSubstatus) colSubstatus = colunas[2];
+            
+            let colSort = colunas.find(k => k.toLowerCase().includes('sorting')) || colunas[1];
+            let colDev = colunas.find(k => k.toLowerCase().includes('devolu')) || colunas[3];
+            let colValor = colunas.find(k => k.toLowerCase().includes('valor')) || colunas[4];
+            let colPrep = colunas.find(k => k.toLowerCase().includes('prep')) || colunas[11];
+            let colAna = colunas.find(k => k.toLowerCase().includes('análise') || k.toLowerCase().includes('analise')) || colunas[12];
+
+            let dadosValidos = globalData.filter(row => row[colId] && row[colId].toString().trim() !== '');
+            dadosValidos.sort((a, b) => { let valA = parseInt(a[colSort]?.toString().replace(/\D/g, '')) || 0; let valB = parseInt(b[colSort]?.toString().replace(/\D/g, '')) || 0; return valB - valA; });
+
+            let totalPacotes = dadosValidos.length;
+            document.getElementById('main-title').innerText = `Aging Devolução (${datasHoje.completa}) Total: ${totalPacotes} Pacotes`;
+            document.getElementById('kpi-qtd').innerText = totalPacotes;
+
+            let txtPrep = (colPrep && globalData.length > 0) ? (globalData[0][colPrep] || '-') : '-';
+            let txtAna = (colAna && globalData.length > 0) ? (globalData[0][colAna] || '-') : '-';
+            
+            document.getElementById('info-prep').innerHTML = `<span class="info-label">Preparação:</span><br>${txtPrep}`;
+            document.getElementById('info-sup').innerHTML = `<span class="info-label">Suporte:</span> ${txtAna}`;
+            document.getElementById('info-ana').innerHTML = `<span class="info-label">Análise:</span> ${txtAna}`;
+
+            let tbodyHTML = "";
+            let contagemStatus = {};
+
+            dadosValidos.forEach(row => {
+                let substatus = row[colSubstatus] && row[colSubstatus].toString().trim() !== '' ? row[colSubstatus] : 'Sem Status';
+                let valorOriginal = row[colValor] || '0';
+                let idPacote = row[colId] || '';
+                
+                contagemStatus[substatus] = (contagemStatus[substatus] || 0) + 1;
+
+                let iconeLinkHTML = idPacote ? `<a href="https://envios.adminml.com/logistics/package-management/package/${idPacote}" target="_blank" class="btn-detalhes" title="Ver detalhes"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>` : '-';
+
+                tbodyHTML += `<tr><td class="td-id">${idPacote || '-'}${iconeLinkHTML}</td><td>${substatus}</td><td>${row[colSort] || '-'}</td><td>${row[colDev] || '-'}</td><td class="col-valor">${valorOriginal}</td></tr>`;
+            });
+
+            document.querySelector('#data-table tbody').innerHTML = tbodyHTML || "<tr><td colspan='5' style='text-align:center;'>Nenhum dado encontrado.</td></tr>";
+
+            if(chartInst) chartInst.destroy();
+            document.getElementById('chart-substatus').innerHTML = '';
+
+            let sortedStatus = Object.entries(contagemStatus).sort((a, b) => b[1] - a[1]);
+            let categorias = sortedStatus.map(s => s[0]);
+            let valores = sortedStatus.map(s => s[1]);
+
+            if(categorias.length > 0) {
+                window.Apex = { chart: { toolbar: { show: false } } };
+                chartInst = new ApexCharts(document.querySelector("#chart-substatus"), {
+                    series: [{ name: 'Pacotes', data: valores }],
+                    chart: { type: 'bar', height: '100%', background: 'transparent' },
+                    colors: ['#3483FA'], 
+                    plotOptions: { bar: { borderRadius: 4, columnWidth: '40%', dataLabels: { position: 'top' } } },
+                    dataLabels: { enabled: true, offsetY: -20, style: { fontSize: '12px', colors: [currentMode === 'light' ? '#2D3277' : '#FFF159'] } },
+                    xaxis: { categories: categorias, labels: { style: { colors: labelColor, fontSize: '12px', fontWeight: 600 } } },
+                    yaxis: { labels: { style: { colors: labelColor } } },
+                    grid: { borderColor: chartBgColor, strokeDashArray: 3 },
+                    tooltip: { theme: currentMode }
+                });
+                chartInst.render();
+            } else {
+                document.getElementById('chart-substatus').innerHTML = 'Nenhum status encontrado.';
+            }
+        }
+    </script>
+</body>
+</html>
