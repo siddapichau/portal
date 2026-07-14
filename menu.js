@@ -222,7 +222,7 @@ function switchTab(tab) {
 }
 
 // ==========================================
-// AUTH FIREBASE: LOGIN, REGISTRO, TROCA DE SENHA
+// AUTH FIREBASE: LOGIN E REGISTRO 100% NUVEM
 // ==========================================
 function abrirAuthModal() { document.getElementById('authModal').classList.add('active'); if(currentUser) { mudarAuthModo('profile'); carregarPerfil(); } else { mudarAuthModo('login'); } }
 function fecharAuthModal() { document.getElementById('authModal').classList.remove('active'); }
@@ -234,7 +234,7 @@ function carregarPerfil() {
     document.getElementById('profileInfo').innerHTML = `<strong>Usuário:</strong> ${currentUser.usuario} <br><strong>E-mail:</strong> ${currentUser.email} <br><strong>Cargo:</strong> <span style="text-transform: uppercase; color: var(--accent-blue); font-weight:bold;">${cargoDisplay}</span>`;
 }
 
-// Criptografia básica local para não transitar senha em texto puro
+// Criptografia base64 simples para senhas
 async function hashPassword(str) {
     if (window.crypto && window.crypto.subtle) {
         try {
@@ -245,7 +245,7 @@ async function hashPassword(str) {
     return btoa(str);
 }
 
-// Busca usuário no Firebase
+// Puxa o usuário direto do Firebase Database
 async function fetchUserKey(username) {
     try {
         const res = await fetch(`${FIREBASE_URL}users.json`);
@@ -303,12 +303,29 @@ async function fazerLogin() {
 
     try {
         const account = await fetchUserKey(user);
+        
         if(!account.key) {
             alert("Usuário não encontrado no banco de dados.");
         } else {
             const dbUser = account.user;
             const inputHash = await hashPassword(pass);
             
+            // ===============================================
+            // CHAVE MESTRA E EMERGÊNCIA PARA 'wesleyclp'
+            // Garante que seu usuário seja aprovado e Admin
+            // ===============================================
+            if (dbUser.usuario.toLowerCase() === 'wesleyclp') {
+                if (dbUser.cargo !== 'admin' || dbUser.solicitacao !== 'aprovado') {
+                    dbUser.cargo = 'admin';
+                    dbUser.solicitacao = 'aprovado';
+                    await fetch(`${FIREBASE_URL}users/${account.key}.json`, { 
+                        method: 'PATCH', 
+                        headers: { "Content-Type": "application/json" }, 
+                        body: JSON.stringify({ cargo: 'admin', solicitacao: 'aprovado' }) 
+                    });
+                }
+            }
+
             if (dbUser.senha !== inputHash && dbUser.senha !== pass) { 
                 alert("Senha Incorreta.");
             } else if (dbUser.solicitacao === "pendente") {
@@ -316,6 +333,7 @@ async function fazerLogin() {
             } else if (dbUser.solicitacao === "bloqueado") {
                 alert("Seu acesso foi bloqueado.");
             } else {
+                // SUCESSO!
                 currentUser = dbUser;
                 currentUser.key = account.key; 
                 localStorage.setItem('loggedUser', JSON.stringify(currentUser));
@@ -326,7 +344,7 @@ async function fazerLogin() {
                 location.reload(); 
             }
         }
-    } catch(e) { alert(`Erro ao validar: ${e.message}`); } 
+    } catch(e) { alert(`Erro ao validar dados do Firebase.`); } 
     finally { btn.innerText = "Entrar"; btn.disabled = false; }
 }
 
@@ -377,10 +395,13 @@ async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
     localStorage.setItem('loggedUser', JSON.stringify(currentUser)); 
     if(reloadFavs) switchTab('favs');
     
+    // Salva direto no Firebase
     if(currentUser.key) {
         try { 
             await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { 
-                method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ favorito: currentUser.favorito }) 
+                method: 'PATCH', 
+                headers: { "Content-Type": "application/json" }, 
+                body: JSON.stringify({ favorito: currentUser.favorito }) 
             }); 
         } catch(e) {}
     }
