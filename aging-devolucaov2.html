@@ -65,10 +65,10 @@
         
         /* BOTÃO SYNC SHEETS NOVO */
         .btn-sync {
-            width: auto !important; padding: 0 12px !important; gap: 6px;
-            background: var(--accent-blue) !important; color: #fff !important; border-color: var(--accent-blue) !important;
+            width: auto !important; padding: 0 12px !important; gap: 6px; font-size: 0.85rem !important;
+            background: #ffffff !important; color: #2D3277 !important; border: 1px solid #2D3277 !important;
         }
-        .btn-sync:hover:not(:disabled) { background: #2968c8 !important; }
+        .btn-sync:hover:not(:disabled) { background: #2D3277 !important; color: #FFF159 !important; }
 
         /* LAYOUT GERAL */
         .row { display: flex; gap: 10px; flex: 1; min-height: 0; width: 100%; }
@@ -91,7 +91,7 @@
         .table-wrapper { flex: 1.5; overflow-y: auto; overflow-x: auto; padding: 0;}
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
         thead th { background-color: rgba(0,0,0,0.4); color: var(--text-title); position: sticky; top: 0; z-index: 1; padding: 10px 12px; backdrop-filter: blur(10px); }
-        [data-theme="light"] thead th { background: rgba(255,255,255,0.9); }
+        [data-theme="light"] th { background: rgba(255,255,255,0.9); }
         th, td { padding: 10px 12px; border-bottom: 1px solid var(--border-card); white-space: nowrap; }
         th { font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
         tbody tr:hover { background-color: rgba(52, 131, 250, 0.05); }
@@ -130,9 +130,9 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
             </button>
 
-            <!-- BOTÃO DE SINCRONIZAÇÃO AUTOMÁTICA -->
-            <button class="btn btn-sync" id="btnSyncSheets" style="display:none;" onclick="puxarDadosDaPlanilhaSheets()" title="Baixar dados em tempo real do Google Sheets">
-                🔄 Atualizar Planilha
+            <!-- BOTÃO DE SINCRONIZAÇÃO MANUAL E AUTOMÁTICA -->
+            <button class="btn btn-sync" id="btnSyncSheets" style="display:none;" onclick="puxarDadosDaPlanilhaSheets(false)" title="Sincronizar com Google Sheets">
+                🔄 Sincronizar
             </button>
         </div>
     </div>
@@ -183,7 +183,7 @@
 
     </div>
 
-    <!-- SCRIPT DE HERANÇA DO PAI (Se necessário) -->
+    <!-- SCRIPT DE HERANÇA DO PAI -->
     <script src="js/app.js"></script>
 
     <script>
@@ -205,21 +205,23 @@
 
         // ============ PERMISSÕES GLOBAIS E LOGS ============
         const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
-        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
         
         const paginaNome = window.location.pathname.split('/').pop() || 'aging-devolucao.html';
         let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
         
         if(canEdit) { document.getElementById('btnSyncSheets').style.display = 'inline-flex'; }
 
-        // ============ LÓGICA DE SINCRONIZAÇÃO AUTOMÁTICA ============
-        async function puxarDadosDaPlanilhaSheets() {
+        // ============ LÓGICA DE SINCRONIZAÇÃO COM GOOGLE SHEETS ============
+        async function puxarDadosDaPlanilhaSheets(isAuto = false) {
             const btn = document.getElementById('btnSyncSheets');
-            const txtOriginal = btn.innerHTML;
+            const txtOriginal = "🔄 Sincronizar";
             const statusBadge = document.getElementById('data-status');
             
-            btn.innerHTML = "⏳ Sincronizando...";
-            btn.disabled = true;
+            if(!isAuto) {
+                btn.innerHTML = "⏳ Sincronizando...";
+                btn.disabled = true;
+            }
+            
             statusBadge.innerText = "Lendo Sheets...";
             statusBadge.style.color = "#3483FA";
 
@@ -234,7 +236,6 @@
                 
                 if (obj.success && obj.lista && obj.lista.length > 0) {
                     
-                    // Exibe a tabela instantaneamente
                     iniciarDashboard(obj.lista);
                     
                     try {
@@ -246,34 +247,58 @@
                             statusBadge.innerText = 'Conectado à Planilha';
                             statusBadge.style.color = '#00A650';
                             
-                            // LOG ESPECÍFICO (SEM O NOME DA PESSOA)
-                            const logData = { 
-                                modulo: "Aging Devolução", 
-                                acao: `Sincronizou a base de dados em tempo real (${obj.lista.length} pacotes).`, 
-                                usuario: "Atualizado direto na planilha", 
-                                timestamp: Date.now() 
-                            };
-                            await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+                            // Emite LOG apenas se o usuário clicou no botão manualmente (para não floodar o feed)
+                            if (!isAuto) {
+                                const logData = { 
+                                    modulo: "Aging Devolução", 
+                                    acao: `Sincronizou a base de dados em tempo real (${obj.lista.length} pacotes).`, 
+                                    usuario: "Atualizado direto na planilha", 
+                                    timestamp: Date.now() 
+                                };
+                                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+                            }
                         }
                     } catch(fbErr) {
-                        statusBadge.innerText = 'Exibindo Dados (Falha ao salvar)';
+                        statusBadge.innerText = 'Exibindo Dados (Falha ao salvar cache)';
                     }
                     
                 } else {
-                    alert("A planilha no Sheets parece estar vazia ou ocorreu um erro.");
+                    if(!isAuto) alert("A planilha no Sheets parece estar vazia ou ocorreu um erro.");
                     statusBadge.innerText = 'Erro na Planilha';
                     statusBadge.style.color = '#FF5252';
                 }
             } catch(error) {
                 console.error("Falha no Google Sheets:", error);
-                alert("Falha de conexão com o banco do Sheets. Certifique-se de ter adicionado a função 'getAgingDevolucao()' no Apps Script.");
+                if(!isAuto) alert("Falha de conexão com o banco do Sheets. Certifique-se de ter adicionado a função 'getAgingDevolucao()' no Apps Script.");
                 statusBadge.innerText = 'Erro Conexão';
                 statusBadge.style.color = '#FF5252';
             } finally {
-                btn.innerHTML = txtOriginal;
-                btn.disabled = false;
+                if(!isAuto) {
+                    btn.innerHTML = txtOriginal;
+                    btn.disabled = false;
+                }
             }
         }
+
+        // ============ AUTO REFRESH (1 MINUTO) ============
+        setInterval(() => {
+            if(canEdit) {
+                // Se for editor, ele puxa do Sheet e abastece o Firebase silenciosamente
+                puxarDadosDaPlanilhaSheets(true);
+            } else {
+                // Se for visualizador, apenas consome o Firebase atualizado
+                fetch(`${FIREBASE_URL}devolucao.json`)
+                    .then(r => r.json())
+                    .then(d => { 
+                        if(d && d.lista) {
+                            iniciarDashboard(d.lista);
+                            document.getElementById('data-status').innerText = 'Conectado à Planilha';
+                            document.getElementById('data-status').style.color = '#00A650';
+                        }
+                    })
+                    .catch(e => console.log("Erro Auto-Refresh Firebase"));
+            }
+        }, 60000); // 60.000 ms = 1 minuto
 
         // ============ EXPORTAÇÃO 4K ============
         function baixarDashboardComoImagem() {
@@ -355,10 +380,20 @@
             let labelColor = currentMode === 'light' ? '#333333' : '#EBEBEB'; 
             let chartBgColor = currentMode === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'; 
 
-            // Verificação Dinâmica e Segura das Colunas
+            // Verificação Inteligente e Precisa das Colunas
             let colunas = Object.keys(globalData[0] || {});
-            let colId = colunas.find(k => k.toLowerCase().includes('id do envio') || k.toLowerCase().includes('id')) || colunas[0];
-            let colSubstatus = colunas.find(k => k.toLowerCase().includes('substatus') || k.toLowerCase().includes('subtatus') || k.toLowerCase().includes('sub status') || k.toLowerCase().includes('status'));
+            
+            let colId = colunas.find(k => {
+                let n = k.toLowerCase().replace(/_/g, ' ').replace(/-/g, ' ');
+                return n.includes('id do envio') || n === 'id';
+            }) || colunas[0];
+            
+            // CORREÇÃO: Pega perfeitamente o Substatus sem confundir com Status comum
+            let colSubstatus = colunas.find(k => {
+                let n = k.toLowerCase().replace(/_/g, ' ').replace(/-/g, ' ');
+                return n.includes('substatus') || n.includes('subtatus') || n.includes('sub status');
+            });
+            if(!colSubstatus) colSubstatus = colunas.find(k => k.toLowerCase().includes('status'));
             if(!colSubstatus) colSubstatus = colunas[2];
             
             let colSort = colunas.find(k => k.toLowerCase().includes('sorting')) || colunas[1];
