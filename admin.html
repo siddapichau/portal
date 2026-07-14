@@ -26,7 +26,6 @@
         
         .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: 0.2s; }
         
-        /* Drop Zones visuais */
         .drag-over { border: 2px dashed var(--accent-blue) !important; background: rgba(52, 131, 250, 0.05) !important; }
 
         .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; align-items: center; transition: 0.2s; }
@@ -44,13 +43,19 @@
         .user-table select { padding: 5px; border-radius: 4px; background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border-card); outline: none;}
         .user-table select:focus { border-color: var(--accent-blue); }
 
-        /* EDITOR DE NOTÍCIAS RICAS */
-        .editor-toolbar { display: flex; gap: 5px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap;}
+        /* =========================================
+           EDITOR DE NOTÍCIAS RICAS (ATUALIZADO)
+           ========================================= */
+        .editor-toolbar { display: flex; gap: 6px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap; align-items: center;}
         [data-theme="light"] .editor-toolbar { background: rgba(0,0,0,0.05); }
-        .editor-toolbar .btn-dark { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); font-size: 1rem; padding: 6px 12px; }
-        .editor-toolbar .btn-dark:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
         
-        .rich-editor { min-height: 200px; max-height: 400px; overflow-y: auto; padding: 15px; border: 1px solid var(--border-card); border-radius: 0 0 8px 8px; background: var(--bg-input); color: var(--text-main); outline: none; font-size: 0.95rem; line-height: 1.5; }
+        .editor-toolbar .btn-dark { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); font-size: 0.95rem; padding: 6px 10px; }
+        .editor-toolbar .btn-dark:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        .editor-toolbar .btn-dark.active-btn { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        
+        .toolbar-divider { width: 1px; height: 24px; background: var(--border-card); margin: 0 5px; }
+
+        .rich-editor { min-height: 250px; max-height: 500px; overflow-y: auto; padding: 15px; border: 1px solid var(--border-card); border-radius: 0 0 8px 8px; background: var(--bg-input); color: var(--text-main); outline: none; font-size: 0.95rem; line-height: 1.5; }
         .rich-editor:focus { border-color: var(--accent-blue); }
         .rich-editor img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
         .rich-editor a { color: var(--accent-blue); text-decoration: underline; font-weight: bold;}
@@ -65,7 +70,6 @@
             <div class="admin-tabs">
                 <div class="admin-tab active" onclick="switchAdminTab('menus')">Gestão de Menus</div>
                 <div class="admin-tab" onclick="switchAdminTab('users')">Gestão de Usuários</div>
-                <!-- NOVA ABA -->
                 <div class="admin-tab" onclick="switchAdminTab('news')">Mural de Notícias</div>
             </div>
 
@@ -105,19 +109,45 @@
                         <input type="text" id="news-tag" placeholder="Tag (Ex: Atualização, Aviso...)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
                     </div>
                     
+                    <!-- BARRA DE FERRAMENTAS DO EDITOR -->
                     <div class="editor-toolbar">
+                        <!-- Texto -->
                         <button class="btn btn-dark" onclick="formatText('bold')" title="Negrito"><b>B</b></button>
                         <button class="btn btn-dark" onclick="formatText('italic')" title="Itálico"><i>I</i></button>
                         <button class="btn btn-dark" onclick="formatText('underline')" title="Sublinhado"><u>U</u></button>
-                        <button class="btn btn-dark" onclick="insertLink()" title="Inserir Link">🔗 Link</button>
-                        <button class="btn btn-dark" onclick="document.getElementById('news-img-upload').click()" title="Inserir Imagem">🖼️ Imagem</button>
-                        <button class="btn btn-dark" onclick="document.getElementById('news-pdf-upload').click()" title="Anexar Arquivo PDF">📄 Anexar PDF</button>
                         
-                        <input type="file" id="news-img-upload" accept="image/*" style="display:none;" onchange="insertImage(this)">
-                        <input type="file" id="news-pdf-upload" accept="application/pdf" style="display:none;" onchange="insertPDF(this)">
+                        <div class="toolbar-divider"></div>
+                        
+                        <!-- Alinhamento -->
+                        <button class="btn btn-dark" onclick="alignText('Left')" title="Alinhar à Esquerda">⬅️</button>
+                        <button class="btn btn-dark" onclick="alignText('Center')" title="Centralizar">↔️</button>
+                        <button class="btn btn-dark" onclick="alignText('Right')" title="Alinhar à Direita">➡️</button>
+
+                        <div class="toolbar-divider"></div>
+
+                        <!-- Anexos e Links -->
+                        <button class="btn btn-dark" onclick="insertLink()" title="Inserir Link de Texto">🔗 Link</button>
+                        
+                        <!-- Imagem: Upload ou Link -->
+                        <button class="btn btn-dark" onclick="document.getElementById('news-img-upload').click()" title="Subir Imagem do PC">🖼️ Subir Imagem</button>
+                        <input type="file" id="news-img-upload" accept="image/*" style="display:none;" onchange="insertImageUpload(this)">
+                        
+                        <button class="btn btn-dark" onclick="insertImageLink()" title="Inserir Imagem por Link (URL)">🔗 Img (Link)</button>
+                        
+                        <!-- Vídeo Youtube -->
+                        <button class="btn btn-dark" onclick="insertVideoLink()" title="Inserir Vídeo do YouTube">🎥 Vídeo</button>
+                        
+                        <!-- Anexos (PDF, Drive) -->
+                        <button class="btn btn-dark" onclick="insertFileLink()" title="Inserir botão de Download (PDF, Drive)">📄 Anexar Arquivo</button>
+                        
+                        <div class="toolbar-divider"></div>
+
+                        <!-- Modo Código Fonte HTML -->
+                        <button class="btn btn-dark" id="btn-toggle-html" onclick="toggleHTML()" title="Ver e Editar o Código HTML Puro">💻 </> Code</button>
                     </div>
+
                     <!-- Div em modo editável -->
-                    <div id="news-body" contenteditable="true" class="rich-editor"></div>
+                    <div id="news-body" contenteditable="true" class="rich-editor" placeholder="Escreva o conteúdo da notícia..."></div>
                     
                     <button class="btn btn-blue" id="btn-publicar" style="width: 100%; margin-top: 15px; padding: 14px; font-size: 1.05rem;" onclick="publicarNoticia()">🚀 Publicar no Mural</button>
                 </div>
@@ -141,7 +171,6 @@
         let adMenuData = { categorias: [] }; 
         let allUsers = [];
 
-        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
         syncTheme();
         window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } });
@@ -174,7 +203,7 @@
         }
 
         // ==========================================
-        // GESTÃO DE USUÁRIOS
+        // GESTÃO DE USUÁRIOS E MENUS (MANTIDO)
         // ==========================================
         async function fetchUsersFromSheet() {
             try {
@@ -203,11 +232,7 @@
             } catch(e) { alert("Erro ao atualizar."); }
         }
 
-        // ==========================================
-        // GESTÃO DE MENUS E DRAG AND DROP
-        // ==========================================
         function getIconOptions(selected) { return ICONES_LOGISTICA.map(ico => `<option value="${ico}" ${ico === selected ? 'selected' : ''}>${ico}</option>`).join(''); }
-
         function renderizarAdmin() {
             const container = document.getElementById('categorias-container'); container.innerHTML = '';
             adMenuData.categorias.forEach((cat, catIdx) => {
@@ -215,103 +240,36 @@
                 (cat.items || []).forEach((item, itemIdx) => {
                     let subItemsHtml = '';
                     (item.subItems || []).forEach((sub, subIdx) => {
-                        subItemsHtml += `
-                            <div class="sub-subitem-row" draggable="true" ondragstart="dragStart(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})">
-                                <span style="color:var(--accent-blue); font-weight:bold; cursor: grab;">↕️ 3º Nível:</span>
-                                <select onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(sub.icon)}</select>
-                                <input type="text" placeholder="Nome" value="${sub.title || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'title', this.value)">
-                                <input type="text" placeholder="URL (.html)" value="${sub.url || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'url', this.value)">
-                                <input type="text" placeholder="Ver (view,editor)" value="${sub.viewRoles || 'view,editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'viewRoles', this.value)">
-                                <input type="text" placeholder="Editar (editor,admin)" value="${sub.uploadRoles || 'editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'uploadRoles', this.value)">
-                                <input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${sub.allowedUsers || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'allowedUsers', this.value)">
-                                <button class="btn btn-red" onclick="removerSubItem(${catIdx}, ${itemIdx}, ${subIdx})">✖</button>
-                            </div>`;
+                        subItemsHtml += `<div class="sub-subitem-row" draggable="true" ondragstart="dragStart(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})"><span style="color:var(--accent-blue); font-weight:bold; cursor: grab;">↕️ 3º Nível:</span><select onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(sub.icon)}</select><input type="text" placeholder="Nome" value="${sub.title || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'title', this.value)"><input type="text" placeholder="URL (.html)" value="${sub.url || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'url', this.value)"><input type="text" placeholder="Ver (view,editor)" value="${sub.viewRoles || 'view,editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'viewRoles', this.value)"><input type="text" placeholder="Editar (editor,admin)" value="${sub.uploadRoles || 'editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'uploadRoles', this.value)"><input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${sub.allowedUsers || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'allowedUsers', this.value)"><button class="btn btn-red" onclick="removerSubItem(${catIdx}, ${itemIdx}, ${subIdx})">✖</button></div>`;
                     });
-
-                    itemsHtml += `
-                        <div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})">
-                            <span style="color:#888; font-weight:bold; cursor: grab; font-size:1.2rem;">↕️ 2º Nível</span>
-                            <select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(item.icon)}</select>
-                            <input type="text" placeholder="Nome do Menu" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)">
-                            <input type="text" placeholder="URL da Página" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)">
-                            <div style="flex-basis: 100%; height: 0; margin: 0;"></div>
-                            <input type="text" placeholder="Ver (view,editor,admin)" value="${item.viewRoles || 'view,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)">
-                            <input type="text" placeholder="Editar (editor,admin)" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)">
-                            <input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${item.allowedUsers || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'allowedUsers', this.value)">
-                            <button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu</button>
-                            <button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖ Remover</button>
-                            <div style="width: 100%;">${subItemsHtml}</div>
-                        </div>
-                    `;
+                    itemsHtml += `<div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})"><span style="color:#888; font-weight:bold; cursor: grab; font-size:1.2rem;">↕️ 2º Nível</span><select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(item.icon)}</select><input type="text" placeholder="Nome do Menu" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)"><input type="text" placeholder="URL da Página" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)"><div style="flex-basis: 100%; height: 0; margin: 0;"></div><input type="text" placeholder="Ver (view,editor,admin)" value="${item.viewRoles || 'view,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)"><input type="text" placeholder="Editar (editor,admin)" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)"><input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${item.allowedUsers || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'allowedUsers', this.value)"><button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu</button><button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖ Remover</button><div style="width: 100%;">${subItemsHtml}</div></div>`;
                 });
-
-                container.innerHTML += `
-                    <div class="cat-card" draggable="true" ondragstart="dragStart(event, 'cat', ${catIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'cat', ${catIdx})">
-                        <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap; border-bottom: 2px solid var(--border-card); padding-bottom: 15px;">
-                            <span style="font-weight:900; color:var(--text-title); font-size:1.1rem; cursor: grab;">↕️ 1º Nível:</span>
-                            <select onchange="updateCat(${catIdx}, 'icon', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">${getIconOptions(cat.icon)}</select>
-                            <input type="text" placeholder="Nome" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; min-width: 150px; padding:8px; font-weight:bold; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">
-                            <input type="text" placeholder="Ver (view,editor,admin)" value="${cat.viewRoles || 'view,editor,admin'}" onchange="updateCat(${catIdx}, 'viewRoles', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">
-                            <button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir Categoria</button>
-                        </div>
-                        <div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem; color: var(--text-muted);">Submenus associados a esta categoria:</div>
-                        ${itemsHtml}
-                        <button class="btn btn-blue" style="margin-top:10px;" onclick="adicionarItem(${catIdx})">+ Adicionar Menu (2º Nível)</button>
-                    </div>
-                `;
+                container.innerHTML += `<div class="cat-card" draggable="true" ondragstart="dragStart(event, 'cat', ${catIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'cat', ${catIdx})"><div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap; border-bottom: 2px solid var(--border-card); padding-bottom: 15px;"><span style="font-weight:900; color:var(--text-title); font-size:1.1rem; cursor: grab;">↕️ 1º Nível:</span><select onchange="updateCat(${catIdx}, 'icon', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">${getIconOptions(cat.icon)}</select><input type="text" placeholder="Nome" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; min-width: 150px; padding:8px; font-weight:bold; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);"><input type="text" placeholder="Ver (view,editor,admin)" value="${cat.viewRoles || 'view,editor,admin'}" onchange="updateCat(${catIdx}, 'viewRoles', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);"><button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir Categoria</button></div><div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem; color: var(--text-muted);">Submenus associados a esta categoria:</div>${itemsHtml}<button class="btn btn-blue" style="margin-top:10px;" onclick="adicionarItem(${catIdx})">+ Adicionar Menu (2º Nível)</button></div>`;
             });
         }
-
-        let draggedItemInfo = null;
-        function dragStart(e, type, catIdx, itemIdx = null, subIdx = null) { draggedItemInfo = { type, catIdx, itemIdx, subIdx }; e.stopPropagation(); }
-        function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-        function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-        function drop(e, targetType, targetCatIdx, targetItemIdx = null, targetSubIdx = null) {
-            e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('drag-over');
-            if (!draggedItemInfo) return; const dType = draggedItemInfo.type;
-            if (dType === 'cat' && targetType === 'cat') { const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0]; adMenuData.categorias.splice(targetCatIdx, 0, temp); }
-            else if (dType === 'item') { const sourceCat = adMenuData.categorias[draggedItemInfo.catIdx]; const itemMovido = sourceCat.items.splice(draggedItemInfo.itemIdx, 1)[0];
-                if (targetType === 'item') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.splice(targetItemIdx, 0, itemMovido); } 
-                else if (targetType === 'cat') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.push(itemMovido); } 
-                else { sourceCat.items.splice(draggedItemInfo.itemIdx, 0, itemMovido); }
-            }
-            else if (dType === 'subItem') { const sourceItem = adMenuData.categorias[draggedItemInfo.catIdx].items[draggedItemInfo.itemIdx]; const subItemMovido = sourceItem.subItems.splice(draggedItemInfo.subIdx, 1)[0];
-                if (targetType === 'subItem') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.splice(targetSubIdx, 0, subItemMovido); } 
-                else if (targetType === 'item') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.push(subItemMovido); } 
-                else { sourceItem.subItems.splice(draggedItemInfo.subIdx, 0, subItemMovido); }
-            }
-            renderizarAdmin();
-        }
-
-        function baixarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2)); const d = document.createElement('a'); d.href = dataStr; d.download = "menu_global.json"; document.body.appendChild(d); d.click(); d.remove(); }
-        function subirJSON(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const parsed = JSON.parse(e.target.result); if(parsed.categorias) { adMenuData = parsed; renderizarAdmin(); alert("JSON carregado!"); } else alert("Estrutura inválida."); } catch (err) { alert("Erro ao ler JSON."); } }; reader.readAsText(file); }
-        function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,editor,admin", items: [] }); renderizarAdmin(); }
-        function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); }
-        function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; }
-        function adicionarItem(catIdx) { if(!adMenuData.categorias[catIdx].items) adMenuData.categorias[catIdx].items = []; adMenuData.categorias[catIdx].items.push({ icon: "📋", title: "Novo Link", url: "#", viewRoles: "view,editor,admin", uploadRoles: "editor,admin", allowedUsers: "", subItems: [] }); renderizarAdmin(); }
-        function removerItem(catIdx, itemIdx) { adMenuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); }
-        function updateItem(catIdx, itemIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx][field] = value; }
-        function adicionarSubItem(catIdx, itemIdx) { if(!adMenuData.categorias[catIdx].items[itemIdx].subItems) adMenuData.categorias[catIdx].items[itemIdx].subItems = []; adMenuData.categorias[catIdx].items[itemIdx].subItems.push({ icon: "↳", title: "Sub-link", url: "#", viewRoles: "view,editor,admin", uploadRoles: "editor,admin", allowedUsers: "" }); renderizarAdmin(); }
-        function removerSubItem(catIdx, itemIdx, subIdx) { adMenuData.categorias[catIdx].items[itemIdx].subItems.splice(subIdx, 1); renderizarAdmin(); }
-        function updateSubItem(catIdx, itemIdx, subIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx].subItems[subIdx][field] = value; }
-
-        async function salvarNoFirebase() { 
-            try { 
-                await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); 
-                await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global.");
-                alert("Salvo com sucesso!"); 
-            } catch(e) { alert("Erro ao salvar."); } 
-        }
+        let draggedItemInfo = null; function dragStart(e, type, catIdx, itemIdx = null, subIdx = null) { draggedItemInfo = { type, catIdx, itemIdx, subIdx }; e.stopPropagation(); } function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); } function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); } function drop(e, targetType, targetCatIdx, targetItemIdx = null, targetSubIdx = null) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('drag-over'); if (!draggedItemInfo) return; const dType = draggedItemInfo.type; if (dType === 'cat' && targetType === 'cat') { const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0]; adMenuData.categorias.splice(targetCatIdx, 0, temp); } else if (dType === 'item') { const sourceCat = adMenuData.categorias[draggedItemInfo.catIdx]; const itemMovido = sourceCat.items.splice(draggedItemInfo.itemIdx, 1)[0]; if (targetType === 'item') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.splice(targetItemIdx, 0, itemMovido); } else if (targetType === 'cat') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.push(itemMovido); } else { sourceCat.items.splice(draggedItemInfo.itemIdx, 0, itemMovido); } } else if (dType === 'subItem') { const sourceItem = adMenuData.categorias[draggedItemInfo.catIdx].items[draggedItemInfo.itemIdx]; const subItemMovido = sourceItem.subItems.splice(draggedItemInfo.subIdx, 1)[0]; if (targetType === 'subItem') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.splice(targetSubIdx, 0, subItemMovido); } else if (targetType === 'item') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.push(subItemMovido); } else { sourceItem.subItems.splice(draggedItemInfo.subIdx, 0, subItemMovido); } } renderizarAdmin(); }
+        function baixarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2)); const d = document.createElement('a'); d.href = dataStr; d.download = "menu_global.json"; document.body.appendChild(d); d.click(); d.remove(); } function subirJSON(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const parsed = JSON.parse(e.target.result); if(parsed.categorias) { adMenuData = parsed; renderizarAdmin(); alert("JSON carregado!"); } else alert("Estrutura inválida."); } catch (err) { alert("Erro ao ler JSON."); } }; reader.readAsText(file); } function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,editor,admin", items: [] }); renderizarAdmin(); } function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); } function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; } function adicionarItem(catIdx) { if(!adMenuData.categorias[catIdx].items) adMenuData.categorias[catIdx].items = []; adMenuData.categorias[catIdx].items.push({ icon: "📋", title: "Novo Link", url: "#", viewRoles: "view,editor,admin", uploadRoles: "editor,admin", allowedUsers: "", subItems: [] }); renderizarAdmin(); } function removerItem(catIdx, itemIdx) { adMenuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); } function updateItem(catIdx, itemIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx][field] = value; } function adicionarSubItem(catIdx, itemIdx) { if(!adMenuData.categorias[catIdx].items[itemIdx].subItems) adMenuData.categorias[catIdx].items[itemIdx].subItems = []; adMenuData.categorias[catIdx].items[itemIdx].subItems.push({ icon: "↳", title: "Sub-link", url: "#", viewRoles: "view,editor,admin", uploadRoles: "editor,admin", allowedUsers: "" }); renderizarAdmin(); } function removerSubItem(catIdx, itemIdx, subIdx) { adMenuData.categorias[catIdx].items[itemIdx].subItems.splice(subIdx, 1); renderizarAdmin(); } function updateSubItem(catIdx, itemIdx, subIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx].subItems[subIdx][field] = value; }
+        async function salvarNoFirebase() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
 
         // ==========================================
-        // GESTÃO DO MURAL DE NOTÍCIAS (EDITOR HTML NATIVO)
+        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT)
         // ==========================================
+        let isHtmlMode = false;
+
         function formatText(cmd) { 
+            if(isHtmlMode) return alert("Saiga do modo de código (</>) para usar a formatação visual.");
             document.execCommand(cmd, false, null); 
             document.getElementById('news-body').focus(); 
         }
 
+        function alignText(align) {
+            if(isHtmlMode) return alert("Saiga do modo de código (</>) para alinhar.");
+            document.execCommand('justify' + align, false, null);
+            document.getElementById('news-body').focus();
+        }
+
         function insertLink() { 
+            if(isHtmlMode) return;
             let url = prompt("Cole a URL (Link) abaixo:"); 
             if(url) {
                 if(!url.startsWith('http')) url = 'https://' + url;
@@ -319,7 +277,8 @@
             }
         }
 
-        function insertImage(input) {
+        function insertImageUpload(input) {
+            if(isHtmlMode) return;
             if(input.files && input.files[0]) {
                 if(input.files[0].size > 2000000) { alert("Aviso: Imagens maiores que 2MB podem deixar o mural lento."); }
                 let reader = new FileReader();
@@ -329,27 +288,67 @@
             input.value = '';
         }
 
-        function insertPDF(input) {
-            if(input.files && input.files[0]) {
-                let file = input.files[0];
-                if(file.size > 5000000) { alert("Aviso: PDFs maiores que 5MB não são recomendados neste método (pois o Firebase tem limite de banda)."); }
-                let reader = new FileReader();
-                reader.onload = function(e) { 
-                    // Insere um link visual em formato de botão
-                    let html = `<br><a href="${e.target.result}" download="${file.name}" style="display:inline-block; padding:10px 15px; background:#3483FA; color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; margin: 10px 0;">📎 Baixar Anexo: ${file.name}</a><br>&nbsp;`;
-                    document.execCommand('insertHTML', false, html);
-                };
-                reader.readAsDataURL(file);
+        function insertImageLink() {
+            if(isHtmlMode) return;
+            let url = prompt("Cole o link (URL) direto da imagem:"); 
+            if(url) document.execCommand('insertImage', false, url); 
+        }
+
+        function insertVideoLink() {
+            if(isHtmlMode) return;
+            let url = prompt("Cole o link do YouTube:");
+            if (url) {
+                let embedUrl = url;
+                if (url.includes('watch?v=')) {
+                    embedUrl = url.replace('watch?v=', 'embed/');
+                    let ampersandIndex = embedUrl.indexOf('&');
+                    if (ampersandIndex !== -1) embedUrl = embedUrl.substring(0, ampersandIndex);
+                } else if (url.includes('youtu.be/')) {
+                    embedUrl = url.replace('youtu.be/', 'youtube.com/embed/');
+                }
+                let html = `<br><iframe width="100%" height="315" src="${embedUrl}" frameborder="0" allowfullscreen style="border-radius:8px;"></iframe><br>&nbsp;`;
+                document.execCommand('insertHTML', false, html);
             }
-            input.value = '';
+        }
+
+        function insertFileLink() {
+            if(isHtmlMode) return;
+            let url = prompt("Cole o link direto do arquivo (Google Drive, PDF, etc):");
+            if (url) {
+                let nome = prompt("Digite o nome para o botão (Ex: Baixar Relatório):") || "Baixar Arquivo";
+                if(!url.startsWith('http')) url = 'https://' + url;
+                let html = `<br><a href="${url}" target="_blank" style="display:inline-block; padding:10px 15px; background:var(--accent-blue); color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; margin: 10px 0; box-shadow: 0 2px 6px rgba(52,131,250,0.3);">📎 ${nome}</a><br>&nbsp;`;
+                document.execCommand('insertHTML', false, html);
+            }
+        }
+
+        function toggleHTML() {
+            const editor = document.getElementById('news-body');
+            const btn = document.getElementById('btn-toggle-html');
+            if (isHtmlMode) {
+                // Voltar para visual (Lê o texto que a pessoa escreveu e injeta como HTML puro)
+                editor.innerHTML = editor.innerText;
+                btn.classList.remove('active-btn');
+                isHtmlMode = false;
+            } else {
+                // Entrar em Código (Pega as Tags Reais e joga como Texto legível)
+                editor.innerText = editor.innerHTML;
+                btn.classList.add('active-btn');
+                isHtmlMode = true;
+            }
         }
 
         async function publicarNoticia() {
+            if (isHtmlMode) {
+                alert("Por favor, saia do Modo Código (Clique em </> Code novamente) antes de publicar!");
+                return;
+            }
+
             let titulo = document.getElementById('news-title').value.trim();
             let tag = document.getElementById('news-tag').value.trim() || 'Aviso';
             let corpo = document.getElementById('news-body').innerHTML.trim();
             
-            if(!titulo || !corpo) return alert("Preencha o título e o conteúdo da notícia antes de publicar.");
+            if(!titulo || !corpo || corpo === '<br>') return alert("Preencha o título e o conteúdo da notícia antes de publicar.");
             
             const btnPub = document.getElementById('btn-publicar');
             btnPub.innerText = "⏳ Publicando..."; btnPub.disabled = true;
@@ -372,7 +371,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(novaNoticia)
                 });
-                await registrarLogFirebase("Painel Admin", `Publicou uma nova notícia no mural: "${titulo}"`);
+                await registrarLogFirebase("Mural", `Publicou uma nova notícia: "${titulo}"`);
                 alert("Notícia publicada com sucesso! Ela já aparecerá na página inicial.");
                 
                 document.getElementById('news-title').value = '';
@@ -417,7 +416,7 @@
             if(!confirm("Atenção: A notícia será apagada permanentemente da página inicial. Confirma a exclusão?")) return;
             try {
                 await fetch(`${FIREBASE_URL}portal_news/${key}.json`, { method: 'DELETE' });
-                await registrarLogFirebase("Painel Admin", "Excluiu uma publicação do mural de notícias.");
+                await registrarLogFirebase("Mural", "Excluiu uma publicação do mural de notícias.");
                 carregarNoticiasAdmin();
             } catch(e) { alert("Erro de comunicação com o servidor ao excluir."); }
         }
