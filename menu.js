@@ -222,7 +222,7 @@ function switchTab(tab) {
 }
 
 // ==========================================
-// AUTH FIREBASE: LOGIN E REGISTRO 100% NUVEM
+// AUTH FIREBASE: 100% NUVEM (SEM GOOGLE SHEETS)
 // ==========================================
 function abrirAuthModal() { document.getElementById('authModal').classList.add('active'); if(currentUser) { mudarAuthModo('profile'); carregarPerfil(); } else { mudarAuthModo('login'); } }
 function fecharAuthModal() { document.getElementById('authModal').classList.remove('active'); }
@@ -234,7 +234,7 @@ function carregarPerfil() {
     document.getElementById('profileInfo').innerHTML = `<strong>Usuário:</strong> ${currentUser.usuario} <br><strong>E-mail:</strong> ${currentUser.email} <br><strong>Cargo:</strong> <span style="text-transform: uppercase; color: var(--accent-blue); font-weight:bold;">${cargoDisplay}</span>`;
 }
 
-// Criptografia base64 simples para senhas
+// Criptografia base64 ou hash simples
 async function hashPassword(str) {
     if (window.crypto && window.crypto.subtle) {
         try {
@@ -245,7 +245,7 @@ async function hashPassword(str) {
     return btoa(str);
 }
 
-// Puxa o usuário direto do Firebase Database
+// Busca usuário no Firebase Database SOMENTE
 async function fetchUserKey(username) {
     try {
         const res = await fetch(`${FIREBASE_URL}users.json`);
@@ -312,7 +312,7 @@ async function fazerLogin() {
             
             // ===============================================
             // CHAVE MESTRA E EMERGÊNCIA PARA 'wesleyclp'
-            // Garante que seu usuário seja aprovado e Admin
+            // Resolve instantaneamente a aprovação
             // ===============================================
             if (dbUser.usuario.toLowerCase() === 'wesleyclp') {
                 if (dbUser.cargo !== 'admin' || dbUser.solicitacao !== 'aprovado') {
@@ -326,7 +326,9 @@ async function fazerLogin() {
                 }
             }
 
-            if (dbUser.senha !== inputHash && dbUser.senha !== pass) { 
+            // Verifica as 3 possibilidades de senha: 
+            // 1. Hash Criptografado (Novo) | 2. Texto Puro | 3. Hash btoa (Planilha Velha)
+            if (dbUser.senha !== inputHash && dbUser.senha !== pass && btoa(pass) !== dbUser.senha) { 
                 alert("Senha Incorreta.");
             } else if (dbUser.solicitacao === "pendente") {
                 alert("Seu acesso ainda está pendente de aprovação!");
@@ -344,7 +346,7 @@ async function fazerLogin() {
                 location.reload(); 
             }
         }
-    } catch(e) { alert(`Erro ao validar dados do Firebase.`); } 
+    } catch(e) { alert(`Erro ao validar dados no Firebase: ` + e.message); } 
     finally { btn.innerText = "Entrar"; btn.disabled = false; }
 }
 
@@ -363,7 +365,7 @@ async function trocarSenha() {
     try {
         const currentHash = await hashPassword(currentPass);
         
-        if(currentUser.senha !== currentHash && currentUser.senha !== currentPass) {
+        if(currentUser.senha !== currentHash && currentUser.senha !== currentPass && currentUser.senha !== btoa(currentPass)) {
             alert("Sua Senha Atual está incorreta.");
         } else {
             const newHash = await hashPassword(newPass1);
