@@ -19,9 +19,10 @@
         
         .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border-card); box-shadow: var(--shadow-card); }
         .header-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .admin-tabs { display: flex; border-bottom: 2px solid var(--border-card); margin-bottom: 20px; }
-        .admin-tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; }
+        .admin-tabs { display: flex; border-bottom: 2px solid var(--border-card); margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
+        .admin-tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; transition: 0.3s;}
         .admin-tab.active { color: var(--accent-blue); border-bottom: 3px solid var(--accent-blue); }
+        .admin-tab:hover { color: var(--text-title); }
         
         .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: 0.2s; }
         
@@ -33,14 +34,26 @@
         
         .subitem-row > input, .subitem-row > select, .sub-subitem-row > input, .sub-subitem-row > select { flex: 1; min-width: 100px; padding: 8px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); border-radius: 4px; font-size: 0.8rem;}
         
-        .btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 0.8rem;}
+        .btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; justify-content: center;}
         .btn:hover { transform: translateY(-2px); }
         .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #334155; }
 
         .user-table { width: 100%; border-collapse: collapse; text-align: left; }
         .user-table th, .user-table td { padding: 12px; border-bottom: 1px solid var(--border-card); font-size: 0.85rem;}
         .user-table th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
-        .user-table select { padding: 5px; border-radius: 4px; background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border-card); }
+        .user-table select { padding: 5px; border-radius: 4px; background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border-card); outline: none;}
+        .user-table select:focus { border-color: var(--accent-blue); }
+
+        /* EDITOR DE NOTÍCIAS */
+        .editor-toolbar { display: flex; gap: 5px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap;}
+        [data-theme="light"] .editor-toolbar { background: rgba(0,0,0,0.05); }
+        .editor-toolbar .btn-dark { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); font-size: 1rem; padding: 6px 12px; }
+        .editor-toolbar .btn-dark:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        
+        .rich-editor { min-height: 250px; max-height: 500px; overflow-y: auto; padding: 15px; border: 1px solid var(--border-card); border-radius: 0 0 8px 8px; background: var(--bg-input); color: var(--text-main); outline: none; font-size: 0.95rem; line-height: 1.5; }
+        .rich-editor:focus { border-color: var(--accent-blue); }
+        .rich-editor img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+        .rich-editor a { color: var(--accent-blue); text-decoration: underline; }
     </style>
 </head>
 <body data-theme="light">
@@ -52,8 +65,10 @@
             <div class="admin-tabs">
                 <div class="admin-tab active" onclick="switchAdminTab('menus')">Gestão de Menus</div>
                 <div class="admin-tab" onclick="switchAdminTab('users')">Gestão de Usuários</div>
+                <div class="admin-tab" onclick="switchAdminTab('news')">Mural de Notícias</div>
             </div>
 
+            <!-- ABA DE MENUS -->
             <div id="tab-menus">
                 <div class="header-actions">
                     <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar na Nuvem</button>
@@ -68,6 +83,7 @@
                 <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; font-size: 1rem;">+ Adicionar Nova Categoria (1º Nível)</button>
             </div>
 
+            <!-- ABA DE USUÁRIOS -->
             <div id="tab-users" style="display:none;">
                 <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos. As alterações são salvas diretamente na planilha.</p>
                 <div style="overflow-x: auto;">
@@ -77,6 +93,37 @@
                     </table>
                 </div>
             </div>
+
+            <!-- ABA DE NOTÍCIAS -->
+            <div id="tab-news" style="display:none;">
+                <div class="cat-card" style="padding: 25px;">
+                    <h3 style="color: var(--text-title); margin-bottom: 15px; font-weight: 900; text-transform: uppercase;">Criar Nova Publicação</h3>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <input type="text" id="news-title" placeholder="Título da Notícia..." style="flex: 2; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                        <input type="text" id="news-tag" placeholder="Tag (Ex: Atualização, Aviso...)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                    </div>
+                    
+                    <div class="editor-toolbar">
+                        <button class="btn btn-dark" onclick="formatText('bold')" title="Negrito"><b>B</b></button>
+                        <button class="btn btn-dark" onclick="formatText('italic')" title="Itálico"><i>I</i></button>
+                        <button class="btn btn-dark" onclick="formatText('underline')" title="Sublinhado"><u>U</u></button>
+                        <button class="btn btn-dark" onclick="insertLink()" title="Inserir Link">🔗 Link</button>
+                        <button class="btn btn-dark" onclick="document.getElementById('news-img-upload').click()" title="Inserir Imagem">🖼️ Imagem</button>
+                        <button class="btn btn-dark" onclick="document.getElementById('news-pdf-upload').click()" title="Anexar Arquivo PDF">📄 Anexar PDF</button>
+                        
+                        <input type="file" id="news-img-upload" accept="image/*" style="display:none;" onchange="insertImage(this)">
+                        <input type="file" id="news-pdf-upload" accept="application/pdf" style="display:none;" onchange="insertPDF(this)">
+                    </div>
+                    <div id="news-body" contenteditable="true" class="rich-editor" placeholder="Digite o conteúdo da notícia aqui..."></div>
+                    
+                    <button class="btn btn-blue" id="btn-publicar" style="width: 100%; margin-top: 15px; padding: 14px; font-size: 1.05rem;" onclick="publicarNoticia()">🚀 Publicar no Mural</button>
+                </div>
+                
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-title); font-weight: 900; text-transform: uppercase;">Publicações Anteriores</h3>
+                <div id="news-list-admin" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+
         </div>
         
         <div id="acessoNegado" style="display:none; text-align:center; padding: 50px;"><h2 style="color: #FF5252;">Acesso Negado 🛑</h2><p>Faça login com cargo de 'admin'.</p></div>
@@ -98,7 +145,7 @@
         window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } });
 
         const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
-        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Admin';
 
         async function registrarLogFirebase(modulo, acao) {
             try {
@@ -118,9 +165,15 @@
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-menus').style.display = tab === 'menus' ? 'block' : 'none';
             document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
+            document.getElementById('tab-news').style.display = tab === 'news' ? 'block' : 'none';
             event.target.classList.add('active');
+
+            if(tab === 'news') carregarNoticiasAdmin();
         }
 
+        // ==========================================
+        // GESTÃO DE USUÁRIOS
+        // ==========================================
         async function fetchUsersFromSheet() {
             try {
                 const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "getUsers" }) });
@@ -148,6 +201,9 @@
             } catch(e) { alert("Erro ao atualizar."); }
         }
 
+        // ==========================================
+        // GESTÃO DE MENUS
+        // ==========================================
         function getIconOptions(selected) { return ICONES_LOGISTICA.map(ico => `<option value="${ico}" ${ico === selected ? 'selected' : ''}>${ico}</option>`).join(''); }
 
         function renderizarAdmin() {
@@ -180,7 +236,7 @@
                             <input type="text" placeholder="Ver (view,editor,admin)" value="${item.viewRoles || 'view,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)">
                             <input type="text" placeholder="Editar (editor,admin)" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)">
                             <input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${item.allowedUsers || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'allowedUsers', this.value)">
-                            <button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu (3º Nível)</button>
+                            <button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu</button>
                             <button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖ Remover</button>
                             <div style="width: 100%;">${subItemsHtml}</div>
                         </div>
@@ -204,98 +260,35 @@
             });
         }
 
-        // ==========================================
-        // LÓGICA MULTI-NÍVEL DE DRAG AND DROP
-        // ==========================================
         let draggedItemInfo = null;
-
-        function dragStart(e, type, catIdx, itemIdx = null, subIdx = null) {
-            draggedItemInfo = { type, catIdx, itemIdx, subIdx };
-            e.stopPropagation(); // Impede que níveis pai iniciem o arrasto junto com o filho
-        }
-
-        function dragOver(e) {
-            e.preventDefault();
-            e.currentTarget.classList.add('drag-over');
-        }
-
-        function dragLeave(e) {
-            e.currentTarget.classList.remove('drag-over');
-        }
-
+        function dragStart(e, type, catIdx, itemIdx = null, subIdx = null) { draggedItemInfo = { type, catIdx, itemIdx, subIdx }; e.stopPropagation(); }
+        function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+        function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
         function drop(e, targetType, targetCatIdx, targetItemIdx = null, targetSubIdx = null) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.remove('drag-over');
-
-            if (!draggedItemInfo) return;
-            const dType = draggedItemInfo.type;
-
-            // REGRA 1: Reordenar Categorias (Nível 1 só interage com Nível 1)
-            if (dType === 'cat' && targetType === 'cat') {
-                const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0];
-                adMenuData.categorias.splice(targetCatIdx, 0, temp);
+            e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('drag-over');
+            if (!draggedItemInfo) return; const dType = draggedItemInfo.type;
+            if (dType === 'cat' && targetType === 'cat') { const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0]; adMenuData.categorias.splice(targetCatIdx, 0, temp); }
+            else if (dType === 'item') { const sourceCat = adMenuData.categorias[draggedItemInfo.catIdx]; const itemMovido = sourceCat.items.splice(draggedItemInfo.itemIdx, 1)[0];
+                if (targetType === 'item') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.splice(targetItemIdx, 0, itemMovido); } 
+                else if (targetType === 'cat') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.push(itemMovido); } 
+                else { sourceCat.items.splice(draggedItemInfo.itemIdx, 0, itemMovido); }
             }
-            
-            // REGRA 2: Movimentar Menus de Nível 2 (Para outra categoria ou alterar ordem)
-            else if (dType === 'item') {
-                const sourceCat = adMenuData.categorias[draggedItemInfo.catIdx];
-                const itemMovido = sourceCat.items.splice(draggedItemInfo.itemIdx, 1)[0];
-
-                if (targetType === 'item') {
-                    // Soltou em cima de outro Menu Nível 2 (Pega o lugar dele)
-                    const targetCat = adMenuData.categorias[targetCatIdx];
-                    if (!targetCat.items) targetCat.items = [];
-                    targetCat.items.splice(targetItemIdx, 0, itemMovido);
-                } else if (targetType === 'cat') {
-                    // Soltou no título da Categoria (Vai pro final da categoria)
-                    const targetCat = adMenuData.categorias[targetCatIdx];
-                    if (!targetCat.items) targetCat.items = [];
-                    targetCat.items.push(itemMovido);
-                } else {
-                    // Se soltou errado, devolve pro lugar original
-                    sourceCat.items.splice(draggedItemInfo.itemIdx, 0, itemMovido);
-                }
+            else if (dType === 'subItem') { const sourceItem = adMenuData.categorias[draggedItemInfo.catIdx].items[draggedItemInfo.itemIdx]; const subItemMovido = sourceItem.subItems.splice(draggedItemInfo.subIdx, 1)[0];
+                if (targetType === 'subItem') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.splice(targetSubIdx, 0, subItemMovido); } 
+                else if (targetType === 'item') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.push(subItemMovido); } 
+                else { sourceItem.subItems.splice(draggedItemInfo.subIdx, 0, subItemMovido); }
             }
-            
-            // REGRA 3: Movimentar Sub-Submenus de Nível 3 (Para outro Menu ou alterar ordem)
-            else if (dType === 'subItem') {
-                const sourceItem = adMenuData.categorias[draggedItemInfo.catIdx].items[draggedItemInfo.itemIdx];
-                const subItemMovido = sourceItem.subItems.splice(draggedItemInfo.subIdx, 1)[0];
-
-                if (targetType === 'subItem') {
-                    // Soltou em cima de outro Sub-submenu Nível 3
-                    const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx];
-                    if (!targetItem.subItems) targetItem.subItems = [];
-                    targetItem.subItems.splice(targetSubIdx, 0, subItemMovido);
-                } else if (targetType === 'item') {
-                    // Soltou no corpo do Menu Nível 2 (Vai pro final dos sub-submenus dele)
-                    const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx];
-                    if (!targetItem.subItems) targetItem.subItems = [];
-                    targetItem.subItems.push(subItemMovido);
-                } else {
-                    // Devolve se errar
-                    sourceItem.subItems.splice(draggedItemInfo.subIdx, 0, subItemMovido);
-                }
-            }
-
             renderizarAdmin();
         }
 
-        // ==========================================
-        // FUNÇÕES PADRÕES
-        // ==========================================
         function baixarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2)); const d = document.createElement('a'); d.href = dataStr; d.download = "menu_global.json"; document.body.appendChild(d); d.click(); d.remove(); }
         function subirJSON(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const parsed = JSON.parse(e.target.result); if(parsed.categorias) { adMenuData = parsed; renderizarAdmin(); alert("JSON carregado!"); } else alert("Estrutura inválida."); } catch (err) { alert("Erro ao ler JSON."); } }; reader.readAsText(file); }
-
         function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,editor,admin", items: [] }); renderizarAdmin(); }
         function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); }
         function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; }
-        
         function adicionarItem(catIdx) { if(!adMenuData.categorias[catIdx].items) adMenuData.categorias[catIdx].items = []; adMenuData.categorias[catIdx].items.push({ icon: "📋", title: "Novo Link", url: "#", viewRoles: "view,editor,admin", uploadRoles: "editor,admin", allowedUsers: "", subItems: [] }); renderizarAdmin(); }
         function removerItem(catIdx, itemIdx) { adMenuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); }
         function updateItem(catIdx, itemIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx][field] = value; }
-
         function adicionarSubItem(catIdx, itemIdx) { if(!adMenuData.categorias[catIdx].items[itemIdx].subItems) adMenuData.categorias[catIdx].items[itemIdx].subItems = []; adMenuData.categorias[catIdx].items[itemIdx].subItems.push({ icon: "↳", title: "Sub-link", url: "#", viewRoles: "view,editor,admin", uploadRoles: "editor,admin", allowedUsers: "" }); renderizarAdmin(); }
         function removerSubItem(catIdx, itemIdx, subIdx) { adMenuData.categorias[catIdx].items[itemIdx].subItems.splice(subIdx, 1); renderizarAdmin(); }
         function updateSubItem(catIdx, itemIdx, subIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx].subItems[subIdx][field] = value; }
@@ -306,6 +299,125 @@
                 await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global.");
                 alert("Salvo com sucesso!"); 
             } catch(e) { alert("Erro ao salvar."); } 
+        }
+
+        // ==========================================
+        // GESTÃO DO MURAL DE NOTÍCIAS (EDITOR RICH TEXT)
+        // ==========================================
+        function formatText(cmd) { 
+            document.execCommand(cmd, false, null); 
+            document.getElementById('news-body').focus(); 
+        }
+
+        function insertLink() { 
+            let url = prompt("Cole a URL (Link) abaixo:"); 
+            if(url) {
+                if(!url.startsWith('http')) url = 'https://' + url;
+                document.execCommand('createLink', false, url); 
+            }
+        }
+
+        function insertImage(input) {
+            if(input.files && input.files[0]) {
+                if(input.files[0].size > 2000000) { alert("Aviso: Imagens maiores que 2MB podem deixar o mural lento."); }
+                let reader = new FileReader();
+                reader.onload = function(e) { document.execCommand('insertImage', false, e.target.result); };
+                reader.readAsDataURL(input.files[0]);
+            }
+            input.value = '';
+        }
+
+        function insertPDF(input) {
+            if(input.files && input.files[0]) {
+                let file = input.files[0];
+                if(file.size > 5000000) { alert("Aviso: PDFs maiores que 5MB não são recomendados neste método."); }
+                let reader = new FileReader();
+                reader.onload = function(e) { 
+                    // Insere um link visual em formato de botão
+                    let html = `<br><a href="${e.target.result}" download="${file.name}" style="display:inline-block; padding:10px 15px; background:var(--accent-blue); color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; margin: 10px 0; box-shadow: 0 2px 6px rgba(52,131,250,0.3);">📎 Baixar Anexo: ${file.name}</a><br>&nbsp;`;
+                    document.execCommand('insertHTML', false, html);
+                };
+                reader.readAsDataURL(file);
+            }
+            input.value = '';
+        }
+
+        async function publicarNoticia() {
+            let titulo = document.getElementById('news-title').value.trim();
+            let tag = document.getElementById('news-tag').value.trim() || 'Aviso';
+            let corpo = document.getElementById('news-body').innerHTML.trim();
+            
+            if(!titulo || !corpo) return alert("Preencha o título e o conteúdo da notícia antes de publicar.");
+            
+            const btnPub = document.getElementById('btn-publicar');
+            btnPub.innerText = "⏳ Publicando..."; btnPub.disabled = true;
+
+            let idNoticia = "news_" + Date.now();
+            let novaNoticia = {
+                id: idNoticia,
+                autor: userName,
+                data: Date.now(),
+                tag: tag,
+                titulo: titulo,
+                corpo: corpo,
+                likes: 0,
+                likedBy: []
+            };
+            
+            try {
+                await fetch(`${FIREBASE_URL}portal_news/${idNoticia}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novaNoticia)
+                });
+                await registrarLogFirebase("Painel Admin", `Publicou uma nova notícia no mural: "${titulo}"`);
+                alert("Notícia publicada com sucesso! Ela já aparecerá na página inicial.");
+                
+                document.getElementById('news-title').value = '';
+                document.getElementById('news-tag').value = '';
+                document.getElementById('news-body').innerHTML = '';
+                carregarNoticiasAdmin();
+            } catch(e) { 
+                alert("Erro ao publicar a notícia. Tente novamente."); 
+            } finally {
+                btnPub.innerText = "🚀 Publicar no Mural"; btnPub.disabled = false;
+            }
+        }
+
+        async function carregarNoticiasAdmin() {
+            let container = document.getElementById('news-list-admin');
+            container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando publicações...</div>';
+            try {
+                let res = await fetch(`${FIREBASE_URL}portal_news.json`);
+                let data = await res.json();
+                if(!data) { container.innerHTML = '<div class="cat-card">Nenhuma notícia publicada ainda no mural.</div>'; return; }
+                
+                let newsList = Object.keys(data).map(k => ({...data[k], key: k})).sort((a,b) => b.data - a.data);
+                let html = '';
+                newsList.forEach(n => {
+                    let d = new Date(n.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                    html += `
+                        <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px;">
+                            <div>
+                                <span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block;">${n.tag}</span>
+                                <strong style="color:var(--text-title); font-size:1.1rem; display:block;">${n.titulo}</strong>
+                                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Por <b>${n.autor}</b> em ${d} • ${n.likes || 0} curtidas</div>
+                            </div>
+                            <button class="btn btn-red" onclick="excluirNoticia('${n.key}')">🗑️ Excluir Publicação</button>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar o histórico de notícias.</div>'; }
+        }
+
+        async function excluirNoticia(key) {
+            if(!confirm("Atenção: A notícia será apagada permanentemente da página inicial. Confirma a exclusão?")) return;
+            try {
+                await fetch(`${FIREBASE_URL}portal_news/${key}.json`, { method: 'DELETE' });
+                await registrarLogFirebase("Painel Admin", "Excluiu uma publicação do mural de notícias.");
+                carregarNoticiasAdmin();
+            } catch(e) { alert("Erro de comunicação com o servidor ao excluir."); }
         }
     </script>
 </body>
