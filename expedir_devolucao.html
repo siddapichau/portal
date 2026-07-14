@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analítico de Expedição</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'expedir_devolucao.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- CSS GLOBAL -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Variáveis específicas para este dashboard */
+        :root {
+            --bg-badge: rgba(255, 255, 255, 0.06);
+            --border-subrow: rgba(255, 255, 255, 0.06);
+            --accent-purple: #A855F7;
+        }
+
+        [data-theme="light"] {
+            --bg-badge: rgba(0, 0, 0, 0.05);
+            --border-subrow: rgba(0, 0, 0, 0.08);
+            --accent-purple: #7c3aed;
+        }
+        
+        html, body { width: 100%; min-height: 100%; background: transparent !important; }
+        body { padding: 20px 10px; display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto; }
+
+        .dashboard-container { max-width: 1520px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding: 10px; }
+
+        .glass-panel { background-color: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); transition: 0.3s; }
+
+        .top-header { position: relative; background-color: #FFF159 !important; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; gap: 20px; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.18); flex: 0 0 auto; min-height: 55px; flex-wrap: wrap; width: 100%; }
+        .ml-logo { z-index: 2; position: relative; height: 28px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); flex-shrink: 0; }
+        .header-center { flex: 1 1 auto; text-align: center; font-size: clamp(1rem, 2vw, 1.35rem); font-weight: 900; color: #2D3277 !important; letter-spacing: 0.6px; text-transform: uppercase; line-height: 1.4; }
+        .header-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+
+        .btn { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1 !important; border-radius: 6px; width: 36px; height: 36px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .2s ease-in-out; box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex-shrink: 0; padding:0;}
+        .btn:hover:not(:disabled) { background: #f8fafc !important; border-color: #94a3b8 !important; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .btn svg { width: 16px; height: 16px; stroke: #1e293b; }
+        
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+        .row { display: flex; gap: 20px; flex-wrap: wrap; width: 100%; }
+        .col-kpi { flex: 1 1 320px; display: flex; flex-direction: column; gap: 15px; }
+        
+        .kpi-card { flex: 1 1 auto; padding: 22px 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-left: 5px solid var(--accent-blue); text-align: center; min-height: 120px; height: auto; }
+        .kpi-title { font-size: 0.88rem; color: var(--text-muted); text-transform: uppercase; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; }
+        .kpi-value { font-size: 3rem; font-weight: 900; color: var(--text-main); line-height: 1; }
+        .kpi-sub-row { font-size: 0.9rem; color: var(--text-muted); margin-top: 6px; width: 100%; max-width: 230px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subrow); padding-bottom: 3px; }
+        .kpi-sub-row b { color: var(--text-title); font-weight: 800; }
+        .kpi-sub-line { font-size: 0.95rem; color: var(--text-muted); width: 100%; text-align: center; margin-top: 4px;}
+
+        .badge-group { display: flex; gap: 8px; justify-content: center; margin-top: 12px; width: 100%; flex-wrap: wrap; }
+        .pill-badge { background-color: var(--bg-badge); border: 1px solid var(--border-card); padding: 4px 12px; border-radius: 30px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); display: inline-flex; gap: 6px; align-items: center; }
+        .pill-badge b { color: var(--text-title); font-weight: 900; }
+
+        .chart-card { flex: 2.5 1 650px; display: flex; flex-direction: column; padding: 22px; min-width: 350px; min-height: 380px; }
+        .chart-title { font-size: 1.05rem; color: var(--text-muted); margin-bottom: 15px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;}
+        .chart-wrapper { position: relative; flex: 1; width: 100%; min-height: 270px; display: flex; justify-content: center; align-items: center;}
+
+        /* Ocultar os botões na hora do Snapshot 4K */
+        .exporting .header-right { display: none !important; }
+
+        @media (max-width: 1024px) { 
+            .row { flex-direction: column; }
+            .col-kpi { flex-direction: row; flex-wrap: wrap; flex: 1 1 100%; }
+            .kpi-card { flex: 1; min-width: 220px; }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="dashboard-container" id="dashboard-container">
+
+        <div class="top-header" id="cabecalho-principal">
+            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
+            
+            <div class="header-center" id="main-title">
+                EXPEDIÇÃO DEVOLUÇÃO PARA DIA --/--/---- COM TOTAL DE 0 PACOTES E 0 PALETES
+            </div>
+            
+            <div class="header-right">
+                <!-- BOTÃO EXPORTAR 4K -->
+                <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Foto 4K">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
+                    </svg>
+                </button>
+                
+                <!-- BOTÃO UPLOAD XLSX/CSV -->
+                <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Subir Base de Dados CSV/XLSX">
+                    <button class="btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </button>
+                    <input type="file" id="excelFileInput" accept=".csv, .xlsx, .xls" />
+                </div>
+            </div>
+        </div>
+
+        <div id="export-container">
+            <div class="row">
+                <div class="col-kpi">
+                    <div class="kpi-card glass-panel" style="border-left-color: var(--accent-blue);">
+                        <div class="kpi-title">TOTAL GERAL LIDO</div>
+                        <div class="kpi-value" id="kpi-total" style="color: var(--accent-blue);">0</div>
+                        <div class="kpi-sub-line" style="margin-top: 10px;">
+                            <span style="color: var(--text-muted)">Sem ID:</span> 
+                            <span id="kpi-semid" style="color: var(--accent-red); font-weight: 900;">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="kpi-card glass-panel" style="border-left-color: var(--accent-yellow);">
+                        <div class="kpi-title">VOLUMES LOGÍSTICOS</div>
+                        <div class="kpi-sub-row"><span>HUs Totais:</span> <b id="kpi-hus">0</b></div>
+                        <div class="kpi-sub-row"><span>Paletes:</span> <b id="kpi-paletes">0</b></div>
+                        <div class="kpi-sub-row"><span>Coleta Bulky:</span> <b id="kpi-coletas">0</b></div>
+                    </div>
+                </div>
+                
+                <div class="chart-card glass-panel">
+                    <div class="chart-title">TOTAL DE PEDIDOS POR PROCESSO (LEGACY & AZUL 2.0)</div>
+                    <div class="chart-wrapper"><canvas id="chart-pedidos"></canvas></div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-kpi">
+                    <div class="kpi-card glass-panel" style="border-left-color: var(--accent-purple);">
+                        <div class="kpi-title">TOTAL STATUS FINALIZADOR</div>
+                        <div class="kpi-value" id="kpi-status-total" style="color: var(--accent-purple);">0</div>
+                        <div class="kpi-sub-line" style="margin-top:12px; font-weight: 800; font-size: 0.8rem; letter-spacing:0.3px;">SUBDIVISÃO ABAS F:</div>
+                        
+                        <div class="badge-group">
+                            <span class="pill-badge">CRS <b id="kpi-st-crs">0</b></span>
+                            <span class="pill-badge">SP <b id="kpi-st-sp">0</b></span>
+                            <span class="pill-badge">SC <b id="kpi-st-sc">0</b></span>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card glass-panel" style="border-left-color: var(--accent-green);">
+                        <div class="kpi-title">INFORMAÇÕES DA CARGA</div>
+                        <div class="kpi-sub-line">Data e Lacre</div>
+                        <div class="kpi-sub-line" id="kpi-data-lacre" style="color: var(--text-title); font-weight: bold; font-size: 1.05rem;">--/--/---- | --</div>
+                        <div class="kpi-sub-line" style="margin-top: 10px;">Conferente</div>
+                        <div class="kpi-sub-line" id="kpi-assinatura" style="color: var(--accent-green); font-weight: bold; font-size: 1.05rem;">--</div>
+                    </div>
+                </div>
+
+                <div class="chart-card glass-panel">
+                    <div class="chart-title">ANÁLISE STATUS FINALIZADOR</div>
+                    <div class="chart-wrapper" id="motivos-container">
+                        <canvas id="chart-motivos"></canvas>
+                        <div id="chart-motivos-empty" style="display:none; width: 100%; text-align: center; color: var(--text-muted); font-weight: bold; padding: 20px;">Nenhum status lançado.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> 
+
+    <script>
+        Chart.register(ChartDataLabels);
+
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_NODE = "envios_diarios_v8"; 
+        
+        let chartInstances = {};
+
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { 
+            if (event.data.type === 'THEME_CHANGED') { 
+                document.body.setAttribute('data-theme', event.data.theme); 
+                renderizarGraficos(); // Atualiza cores do Chart.js
+            } 
+        });
+
+        // ============ PERMISSÕES GLOBAIS E LOGS ============
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        
+        const paginaNome = window.location.pathname.split('/').pop() || 'expedir_devolucao.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        
+        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        let BANCO_GLOBAL = {
+            data: "--/--/----", lacre: "--", assinatura: "--", 
+            totalGeral: 0, palletsGlobal: 0, totalHUGlobal: 0, totalColetas: 0,
+            semID: 0, statusTotal: 0, statusCRS: 0, statusFSP: 0, statusFSC: 0,
+            motivos: {}, 
+            setores: {
+                "F_CROSS": { pedidos: 0, label: "Legacy Cross" },
+                "F_FULL_SP": { pedidos: 0, label: "Legacy SP" },
+                "F_FULL_SC": { pedidos: 0, label: "Legacy SC" },
+                "Cross_2_0": { pedidos: 0, label: "CROSS 2.0" },
+                "Full_2_0": { pedidos: 0, label: "FULL 2.0" }
+            }
+        };
+
+        function normalizarDataComZeros(dataStr) {
+            if (!dataStr) return "--/--/----";
+            let partes = dataStr.split(/[\/\-]/);
+            if (partes.length === 3) {
+                let dia = partes[0].trim().padStart(2, '0');
+                let mes = partes[1].trim().padStart(2, '0');
+                let ano = partes[2].trim();
+                if (ano.length === 2) ano = "20" + ano;
+                return `${dia}/${mes}/${ano}`;
+            }
+            return dataStr;
+        }
+
+        async function carregarDoFirebase() {
+            try {
+                const url = `${FIREBASE_URL}${FIREBASE_NODE}.json?cb=${Date.now()}`;
+                const response = await fetch(url);
+                const dbData = await response.json();
+                
+                if (dbData && dbData.dados) {
+                    BANCO_GLOBAL = Object.assign(BANCO_GLOBAL, dbData.dados);
+                    if(!BANCO_GLOBAL.motivos) BANCO_GLOBAL.motivos = {}; 
+                    renderizarGraficos();
+                }
+            } catch(e) {}
+        }
+        document.addEventListener('DOMContentLoaded', carregarDoFirebase);
+
+        document.getElementById('excelFileInput').addEventListener('change', function(event) {
+            if(!canEdit) return;
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            
+            reader.onload = async function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                
+                let tempDados = {
+                    data: "", lacre: "", assinatura: "", 
+                    totalGeral: 0, palletsGlobal: 0, totalHUGlobal: 0, totalColetas: 0,
+                    semID: 0, statusTotal: 0, statusCRS: 0, statusFSP: 0, statusFSC: 0,
+                    motivos: {},
+                    setores: {
+                        "F_CROSS": { pedidos: 0, label: "Legacy Cross" },
+                        "F_FULL_SP": { pedidos: 0, label: "Legacy SP" },
+                        "F_FULL_SC": { pedidos: 0, label: "Legacy SC" },
+                        "Cross_2_0": { pedidos: 0, label: "CROSS 2.0" },
+                        "Full_2_0": { pedidos: 0, label: "FULL 2.0" }
+                    }
+                };
+
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                if (worksheet) {
+                    const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1, raw: false, defval: ""});
+                    
+                    if (rows.length > 2) {
+                        tempDados.data = normalizarDataComZeros(String(rows[1][21] || "").trim());
+                        tempDados.lacre = String(rows[1][22] || "").trim() || "--";
+                        tempDados.assinatura = String(rows[1][23] || "").trim() || "--";
+                        tempDados.palletsGlobal = parseFloat(rows[1][24]) || 0;
+                        tempDados.totalHUGlobal = parseFloat(rows[1][25]) || 0;
+
+                        tempDados.semID = parseFloat(rows[2][0]) || 0;
+                        tempDados.setores["F_CROSS"].pedidos = parseFloat(rows[2][2]) || 0;
+                        tempDados.setores["F_FULL_SP"].pedidos = parseFloat(rows[2][3]) || 0;
+                        tempDados.setores["F_FULL_SC"].pedidos = parseFloat(rows[2][4]) || 0;
+                        tempDados.setores["Cross_2_0"].pedidos = parseFloat(rows[2][7]) || 0;
+                        tempDados.setores["Full_2_0"].pedidos = parseFloat(rows[2][8]) || 0;
+
+                        tempDados.statusCRS = parseFloat(rows[2][11]) || 0;
+                        tempDados.statusFSP = parseFloat(rows[2][12]) || 0;
+                        tempDados.statusFSC = parseFloat(rows[2][13]) || 0;
+                        tempDados.statusTotal = parseFloat(rows[2][14]) || 0;
+                        tempDados.totalColetas = parseFloat(rows[2][16]) || 0;
+
+                        for (let i = 2; i < rows.length; i++) {
+                            if (!rows[i]) continue;
+                            let motivoBruto = String(rows[i][18] || "").trim().toUpperCase();
+                            let qtd = parseFloat(rows[i][19]) || 0;
+
+                            if (motivoBruto !== "" && qtd > 0) {
+                                let motivoCorrigido = motivoBruto;
+                                if(motivoBruto.includes('DESTRUI')) motivoCorrigido = 'DESTRUIÇÃO';
+                                else if(motivoBruto.includes('DEVOL')) motivoCorrigido = 'DEVOLVIDO';
+                                else if(motivoBruto.includes('ENTREGUE')) motivoCorrigido = 'ENTREGUE';
+                                else if(motivoBruto.includes('PERDIDO')) motivoCorrigido = 'PERDIDO';
+                                else if(motivoBruto.includes('OUTROS')) motivoCorrigido = 'OUTROS';
+                                else motivoCorrigido = motivoCorrigido.replace(/[\.\#\$\[\]\/]/g, "_");
+
+                                tempDados.motivos[motivoCorrigido] = qtd;
+                            }
+                        }
+                    }
+                }
+
+                let totalPac = 0;
+                for (let chave in tempDados.setores) { totalPac += tempDados.setores[chave].pedidos; }
+                tempDados.totalGeral = totalPac;
+
+                BANCO_GLOBAL = tempDados;
+                renderizarGraficos();
+
+                try {
+                    const now = new Date();
+                    const timestamp = `${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+                    await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, {
+                        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ultimaAtualizacao: timestamp, dados: BANCO_GLOBAL })
+                    });
+                    await registrarLogFirebase("Expedir Devolução", `Atualizou a base de expedição do dia: <b>${BANCO_GLOBAL.data}</b>`);
+                } catch(e) {}
+            };
+            
+            reader.readAsArrayBuffer(file);
+            event.target.value = ''; 
+        });
+
+        // ==========================================
+        // RENDERIZAÇÃO DE GRÁFICOS (CHART.JS)
+        // ==========================================
+        function getChartTextColor() { return document.body.getAttribute('data-theme') === 'light' ? '#334155' : '#EBEBEB'; }
+        function getGridColor() { return document.body.getAttribute('data-theme') === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'; }
+
+        function renderizarGraficos() {
+            document.getElementById('main-title').innerText = `EXPEDIÇÃO DEVOLUÇÃO PARA DIA ${BANCO_GLOBAL.data} COM TOTAL DE ${BANCO_GLOBAL.totalGeral} PACOTES E ${BANCO_GLOBAL.palletsGlobal} PALETES`;
+            
+            document.getElementById('kpi-total').innerText = BANCO_GLOBAL.totalGeral;
+            document.getElementById('kpi-semid').innerText = BANCO_GLOBAL.semID;
+            document.getElementById('kpi-hus').innerText = BANCO_GLOBAL.totalHUGlobal;
+            document.getElementById('kpi-paletes').innerText = BANCO_GLOBAL.palletsGlobal;
+            document.getElementById('kpi-coletas').innerText = BANCO_GLOBAL.totalColetas;
+            
+            document.getElementById('kpi-status-total').innerText = BANCO_GLOBAL.statusTotal;
+            document.getElementById('kpi-st-crs').innerText = BANCO_GLOBAL.statusCRS;
+            document.getElementById('kpi-st-sp').innerText = BANCO_GLOBAL.statusFSP;
+            document.getElementById('kpi-st-sc').innerText = BANCO_GLOBAL.statusFSC;
+            
+            document.getElementById('kpi-data-lacre').innerText = `${BANCO_GLOBAL.data} | ${BANCO_GLOBAL.lacre}`;
+            document.getElementById('kpi-assinatura').innerText = BANCO_GLOBAL.assinatura;
+
+            Object.keys(chartInstances).forEach(key => { if(chartInstances[key]) chartInstances[key].destroy(); });
+
+            Chart.defaults.color = getChartTextColor();
+            Chart.defaults.font.family = "'Inter', sans-serif";
+
+            // Gráfico 1: Processos
+            const chaves = Object.keys(BANCO_GLOBAL.setores);
+            chartInstances.pedidos = new Chart(document.getElementById('chart-pedidos'), {
+                type: 'bar',
+                data: { labels: chaves.map(k => BANCO_GLOBAL.setores[k].label), datasets: [{ data: chaves.map(k => BANCO_GLOBAL.setores[k].pedidos), backgroundColor: '#3483FA', borderRadius: 6, maxBarThickness: 90 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false, animation: false, layout: { padding: { top: 30 } },
+                    scales: { y: { grid: { color: getGridColor(), drawBorder: false } }, x: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 12 } } } },
+                    plugins: { legend: false, datalabels: { color: getChartTextColor(), font: { weight: 'bold', size: 14 }, align: 'end', anchor: 'end', offset: 4 } }
+                }
+            });
+
+            // Gráfico 2: Motivos
+            const motivosLabels = Object.keys(BANCO_GLOBAL.motivos);
+            const motivosDados = Object.values(BANCO_GLOBAL.motivos);
+            const canvasMotivos = document.getElementById('chart-motivos');
+            const emptyMotivos = document.getElementById('chart-motivos-empty');
+
+            if (motivosLabels.length > 0) {
+                canvasMotivos.style.display = 'block';
+                emptyMotivos.style.display = 'none';
+
+                chartInstances.motivos = new Chart(canvasMotivos, {
+                    type: 'bar',
+                    data: { labels: motivosLabels, datasets: [{ data: motivosDados, backgroundColor: '#FFB000', borderRadius: 6, maxBarThickness: 75 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, animation: false, layout: { padding: { top: 30, bottom: 10 } },
+                        scales: { y: { grid: { color: getGridColor(), drawBorder: false }, ticks: { font: { weight: 'bold' } } }, x: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 12 }, autoSkip: false } } },
+                        plugins: { legend: false, datalabels: { color: getChartTextColor(), font: { weight: 'bold', size: 14 }, align: 'top', anchor: 'end', offset: 4 } }
+                    }
+                });
+            } else {
+                canvasMotivos.style.display = 'none';
+                emptyMotivos.style.display = 'block';
+            }
+        }
+
+        // ==========================================
+        // EXPORTAÇÃO 4K
+        // ==========================================
+        function baixarDashboardComoImagem() {
+            const btn = document.getElementById('btnExportar');
+            btn.disabled = true;
+            document.body.classList.add('exporting');
+
+            setTimeout(() => {
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f';
+                const targetElement = document.getElementById('dashboard-container');
+
+                html2canvas(targetElement, { scale: 3, useCORS: true, backgroundColor: bgCor, logging: false }).then(canvas => {
+                    document.body.classList.remove('exporting');
+                    btn.disabled = false;
+                    const link = document.createElement('a');
+                    link.download = `Snapshot_Expedicao_${BANCO_GLOBAL.data.replace(/\//g, '-')}_4K.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }).catch(() => {
+                    document.body.classList.remove('exporting');
+                    btn.disabled = false;
+                });
+            }, 150);
+        }
+    </script>
+</body>
+</html>
