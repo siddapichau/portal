@@ -23,9 +23,6 @@
         .quote-text { font-size: 1rem; color: var(--text-main); font-style: italic; font-weight: 600; transition: opacity 0.5s ease; }
         .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-blue); width: 0%; }
 
-        /* =========================================
-           GRID DE 3 COLUNAS (DENTRO DO HOME-VIEW)
-           ========================================= */
         #home-view { width: 100%; max-width: 1500px; display: grid; grid-template-columns: 320px 1fr 300px; gap: 20px; height: calc(100vh - 250px); margin-bottom: 20px; }
 
         .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden; }
@@ -132,39 +129,20 @@
         </div>
 
         <div id="home-view">
-            
-            <!-- COLUNA 1: LOGS -->
             <div class="panel-box col-logs">
-                <div class="panel-header">
-                    <h2><div class="live-indicator" title="Monitorando ao vivo"></div> Radar de Atividades</h2>
-                </div>
-                <div class="panel-content">
-                    <ul class="feed-list" id="feed-list">
-                        <div class="muted-msg">Conectando à Central...</div>
-                    </ul>
-                </div>
+                <div class="panel-header"><h2><div class="live-indicator" title="Monitorando ao vivo"></div> Radar de Atividades</h2></div>
+                <div class="panel-content"><ul class="feed-list" id="feed-list"><div class="muted-msg">Conectando à Central...</div></ul></div>
             </div>
 
-            <!-- COLUNA 2: NOTÍCIAS -->
             <div class="panel-box col-news">
-                <div class="news-header-banner">
-                    📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS
-                </div>
-                <div class="panel-content" id="news-feed-container">
-                    <div class="muted-msg">Carregando mural...</div>
-                </div>
+                <div class="news-header-banner">📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS</div>
+                <div class="panel-content" id="news-feed-container"><div class="muted-msg">Carregando mural...</div></div>
             </div>
 
-            <!-- COLUNA 3: USUÁRIOS E PRESENÇA -->
             <div class="panel-box col-users">
-                <div class="panel-header">
-                    <h2>👥 Equipe no Portal</h2>
-                </div>
-                <div class="panel-content" id="users-feed-container">
-                    <div class="muted-msg">Mapeando presenças...</div>
-                </div>
+                <div class="panel-header"><h2>👥 Equipe no Portal</h2></div>
+                <div class="panel-content" id="users-feed-container"><div class="muted-msg">Mapeando presenças...</div></div>
             </div>
-
         </div>
 
         <iframe id="app-frame" src=""></iframe>
@@ -172,16 +150,12 @@
 
     <script>
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
         
         let CURRENT_LOGGED_USER = null;
         try { CURRENT_LOGGED_USER = JSON.parse(localStorage.getItem('loggedUser')); } catch(e) {}
         let currentUserStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.usuario) ? CURRENT_LOGGED_USER.usuario : 'Você';
         let currentRoleStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.cargo) ? CURRENT_LOGGED_USER.cargo : 'Acesso Local';
 
-        // ==========================================
-        // CITAÇÕES ANIMADAS
-        // ==========================================
         const messages = [ "O talento vence jogos, mas o trabalho em equipe e a inteligência vencem campeonatos.", "Um inventário preciso é o coração da nossa logística.", "No Mercado Livre, não entregamos apenas pacotes, entregamos propósitos.", "Nossa força está na união. Juntos, fazemos do nosso inventário um modelo de eficiência." ];
         let msgIndex = 0; const quoteEl = document.getElementById('animated-quote'); const progressBar = document.getElementById('progress-bar'); const INTERVAL_MS = 10000;
 
@@ -191,16 +165,11 @@
         }
         function animateProgressBar() { progressBar.style.transition = 'none'; progressBar.style.width = '0%'; void progressBar.offsetWidth; progressBar.style.transition = `width ${INTERVAL_MS}ms linear`; progressBar.style.width = '100%'; }
         
-        // ==========================================
-        // FUNÇÃO DE TIMEOUT PARA O FETCH (EVITAR TRAVAMENTOS)
-        // ==========================================
         async function fetchWithTimeout(resource, options = {}) {
-            const { timeout = 8000 } = options;
-            const controller = new AbortController();
+            const { timeout = 8000 } = options; const controller = new AbortController();
             const id = setTimeout(() => controller.abort(), timeout);
             const response = await fetch(resource, { ...options, signal: controller.signal });
-            clearTimeout(id);
-            return response;
+            clearTimeout(id); return response;
         }
 
         // ==========================================
@@ -214,9 +183,7 @@
                 
                 if(!data) { listEl.innerHTML = '<div class="muted-msg">Nenhuma atividade recente.</div>'; return; }
                 
-                let logs = [];
-                if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
-                
+                let logs = []; if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
                 logs.sort((a, b) => b.timestamp - a.timestamp); logs = logs.slice(0, 15); 
                 listEl.innerHTML = '';
                 
@@ -240,10 +207,7 @@
                         </li>
                     `;
                 });
-            } catch (e) { 
-                console.error("Erro Logs:", e);
-                if(listEl.innerHTML.includes('Conectando')) listEl.innerHTML = '<div class="error-msg">Erro ao carregar o radar de atividades.</div>'; 
-            } 
+            } catch (e) { if(listEl.innerHTML.includes('Conectando')) listEl.innerHTML = '<div class="error-msg">Erro ao carregar o radar de atividades.</div>'; } 
         }
 
         // ==========================================
@@ -255,245 +219,119 @@
                 const res = await fetchWithTimeout(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
                 let data = await res.json();
                 
-                if(!data) {
-                    container.innerHTML = '<div class="muted-msg">Ainda não há publicações no mural.</div>';
-                    return;
-                }
+                if(!data) { container.innerHTML = '<div class="muted-msg">Ainda não há publicações no mural.</div>'; return; }
 
-                let newsList = [];
-                if (Array.isArray(data)) { newsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
-                else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
-                
-                newsList.sort((a,b) => b.data - a.data);
-                container.innerHTML = '';
+                let newsList = []; if (Array.isArray(data)) { newsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
+                newsList.sort((a,b) => b.data - a.data); container.innerHTML = '';
 
                 newsList.forEach(news => {
                     const dataFormatada = new Date(news.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
                     const inicial = (news.autor || 'A').charAt(0).toUpperCase();
                     
                     let userHasLiked = false;
-                    if(news.likedBy && Array.isArray(news.likedBy) && news.likedBy.includes(currentUserStr)) {
-                        userHasLiked = true;
-                    }
-
+                    if(news.likedBy && Array.isArray(news.likedBy) && news.likedBy.includes(currentUserStr)) { userHasLiked = true; }
                     const btnClass = userHasLiked ? 'btn-like liked' : 'btn-like';
                     
                     container.innerHTML += `
                         <div class="post-card">
-                            <div class="post-header">
-                                <div class="post-author-box">
-                                    <div class="author-avatar">${inicial}</div>
-                                    <div class="author-info">
-                                        <span class="author-name">${news.autor || 'Admin'}</span>
-                                        <span class="post-date">${dataFormatada}</span>
-                                    </div>
-                                </div>
-                                <span class="post-tag">${news.tag || 'Aviso'}</span>
-                            </div>
-                            
+                            <div class="post-header"><div class="post-author-box"><div class="author-avatar">${inicial}</div><div class="author-info"><span class="author-name">${news.autor || 'Admin'}</span><span class="post-date">${dataFormatada}</span></div></div><span class="post-tag">${news.tag || 'Aviso'}</span></div>
                             <div class="post-title">${news.titulo || ''}</div>
                             <div class="post-body">${news.corpo || ''}</div>
-                            
-                            <div class="post-footer">
-                                <div class="ml-signature">
-                                    <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="ML"> Equipe Inventário
-                                </div>
-                                <button class="${btnClass}" id="btn-like-${news.key}" onclick="darLikeNews('${news.key}')">
-                                    🚀 <span id="like-count-${news.key}">${news.likes || 0}</span>
-                                    <span class="like-anim-text" id="like-anim-${news.key}">Para Cima!</span>
-                                </button>
-                            </div>
+                            <div class="post-footer"><div class="ml-signature"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="ML"> Equipe Inventário</div><button class="${btnClass}" id="btn-like-${news.key}" onclick="darLikeNews('${news.key}')">🚀 <span id="like-count-${news.key}">${news.likes || 0}</span><span class="like-anim-text" id="like-anim-${news.key}">Para Cima!</span></button></div>
                         </div>
                     `;
                 });
                 
-            } catch (e) {
-                console.error("Erro Noticias:", e);
-                if(container.innerHTML.includes('Carregando')) container.innerHTML = '<div class="error-msg">Falha ao obter mural de notícias.</div>';
-            }
+            } catch (e) { if(container.innerHTML.includes('Carregando')) container.innerHTML = '<div class="error-msg">Falha ao obter mural de notícias.</div>'; }
         }
 
         async function darLikeNews(newsKey) {            
-            const btn = document.getElementById(`btn-like-${newsKey}`);
-            const countSpan = document.getElementById(`like-count-${newsKey}`);
-            const animSpan = document.getElementById(`like-anim-${newsKey}`);
-            
+            const btn = document.getElementById(`btn-like-${newsKey}`); const countSpan = document.getElementById(`like-count-${newsKey}`); const animSpan = document.getElementById(`like-anim-${newsKey}`);
             try {
-                const res = await fetch(`${FIREBASE_URL}portal_news/${newsKey}.json`);
-                const news = await res.json();
-                if(!news) return;
-
-                let likedBy = news.likedBy || [];
-                let currentLikes = parseInt(news.likes) || 0;
-
-                if (likedBy.includes(currentUserStr)) {
-                    likedBy = likedBy.filter(u => u !== currentUserStr);
-                    currentLikes--;
-                    btn.classList.remove('liked');
-                } else {
-                    likedBy.push(currentUserStr);
-                    currentLikes++;
-                    btn.classList.add('liked');
-                    
-                    animSpan.classList.remove('animate');
-                    void animSpan.offsetWidth; 
-                    animSpan.classList.add('animate');
-                }
-
+                const res = await fetch(`${FIREBASE_URL}portal_news/${newsKey}.json`); const news = await res.json(); if(!news) return;
+                let likedBy = news.likedBy || []; let currentLikes = parseInt(news.likes) || 0;
+                if (likedBy.includes(currentUserStr)) { likedBy = likedBy.filter(u => u !== currentUserStr); currentLikes--; btn.classList.remove('liked'); } 
+                else { likedBy.push(currentUserStr); currentLikes++; btn.classList.add('liked'); animSpan.classList.remove('animate'); void animSpan.offsetWidth; animSpan.classList.add('animate'); }
                 countSpan.innerText = currentLikes;
-
-                await fetch(`${FIREBASE_URL}portal_news/${newsKey}.json`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ likes: currentLikes, likedBy: likedBy })
-                });
-
-            } catch(e) { console.error("Erro ao computar like."); }
+                await fetch(`${FIREBASE_URL}portal_news/${newsKey}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ likes: currentLikes, likedBy: likedBy }) });
+            } catch(e) {}
         }
 
         // ==========================================
-        // COLUNA 3: USUÁRIOS E PRESENÇA AO VIVO
+        // COLUNA 3: USUÁRIOS E PRESENÇA (100% FIREBASE)
         // ==========================================
         function formatRoleName(role) {
-            if(!role) return 'Desconhecido';
-            const r = role.toLowerCase();
-            if(r === 'view2') return 'View Plus';
-            if(r === 'view') return 'Viewer';
-            if(r === 'editor') return 'Editor';
-            if(r === 'admin') return 'Admin';
-            return role;
+            if(!role) return 'Desconhecido'; const r = role.toLowerCase();
+            if(r === 'view2') return 'View Plus'; if(r === 'view') return 'Viewer'; if(r === 'editor') return 'Editor'; if(r === 'admin') return 'Admin'; return role;
         }
 
         function registrarPresenca() {
             if(currentUserStr !== 'Você' && currentUserStr !== 'Sistema') {
-                fetch(`${FIREBASE_URL}presence/${currentUserStr}.json`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ cargo: currentRoleStr, lastSeen: Date.now() })
-                }).catch(e => console.log(e));
+                fetch(`${FIREBASE_URL}presence/${currentUserStr}.json`, { method: 'PUT', body: JSON.stringify({ cargo: currentRoleStr, lastSeen: Date.now() }) }).catch(e => console.log(e));
             }
         }
 
         async function carregarPresencaUsuarios() {
             const container = document.getElementById('users-feed-container');
-            
             try {
+                // 1. Pega os status ao vivo do Firebase
                 let presenceData = {};
-                try {
-                    const resP = await fetchWithTimeout(`${FIREBASE_URL}presence.json?_=${Date.now()}`, { timeout: 5000 });
-                    presenceData = await resP.json() || {};
-                } catch(errP) { console.warn("Erro ao buscar presença do Firebase."); }
+                try { const resP = await fetchWithTimeout(`${FIREBASE_URL}presence.json?_=${Date.now()}`, { timeout: 5000 }); presenceData = await resP.json() || {}; } catch(errP) {}
                 
                 const now = Date.now();
                 const onlineUsers = Object.keys(presenceData).filter(u => now - presenceData[u].lastSeen < 120000).map(u => ({ nome: u, cargo: formatRoleName(presenceData[u].cargo) }));
 
-                let allUsers = JSON.parse(sessionStorage.getItem('cachedUsersList')) || null;
-                
+                // 2. BUSCA USUÁRIOS DIRETO DO FIREBASE (LIVRE DE PLANILHAS E CORS)
+                let allUsers = JSON.parse(sessionStorage.getItem('cachedUsersList_fb')) || null;
                 if (!allUsers) {
                     try {
-                        const resU = await fetchWithTimeout(APP_SCRIPT_URL, { 
-                            method: 'POST', 
-                            headers: { "Content-Type": "text/plain;charset=utf-8" },
-                            redirect: "follow",
-                            body: JSON.stringify({ action: "getUsers" }),
-                            timeout: 8000
-                        });
+                        const resU = await fetchWithTimeout(`${FIREBASE_URL}users.json?_=${Date.now()}`, { timeout: 8000 });
                         const dataU = await resU.json();
-                        if(dataU.success) { 
-                            allUsers = dataU.users; 
-                            sessionStorage.setItem('cachedUsersList', JSON.stringify(allUsers)); 
+                        if(dataU) { 
+                            allUsers = Object.values(dataU); 
+                            sessionStorage.setItem('cachedUsersList_fb', JSON.stringify(allUsers)); 
                         } else { allUsers = []; }
-                    } catch(errScript) {
-                        console.error("Script demorou muito ou falhou:", errScript);
-                        allUsers = [];
-                    }
+                    } catch(errScript) { allUsers = []; }
                 }
                 
                 let pendentes = allUsers.filter(u => u.solicitacao === 'pendente').slice(0, 2);
                 let ultimosLogados = allUsers.filter(u => u.solicitacao === 'aprovado' && u.usuario !== currentUserStr && !onlineUsers.some(ou => ou.nome === u.usuario)).slice(0, 5);
 
                 let html = '';
-
                 html += `<div class="user-group-title">🟢 Agora no Portal</div><ul class="user-list">`;
                 
                 if(currentUserStr !== 'Você') {
-                    html += `
-                        <li class="user-item">
-                            <div class="user-avatar" style="background: rgba(0, 166, 80, 0.1); color: var(--accent-green); border-color: var(--accent-green);">${currentUserStr.charAt(0).toUpperCase()}</div>
-                            <div class="user-info">
-                                <span class="user-name">${currentUserStr} (Você) <div class="status-dot dot-online"></div></span>
-                                <span class="user-role">${formatRoleName(currentRoleStr)}</span>
-                            </div>
-                        </li>
-                    `;
+                    html += `<li class="user-item"><div class="user-avatar" style="background: rgba(0, 166, 80, 0.1); color: var(--accent-green); border-color: var(--accent-green);">${currentUserStr.charAt(0).toUpperCase()}</div><div class="user-info"><span class="user-name">${currentUserStr} (Você) <div class="status-dot dot-online"></div></span><span class="user-role">${formatRoleName(currentRoleStr)}</span></div></li>`;
                 }
 
                 onlineUsers.forEach(ou => {
-                    if(ou.nome !== currentUserStr) {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar" style="background: rgba(52, 131, 250, 0.1); color: var(--accent-blue);">${ou.nome.charAt(0).toUpperCase()}</div>
-                                <div class="user-info">
-                                    <span class="user-name">${ou.nome} <div class="status-dot dot-online"></div></span>
-                                    <span class="user-role">${ou.cargo}</span>
-                                </div>
-                            </li>
-                        `;
-                    }
+                    if(ou.nome !== currentUserStr) { html += `<li class="user-item"><div class="user-avatar" style="background: rgba(52, 131, 250, 0.1); color: var(--accent-blue);">${ou.nome.charAt(0).toUpperCase()}</div><div class="user-info"><span class="user-name">${ou.nome} <div class="status-dot dot-online"></div></span><span class="user-role">${ou.cargo}</span></div></li>`; }
                 });
                 
-                if (onlineUsers.length === 0 && currentUserStr === 'Você') {
-                    html += `<li class="user-item"><div class="user-info"><span class="user-role" style="text-transform: none;">Ninguém online no momento.</span></div></li>`;
-                }
+                if (onlineUsers.length === 0 && currentUserStr === 'Você') { html += `<li class="user-item"><div class="user-info"><span class="user-role" style="text-transform: none;">Ninguém online no momento.</span></div></li>`; }
                 html += `</ul>`;
 
                 if(ultimosLogados.length > 0) {
                     html += `<div class="user-group-title">⏱️ Acessos Recentes</div><ul class="user-list">`;
-                    ultimosLogados.forEach(u => {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar">${u.usuario.charAt(0).toUpperCase()}</div>
-                                <div class="user-info">
-                                    <span class="user-name">${u.usuario} <div class="status-dot dot-offline"></div></span>
-                                    <span class="user-role">${formatRoleName(u.cargo)}</span>
-                                </div>
-                            </li>
-                        `;
-                    });
+                    ultimosLogados.forEach(u => { html += `<li class="user-item"><div class="user-avatar">${u.usuario.charAt(0).toUpperCase()}</div><div class="user-info"><span class="user-name">${u.usuario} <div class="status-dot dot-offline"></div></span><span class="user-role">${formatRoleName(u.cargo)}</span></div></li>`; });
                     html += `</ul>`;
                 }
 
                 if(pendentes.length > 0) {
                     html += `<div class="user-group-title">🆕 Novos Cadastros</div><ul class="user-list">`;
-                    pendentes.forEach(u => {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar" style="background: rgba(255, 176, 0, 0.1); border-color: var(--accent-warn); color: var(--accent-warn);">${u.usuario.charAt(0).toUpperCase()}</div>
-                                <div class="user-info">
-                                    <span class="user-name">${u.usuario} <div class="status-dot dot-new"></div></span>
-                                    <span class="user-role" style="color: var(--accent-warn);">Aguardando Aprovação</span>
-                                </div>
-                            </li>
-                        `;
-                    });
+                    pendentes.forEach(u => { html += `<li class="user-item"><div class="user-avatar" style="background: rgba(255, 176, 0, 0.1); border-color: var(--accent-warn); color: var(--accent-warn);">${u.usuario.charAt(0).toUpperCase()}</div><div class="user-info"><span class="user-name">${u.usuario} <div class="status-dot dot-new"></div></span><span class="user-role" style="color: var(--accent-warn);">Aguardando Aprovação</span></div></li>`; });
                     html += `</ul>`;
                 }
-
                 container.innerHTML = html;
-
-            } catch (e) {
-                console.error("Erro painel de presença completo:", e);
-                if(container.innerHTML.includes('Mapeando')) container.innerHTML = '<div class="error-msg">Falha ao sincronizar usuários.</div>';
-            }
+            } catch (e) { if(container.innerHTML.includes('Mapeando')) container.innerHTML = '<div class="error-msg">Falha ao sincronizar usuários.</div>'; }
         }
 
         // ==========================================
-        // INICIALIZAÇÃO SEGURA E INDEPENDENTE
+        // INICIALIZAÇÃO INDEPENDENTE
         // ==========================================
         setTimeout(() => { 
             startMessageCycle(); 
             registrarPresenca();
-            
-            // Cada função roda de forma paralela e independente! Se uma falhar, a outra continua.
             carregarFeedAtualizacoes(); 
             carregarNoticias();
             carregarPresencaUsuarios();
@@ -506,7 +344,6 @@
             }, 30000); 
 
         }, 500);
-
     </script>
 </body>
 </html>
