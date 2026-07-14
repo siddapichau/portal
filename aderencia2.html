@@ -16,12 +16,12 @@
   <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- CSS GLOBAL -->
   <link rel="stylesheet" href="style.css">
 
   <style>
-    /* Variáveis específicas para as cores das tabelas e chips */
     :root {
       --bg-table: rgba(30, 41, 59, 0.6); --bg-table-even: rgba(30, 41, 59, 0.4); --bg-th: rgba(15, 23, 42, 0.8);
       --bg-fechamento: rgba(15, 23, 42, 0.9);
@@ -53,6 +53,10 @@
       cursor:pointer; transition:all .3s; box-shadow:0 2px 5px var(--shadow-card);
     }
     .btn-upload:hover{ background:#F3E34C; transform:translateY(-2px); }
+
+    .btn-dark { background: rgba(255, 255, 255, 0.15); color: var(--text-main); border: 1px solid var(--border-card); padding: 8px 16px; border-radius: 6px; font-size: 0.95rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all .3s ease;}
+    [data-theme="light"] .btn-dark { background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.1); }
+    .btn-dark:hover { background: rgba(255, 255, 255, 0.25); transform: translateY(-2px); }
 
     .table-card{ background: var(--bg-card); border-radius:12px; overflow:hidden; box-shadow: var(--shadow-card); border:1px solid var(--border-card); transition: 0.3s; }
 
@@ -102,6 +106,9 @@
     .toast-icon { font-size: 3rem; background: rgba(255,255,255,0.2); padding: 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
     .toast-close { position: absolute; top: 12px; right: 12px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; display: flex; }
     .toast-close:hover { opacity: 1; }
+    
+    /* Exportação */
+    .exporting .top-bar { display: none !important; }
   </style>
 </head>
 
@@ -111,9 +118,21 @@
   <div class="top-bar">
     <span class="status-badge" id="data-status">Conectando ao banco...</span>
 
+    <!-- BOTÃO EXPORTAR 4K -->
+    <button class="btn-dark" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        Exportar 4K
+    </button>
+
     <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Selecione o CSV exportado da aba 'Ofensores'">
       <button class="btn-upload">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
         Selecionar CSV Local
       </button>
       <input type="file" id="csvFileInput" accept=".csv"/>
@@ -125,6 +144,7 @@
       <div class="header-left">
         <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre">
       </div>
+
       <div class="header-center" id="dash-title">ANALISE DOS PACOTES PENDENTES INVENTARIO</div>
       <div style="min-width: 140px;"></div>
     </div>
@@ -137,6 +157,7 @@
           <th>Detalhamento (Sub-motivos)</th>
         </tr>
       </thead>
+
       <tbody id="tbody-ofensores">
         <tr><td class="muted" colspan="3">Aguardando dados...</td></tr>
       </tbody>
@@ -194,6 +215,40 @@
       }
   };
 
+  function baixarDashboardComoImagem() {
+      const btn = document.getElementById('btnExportar');
+      const statusBadge = document.getElementById('data-status');
+      const txtOriginal = statusBadge.innerText;
+      const corOriginal = statusBadge.style.color;
+      
+      statusBadge.innerText = 'Gerando UHD 4K...';
+      statusBadge.style.color = '#3483FA';
+      btn.disabled = true;
+      document.body.classList.add('exporting');
+
+      setTimeout(() => {
+          const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#ffffff' : '#0b121f';
+
+          html2canvas(document.body, { scale: 3, useCORS: true, backgroundColor: bgCor, logging: false }).then(canvas => {
+              document.body.classList.remove('exporting');
+              statusBadge.innerText = txtOriginal;
+              statusBadge.style.color = corOriginal;
+              btn.disabled = false;
+              
+              const hoje = new Date();
+              const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${hoje.getFullYear()}`;
+              const link = document.createElement('a');
+              link.download = `Aderencia_Ofensores_${dataFormatada}_4K.png`;
+              link.href = canvas.toDataURL('image/png');
+              link.click();
+          }).catch(() => {
+              document.body.classList.remove('exporting');
+              btn.disabled = false;
+              statusBadge.innerText = 'Erro captura';
+              statusBadge.style.color = '#FF5252';
+          });
+      }, 150);
+  }
 
   const frasesEquipe = [ "Um inventário preciso é a base de uma logística de excelência.", "Trabalho em equipe move caixas, mas também move montanhas.", "Cada bip conta! Nossa dedicação constrói a melhor experiência do Mercado Livre.", "Acuracidade e agilidade andam juntas na nossa operação." ];
 
@@ -223,35 +278,52 @@
 
   function checkHasXPT(matrix) {
       if(!matrix) return false;
-      for(let r=0; r<matrix.length; r++) { if(!matrix[r]) continue; for(let c=0; c<matrix[r].length; c++) { if(String(matrix[r][c]).trim().toLowerCase() === 'xpt') return true; } }
+      for(let r=0; r<matrix.length; r++) {
+          if(!matrix[r]) continue;
+          for(let c=0; c<matrix[r].length; c++) {
+              if(String(matrix[r][c]).trim().toLowerCase() === 'xpt') return true;
+          }
+      }
       return false;
   }
 
   function definirEstadoVazio(mensagem) {
       const statusBadge = document.getElementById('data-status');
-      statusBadge.innerText = mensagem; statusBadge.style.color = "#FF7733";
+      statusBadge.innerText = mensagem;
+      statusBadge.style.color = "#FF7733";
       document.getElementById('tbody-ofensores').innerHTML = "<tr><td class='muted' colspan='3'>Nenhum dado ativo. Carregue um CSV local.</td></tr>";
   }
 
   function findCell(matrix, predicate){
     for(let r=0; r<matrix.length; r++){
       const row = matrix[r] || [];
-      for(let c=0; c<row.length; c++){ const v = String(row[c] ?? '').trim(); if(v && predicate(v, r, c)) return { r, c, v }; }
+      for(let c=0; c<row.length; c++){
+        const v = String(row[c] ?? '').trim();
+        if(v && predicate(v, r, c)) return { r, c, v };
+      }
     }
     return null;
   }
 
-  function cell(matrix, r, c){ if(!matrix[r] || matrix[r][c] === undefined || matrix[r][c] === null) return ''; return String(matrix[r][c]).trim(); }
+  function cell(matrix, r, c){
+    if(!matrix[r] || matrix[r][c] === undefined || matrix[r][c] === null) return '';
+    return String(matrix[r][c]).trim();
+  }
 
   function numStr(v){
-    let s = String(v ?? '').trim(); if(!s) return '0';
-    s = s.replace('%','').trim(); s = s.replace(/\./g,'').replace(',','.');
-    const n = Number(s); if(Number.isFinite(n)) return String(Math.trunc(n)); return String(v ?? '').trim();
+    let s = String(v ?? '').trim();
+    if(!s) return '0';
+    s = s.replace('%','').trim();
+    s = s.replace(/\./g,'').replace(',','.');
+    const n = Number(s);
+    if(Number.isFinite(n)) return String(Math.trunc(n));
+    return String(v ?? '').trim();
   }
 
   function setTitleFromMatrixOrFile(matrix, file){
     const found = findCell(matrix, (v)=> norm(v).includes('analise dos pacotes pendentes inventario'));
     if(found) return found.v;
+
     const d = new Date(file.lastModified).toLocaleDateString('pt-BR');
     return `ANALISE DOS PACOTES PENDENTES INVENTARIO ${d}`;
   }
@@ -260,58 +332,112 @@
     const anchor = findCell(matrix, (v)=> norm(v) === norm(anchorText));
     if(!anchor) return null;
 
-    const macroCol = anchor.c; const totalCol = anchor.c + 1; const total = numStr(cell(matrix, anchor.r, totalCol));
-    const lblLCol = macroCol + 2; const valLCol = macroCol + 3; const lblRCol = macroCol + 4; const valRCol = macroCol + 5;
+    const macroCol = anchor.c;
+    const totalCol = anchor.c + 1;
+    const total = numStr(cell(matrix, anchor.r, totalCol));
+
+    const lblLCol = macroCol + 2;
+    const valLCol = macroCol + 3;
+    const lblRCol = macroCol + 4;
+    const valRCol = macroCol + 5;
 
     const items = [];
     for(let r = anchor.r; r < matrix.length; r++){
       const macroHere = norm(cell(matrix, r, macroCol));
-      if(r !== anchor.r && (macroHere === 'sorting' || macroHere === 'problem solving' || macroHere === 'returns' || macroHere === 'as outras áreas' || macroHere === 'total')){ break; }
+      if(r !== anchor.r && (
+        macroHere === 'sorting' ||
+        macroHere === 'problem solving' ||
+        macroHere === 'returns' ||
+        macroHere === 'as outras áreas' ||
+        macroHere === 'total'
+      )){
+        break;
+      }
 
-      const lLabel = String(cell(matrix, r, lblLCol)).trim(); const lVal = cell(matrix, r, valLCol);
-      const rLabel = String(cell(matrix, r, lblRCol)).trim(); const rVal = cell(matrix, r, valRCol);
+      const lLabel = String(cell(matrix, r, lblLCol)).trim();
+      const lVal   = cell(matrix, r, valLCol);
+      const rLabel = String(cell(matrix, r, lblRCol)).trim();
+      const rVal   = cell(matrix, r, valRCol);
 
       if(!lLabel && !rLabel && !String(lVal).trim() && !String(rVal).trim()) continue;
+
       if(lLabel) items.push({ label: lLabel, val: numStr(lVal) });
       if(rLabel) items.push({ label: rLabel, val: numStr(rVal) });
     }
+
     return { name: anchorText, total, items };
   }
 
   function toNumberMaybe(v){
-    let s = String(v ?? '').trim(); if(!s) return null;
-    s = s.replace('%','').trim(); s = s.replace(/\./g,'').replace(',','.');
-    const n = Number(s); return Number.isFinite(n) ? n : null;
+    let s = String(v ?? '').trim();
+    if(!s) return null;
+    s = s.replace('%','').trim();
+    s = s.replace(/\./g,'').replace(',','.');
+    const n = Number(s);
+    return Number.isFinite(n) ? n : null;
   }
 
   function pickTotalFromTotalRow(matrix){
     const totalCell = findCell(matrix, (v)=> norm(v) === 'total');
     if(!totalCell) return '0';
 
-    const r = totalCell.r; const row = matrix[r] || [];
+    const r = totalCell.r;
+    const row = matrix[r] || [];
+
     let best = null;
     for(let c=0; c<row.length; c++){
-      const n = toNumberMaybe(row[c]); if(n === null) continue;
+      const n = toNumberMaybe(row[c]);
+      if(n === null) continue;
       if(best === null || n > best) best = n;
     }
+
     return (best === null) ? '0' : String(Math.trunc(best));
   }
 
   function renderChips(items){
-    if(!items || items.length === 0){ return `<div style="color:#AAA;font-weight:700;">(sem detalhamento)</div>`; }
+    if(!items || items.length === 0){
+      return `<div style="color:#AAA;font-weight:700;">(sem detalhamento)</div>`;
+    }
     let html = `<div class="chips">`;
-    items.forEach(it => { html += `<div class="chip"><span>${it.label}</span><span class="col-chip">${it.val}</span></div>`; });
-    html += `</div>`; return html;
+    items.forEach(it => {
+      html += `
+        <div class="chip">
+          <span>${it.label}</span>
+          <span class="col-chip">${it.val}</span>
+        </div>
+      `;
+    });
+    html += `</div>`;
+    return html;
   }
 
   function processarMatrizCSV(matrix) {
-    const sorting = readBlock(matrix, 'Sorting'); const ps = readBlock(matrix, 'Problem Solving');
-    const returns = readBlock(matrix, 'Returns'); const outras  = readBlock(matrix, 'As Outras Áreas');
-    const totalGeral = pickTotalFromTotalRow(matrix); const blocks = [sorting, ps, returns, outras].filter(Boolean);
+    const sorting = readBlock(matrix, 'Sorting');
+    const ps      = readBlock(matrix, 'Problem Solving');
+    const returns = readBlock(matrix, 'Returns');
+    const outras  = readBlock(matrix, 'As Outras Áreas');
+
+    const totalGeral = pickTotalFromTotalRow(matrix);
+    const blocks = [sorting, ps, returns, outras].filter(Boolean);
 
     let html = '';
-    blocks.forEach(b => { html += `<tr class="area-row"><td class="area-name" style="font-size:1rem;font-weight:900;">${b.name}</td><td class="num-center col-pend" style="font-size:1rem;">${b.total}</td><td>${renderChips(b.items)}</td></tr>`; });
-    html += `<tr class="row-fechamento"><td style="font-size:1rem;">TOTAL</td><td class="num-center col-pend" style="font-size:1rem;">${totalGeral}</td><td></td></tr>`;
+    blocks.forEach(b => {
+      html += `
+        <tr class="area-row">
+          <td class="area-name" style="font-size:1rem;font-weight:900;">${b.name}</td>
+          <td class="num-center col-pend" style="font-size:1rem;">${b.total}</td>
+          <td>${renderChips(b.items)}</td>
+        </tr>
+      `;
+    });
+
+    html += `
+      <tr class="row-fechamento">
+        <td style="font-size:1rem;">TOTAL</td>
+        <td class="num-center col-pend" style="font-size:1rem;">${totalGeral}</td>
+        <td></td>
+      </tr>
+    `;
 
     $('#tbody-ofensores').innerHTML = html;
   }
@@ -334,6 +460,7 @@
         
         $('#dash-title').innerText = tituloCalculado;
         processarMatrizCSV(matrizData);
+        
         const hasXPT = checkHasXPT(matrizData);
 
         try {
@@ -353,7 +480,9 @@
                 statusBadge.innerText = `Atualizado: ${strAtualizacao}`;
                 statusBadge.style.color = "#00A650";
                 showModernToast(hasXPT);
-            } else { throw new Error(); }
+            } else {
+                throw new Error();
+            }
         } catch(err) {
             console.warn("Falha no sync da nuvem, exibindo dados locais:", err);
             statusBadge.innerText = "Arquivo Carregado (Local)";
