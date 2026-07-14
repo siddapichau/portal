@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Aderência Ofensores - Mercado Livre</title>
+
+  <!-- SISTEMA ANTI-ACESSO DIRETO -->
+  <script>
+      if (window === window.top) {
+          const paginaAtual = window.location.pathname.split('/').pop() || 'aderencia2.html';
+          window.location.replace('index.html?page=' + paginaAtual);
+      }
+  </script>
+
+  <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <!-- CSS GLOBAL -->
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    /* Variáveis específicas para as cores das tabelas e chips */
+    :root {
+      --bg-table: rgba(30, 41, 59, 0.6); --bg-table-even: rgba(30, 41, 59, 0.4); --bg-th: rgba(15, 23, 42, 0.8);
+      --bg-fechamento: rgba(15, 23, 42, 0.9);
+      --text-pend: #FF5252; --text-chip: #00E5FF;
+      --bg-chip: rgba(0,0,0,0.2); --border-chip: rgba(255,255,255,0.1); --text-chip-label: #E5E5E5;
+      --border-light-2: rgba(255,255,255,0.2); --border-thick: rgba(255,255,255,0.4);
+    }
+
+    [data-theme="light"] {
+      --bg-table: #FFFFFF; --bg-table-even: #F9F9F9; --bg-th: #F0F0F0;
+      --bg-fechamento: #F0F0F0;
+      --text-pend: #D32F2F; --text-chip: #008B99;
+      --bg-chip: #F5F5F5; --border-chip: #DDDDDD; --text-chip-label: #555555;
+      --border-light-2: rgba(0,0,0,0.1); --border-thick: rgba(0,0,0,0.2);
+    }
+
+    html, body { width: 100%; min-height: 100%; background: transparent !important; }
+    body { padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+
+    .top-bar{ display:flex; justify-content:flex-end; padding-bottom:5px; gap:15px; align-items:center; }
+    .upload-wrapper{ position:relative; overflow:hidden; display: inline-flex; }
+    .upload-wrapper input[type=file]{ position:absolute; left:0; top:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+
+    .status-badge { font-size: 0.85rem; font-weight: 800; color: var(--text-title); background: rgba(0,0,0,0.15); padding: 6px 12px; border-radius: 4px; }
+
+    .btn-upload{
+      background:#FFF159; border:none; color:#2D3277; padding:8px 16px; border-radius:6px;
+      font-size:.95rem; font-weight:800; display:flex; align-items:center; gap:8px;
+      cursor:pointer; transition:all .3s; box-shadow:0 2px 5px var(--shadow-card);
+    }
+    .btn-upload:hover{ background:#F3E34C; transform:translateY(-2px); }
+
+    .table-card{ background: var(--bg-card); border-radius:12px; overflow:hidden; box-shadow: var(--shadow-card); border:1px solid var(--border-card); transition: 0.3s; }
+
+    .yellow-header{ background:#FFF159; color:#2D3277; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; font-weight:900; letter-spacing:.3px; gap:10px; position: relative; }
+    .header-left{ font-weight:900; display:flex; align-items:center; z-index:2; }
+    .header-center{ position: absolute; left: 50%; transform: translateX(-50%); text-align:center; text-transform:uppercase; white-space: nowrap; }
+    .ml-logo{ height:26px; width:auto; object-fit:contain; }
+
+    table{ width:100%; border-collapse:collapse; font-size:0.85rem; background: var(--bg-table); transition: 0.3s; }
+    thead th{ background: var(--bg-th); color: var(--text-title); padding:10px 10px; text-align:left; border-bottom:1px solid var(--border-card); font-weight:900; text-transform:uppercase; }
+    thead th.num{ text-align:center; }
+
+    tbody td{ padding:12px 10px; border-bottom:1px solid var(--border-card); font-weight:800; background: var(--bg-table); color: var(--text-main); vertical-align:top; }
+    tbody tr:nth-child(even) td{ background: var(--bg-table-even); }
+
+    .num-center{ text-align:center; }
+    .col-pend{ color: var(--text-pend); } 
+    .col-chip{ color: var(--text-chip); } 
+
+    tbody tr.area-row td{ border-top:2px solid var(--border-light-2); box-shadow: inset 0 10px 18px rgba(0,0,0,0.05); }
+    tbody tr.area-row:first-child td{ border-top:1px solid var(--border-card); box-shadow:none; }
+    td.area-name{ position:relative; padding-left:14px; }
+    td.area-name::before{ content:''; position:absolute; left:0; top:12px; bottom:12px; width:4px; border-radius:3px; background: var(--accent-blue); opacity:.95; }
+
+    .row-fechamento td{ background: var(--bg-fechamento) !important; border-top:2px solid var(--border-thick); font-weight:900; color: var(--text-title); }
+    .muted{ color: var(--text-muted); text-align:center; padding:30px !important; font-weight:700 !important; background: var(--bg-table) !important; }
+
+    .chips{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:8px; }
+    .chip{ background: var(--bg-chip); border:1px solid var(--border-chip); border-radius:7px; padding:8px 10px; display:flex; justify-content:space-between; gap:10px; align-items:center; }
+    .chip span:first-child{ color: var(--text-chip-label); font-weight:800; }
+    .chip span:last-child{ color: var(--text-chip); font-weight:900; }
+
+    @media (max-width: 900px){ table{ font-size:0.8rem; } .chips{ grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); } }
+  
+    /* MODERN TOAST ALERTS */
+    #toast-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+    .modern-toast { min-width: 450px; padding: 24px 32px; padding-right: 50px; border-radius: 16px; font-family: 'Inter', sans-serif; box-shadow: 0 15px 35px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 20px; transform: translateY(30px) scale(0.9); opacity: 0; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); position: relative; cursor: pointer; pointer-events: auto; }
+    .modern-toast.show { transform: translateY(0) scale(1); opacity: 1; }
+    .toast-content { display: flex; flex-direction: column; }
+    .toast-title { font-size: 1.1rem; opacity: 0.9; margin-bottom: 4px; font-weight: 600; }
+    .toast-message { font-size: 1.5rem; font-weight: 900; letter-spacing: 0.5px; }
+    .toast-footer-msg { margin-top: 12px; font-size: 0.85rem; font-weight: 600; opacity: 0.85; font-style: italic; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 8px; }
+    .toast-xpt { background: linear-gradient(135deg, #FFF159 0%, #E6D22E 100%); border: 1px solid #D6C72A; color: #2D3277; }
+    .toast-xpt .toast-footer-msg { border-top: 1px solid rgba(45,50,119,0.2); }
+    .toast-xpt .toast-icon { background: rgba(45, 50, 119, 0.1); }
+    .toast-normal { background: linear-gradient(135deg, #00A650 0%, #1D5A33 100%); border: 1px solid #00C863; color: #FFFFFF; }
+    .toast-icon { font-size: 3rem; background: rgba(255,255,255,0.2); padding: 12px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .toast-close { position: absolute; top: 12px; right: 12px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; display: flex; }
+    .toast-close:hover { opacity: 1; }
+  </style>
+</head>
+
+<body data-theme="light">
+  <div id="toast-container"></div>
+  
+  <div class="top-bar">
+    <span class="status-badge" id="data-status">Conectando ao banco...</span>
+
+    <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Selecione o CSV exportado da aba 'Ofensores'">
+      <button class="btn-upload">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        Selecionar CSV Local
+      </button>
+      <input type="file" id="csvFileInput" accept=".csv"/>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="yellow-header">
+      <div class="header-left">
+        <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre">
+      </div>
+      <div class="header-center" id="dash-title">ANALISE DOS PACOTES PENDENTES INVENTARIO</div>
+      <div style="min-width: 140px;"></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Área</th>
+          <th class="num">Total Pendentes</th>
+          <th>Detalhamento (Sub-motivos)</th>
+        </tr>
+      </thead>
+      <tbody id="tbody-ofensores">
+        <tr><td class="muted" colspan="3">Aguardando dados...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+<script>
+  const $ = (s) => document.querySelector(s);
+  function norm(s){ return String(s ?? '').trim().toLowerCase(); }
+
+  const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+
+  // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+  function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+  syncTheme();
+  window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } });
+
+  // ============ PERMISSÕES GLOBAIS E LOGS ============
+  const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+  let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+  
+  const paginaNome = window.location.pathname.split('/').pop() || 'aderencia2.html';
+  let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+  
+  if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
+
+  async function registrarLogFirebase(modulo, acao) {
+      try {
+          const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+          await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+      } catch(e) {}
+  }
+
+  window.onload = async function() {
+      const statusBadge = document.getElementById('data-status');
+      try {
+          const response = await fetch(`${FIREBASE_URL}ofensores.json`);
+          const dbData = await response.json();
+          
+          if(dbData && dbData.matriz) {
+              $('#dash-title').innerText = dbData.titulo || "ANALISE DOS PACOTES PENDENTES INVENTARIO";
+              processarMatrizCSV(dbData.matriz);
+              if(dbData.ultimaAtualizacao) {
+                  statusBadge.innerText = `Atualizado: ${dbData.ultimaAtualizacao}`;
+              } else {
+                  statusBadge.innerText = "Online (Firebase Nuvem)";
+              }
+              statusBadge.style.color = "#00A650";
+          } else {
+              definirEstadoVazio("Banco Vazio. Faça Upload.");
+          }
+      } catch(e) {
+          console.error(e);
+          definirEstadoVazio("Offline (Aguardando CSV)");
+      }
+  };
+
+
+  const frasesEquipe = [ "Um inventário preciso é a base de uma logística de excelência.", "Trabalho em equipe move caixas, mas também move montanhas.", "Cada bip conta! Nossa dedicação constrói a melhor experiência do Mercado Livre.", "Acuracidade e agilidade andam juntas na nossa operação." ];
+
+  function showModernToast(hasXPT) {
+      const container = document.getElementById('toast-container');
+      if(!container) return;
+      const toast = document.createElement('div');
+      
+      const isXPT = hasXPT;
+      const themeClass = isXPT ? 'toast-xpt' : 'toast-normal';
+      const iconSvg = isXPT ? `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>` : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+      const closeIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+
+      const titleText = "Você atualizou com sucesso!";
+      const messageText = isXPT ? "Tabela com XPT" : "Tabela Normal<br><span style='font-size:1.1rem; font-weight:700; opacity:0.9;'>Sem XPT!</span>";
+      const fraseAleatoria = frasesEquipe[Math.floor(Math.random() * frasesEquipe.length)];
+      const footerMsg = `${fraseAleatoria}<br><span style="display:inline-block; margin-top:5px; font-weight:800;">Opa, estamos quase Acabando o dia! 🚀</span>`;
+
+      toast.className = `modern-toast ${themeClass}`;
+      toast.innerHTML = `<div class="toast-close">${closeIcon}</div><div class="toast-icon">${iconSvg}</div><div class="toast-content" style="flex: 1;"><span class="toast-title">${titleText}</span><span class="toast-message">${messageText}</span><div class="toast-footer-msg">${footerMsg}</div></div>`;
+
+      const closeToast = () => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); };
+      toast.addEventListener('click', closeToast);
+      container.appendChild(toast);
+      setTimeout(() => toast.classList.add('show'), 10);
+  }
+
+  function checkHasXPT(matrix) {
+      if(!matrix) return false;
+      for(let r=0; r<matrix.length; r++) { if(!matrix[r]) continue; for(let c=0; c<matrix[r].length; c++) { if(String(matrix[r][c]).trim().toLowerCase() === 'xpt') return true; } }
+      return false;
+  }
+
+  function definirEstadoVazio(mensagem) {
+      const statusBadge = document.getElementById('data-status');
+      statusBadge.innerText = mensagem; statusBadge.style.color = "#FF7733";
+      document.getElementById('tbody-ofensores').innerHTML = "<tr><td class='muted' colspan='3'>Nenhum dado ativo. Carregue um CSV local.</td></tr>";
+  }
+
+  function findCell(matrix, predicate){
+    for(let r=0; r<matrix.length; r++){
+      const row = matrix[r] || [];
+      for(let c=0; c<row.length; c++){ const v = String(row[c] ?? '').trim(); if(v && predicate(v, r, c)) return { r, c, v }; }
+    }
+    return null;
+  }
+
+  function cell(matrix, r, c){ if(!matrix[r] || matrix[r][c] === undefined || matrix[r][c] === null) return ''; return String(matrix[r][c]).trim(); }
+
+  function numStr(v){
+    let s = String(v ?? '').trim(); if(!s) return '0';
+    s = s.replace('%','').trim(); s = s.replace(/\./g,'').replace(',','.');
+    const n = Number(s); if(Number.isFinite(n)) return String(Math.trunc(n)); return String(v ?? '').trim();
+  }
+
+  function setTitleFromMatrixOrFile(matrix, file){
+    const found = findCell(matrix, (v)=> norm(v).includes('analise dos pacotes pendentes inventario'));
+    if(found) return found.v;
+    const d = new Date(file.lastModified).toLocaleDateString('pt-BR');
+    return `ANALISE DOS PACOTES PENDENTES INVENTARIO ${d}`;
+  }
+
+  function readBlock(matrix, anchorText){
+    const anchor = findCell(matrix, (v)=> norm(v) === norm(anchorText));
+    if(!anchor) return null;
+
+    const macroCol = anchor.c; const totalCol = anchor.c + 1; const total = numStr(cell(matrix, anchor.r, totalCol));
+    const lblLCol = macroCol + 2; const valLCol = macroCol + 3; const lblRCol = macroCol + 4; const valRCol = macroCol + 5;
+
+    const items = [];
+    for(let r = anchor.r; r < matrix.length; r++){
+      const macroHere = norm(cell(matrix, r, macroCol));
+      if(r !== anchor.r && (macroHere === 'sorting' || macroHere === 'problem solving' || macroHere === 'returns' || macroHere === 'as outras áreas' || macroHere === 'total')){ break; }
+
+      const lLabel = String(cell(matrix, r, lblLCol)).trim(); const lVal = cell(matrix, r, valLCol);
+      const rLabel = String(cell(matrix, r, lblRCol)).trim(); const rVal = cell(matrix, r, valRCol);
+
+      if(!lLabel && !rLabel && !String(lVal).trim() && !String(rVal).trim()) continue;
+      if(lLabel) items.push({ label: lLabel, val: numStr(lVal) });
+      if(rLabel) items.push({ label: rLabel, val: numStr(rVal) });
+    }
+    return { name: anchorText, total, items };
+  }
+
+  function toNumberMaybe(v){
+    let s = String(v ?? '').trim(); if(!s) return null;
+    s = s.replace('%','').trim(); s = s.replace(/\./g,'').replace(',','.');
+    const n = Number(s); return Number.isFinite(n) ? n : null;
+  }
+
+  function pickTotalFromTotalRow(matrix){
+    const totalCell = findCell(matrix, (v)=> norm(v) === 'total');
+    if(!totalCell) return '0';
+
+    const r = totalCell.r; const row = matrix[r] || [];
+    let best = null;
+    for(let c=0; c<row.length; c++){
+      const n = toNumberMaybe(row[c]); if(n === null) continue;
+      if(best === null || n > best) best = n;
+    }
+    return (best === null) ? '0' : String(Math.trunc(best));
+  }
+
+  function renderChips(items){
+    if(!items || items.length === 0){ return `<div style="color:#AAA;font-weight:700;">(sem detalhamento)</div>`; }
+    let html = `<div class="chips">`;
+    items.forEach(it => { html += `<div class="chip"><span>${it.label}</span><span class="col-chip">${it.val}</span></div>`; });
+    html += `</div>`; return html;
+  }
+
+  function processarMatrizCSV(matrix) {
+    const sorting = readBlock(matrix, 'Sorting'); const ps = readBlock(matrix, 'Problem Solving');
+    const returns = readBlock(matrix, 'Returns'); const outras  = readBlock(matrix, 'As Outras Áreas');
+    const totalGeral = pickTotalFromTotalRow(matrix); const blocks = [sorting, ps, returns, outras].filter(Boolean);
+
+    let html = '';
+    blocks.forEach(b => { html += `<tr class="area-row"><td class="area-name" style="font-size:1rem;font-weight:900;">${b.name}</td><td class="num-center col-pend" style="font-size:1rem;">${b.total}</td><td>${renderChips(b.items)}</td></tr>`; });
+    html += `<tr class="row-fechamento"><td style="font-size:1rem;">TOTAL</td><td class="num-center col-pend" style="font-size:1rem;">${totalGeral}</td><td></td></tr>`;
+
+    $('#tbody-ofensores').innerHTML = html;
+  }
+
+  document.getElementById('csvFileInput').addEventListener('change', function(e){
+    if(!canEdit) return;
+    const file = e.target.files[0];
+    if(!file) return;
+
+    const statusBadge = document.getElementById('data-status');
+    statusBadge.innerText = "Gravando na nuvem...";
+    statusBadge.style.color = "#3483FA";
+
+    Papa.parse(file, {
+      header: false,
+      skipEmptyLines: false,
+      complete: async function(res){
+        const matrizData = res.data || [];
+        const tituloCalculado = setTitleFromMatrixOrFile(matrizData, file);
+        
+        $('#dash-title').innerText = tituloCalculado;
+        processarMatrizCSV(matrizData);
+        const hasXPT = checkHasXPT(matrizData);
+
+        try {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const dateString = now.toLocaleDateString('pt-BR');
+            const strAtualizacao = `${dateString} às ${timeString}`;
+
+            const response = await fetch(`${FIREBASE_URL}ofensores.json`, {
+                method: 'PUT',
+                body: JSON.stringify({ titulo: tituloCalculado, matriz: matrizData, ultimaAtualizacao: strAtualizacao })
+            });
+            
+            await registrarLogFirebase("Aderência Ofensores", "Atualizou a base de dados via CSV.");
+
+            if(response.ok) {
+                statusBadge.innerText = `Atualizado: ${strAtualizacao}`;
+                statusBadge.style.color = "#00A650";
+                showModernToast(hasXPT);
+            } else { throw new Error(); }
+        } catch(err) {
+            console.warn("Falha no sync da nuvem, exibindo dados locais:", err);
+            statusBadge.innerText = "Arquivo Carregado (Local)";
+            statusBadge.style.color = "#FF7733";
+        }
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
