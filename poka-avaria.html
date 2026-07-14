@@ -40,23 +40,39 @@
 
         .glass-panel { background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; box-shadow: var(--shadow-card); transition: 0.3s; }
 
-        .header { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; flex: 0 0 auto; background-color: #FFF159 !important; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        /* CABEÇALHO ML CLEAN */
+        .top-header { 
+            position: relative; background-color: #FFF159 !important; padding: 10px 20px; 
+            display: flex; justify-content: space-between; align-items: center; gap: 20px; 
+            border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.18); flex: 0 0 auto;
+            min-height: 55px; flex-wrap: wrap; width: 100%;
+        }
         .header-left { display: flex; align-items: center; }
-        .ml-logo { height: 28px; width: auto; object-fit: contain; }
-        .header-center { flex: 1; text-align: center; font-size: 1.1rem; font-weight: 900; color: #2D3277 !important; text-transform: uppercase; letter-spacing: 0.5px; }
-        .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;}
+        .ml-logo { height: 28px; width: auto; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); }
+        
+        .header-center { flex: 1; text-align: center; font-size: clamp(1rem, 2vw, 1.15rem); font-weight: 900; color: #2D3277 !important; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;}
 
-        .btn { background: var(--bg-body); color: var(--text-title); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all .3s ease; text-decoration: none; white-space: nowrap; }
-        .btn:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
-        .btn-blue { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
-        .btn-blue:hover { background: #2968c8; color: #fff; }
-        .btn-cyan { background: #06b6d4; color: #fff; border-color: #06b6d4; }
-        .btn-cyan:hover { background: #0891b2; color: #fff; }
+        /* BOTOES CLEAN MINIMALISTAS */
+        .btn { 
+            background: #ffffff !important; color: #1e293b !important; 
+            border: 1px solid #cbd5e1 !important; border-radius: 6px; 
+            width: 36px; height: 36px; font-size: 0.95rem; font-weight: 700; 
+            cursor: pointer; display: inline-flex; align-items: center; 
+            justify-content: center; transition: all .2s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex-shrink: 0; padding: 0;
+        }
+        .btn:hover:not(:disabled) { 
+            background: #f8fafc !important; border-color: #94a3b8 !important; 
+            transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+        }
+        .btn svg { width: 16px; height: 16px; stroke: #1e293b; }
 
         .status-badge { font-size: .75rem; font-weight: 900; color: #2D3277; background: rgba(0,0,0,0.1); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
-        .upload-btn-wrapper { position: relative; overflow: hidden; display: inline-flex; }
-        .upload-btn-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 
+        /* BARRA DE FILTROS */
         .filter-bar { display: flex; gap: 15px; padding: 12px 16px; align-items: center; flex: 0 0 auto; flex-wrap: wrap; justify-content: center; }
         .filter-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
         .filter-group select { background-color: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-card); padding: 6px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer; min-width: 120px; font-size: 0.85rem; font-weight: 600; transition: 0.3s; }
@@ -98,7 +114,6 @@
         .lupa-icon { color: var(--accent-blue); transition: transform 0.2s; display: inline-flex; } .lupa-icon:hover { transform: scale(1.2); }
         .photo-icon { color: var(--accent-warn); transition: transform 0.2s; display: inline-flex; } .photo-icon:hover { transform: scale(1.2); color: #f59e0b; }
 
-        /* Ocultar elementos na Exportação 4K */
         .exporting .header-actions, .exporting .filter-bar { display: none !important; }
         
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -110,18 +125,29 @@
 </head>
 <body data-theme="light">
 
-    <div class="header glass-panel">
+    <div class="top-header glass-panel">
         <div class="header-left"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
         <div class="header-center" id="main-dynamic-title">AVARIAS LANÇADAS E APROVADAS MENSAIS</div>
         
         <div class="header-actions">
             <span class="status-badge" id="data-status">Conectando...</span>
-            <button class="btn btn-cyan" onclick="abrirModalMensal()">📊 Comparativo Mensal</button>
-            <button class="btn btn-blue" onclick="abrirModalLista(null, null)">📄 Lista de Pacotes</button>
-            <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Imagem UHD 4K">Exportar 4K</button>
             
-            <div class="upload-btn-wrapper" id="btnUploadArea" style="display:none;" title="Mesclar Nova Planilha (Ignora Duplicados)">
-                <button class="btn">📥 Subir CSV</button>
+            <button class="btn" onclick="abrirModalMensal()" title="Comparativo Mensal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+            </button>
+            
+            <button class="btn" onclick="abrirModalLista(null, null)" title="Lista de Pacotes">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            </button>
+            
+            <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Imagem UHD 4K">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </button>
+            
+            <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Mesclar Nova Planilha (Ignora Duplicados)">
+                <button class="btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </button>
                 <input type="file" id="csvFileInput" accept=".csv" />
             </div>
         </div>
@@ -192,7 +218,7 @@
             if (event.data.type === 'THEME_CHANGED') { 
                 document.body.setAttribute('data-theme', event.data.theme); 
                 window.Apex = { theme: { mode: event.data.theme } };
-                if(globalData.length > 0) renderizarDashboard(DADOS_FILTRADOS);
+                if(globalData && globalData.length > 0) renderizarDashboard(DADOS_FILTRADOS);
             } 
         });
 
@@ -224,15 +250,23 @@
             try {
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
                 const dbData = await response.json();
-                if(dbData && Array.isArray(dbData)) {
-                    BANCO_GLOBAL = dbData;
+                
+                // Correção poderosa para puxar os dados, seja Array ou Object.
+                if(dbData) {
+                    if (Array.isArray(dbData)) BANCO_GLOBAL = dbData;
+                    else if (dbData.lista) BANCO_GLOBAL = Array.isArray(dbData.lista) ? dbData.lista : Object.values(dbData.lista);
+                    else BANCO_GLOBAL = Object.values(dbData);
+
                     if(BANCO_GLOBAL.length > 0) {
                         let cols = Object.keys(BANCO_GLOBAL[0]);
                         colSemanaNome = cols.find(k => k.toLowerCase().trim() === 'semana do ano' || k.toLowerCase().trim() === 'semana') || 'Semana do ano';
+                        setStatus(`Sincronizado: ${BANCO_GLOBAL.length} registros`, '#00A650');
+                        preencherDropdowns(); aplicarFiltros();
+                    } else {
+                        setStatus('Banco vazio. Suba a primeira planilha.', '#FFB000');
                     }
-                    setStatus(`Sincronizado: ${BANCO_GLOBAL.length} registros`, '#00A650');
-                } else { BANCO_GLOBAL = []; setStatus('Banco vazio. Suba a primeira planilha.', '#FFB000'); }
-                preencherDropdowns(); aplicarFiltros();
+                } else { setStatus('Banco vazio. Suba a primeira planilha.', '#FFB000'); }
+                
             } catch (err) { setStatus('Erro ao carregar', '#FF5252'); }
         };
 
@@ -289,7 +323,7 @@
             });
             function popSel(id, vals, def) { let s = document.getElementById(id); let a = s.value; s.innerHTML = `<option value="Todos">${def}</option>`; vals.forEach(v => { if(v&&v.toString().trim()!=='') s.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`; }); if([...s.options].some(o=>o.value===a)) s.value=a; }
 
-            let arrS = Array.from(semanas).sort((a,b)=> (parseInt(b.replace(/\D/g,''))||0)-(parseInt(a.replace(/\D/g,''))||0));
+            let arrS = Array.from(semanaSet).filter(s => s && !isNaN(parseInt(s))).sort((a,b)=> parseInt(b) - parseInt(a));
             let arrM = Array.from(mesSet).sort((a,b)=> { let [mA,yA]=a.split('/'); let [mB,yB]=b.split('/'); if(yA!==yB) return parseInt(yA)-parseInt(yB); return parseInt(mA)-parseInt(mB); });
             popSel('filter-mes', arrM, 'Todos'); popSel('filter-semana', arrS, 'Todos'); popSel('filter-categoria', Array.from(catSet).sort(), 'Todos');
             popSel('filter-ps', Array.from(psSet).sort(), 'Todos'); popSel('filter-turno', Array.from(turnoSet).sort(), 'Todos');
@@ -319,6 +353,7 @@
         }
 
         function renderizarDashboard(data) {
+            globalData = data;
             let totalValor = 0; let dadosTurno = {}, dadosPS = {}, dadosResolucao = {}, dadosOrigem = {}, dadosCategoria = {};
             let dadosDias = { 'Domingo': {qtd:0,valor:0}, 'Segunda-feira': {qtd:0,valor:0}, 'Terça-feira': {qtd:0,valor:0}, 'Quarta-feira': {qtd:0,valor:0}, 'Quinta-feira': {qtd:0,valor:0}, 'Sexta-feira': {qtd:0,valor:0}, 'Sábado': {qtd:0,valor:0} };
 
@@ -356,7 +391,7 @@
 
             const dLabels = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']; const dValores = dLabels.map(d => Math.round(dadosDias[d].valor)); const dQtds = dLabels.map(d => dadosDias[d].qtd);
             chartInstances.dias = new ApexCharts(document.querySelector("#chart-dias"), {
-                series: [ { name: 'Valor (R$)', type: 'column', data: dValores }, { name: 'Quantidade', type: 'line', data: dQtds } ],
+                series: [ { name: 'Valor Lançado (R$)', type: 'column', data: dValores }, { name: 'Quantidade', type: 'line', data: dQtds } ],
                 chart: { type: 'line', height: '100%', background: 'transparent', events: { dataPointSelection: function(e, c, config) { abrirModalLista('Dia', dLabels[config.dataPointIndex]); } } },
                 theme: { mode: document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark' }, stroke: { width: [0, 4], curve: 'smooth' }, markers: { size: [0, 6], colors: ['#2B2B2B'], strokeColors: ['transparent', '#FFF159'], strokeWidth: 3 }, colors: ['#3483FA', '#FFF159'], 
                 xaxis: { categories: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'], labels: { style: { colors: getChartTextColor(), fontWeight: 'bold' } } },
@@ -423,9 +458,6 @@
         }
         function fecharModalMensal() { document.getElementById('modal-mensal').classList.remove('active'); }
 
-        // ==========================================
-        // EXPORTAÇÃO 4K
-        // ==========================================
         function baixarDashboardComoImagem() {
             document.body.classList.add('exporting');
             setTimeout(() => {
