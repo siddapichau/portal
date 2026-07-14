@@ -3,10 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin - Gerenciar Menu e Usuários</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'admin.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
     <link rel="stylesheet" href="style.css">
     <style>
-        #main-content { margin-top: 80px; padding: 20px; max-width: 1200px; margin: 80px auto; }
-        .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border-card); }
+        body { background: transparent !important; padding: 20px; }
+        #main-content { max-width: 1200px; margin: 0 auto; width: 100%; }
+        
+        .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border-card); box-shadow: var(--shadow-card); }
         .header-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
         .admin-tabs { display: flex; border-bottom: 2px solid var(--border-card); margin-bottom: 20px; }
         .admin-tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; }
@@ -29,7 +40,6 @@
     </style>
 </head>
 <body data-theme="light">
-    <script src="menu.js"></script>
 
     <div id="main-content">
         <div class="admin-container" id="adminPanel" style="display:none;">
@@ -40,7 +50,6 @@
                 <div class="admin-tab" onclick="switchAdminTab('users')">Gestão de Usuários</div>
             </div>
 
-            <!-- ABA DE MENUS -->
             <div id="tab-menus">
                 <div class="header-actions">
                     <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar na Nuvem</button>
@@ -52,7 +61,6 @@
                 <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; font-size: 1rem;">+ Adicionar Nova Categoria</button>
             </div>
 
-            <!-- ABA DE USUÁRIOS -->
             <div id="tab-users" style="display:none;">
                 <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos. As alterações são salvas diretamente na planilha.</p>
                 <div style="overflow-x: auto;">
@@ -70,15 +78,33 @@
     <datalist id="lista-usuarios"></datalist>
 
     <script>
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const ICONES_LOGISTICA = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑", "↳"];
-        let adMenuData = { categorias: [] }; let allUsers = [];
+        
+        let adMenuData = { categorias: [] }; 
+        let allUsers = [];
+
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } });
+
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+
+        // LÓGICA DE LOGS NO FIREBASE
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) { console.error("Erro log:", e); }
+        }
 
         window.onload = async () => {
-            const userStr = localStorage.getItem('loggedUser'); if(!userStr) { document.getElementById('acessoNegado').style.display = 'block'; return; }
-            const user = JSON.parse(userStr); if(user.cargo !== 'admin') { document.getElementById('acessoNegado').style.display = 'block'; return; }
-
+            if(!currentUser || currentUser.cargo !== 'admin') { document.getElementById('acessoNegado').style.display = 'block'; return; }
             document.getElementById('adminPanel').style.display = 'block';
-            try { const res = await fetch(`https://reportes-bdb0a-default-rtdb.firebaseio.com/menu_global.json`); const data = await res.json(); adMenuData = data && data.categorias ? data : { categorias: [] }; renderizarAdmin(); } catch (e) { console.error(e); }
+            try { const res = await fetch(`${FIREBASE_URL}menu_global.json`); const data = await res.json(); adMenuData = data && data.categorias ? data : { categorias: [] }; renderizarAdmin(); } catch (e) { console.error(e); }
             fetchUsersFromSheet();
         };
 
@@ -108,7 +134,12 @@
         }
         async function salvarUsuario(idx, username) {
             const status = document.getElementById(`status-${idx}`).value; const cargo = document.getElementById(`cargo-${idx}`).value;
-            try { const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "updateUser", usuario: username, solicitacao: status, cargo: cargo }) }); const data = await res.json(); alert(data.message); } catch(e) { alert("Erro ao atualizar."); }
+            try { 
+                const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "updateUser", usuario: username, solicitacao: status, cargo: cargo }) }); 
+                const data = await res.json(); 
+                alert(data.message); 
+                await registrarLogFirebase("Painel Admin", `Alterou permissões/cargo do usuário: <b>${username}</b>`);
+            } catch(e) { alert("Erro ao atualizar."); }
         }
 
         function getIconOptions(selected) { return ICONES_LOGISTICA.map(ico => `<option value="${ico}" ${ico === selected ? 'selected' : ''}>${ico}</option>`).join(''); }
@@ -128,22 +159,22 @@
                                 <input type="text" placeholder="URL (.html)" value="${sub.url || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'url', this.value)">
                                 <input type="text" placeholder="Ver (view,editor)" value="${sub.viewRoles || 'view,editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'viewRoles', this.value)">
                                 <input type="text" placeholder="Editar (editor,admin)" value="${sub.uploadRoles || 'editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'uploadRoles', this.value)">
-                                <input type="text" list="lista-usuarios" placeholder="Usuários p/ Editar" value="${sub.allowedUsers || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'allowedUsers', this.value)">
+                                <input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${sub.allowedUsers || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'allowedUsers', this.value)">
                                 <button class="btn btn-red" onclick="removerSubItem(${catIdx}, ${itemIdx}, ${subIdx})">✖</button>
                             </div>`;
                     });
 
                     itemsHtml += `
-                        <div class="subitem-row">
-                            <span style="color:#888; font-weight:bold;">2º Nível</span>
+                        <div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="allowDrop(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})">
+                            <span style="color:#888; font-weight:bold; cursor: grab;">2º Nível</span>
                             <select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(item.icon)}</select>
                             <input type="text" placeholder="Nome do Menu" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)">
                             <input type="text" placeholder="URL da Página" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)">
                             <div style="flex-basis: 100%; height: 0; margin: 0;"></div>
-                            <input type="text" placeholder="Ver (view,editor,admin)" title="Cargos Visuais" value="${item.viewRoles || 'view,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)">
-                            <input type="text" placeholder="Editar (editor,admin)" title="Cargos Edição" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)">
-                            <input type="text" list="lista-usuarios" placeholder="Usuários p/ Editar (João, Maria)" title="Permissão direta por nome" value="${item.allowedUsers || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'allowedUsers', this.value)">
-                            <button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu (3º Nível)</button>
+                            <input type="text" placeholder="Ver (view,editor,admin)" value="${item.viewRoles || 'view,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)">
+                            <input type="text" placeholder="Editar (editor,admin)" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)">
+                            <input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${item.allowedUsers || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'allowedUsers', this.value)">
+                            <button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu</button>
                             <button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖ Remover</button>
                             <div style="width: 100%;">${subItemsHtml}</div>
                         </div>
@@ -151,9 +182,9 @@
                 });
 
                 container.innerHTML += `
-                    <div class="cat-card">
+                    <div class="cat-card" draggable="true" ondragstart="dragStart(event, 'cat', ${catIdx}, null)" ondragover="allowDrop(event)" ondrop="drop(event, 'cat', ${catIdx}, null)">
                         <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap; border-bottom: 2px solid var(--border-card); padding-bottom: 15px;">
-                            <span style="font-weight:900; color:var(--text-title); font-size:1.1rem;">1º Nível (Categoria):</span>
+                            <span style="font-weight:900; color:var(--text-title); font-size:1.1rem; cursor: grab;">1º Nível:</span>
                             <select onchange="updateCat(${catIdx}, 'icon', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">${getIconOptions(cat.icon)}</select>
                             <input type="text" placeholder="Nome" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; min-width: 150px; padding:8px; font-weight:bold; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">
                             <input type="text" placeholder="Ver (view,editor,admin)" value="${cat.viewRoles || 'view,editor,admin'}" onchange="updateCat(${catIdx}, 'viewRoles', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">
@@ -164,6 +195,21 @@
                     </div>
                 `;
             });
+        }
+
+        let draggedItemInfo = null;
+        function dragStart(e, type, catIdx, itemIdx) { draggedItemInfo = { type, catIdx, itemIdx }; e.stopPropagation(); }
+        function allowDrop(e) { e.preventDefault(); }
+        function drop(e, targetType, targetCatIdx, targetItemIdx) {
+            e.preventDefault(); e.stopPropagation();
+            if (!draggedItemInfo || draggedItemInfo.type !== targetType) return;
+            if(targetType === 'cat') {
+                const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0]; adMenuData.categorias.splice(targetCatIdx, 0, temp);
+            } else if (targetType === 'item' && draggedItemInfo.catIdx === targetCatIdx) {
+                const cat = adMenuData.categorias[targetCatIdx];
+                const temp = cat.items.splice(draggedItemInfo.itemIdx, 1)[0]; cat.items.splice(targetItemIdx, 0, temp);
+            }
+            renderizarAdmin();
         }
 
         function baixarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2)); const d = document.createElement('a'); d.href = dataStr; d.download = "menu_global.json"; document.body.appendChild(d); d.click(); d.remove(); }
@@ -181,7 +227,13 @@
         function removerSubItem(catIdx, itemIdx, subIdx) { adMenuData.categorias[catIdx].items[itemIdx].subItems.splice(subIdx, 1); renderizarAdmin(); }
         function updateSubItem(catIdx, itemIdx, subIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx].subItems[subIdx][field] = value; }
 
-        async function salvarNoFirebase() { try { await fetch(`https://reportes-bdb0a-default-rtdb.firebaseio.com/menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
+        async function salvarNoFirebase() { 
+            try { 
+                await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); 
+                await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global.");
+                alert("Salvo com sucesso!"); 
+            } catch(e) { alert("Erro ao salvar."); } 
+        }
     </script>
 </body>
 </html>
