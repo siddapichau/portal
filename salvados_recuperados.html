@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salvados Recuperados - Dashboard Mercado Livre</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'salvados_recuperados.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <!-- CSS GLOBAL -->
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        body { padding: 10px; display: flex; flex-direction: column; gap: 12px; min-height: 100vh; background: transparent; }
+
+        .glass-panel { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; box-shadow: var(--shadow-card); transition: 0.3s; }
+
+        .header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #FFF159 !important; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); flex-wrap: wrap; gap: 10px;}
+        .ml-logo { height: 26px; width: auto; object-fit: contain; }
+        .header-center { font-size: 1rem; font-weight: 900; color: #333333 !important; text-transform: uppercase; text-align: center; flex: 1; }
+        .header-actions { display: flex; align-items: center; gap: 10px; }
+
+        .status-badge { background: #FFFFFF !important; color: #333333 !important; border: 1px solid #CCCCCC !important; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.8rem; padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
+        
+        .btn { background: var(--bg-body); color: var(--text-title); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all .2s ease; text-decoration: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05);}
+        .btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-blue { background: var(--accent-blue) !important; color: #fff !important; border: none; }
+
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+        #export-container { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+
+        /* BARRA DE FILTROS */
+        .filter-bar { display: flex; gap: 15px; padding: 12px 16px; align-items: center; flex: 0 0 auto; flex-wrap: wrap; justify-content: center; }
+        .filter-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); }
+        .filter-group select, .filter-group input { background-color: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-card); padding: 6px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer; min-width: 120px; font-size: 0.85rem; font-weight: 600; }
+        .filter-group select:focus, .filter-group input:focus { border-color: var(--accent-blue); }
+        .btn-clear { background-color: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 800; cursor: pointer; transition: 0.2s; margin-left: auto; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; }
+
+        /* KPIS E GRÁFICOS */
+        .middle-section { display: grid; grid-template-columns: 280px 1fr 1.5fr; gap: 12px; min-height: 320px; }
+        .kpi-column { display: flex; flex-direction: column; gap: 12px; }
+        .kpi-card { flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-left: 6px solid var(--accent-blue); text-align: center; }
+        .kpi-card.green { border-left-color: var(--accent-green); }
+        .kpi-title { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .kpi-value { font-size: 2.2rem; font-weight: 900; color: var(--text-title); }
+
+        .chart-card { padding: 15px; display: flex; flex-direction: column; min-height: 280px; }
+        .chart-title { flex: 0 0 auto; font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-wrapper { position: relative; flex: 1; width: 100%; display: flex; justify-content: center; align-items: center; }
+
+        /* TABELA */
+        .table-wrapper { max-height: 45vh; min-height: 250px; overflow: auto; border-radius: 10px; transform: translateZ(0); }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px; text-align: left; }
+        th, td { padding: 10px 15px; border-bottom: 1px solid var(--border-card); font-size: .85rem; color: var(--text-main); vertical-align: middle; }
+        th { background: rgba(0,0,0,0.1); color: var(--text-title); text-transform: uppercase; font-size: .75rem; font-weight: 900; position: sticky; top: 0; z-index: 2; backdrop-filter: blur(10px); }
+        [data-theme="dark"] th { background: rgba(0,0,0,0.5); }
+        tr:hover td { background: rgba(52, 131, 250, 0.05); }
+
+        .center { text-align: center; }
+        .col-id { font-weight: 900; color: var(--text-title); display: flex; align-items: center; gap: 8px;}
+        .col-val { font-weight: 900; color: var(--accent-green); }
+        
+        .action-icon { color: var(--accent-blue); transition: transform 0.2s; display: inline-flex; text-decoration: none; padding: 4px; border-radius: 4px; background: rgba(52, 131, 250, 0.1); border: 1px solid rgba(52, 131, 250, 0.2); }
+        .action-icon:hover { transform: scale(1.15); background: rgba(52, 131, 250, 0.2); }
+        .action-icon.sauron { color: var(--accent-warn); background: rgba(255, 176, 0, 0.1); border-color: rgba(255, 176, 0, 0.2); }
+
+        .bottom-section { display: flex; gap: 12px; min-height: 320px; }
+
+        .exporting .header-actions, .exporting #hide-on-export-search, .exporting #hide-on-export-clear { display: none !important; }
+        .exporting .table-wrapper { overflow: hidden !important; max-height: 360px !important; } 
+
+        @media (max-width: 1100px) { .middle-section { grid-template-columns: 1fr; } .kpi-column { flex-direction: row; } }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-body); }
+        ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="header glass-panel">
+        <div class="header-left">
+            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
+        </div>
+        
+        <div class="header-center" id="main-dynamic-title">
+            SALVADOS DO SEM IDENTIFICAÇÃO | CARREGANDO...
+        </div>
+
+        <div class="header-actions">
+            <span class="status-badge" id="data-status">Conectando...</span>
+            
+            <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Dashboard em Imagem UHD 4K">Exportar 4K</button>
+
+            <div class="upload-wrapper" id="btnUploadArea" title="Substituir Base de Dados">
+                <button class="btn btn-blue">📤 Subir CSV</button>
+                <input type="file" id="csvFileInput" accept=".csv" />
+            </div>
+        </div>
+    </div>
+
+    <div id="export-container">
+        <div class="filter-bar glass-panel" id="export-filters">
+            <div class="filter-group">
+                <label style="color: var(--accent-blue);">Data Recuperado:</label>
+                <select id="filter-data" style="border-color: var(--accent-blue);"><option value="Todos">Todos</option></select>
+            </div>
+            <div class="filter-group">
+                <label>Observação / Substatus:</label>
+                <select id="filter-obs"><option value="Todos">Todos</option></select>
+            </div>
+            <div class="filter-group" id="hide-on-export-search">
+                <label>Pesquisar Pacote:</label>
+                <input type="text" id="search-input" placeholder="ID ou Descrição..." oninput="aplicarFiltros()">
+            </div>
+            <button class="btn-clear" id="hide-on-export-clear" onclick="limparFiltros()">✖ Limpar</button>
+        </div>
+
+        <div class="middle-section">
+            <div class="kpi-column">
+                <div class="kpi-card glass-panel green">
+                    <div class="kpi-title">Valor Total Recuperado</div>
+                    <div class="kpi-value" id="kpi-valor">R$ 0,00</div>
+                </div>
+                <div class="kpi-card glass-panel">
+                    <div class="kpi-title">Total de Volumes</div>
+                    <div class="kpi-value" id="kpi-volumes">0</div>
+                </div>
+            </div>
+
+            <div class="chart-card glass-panel">
+                <div class="chart-title">Observações (Substatus)</div>
+                <div id="chart-obs-container" class="chart-wrapper"><canvas id="chart-obs"></canvas></div>
+            </div>
+
+            <div class="chart-card glass-panel">
+                <div class="chart-title">Evolução Diária (Geral)</div>
+                <div id="chart-diario-container" class="chart-wrapper"><canvas id="chart-diario"></canvas></div>
+            </div>
+        </div>
+
+        <div class="table-wrapper glass-panel" id="table-scroll-container" onscroll="carregarMaisPacotes()">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:18%;">ID / Rastreio</th>
+                        <th style="width:12%;">Data Recuperado</th>
+                        <th style="width:35%;">Descrição do Item</th>
+                        <th style="width:20%;">Observações / Substatus</th>
+                        <th style="width:15%;">Valor</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-pacotes">
+                    <tr><td colspan="5" class="center" style="padding: 40px;">Aguardando dados...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bottom-section">
+            <div class="chart-card glass-panel" style="flex: 1;">
+                <div class="chart-title">Evolução Semanal (Geral)</div>
+                <div id="chart-semana-container" class="chart-wrapper"><canvas id="chart-semana"></canvas></div>
+            </div>
+        </div>
+    </div> 
+
+    <script>
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_NODE = "salvados_recuperados";
+        
+        // ============ SINCRONIZAÇÃO DE TEMA E PERMISSÕES ============
+        function syncTheme() {
+            const theme = localStorage.getItem('themePreference') || 'light';
+            document.body.setAttribute('data-theme', theme);
+            if(DADOS_FILTRADOS && DADOS_FILTRADOS.length > 0) renderizarDashboard(DADOS_FILTRADOS);
+        }
+        syncTheme();
+        window.addEventListener('storage', (e) => { if (e.key === 'themePreference') syncTheme(); });
+
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        let canEdit = ['editor', 'admin'].includes(userRole);
+        
+        if(!canEdit) {
+            document.getElementById('btnUploadArea').style.display = 'none';
+        }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        Chart.register(ChartDataLabels);
+
+        let BANCO_GLOBAL = [];       
+        let DADOS_FILTRADOS = [];    
+        let chartInstances = {};
+        let PAGE_SIZE = 50; 
+        let CUR_PAGE = 0;
+        const mlColors = ['#3483FA', '#00A650', '#FF7733', '#4A90E2', '#FFF159', '#FF5252', '#B48B00', '#06b6d4', '#8b5cf6'];
+
+        function setStatus(texto, cor = "#00A650") { const el = document.getElementById('data-status'); if (el) { el.innerText = texto; el.style.color = cor; } }
+
+        function baixarDashboardComoImagem() {
+            const statusBadge = document.getElementById('data-status');
+            const txtOriginal = statusBadge.innerText; const corOriginal = statusBadge.style.color;
+            statusBadge.innerText = 'Processando em Ultra HD 4K...'; statusBadge.style.color = '#3483FA';
+            document.body.classList.add('exporting');
+            setTimeout(() => {
+                const isLight = document.body.getAttribute('data-theme') === 'light';
+                const bgCor = isLight ? '#ffffff' : '#0b121f';
+                html2canvas(document.body, { scale: 3, useCORS: true, allowTaint: true, backgroundColor: bgCor, logging: false, windowHeight: document.documentElement.offsetHeight, windowWidth: document.documentElement.offsetWidth }).then(canvas => {
+                    document.body.classList.remove('exporting'); statusBadge.innerText = txtOriginal; statusBadge.style.color = corOriginal;
+                    const hoje = new Date(); const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${hoje.getFullYear()}`;
+                    const link = document.createElement('a'); link.download = `Painel_Salvados_Recuperados_${dataFormatada}_4K.png`; link.href = canvas.toDataURL('image/png'); link.click();
+                }).catch(err => { document.body.classList.remove('exporting'); statusBadge.innerText = 'Erro captura'; statusBadge.style.color = '#FF5252'; });
+            }, 100);
+        }
+
+        function removerAcentos(str) { return String(str ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+        function parseCurrency(valStr) { if (!valStr) return 0; let s = String(valStr).replace('R$', '').replace(/\./g, '').replace(',', '.').trim(); return parseFloat(s) || 0; }
+        function getVal(row, possibleKeys) { let keys = Object.keys(row); for (let pk of possibleKeys) { let found = keys.find(k => k.toLowerCase().trim() === pk.toLowerCase().trim()); if (found && row[found] !== undefined && row[found] !== null) return String(row[found]).trim(); } return ''; }
+        function extrairID(row) { let chaves = Object.keys(row); let val = getVal(row, ['id', 'id do pacote', 'pacote', 'shipment', 'tracking']); if (val) return val; if (chaves.length > 0) return String(row[chaves[0]]).trim(); return ''; }
+        function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+        function getWeekNumberStr(dateStr) {
+            if (!dateStr || !dateStr.includes('/')) return 'Sem Data'; let parts = dateStr.split('/'); if (parts.length !== 3) return 'Sem Data';
+            let d = new Date(parts[2], parts[1] - 1, parts[0]); if (isNaN(d.getTime())) return 'Sem Data';
+            d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7); let week1 = new Date(d.getFullYear(), 0, 4);
+            let week = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+            return `Semana ${String(week).padStart(2, '0')} (${d.getFullYear()})`;
+        }
+
+        async function carregarDoFirebase() {
+            setStatus('Conectando...', '#3483FA');
+            try {
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
+                if (!response.ok) throw new Error("Erro de rede");
+                const dbData = await response.json();
+                if (dbData && Array.isArray(dbData)) { BANCO_GLOBAL = dbData; setStatus(`Base Carregada: ${BANCO_GLOBAL.length} registros`, '#00A650'); } 
+                else { BANCO_GLOBAL = []; setStatus('Banco vazio.', '#FFB000'); }
+                preencherDropdowns(); aplicarFiltros();
+            } catch (err) { setStatus('Erro ao carregar', '#FF5252'); }
+        }
+
+        async function sobrescreverFirebase(dados) {
+            setStatus(`Salvando ${dados.length} pacotes...`, '#3483FA');
+            try {
+                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
+                await registrarLogFirebase("Salvados Recuperados", `Atualizou a base de dados via CSV (${dados.length} pacotes).`);
+                BANCO_GLOBAL = dados; preencherDropdowns(); aplicarFiltros();
+                alert(`Sucesso! Banco atualizado com ${dados.length} pacotes.`); setStatus(`Base Atualizada: ${BANCO_GLOBAL.length} registros`, '#00A650');
+            } catch (err) { alert("Erro ao salvar."); setStatus('Erro', '#FF5252'); }
+        }
+
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            if(!canEdit) return;
+            const file = event.target.files[0]; if (!file) return;
+            Papa.parse(file, {
+                header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    let data = results.data;
+                    let dadosLimpos = data.map(row => {
+                        let valText = getVal(row, ['valor', 'preço', 'price', ' valor ']);
+                        return { ID: extrairID(row), Descricao: getVal(row, ['descrição', 'descricao', 'produto', 'item']), Status: getVal(row, ['status']), Observacao: getVal(row, ['observações + status', 'observação', 'observacoes']), Valor: valText, ValorNum: parseCurrency(valText), Data: getVal(row, ['data recuperado', 'data', 'data de criacao']) };
+                    }).filter(i => i.ID && i.ID.toLowerCase() !== 'nan');
+                    dadosLimpos = dadosLimpos.filter(i => i.Status.toUpperCase().includes('RECUPERADO'));
+                    if(dadosLimpos.length === 0) { alert("Arquivo sem pacotes 'RECUPERADO' ou formato inválido."); return; }
+                    sobrescreverFirebase(dadosLimpos); event.target.value = ''; 
+                }
+            });
+        });
+
+        function preencherDropdowns() {
+            let dataSet = new Set(), obsSet = new Set();
+            BANCO_GLOBAL.forEach(row => { if (row.Data) dataSet.add(row.Data); if (row.Observacao) obsSet.add(row.Observacao); });
+            preencherSelectData('filter-data', Array.from(dataSet).filter(d => d.trim() !== ''));
+            preencherSelect('filter-obs', Array.from(obsSet).sort());
+        }
+
+        function preencherSelect(id, valores) {
+            let select = document.getElementById(id); let valAtual = select.value; select.innerHTML = '<option value="Todos">Todos</option>';
+            valores.forEach(val => { if(val && val.trim() !== '') { let option = document.createElement('option'); option.value = val; option.text = val; select.appendChild(option); } });
+            select.addEventListener('change', aplicarFiltros); if ([...select.options].some(opt => opt.value === valAtual)) select.value = valAtual;
+        }
+
+        function preencherSelectData(id, valores) {
+            let select = document.getElementById(id); let valAtual = select.value; select.innerHTML = '<option value="Todos">Todas as Datas</option><option value="VAZIO">Sem Data</option>';
+            valores.sort((a,b) => { let pA = a.split('/'); let pB = b.split('/'); if(pA.length === 3 && pB.length === 3) return new Date(`${pB[2]}-${pB[1]}-${pB[0]}`) - new Date(`${pA[2]}-${pA[1]}-${pA[0]}`); return 0; });
+            valores.forEach(val => { let option = document.createElement('option'); option.value = val; option.text = val; select.appendChild(option); });
+            select.addEventListener('change', aplicarFiltros); if ([...select.options].some(opt => opt.value === valAtual)) select.value = valAtual;
+        }
+
+        function limparFiltros() { document.getElementById('filter-data').value = 'Todos'; document.getElementById('filter-obs').value = 'Todos'; document.getElementById('search-input').value = ''; aplicarFiltros(); }
+
+        function aplicarFiltros() {
+            let fData = document.getElementById('filter-data').value; let fObs = document.getElementById('filter-obs').value; let busca = removerAcentos(document.getElementById('search-input').value.toLowerCase().trim());
+            DADOS_FILTRADOS = BANCO_GLOBAL.filter(row => {
+                let dt = row.Data ? row.Data.trim() : ''; let matchData = true;
+                if (fData === 'VAZIO') matchData = dt === ''; else if (fData !== 'Todos') matchData = dt === fData;
+                let matchObs = (fObs === 'Todos' || row.Observacao === fObs);
+                let matchBusca = true;
+                if (busca !== '') { let txt = [row.ID, removerAcentos(row.Descricao)].join(' ').toLowerCase(); matchBusca = txt.includes(busca); }
+                return matchData && matchObs && matchBusca;
+            });
+            DADOS_FILTRADOS.sort((a,b) => (b.ValorNum || 0) - (a.ValorNum || 0));
+            renderizarDashboard(DADOS_FILTRADOS); CUR_PAGE = 0; document.getElementById('tbody-pacotes').innerHTML = ''; renderizarPedaçoTabela();
+        }
+
+        function getChartTextColor() { return document.body.getAttribute('data-theme') === 'light' ? '#334155' : '#EBEBEB'; }
+        function getGridColor() { return document.body.getAttribute('data-theme') === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'; }
+
+        function renderizarDashboard(dataFiltrada) {
+            let totalPacotes = dataFiltrada.length; let valorTotal = 0; let dadosObs = {};
+            let isLight = document.body.getAttribute('data-theme') === 'light';
+
+            dataFiltrada.forEach(row => { valorTotal += row.ValorNum; let sF = row.Observacao || 'Outros'; dadosObs[sF] = (dadosObs[sF] || 0) + 1; });
+
+            let dadosDiariosGeral = {}; let dadosSemanaGeral = {};
+            BANCO_GLOBAL.forEach(row => {
+                let dia = row.Data || 'Sem Data'; if(!dadosDiariosGeral[dia]) dadosDiariosGeral[dia] = { count: 0, valor: 0 };
+                dadosDiariosGeral[dia].count++; dadosDiariosGeral[dia].valor += row.ValorNum;
+                let semana = getWeekNumberStr(row.Data); if(!dadosSemanaGeral[semana]) dadosSemanaGeral[semana] = { count: 0, valor: 0 };
+                dadosSemanaGeral[semana].count++; dadosSemanaGeral[semana].valor += row.ValorNum;
+            });
+
+            let fData = document.getElementById('filter-data').value; let dataTexto = fData === 'Todos' ? '' : (fData === 'VAZIO' ? '(SEM DATA)' : `${fData}`);
+            let formatedValor = valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            
+            document.getElementById('main-dynamic-title').innerText = `SALVADOS DO SEM IDENTIFICAÇÃO ${dataTexto} VALOR TOTAL: ${formatedValor} DE ${totalPacotes} VOLUMES`.replace('  ', ' ');
+            document.getElementById('kpi-valor').innerText = formatedValor; document.getElementById('kpi-volumes').innerText = totalPacotes;
+
+            Object.keys(chartInstances).forEach(key => { if(chartInstances[key]) chartInstances[key].destroy(); });
+
+            if (BANCO_GLOBAL.length === 0) { ['chart-obs-container', 'chart-diario-container', 'chart-semana-container'].forEach(id => document.getElementById(id).innerHTML = 'Nenhum dado.'); return; }
+
+            Chart.defaults.color = getChartTextColor(); Chart.defaults.font.family = "'Inter', sans-serif";
+            let yellowLineColor = isLight ? '#D4A300' : '#FFF159'; let yellowLabelColor = isLight ? '#9A7B00' : '#FFF159'; 
+            let orangeLineColor = isLight ? '#CC5500' : '#FF7733'; let orangeLabelColor = isLight ? '#B34700' : '#FF7733';
+
+            chartInstances.obs = new Chart(document.getElementById('chart-obs'), {
+                type: 'doughnut', data: { labels: Object.keys(dadosObs), datasets: [{ data: Object.values(dadosObs), backgroundColor: mlColors, borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: {size: 11, weight: 'bold'} } }, datalabels: { display: false } } }
+            });
+
+            let sortedDays = Object.keys(dadosDiariosGeral).sort((a,b) => { let pA = a.split('/'); let pB = b.split('/'); if(pA.length === 3 && pB.length === 3) return new Date(`${pA[2]}-${pA[1]}-${pA[0]}`) - new Date(`${pB[2]}-${pB[1]}-${pB[0]}`); return 0; });
+            chartInstances.diario = new Chart(document.getElementById('chart-diario'), {
+                type: 'bar', 
+                data: { labels: sortedDays, datasets: [
+                    { type: 'bar', label: 'Valor Recuperado (R$)', data: sortedDays.map(d => dadosDiariosGeral[d].valor), backgroundColor: '#3483FA', borderRadius: 4, maxBarThickness: 45, yAxisID: 'y' },
+                    { type: 'line', label: 'Volumes Recuperados', data: sortedDays.map(d => dadosDiariosGeral[d].count), borderColor: yellowLineColor, backgroundColor: yellowLineColor, borderWidth: 3, tension: 0.3, yAxisID: 'y1', pointRadius: 5 }
+                ]},
+                options: {
+                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 30, bottom: 10 } }, 
+                    scales: { x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }, y: { position: 'left', grid: { color: getGridColor() }, ticks: { callback: function(val) { return "R$ " + val.toLocaleString('pt-BR'); } } }, y1: { position: 'right', grid: { display: false } } },
+                    plugins: { legend: { position: 'top', labels: { font: { weight: 'bold'} } }, datalabels: { color: function(ctx) { return ctx.dataset.type === 'bar' ? '#FFFFFF' : yellowLabelColor; }, font: { weight: '900', size: 10 }, align: function(ctx) { return ctx.dataset.type === 'bar' ? 'center' : 'top'; }, formatter: function(v, ctx) { if (v === 0) return ''; return ctx.dataset.type === 'bar' ? (v >= 1000 ? "R$ " + (v/1000).toFixed(1).replace('.',',') + "k" : "R$ " + Math.round(v)) : Math.round(v); } } }
+                }
+            });
+
+            let sortedWeeks = Object.keys(dadosSemanaGeral).sort();
+            chartInstances.semana = new Chart(document.getElementById('chart-semana'), {
+                type: 'bar',
+                data: { labels: sortedWeeks, datasets: [
+                    { type: 'bar', label: 'Valor Recuperado (R$)', data: sortedWeeks.map(w => dadosSemanaGeral[w].valor), backgroundColor: '#00A650', borderRadius: 4, maxBarThickness: 45, yAxisID: 'y' },
+                    { type: 'line', label: 'Volumes Recuperados', data: sortedWeeks.map(w => dadosSemanaGeral[w].count), borderColor: orangeLineColor, backgroundColor: orangeLineColor, borderWidth: 3, tension: 0.3, yAxisID: 'y1', pointRadius: 5 }
+                ]},
+                options: {
+                    responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, layout: { padding: { top: 30, bottom: 10 } }, 
+                    scales: { x: { grid: { display: false }, ticks: { font: { weight: 'bold' } } }, y: { position: 'left', grid: { color: getGridColor() }, ticks: { callback: function(val) { return "R$ " + val.toLocaleString('pt-BR'); } } }, y1: { position: 'right', grid: { display: false } } },
+                    plugins: { legend: { position: 'bottom', labels: { font: { weight: 'bold'} } }, datalabels: { color: function(ctx) { return ctx.dataset.type === 'bar' ? '#FFFFFF' : orangeLabelColor; }, font: { weight: '900', size: 10 }, align: function(ctx) { return ctx.dataset.type === 'bar' ? 'center' : 'top'; }, formatter: function(v, ctx) { if (v === 0) return ''; return ctx.dataset.type === 'bar' ? (v >= 1000 ? "R$ " + (v/1000).toFixed(1).replace('.',',') + "k" : "R$ " + Math.round(v)) : Math.round(v); } } }
+                }
+            });
+        }
+
+        function renderizarPedaçoTabela() {
+            let start = CUR_PAGE * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_FILTRADOS.slice(start, end); let tbody = document.getElementById('tbody-pacotes');
+            if (pedaco.length === 0 && CUR_PAGE === 0) { tbody.innerHTML = `<tr><td colspan="5" class="center" style="padding: 40px; color: var(--accent-red);">Nenhum pacote encontrado.</td></tr>`; return; }
+            let html = '';
+            pedaco.forEach(item => {
+                let id = item.ID || '-';
+                let linkHtml = id !== '-' ? `<div style="display:flex; gap: 6px;"><a href="https://envios.adminml.com/logistics/package-management/package/${escapeHtml(id)}" target="_blank" class="action-icon">🔍</a><a href="https://shipping-bo.adminml.com/sauron/shipments/shipment/${escapeHtml(id)}" target="_blank" class="action-icon sauron">📋</a></div>` : '';
+                html += `<tr><td class="col-id">${linkHtml} <span>${escapeHtml(id)}</span></td><td class="center">${escapeHtml(item.Data || '-')}</td><td style="font-size:0.8rem; font-weight: 600;">${escapeHtml(item.Descricao || '-')}</td><td style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(item.Observacao || '-')}</td><td class="col-val">R$ ${item.ValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
+            });
+            tbody.insertAdjacentHTML('beforeend', html);
+        }
+
+        function carregarMaisPacotes() { let container = document.getElementById('table-scroll-container'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) { if ((CUR_PAGE + 1) * PAGE_SIZE < DADOS_FILTRADOS.length) { CUR_PAGE++; renderizarPedaçoTabela(); } } }
+
+        document.addEventListener('DOMContentLoaded', carregarDoFirebase);
+    </script>
+</body>
+</html>
