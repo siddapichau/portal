@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avarias Aprovadas - Dashboard Diário</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'avarias-diario.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- CSS GLOBAL -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Variáveis Locais do Painel */
+        :root {
+            --bg-header: rgba(15, 23, 42, 0.6);
+            --bg-hover: rgba(30, 41, 59, 0.85);
+            --bg-input: rgba(15, 23, 42, 0.6);
+            --border-light: rgba(255, 255, 255, 0.2);
+            --accent-warn: #FFB000;
+        }
+        [data-theme="light"] {
+            --bg-header: rgba(255, 255, 255, 0.9);
+            --bg-hover: rgba(255, 255, 255, 0.95);
+            --bg-input: rgba(255, 255, 255, 0.6);
+            --border-light: rgba(0, 0, 0, 0.1);
+            --accent-warn: #B48B00;
+        }
+
+        html, body { width: 100%; min-height: 100%; background: transparent !important; }
+        body { padding: 10px; display: flex; flex-direction: column; gap: 10px; height: 100vh; overflow: hidden; font-size: 1.05rem; }
+
+        .glass-panel { background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; box-shadow: var(--shadow-card); transition: 0.3s; }
+
+        /* CABEÇALHO */
+        .header { padding: 12px 20px; flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 20px; background-color: #FFF159 !important; border: none; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .header-title-wrapper { flex: 1; text-align: center; color: #2D3277 !important; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; font-size: 1.15rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .ml-logo { height: 32px; width: auto; object-fit: contain; }
+
+        .header-controls { display: flex; align-items: center; gap: 12px; }
+
+        .btn-icon { background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(0, 0, 0, 0.1); color: #2D3277; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; padding: 0; margin: 0; }
+        .btn-icon:hover { background: rgba(255, 255, 255, 0.9); transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+
+        /* BARRA DE FILTROS */
+        .filter-bar { display: flex; gap: 15px; padding: 12px 20px; align-items: center; flex: 0 0 auto; }
+        .filter-label { font-size: 0.85rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+        .filter-select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-light); background: var(--bg-card); color: var(--text-main); font-family: 'Inter'; font-weight: 600; font-size: 0.9rem; outline: none; cursor: pointer; }
+        .btn-limpar { padding: 8px 15px; background: var(--accent-blue); color: #fff; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; transition: background 0.3s; font-size: 0.85rem; text-transform: uppercase; }
+        
+        /* LAYOUT GERAL */
+        .row { display: flex; gap: 10px; flex: 1; min-height: 0; }
+        .col-kpi { flex: 0 0 220px; display: flex; flex-direction: column; gap: 10px; }
+        .col-table { flex: 1; display: flex; flex-direction: column; padding: 10px; }
+        .chart-card { flex: 1; display: flex; flex-direction: column; padding: 10px; }
+        
+        .kpi-card { flex: 1; padding: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-left: 4px solid var(--accent-blue); }
+        .kpi-title { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; text-align: center; font-weight: 800;}
+        .kpi-value { font-size: 2.1rem; font-weight: 900; color: var(--text-main); }
+        .kpi-card:nth-child(2) { border-left-color: #00A650; }
+
+        /* TABELA */
+        .table-title, .chart-title { font-size: 0.95rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; }
+        .table-wrapper { flex: 1; overflow-y: auto; overflow-x: auto; border-radius: 6px; border: 1px solid var(--border-light); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; text-align: left; }
+        thead { background-color: var(--bg-header); color: var(--text-title); position: sticky; top: 0; z-index: 1; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid var(--border-card); white-space: nowrap; vertical-align: middle;}
+        th { font-weight: 800; letter-spacing: 0.5px; }
+        tbody tr { cursor: pointer; transition: background-color 0.2s; }
+        tbody tr:nth-child(even) { background-color: rgba(0,0,0,0.05); }
+        tbody tr:hover { background-color: rgba(52, 131, 250, 0.15) !important; }
+        
+        .col-valor { font-weight: 900; color: #00A650; } 
+        .td-id { display: flex; align-items: center; gap: 8px; font-weight: 900; color: var(--accent-blue); }
+        
+        .icon-action { display: inline-flex; transition: transform 0.2s; }
+        .icon-action:hover { transform: scale(1.2); }
+        .lupa-icon { color: var(--accent-blue); }
+        .sauron-icon { color: #00A650; }
+        .dano-icon { color: #FF5252; } 
+
+        .chart-wrapper { flex: 1; min-height: 0; width: 100%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 0.9rem;}
+        
+        .row-top { flex: 2; }   
+        .row-mid { flex: 1; }   
+        .row-bot { flex: 1.2; } 
+
+        /* MODAL POP-UP */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--bg-card); width: 95%; max-width: 1400px; max-height: 85vh; padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; border: 1px solid var(--border-light); box-shadow: 0 15px 50px rgba(0,0,0,0.6); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-light); padding-bottom: 10px;}
+        .modal-title { font-size: 1.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; }
+        .modal-close { font-size: 2rem; cursor: pointer; color: var(--text-muted); line-height: 1; margin-top: -10px; }
+        .modal-body { flex: 1; overflow-y: auto; padding: 0; position: relative; }
+
+        /* Ocultar elementos na Exportação 4K */
+        .exporting .header-controls, .exporting .filter-bar { display: none !important; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="header glass-panel">
+        <div class="header-left">
+            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
+        </div>
+        
+        <div class="header-title-wrapper" id="main-title">
+            AVARIAS LANÇADAS E APROVADAS MENSAIS
+        </div>
+
+        <div class="header-controls">
+            <button class="btn-icon" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Dashboard em Imagem UHD 4K">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
+                </svg>
+            </button>
+
+            <label class="btn-icon" id="btnUploadArea" style="display:none;" title="Mesclar Nova Planilha (Arquivo CSV)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
+            </label>
+        </div>
+    </div>
+
+    <div class="filter-bar glass-panel">
+        <span class="filter-label">Filtros:</span>
+        <select id="filter-week" class="filter-select" onchange="renderizarDashboard()"><option value="">Todas as Semanas</option></select>
+        <select id="filter-date" class="filter-select" onchange="renderizarDashboard()"><option value="">Todos os Dias</option></select>
+        <select id="filter-solver" class="filter-select" onchange="renderizarDashboard()"><option value="">Todos Lançadores</option></select>
+        <button class="btn-limpar" onclick="resetarFiltrosHoje()">Hoje</button>
+    </div>
+
+    <div class="row row-top">
+        <div class="col-kpi">
+            <div class="kpi-card glass-panel">
+                <div class="kpi-title">Valor do Dia/Filtro</div>
+                <div class="kpi-value" id="kpi-valor" style="color: #3483FA;">R$ 0,00</div>
+            </div>
+            <div class="kpi-card glass-panel">
+                <div class="kpi-title">Qtd de Pacotes</div>
+                <div class="kpi-value" id="kpi-qtd">0</div>
+            </div>
+        </div>
+        <div class="col-table glass-panel">
+            <div class="table-title">Detalhamento dos Pacotes</div>
+            <div class="table-wrapper">
+                <table id="tabela-pacotes">
+                    <thead><tr><th>ID do pacote</th><th>Data</th><th>Lançado Por</th><th>Descrição</th><th>Valor</th><th>Origem de dano</th><th>Resolução</th><th>Status</th></tr></thead>
+                    <tbody><tr><td colspan='8' style='text-align:center; padding: 15px;'>Aguardando dados...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-mid">
+        <div class="chart-card glass-panel"><div class="chart-title">Status de Resolução</div><div id="chart-resolucao" class="chart-wrapper">Aguardando...</div></div>
+        <div class="chart-card glass-panel"><div class="chart-title">Origem do Dano</div><div id="chart-origem" class="chart-wrapper">Aguardando...</div></div>
+    </div>
+
+    <div class="row row-bot">
+        <div class="chart-card glass-panel" style="border-top: 3px solid var(--accent-yellow);"><div class="chart-title">Avarias por Semana</div><div id="chart-semana" class="chart-wrapper">Aguardando...</div></div>
+    </div>
+
+    <div id="modal-detalhes" class="modal-overlay">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Detalhes da Categoria</div>
+                <span class="modal-close" onclick="fecharModal()">&times;</span>
+            </div>
+            <div class="table-wrapper" style="max-height: 60vh;">
+                <table id="modal-table">
+                    <thead><tr><th>ID do pacote</th><th>Data</th><th>Lançado Por</th><th>Descrição</th><th>Valor</th><th>Origem de dano</th><th>Resolução</th><th>Status</th></tr></thead>
+                    <tbody id="modal-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const mlColors = ['#3483FA', '#00A650', '#FF7733', '#4A90E2', '#FFF159', '#737373', '#B2B2B2'];
+        let globalData = []; let dadosFiltradosAtuais = []; let chartInstances = {};
+        let colDataNome, colLancadoPorNome, colDescricao, colValor, colOrigem, colResolucao, colStatusResolucao;
+
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_NODE = "poka_avarias_diario";
+        
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { 
+            if (event.data.type === 'THEME_CHANGED') { 
+                document.body.setAttribute('data-theme', event.data.theme); 
+                if(globalData.length > 0) renderizarDashboard();
+            } 
+        });
+
+        // ============ PERMISSÕES GLOBAIS E LOGS ============
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        
+        const paginaNome = window.location.pathname.split('/').pop() || 'avarias-diario.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        
+        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'flex'; }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        // ============ UTILITÁRIOS ============
+        function getVal(row, possibleKeys) {
+            let keys = Object.keys(row);
+            for (let pk of possibleKeys) {
+                let found = keys.find(k => k.toLowerCase().trim() === pk.toLowerCase().trim());
+                if (found && row[found] !== undefined && row[found] !== null) return String(row[found]).trim();
+            }
+            return '';
+        }
+        
+        function extrairID(row) { return getVal(row, ['id do pacote', 'pacote', 'shipment', 'tracking', 'nº pacote', 'numero pacote', 'id_pacote']); }
+        function extrairIdAvaria(row) { return getVal(row, ['id', 'id avaria', 'id_avaria', 'avaria', 'id. avaria', 'id da avaria']); }
+        function parseCurrency(valStr) { if (!valStr) return 0; let s = String(valStr).replace('R$', '').replace(/\./g, '').replace(',', '.').trim(); return parseFloat(s) || 0; }
+        function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+        function obterDataHojeFormatada() { const hoje = new Date(); const dia = String(hoje.getDate()).padStart(2, '0'); const mes = String(hoje.getMonth() + 1).padStart(2, '0'); const ano = hoje.getFullYear(); return `${dia}/${mes}/${ano}`; }
+
+        window.onload = async function() {
+            try {
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
+                const dbData = await response.json();
+                if(dbData) {
+                    globalData = Array.isArray(dbData) ? dbData : (dbData.lista || []);
+                    if(globalData.length > 0) { preencherOpcoesDeFiltros(); resetarFiltrosHoje(); } 
+                    else { definirEstadoVazio("Banco Vazio. Faça Upload."); }
+                } else { definirEstadoVazio("Banco Vazio. Faça Upload."); }
+            } catch(e) { definirEstadoVazio("Offline (Aguardando CSV)"); }
+        };
+
+        function definirEstadoVazio(mensagem) {
+            document.getElementById('main-title').innerText = mensagem;
+            document.getElementById('tabela-pacotes').querySelector('tbody').innerHTML = "<tr><td colspan='8' style='text-align:center; padding: 15px;'>Nenhum dado ativo.</td></tr>";
+        }
+
+        async function mesclarESalvarFirebase(novosDados) {
+            let mapExistentes = new Map();
+            globalData.forEach(row => { let id = extrairID(row); if(id) mapExistentes.set(id, row); });
+
+            novosDados.forEach(row => {
+                let id = extrairID(row);
+                if (id) {
+                    let objSanitizado = {};
+                    for(let k in row) {
+                        let safeKey = String(k).replace(/[\.\#\$\/\[\]]/g, '_').trim();
+                        if(!safeKey) safeKey = "coluna_vazia"; 
+                        objSanitizado[safeKey] = (row[k] === null || row[k] === undefined) ? "" : String(row[k]);
+                    }
+                    mapExistentes.set(id, objSanitizado); 
+                }
+            });
+
+            let bancoAtualizado = Array.from(mapExistentes.values());
+            
+            try {
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bancoAtualizado) });
+                if(response.ok) {
+                    globalData = bancoAtualizado; preencherOpcoesDeFiltros(); resetarFiltrosHoje();
+                    await registrarLogFirebase("Avaria Diário", "Sincronizou a base de dados via CSV.");
+                    alert("Dados salvos e sincronizados com a nuvem.");
+                }
+            } catch (err) { alert("Erro ao salvar na nuvem."); }
+        }
+
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            if(!canEdit) return;
+            const file = event.target.files[0]; if (!file) return;
+            Papa.parse(file, { header: true, skipEmptyLines: true, complete: function(results) {
+                if (results.data && results.data.length > 0) {
+                    const dadosFiltrados = results.data.filter(row => Object.values(row).some(val => val !== null && val.trim() !== ''));
+                    mesclarESalvarFirebase(dadosFiltrados);
+                } else { alert("Arquivo Vazio"); }
+            }});
+            event.target.value = ''; 
+        });
+
+        function limparValor(valStr) { if(!valStr) return 0; return parseFloat(valStr.toString().replace('R$', '').replace(/\./g, '').replace(',', '.').trim()) || 0; }
+
+        function definirIdentificadoresDeColunas() {
+            if(globalData.length === 0) return;
+            let colunas = Object.keys(globalData[0]);
+            colDataNome = colunas.find(k => k.toLowerCase().includes('data') || k.toLowerCase().includes('date')) || 'Data';
+            colLancadoPorNome = colunas.find(k => k.toLowerCase().includes('problem solver') || k.toLowerCase().includes('lançado') || k.toLowerCase().includes('lancado')) || colunas[2]; 
+            colDescricao = colunas.find(k => k.toLowerCase().includes('descri')) || 'Descrição';
+            colValor = colunas.find(k => k.toLowerCase() === 'valor' || k.toLowerCase().includes('valor declarado')) || 'Valor';
+            colOrigem = colunas.find(k => k.toLowerCase().includes('origem')) || 'Origem de dano';
+            colResolucao = colunas.find(k => k.trim().toLowerCase() === 'resolução' || k.trim().toLowerCase() === 'resolucao') || 'Resolução';
+            colStatusResolucao = colunas.find(k => k.trim().toLowerCase() === 'status de resolução' || k.trim().toLowerCase() === 'status de resolucao') || 'Status de resolução';
+        }
+
+        function preencherOpcoesDeFiltros() {
+            if(globalData.length === 0) return;
+            definirIdentificadoresDeColunas();
+            let colSemanaNome = Object.keys(globalData[0]).find(k => k.toLowerCase().includes('semana') || k.toLowerCase().includes('week')) || 'Semana';
+            let semanas = new Set(), datas = new Set(), solvers = new Set();
+            
+            globalData.forEach(row => {
+                let sem = row[colSemanaNome] ? row[colSemanaNome].toString().trim() : '';
+                let dt = row[colDataNome] ? String(row[colDataNome]).trim().split(' ')[0] : '';
+                let slv = row[colLancadoPorNome] ? String(row[colLancadoPorNome]).trim() : '';
+                if(sem) semanas.add(sem); if(dt) datas.add(dt); if(slv) solvers.add(slv);
+            });
+
+            function popularSelectArray(id, arrayValores, textoPadrao) {
+                let select = document.getElementById(id);
+                select.innerHTML = `<option value="">${textoPadrao}</option>`;
+                arrayValores.forEach(val => { select.innerHTML += `<option value="${escapeHtml(val)}">${escapeHtml(val)}</option>`; });
+            }
+
+            let arraySemanas = Array.from(semanas).sort((a, b) => { let numA = parseInt(a.replace(/\D/g, '')) || 0; let numB = parseInt(b.replace(/\D/g, '')) || 0; return numB - numA; });
+            let arrayDatas = Array.from(datas).sort((a, b) => {
+                let partesA = a.split('/'); let partesB = b.split('/');
+                if(partesA.length === 3 && partesB.length === 3) return new Date(`${partesB[2]}-${partesB[1]}-${partesB[0]}`) - new Date(`${partesA[2]}-${partesA[1]}-${partesA[0]}`);
+                return b.localeCompare(a); 
+            });
+            let arraySolvers = Array.from(solvers).sort((a, b) => a.localeCompare(b));
+
+            popularSelectArray('filter-week', arraySemanas, 'Todas as Semanas');
+            popularSelectArray('filter-date', arrayDatas, 'Todos os Dias');
+            popularSelectArray('filter-solver', arraySolvers, 'Todos Lançadores');
+        }
+
+        function resetarFiltrosHoje() {
+            let dataHoje = obterDataHojeFormatada();
+            document.getElementById('filter-week').value = ""; document.getElementById('filter-solver').value = "";
+            let dateSelect = document.getElementById('filter-date');
+            let optionHoje = Array.from(dateSelect.options).find(opt => opt.value.startsWith(dataHoje));
+            dateSelect.value = optionHoje ? optionHoje.value : "";
+            renderizarDashboard();
+        }
+
+        function gerarLinhasTabela(dadosLista) {
+            let html = "";
+            dadosLista.forEach(row => {
+                let idPacote = extrairID(row) || '-'; let idAvaria = extrairIdAvaria(row) || '';
+                let dataPacote = row[colDataNome] ? escapeHtml(row[colDataNome]) : '-';
+                
+                let linkRastreio = idPacote !== '-' ? `https://envios.adminml.com/logistics/package-management/package/${escapeHtml(idPacote)}` : '#';
+                let lupaHtml = idPacote !== '-' ? `<a href="${linkRastreio}" target="_blank" class="icon-action lupa-icon" title="Rastreio"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></a>` : '';
+                let linkSauron = idPacote !== '-' ? `https://shipping-bo.adminml.com/sauron/shipments/shipment/${escapeHtml(idPacote)}` : '#';
+                let sauronHtml = idPacote !== '-' ? `<a href="${linkSauron}" target="_blank" class="icon-action sauron-icon" title="Sauron"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></a>` : '';
+                let linkDano = idAvaria !== '' ? `https://envios.adminml.com/logistics/problem-solving/detail/${escapeHtml(idAvaria)}` : '#';
+                let danoHtml = idAvaria !== '' ? `<a href="${linkDano}" target="_blank" class="icon-action dano-icon" title="Ver Avaria"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line><polyline points="12 12 15 14 10 16 13 18" stroke="#FF5252" stroke-width="2.5"></polyline></svg></a>` : '';
+
+                let valor = limparValor(row[colValor]);
+                let origem = row[colOrigem] && row[colOrigem].toString().trim() !== '' ? escapeHtml(row[colOrigem]) : '-';
+                let txtResolucao = row[colResolucao] ? escapeHtml(String(row[colResolucao]).trim()) : '-';
+                let txtStatusResolucao = row[colStatusResolucao] ? escapeHtml(String(row[colStatusResolucao]).trim()) : '-';
+
+                html += `<tr onclick="abrirModalLinha('${idPacote}')">
+                    <td class="td-id" onclick="event.stopPropagation();"><div style="display:flex; gap:8px;">${lupaHtml}${sauronHtml}${danoHtml}</div><span>${escapeHtml(idPacote)}</span></td>
+                    <td>${dataPacote}</td><td>${escapeHtml(row[colLancadoPorNome] || '-')}</td><td>${escapeHtml((row[colDescricao] || '-').substring(0,35))}...</td>
+                    <td class="col-valor">R$ ${valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                    <td>${origem}</td><td>${txtResolucao}</td><td>${txtStatusResolucao}</td>
+                </tr>`;
+            });
+            return html;
+        }
+
+        function renderizarDashboard() {
+            let currentMode = document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+            let labelColor = currentMode === 'light' ? '#333333' : '#EBEBEB'; 
+
+            if(globalData.length === 0) return;
+            definirIdentificadoresDeColunas();
+
+            let fWeek = document.getElementById('filter-week').value; let fDate = document.getElementById('filter-date').value; let fSolver = document.getElementById('filter-solver').value;
+            let colSemanaNome = Object.keys(globalData[0]).find(k => k.toLowerCase().includes('semana') || k.toLowerCase().includes('week')) || 'Semana';
+
+            dadosFiltradosAtuais = globalData.filter(row => {
+                let matchWeek = fWeek === "" || (row[colSemanaNome] && String(row[colSemanaNome]).trim() === fWeek);
+                let matchDate = fDate === "" || (row[colDataNome] && String(row[colDataNome]).trim().startsWith(fDate));
+                let matchSolver = fSolver === "" || (row[colLancadoPorNome] && String(row[colLancadoPorNome]).trim() === fSolver);
+                return matchWeek && matchDate && matchSolver;
+            });
+
+            dadosFiltradosAtuais.sort((a, b) => limparValor(b[colValor]) - limparValor(a[colValor]));
+
+            let totalValorDia = 0; let dadosChartResolucao = {}; let dadosOrigem = {};
+            dadosFiltradosAtuais.forEach(row => {
+                totalValorDia += limparValor(row[colValor]);
+                let txtStatusResolucao = row[colStatusResolucao] ? String(row[colStatusResolucao]).trim() : 'Não definido';
+                dadosChartResolucao[txtStatusResolucao] = (dadosChartResolucao[txtStatusResolucao] || 0) + 1;
+                let origem = row[colOrigem] && row[colOrigem].toString().trim() !== '' ? row[colOrigem] : 'Não definido';
+                dadosOrigem[origem] = (dadosOrigem[origem] || 0) + 1;
+            });
+
+            let qtdDia = dadosFiltradosAtuais.length;
+            let valorFormatado = totalValorDia.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            document.getElementById('main-title').innerText = `Avarias Diário - ${fDate || "Dados Filtrados"}`;
+            document.getElementById('kpi-valor').innerText = valorFormatado;
+            document.getElementById('kpi-qtd').innerText = qtdDia;
+            
+            document.getElementById('tabela-pacotes').querySelector('tbody').innerHTML = gerarLinhasTabela(dadosFiltradosAtuais) || "<tr><td colspan='8' style='text-align:center;'>Nenhum dado.</td></tr>";
+
+            Object.keys(chartInstances).forEach(key => { if(chartInstances[key]) chartInstances[key].destroy(); });
+
+            let resLabels = Object.keys(dadosChartResolucao); let resSeries = Object.values(dadosChartResolucao);
+            if(resLabels.length > 0) {
+                chartInstances.resolucao = new ApexCharts(document.querySelector("#chart-resolucao"), {
+                    series: [{ name: 'Qtd', data: resSeries }], chart: { type: 'bar', height: '100%', background: 'transparent', events: { dataPointSelection: function(e, c, config) { abrirModalBloco(`Status: ${config.w.globals.labels[config.dataPointIndex]}`, dadosFiltradosAtuais.filter(r => (r[colStatusResolucao] || 'Não definido').trim() === config.w.globals.labels[config.dataPointIndex])); } } },
+                    plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true, dataLabels: { position: 'bottom' } } }, colors: mlColors,
+                    dataLabels: { enabled: true, textAnchor: 'start', style: { colors: [labelColor], fontSize: '13px' }, formatter: function (val, opt) { return opt.w.globals.labels[opt.dataPointIndex] + ": " + val; }, offsetX: 0 },
+                    xaxis: { categories: resLabels, labels: {show: false} }, yaxis: { labels: { show: false } }, legend: { show: false },
+                    grid: { borderColor: currentMode === 'light' ? '#DDDDDD' : '#444', strokeDashArray: 3 }, theme: { mode: currentMode }
+                });
+                chartInstances.resolucao.render();
+            } else { document.getElementById('chart-resolucao').innerHTML = 'Sem dados.'; }
+
+            let origLabels = Object.keys(dadosOrigem); let origSeries = Object.values(dadosOrigem);
+            if(origLabels.length > 0) {
+                chartInstances.origem = new ApexCharts(document.querySelector("#chart-origem"), {
+                    series: [{ name: 'Qtd', data: origSeries }], chart: { type: 'bar', height: '100%', background: 'transparent', events: { dataPointSelection: function(e, c, config) { abrirModalBloco(`Origem: ${config.w.globals.labels[config.dataPointIndex]}`, dadosFiltradosAtuais.filter(r => (r[colOrigem] || 'Não definido').trim() === config.w.globals.labels[config.dataPointIndex])); } } },
+                    plotOptions: { bar: { horizontal: true, borderRadius: 4, distributed: true, dataLabels: { position: 'bottom' } } }, colors: mlColors,
+                    dataLabels: { enabled: true, textAnchor: 'start', style: { colors: [labelColor], fontSize: '13px' }, formatter: function (val, opt) { return opt.w.globals.labels[opt.dataPointIndex] + ": " + val; }, offsetX: 0 },
+                    xaxis: { categories: origLabels, labels: {show: false} }, yaxis: { labels: { show: false } }, legend: { show: false },
+                    grid: { borderColor: currentMode === 'light' ? '#DDDDDD' : '#444', strokeDashArray: 3 }, theme: { mode: currentMode }
+                });
+                chartInstances.origem.render();
+            } else { document.getElementById('chart-origem').innerHTML = 'Sem dados.'; }
+
+            let dadosSemana = {};
+            globalData.forEach(row => {
+                let sem = row[colSemanaNome] ? row[colSemanaNome].toString().trim() : 'S/N';
+                if(!dadosSemana[sem]) dadosSemana[sem] = { valor: 0, qtd: 0 };
+                dadosSemana[sem].valor += limparValor(row[colValor]); dadosSemana[sem].qtd += 1;
+            });
+
+            let semOrdenadas = Object.keys(dadosSemana).sort((a,b) => { let numA = a.replace(/\D/g,''); let numB = b.replace(/\D/g,''); return (numA || 0) - (numB || 0); });
+            let semValores = semOrdenadas.map(s => Math.round(dadosSemana[s].valor)); let semQtds = semOrdenadas.map(s => dadosSemana[s].qtd);
+
+            if(semOrdenadas.length > 0) {
+                chartInstances.semana = new ApexCharts(document.querySelector("#chart-semana"), {
+                    series: [ { name: 'Valor (R$)', type: 'column', data: semValores } ],
+                    chart: { type: 'bar', height: '100%', background: 'transparent' }, colors: ['#3483FA'],
+                    plotOptions: { bar: { borderRadius: 4, columnWidth: '45%', dataLabels: { position: 'top' } } },
+                    dataLabels: { enabled: true, offsetY: -25, style: { fontSize: '12px', colors: [currentMode === 'light' ? '#2D3277' : '#FFF159'] }, formatter: function (val, opts) { return ["R$ " + val.toLocaleString('pt-BR'), semQtds[opts.dataPointIndex] + " un."]; } },
+                    xaxis: { categories: semOrdenadas, labels: { style: { colors: labelColor, fontSize: '13px', fontWeight: 600 } } },
+                    yaxis: { labels: { formatter: (v) => "R$ " + v.toLocaleString('pt-BR'), style: { colors: labelColor, fontSize: '12px' } } },
+                    grid: { borderColor: currentMode === 'light' ? '#DDDDDD' : '#444', strokeDashArray: 3 },
+                    tooltip: { theme: currentMode, y: { formatter: function (val) { return "R$ " + val.toLocaleString('pt-BR'); } } }, theme: { mode: currentMode }
+                });
+                chartInstances.semana.render();
+            }
+        }
+
+        function abrirModalLinha(idPacoteSelecionado) {
+            let row = dadosFiltradosAtuais.find(r => extrairID(r) === idPacoteSelecionado);
+            if(row) abrirModalBloco(`Detalhe: ${idPacoteSelecionado}`, [row]);
+        }
+
+        function abrirModalBloco(titulo, subsetDados) {
+            document.getElementById('modal-title').innerText = titulo + ` (${subsetDados.length} pacotes)`;
+            document.getElementById('modal-tbody').innerHTML = gerarLinhasTabela(subsetDados);
+            document.getElementById('modal-detalhes').classList.add('active');
+        }
+
+        function fecharModal() { document.getElementById('modal-detalhes').classList.remove('active'); }
+
+        // =========================================================================
+        // EXPORTAÇÃO EM QUALIDADE 4K
+        // =========================================================================
+        function baixarDashboardComoImagem() {
+            document.body.classList.add('exporting');
+            setTimeout(() => {
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f';
+                html2canvas(document.body, { scale: 3, useCORS: true, backgroundColor: bgCor, logging: false }).then(canvas => {
+                    document.body.classList.remove('exporting');
+                    const link = document.createElement('a');
+                    link.download = `Avarias_Diario_${obterDataHojeFormatada().replaceAll('/', '-')}_4K.png`;
+                    link.href = canvas.toDataURL('image/png'); link.click();
+                }).catch(err => { document.body.classList.remove('exporting'); });
+            }, 100);
+        }
+    </script>
+</body>
+</html>
