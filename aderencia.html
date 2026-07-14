@@ -16,6 +16,7 @@
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- CSS GLOBAL -->
     <link rel="stylesheet" href="style.css">
@@ -51,6 +52,10 @@
         .btn-upload:hover { background-color: #F3E34C; transform: translateY(-2px); }
         
         .btn { border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .3s ease; }
+        .btn-dark { background: rgba(255, 255, 255, 0.15); color: var(--text-main); border: 1px solid var(--border-card); padding: 8px 16px; border-radius: 6px; font-size: 0.95rem;}
+        [data-theme="light"] .btn-dark { background: rgba(0, 0, 0, 0.05); border: 1px solid rgba(0, 0, 0, 0.1); }
+        .btn-dark:hover { background: rgba(255, 255, 255, 0.25); transform: translateY(-2px); }
+
         .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
         .upload-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
 
@@ -94,6 +99,12 @@
         .modal-title { font-size: 1.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase;}
         .modal-close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.8rem; cursor: pointer; display: inline-flex; line-height: 1; font-weight: bold;}
         .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 1rem; }
+        
+        /* Exportação */
+        .exporting .top-bar { display: none !important; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-body); }
+        ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
 </head>
 <body data-theme="light">
@@ -105,6 +116,14 @@
         <select id="filter-data" class="select-date" onchange="aplicarFiltroData()">
             <option value="">Aguardando Dados...</option>
         </select>
+        
+        <!-- BOTÃO EXPORTAR 4K -->
+        <button class="btn btn-dark" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
+            </svg>
+            Exportar 4K
+        </button>
 
         <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Selecione o CSV exportado da aba 'Tabela'">
             <button class="btn-upload">
@@ -162,7 +181,7 @@
                 <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 10px; text-align: left; color: var(--text-main);">Para qual data você está subindo esta Aderência?</p>
                 <select id="modal-csv-date-select" class="select-date" style="width: 100%; border-color: var(--accent-warn); height: 45px; font-size: 1rem;"></select>
                 <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; text-align: left;">* A aderência será vinculada e salvará no banco sob o dia escolhido.</p>
-                <button class="btn-upload" style="margin-top: 15px; width: 100%; height: 45px; font-size: 1rem; justify-content: center;" onclick="confirmarImportacaoCsv()">Salvar Aderência</button>
+                <button class="btn btn-upload" style="margin-top: 15px; width: 100%; height: 45px; font-size: 1rem; justify-content: center;" onclick="confirmarImportacaoCsv()">Salvar Aderência</button>
             </div>
         </div>
     </div>
@@ -242,6 +261,41 @@
             processarMatrizCSV(dataObj.matriz);
         }
 
+        function baixarDashboardComoImagem() {
+            const btn = document.getElementById('btnExportar');
+            const statusBadge = document.getElementById('data-status');
+            const txtOriginal = statusBadge.innerText;
+            const corOriginal = statusBadge.style.color;
+            
+            statusBadge.innerText = 'Gerando UHD 4K...';
+            statusBadge.style.color = '#3483FA';
+            btn.disabled = true;
+            document.body.classList.add('exporting');
+
+            setTimeout(() => {
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#ffffff' : '#0b121f';
+
+                html2canvas(document.body, { scale: 3, useCORS: true, backgroundColor: bgCor, logging: false }).then(canvas => {
+                    document.body.classList.remove('exporting');
+                    statusBadge.innerText = txtOriginal;
+                    statusBadge.style.color = corOriginal;
+                    btn.disabled = false;
+                    
+                    const hoje = new Date();
+                    const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${hoje.getFullYear()}`;
+                    const link = document.createElement('a');
+                    link.download = `Aderencia_Inventario_${dataFormatada}_4K.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }).catch(() => {
+                    document.body.classList.remove('exporting');
+                    btn.disabled = false;
+                    statusBadge.innerText = 'Erro captura';
+                    statusBadge.style.color = '#FF5252';
+                });
+            }, 150);
+        }
+
         const frasesEquipe = ["Um inventário preciso é a base de uma logística de excelência.", "Trabalho em equipe move caixas, mas também move montanhas.", "Cada bip conta! Nossa dedicação constrói a melhor experiência do Mercado Livre."];
         function showModernToast(hasXPT) {
             const container = document.getElementById('toast-container');
@@ -266,14 +320,13 @@
         function definirEstadoVazio(mensagem) {
             const statusBadge = document.getElementById('data-status');
             statusBadge.innerText = mensagem; statusBadge.style.color = "#FF7733";
-            const msgTbody = "<tr><td colspan='5' style='text-align: center; padding: 20px;'>Nenhum dado ativo.</td></tr>";
+            const msgTbody = "<tr><td colspan='5' style='text-align: center; padding: 20px;'>Nenhum dado ativo para essa data.</td></tr>";
             document.getElementById('tbody-geral').innerHTML = msgTbody;
             document.getElementById('tbody-sem-ativos').innerHTML = msgTbody;
             document.getElementById('tbody-ativos').innerHTML = "<tr><td colspan='5' style='text-align: center; padding: 20px;'>Nenhum dado ativo.</td></tr>";
         }
 
         document.getElementById('csvFileInput').addEventListener('change', function(event) {
-            if(!canEdit) return;
             const file = event.target.files[0]; 
             if (!file) return;
 
@@ -283,11 +336,19 @@
             selectModal.innerHTML = '';
             
             for(let i = 0; i <= 4; i++) {
-                const d = new Date(); d.setDate(d.getDate() - i);
-                const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0');
-                const dbDateKey = `${y}-${m}-${day}`; const dataBR = `${day}/${m}/${y}`;
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
                 
-                let label = dataBR; if(i === 0) label += " (Hoje)"; else if(i === 1) label += " (Ontem)";
+                const dbDateKey = `${y}-${m}-${day}`;
+                const dataBR = `${day}/${m}/${y}`;
+                
+                let label = dataBR;
+                if(i === 0) label += " (Hoje)";
+                else if(i === 1) label += " (Ontem)";
+                
                 selectModal.innerHTML += `<option value="${dbDateKey}">${label}</option>`;
             }
 
@@ -302,7 +363,7 @@
         function fecharModalCsvDataExterno(e) { if(e.target.id === 'csv-date-select-modal') fecharModalCsvData(); }
 
         function confirmarImportacaoCsv() {
-            if(!canEdit || !temporaryCsvFile) return;
+            if(!temporaryCsvFile) return;
 
             const dbDateKey = document.getElementById('modal-csv-date-select').value;
             const p = dbDateKey.split('-');
@@ -328,11 +389,14 @@
                     DB_LOCAL[dbDateKey] = payloadData;
 
                     try {
-                        const response = await fetch(`${FIREBASE_URL}${NODE_HISTORICO}/${dbDateKey}.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
-                        await fetch(`${FIREBASE_URL}aderencia.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
+                        const response = await fetch(`${FIREBASE_URL}${NODE_HISTORICO}/${dbDateKey}.json`, {
+                            method: 'PUT',
+                            body: JSON.stringify(payloadData)
+                        });
                         
+                        await fetch(`${FIREBASE_URL}aderencia.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
                         await registrarLogFirebase("Aderência Tabela", `Substituiu os dados consolidados do dia: <b>${globalDataBRFormatada}</b>`);
-
+                        
                         if(response.ok) {
                             statusBadge.innerText = "Online (Histórico Ativo)";
                             statusBadge.style.color = "#00A650";
@@ -375,7 +439,9 @@
                     let cell = formatVal(data[r][c]).toLowerCase();
                     if(cell === 'com ativo poc' || cell === 'atico poc' || cell === 'ativo poc') { 
                         t3_col = c - 1; t3_row = r + 1; 
-                        for(let h = 0; h < data[r].length; h++) { if(formatVal(data[r][h]).toLowerCase() === 'xpt') { hasXPT = true; resultHasXPT = true; break; } }
+                        for(let h = 0; h < data[r].length; h++) {
+                            if(formatVal(data[r][h]).toLowerCase() === 'xpt') { hasXPT = true; resultHasXPT = true; break; }
+                        }
                         break; 
                     }
                 }
