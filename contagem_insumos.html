@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
-        /* Variáveis locais específicas desta página não cobertas pelo CSS Global */
+        /* Variáveis locais para a tabela/cards */
         :root {
             --bg-header: rgba(15, 23, 42, 0.6);
             --bg-input: rgba(15, 23, 42, 0.8);
@@ -35,148 +35,87 @@
             --accent-warn: #B48B00;
         }
 
-        html, body { width: 100%; min-height: 100%; background: transparent; /* Pega o fundo do iframe */ }
+        html, body { width: 100%; min-height: 100%; background: transparent; }
         body { padding: 8px; }
 
-        /* HEADER E BOTÕES */
         .top-header {
             background-color: #FFF159 !important; color: #2D3277; border-radius: 10px; padding: 10px 16px;
             display: flex; align-items: center; justify-content: space-between; gap: 12px;
             margin-bottom: 10px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
-
         .header-left { display: flex; align-items: center; }
         .ml-logo { height: 28px; object-fit: contain; }
-
-        .header-center {
-            text-align: center; font-size: 0.95rem; font-weight: 900; color: #2D3277 !important; 
-            text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
-        }
-
+        .header-center { text-align: center; font-size: 0.95rem; font-weight: 900; color: #2D3277 !important; text-transform: uppercase; flex: 1; }
         .header-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap;}
+        .status-badge { background: #FFFFFF !important; color: #333333 !important; border: 1px solid rgba(0,0,0,0.1) !important; font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.8rem; padding: 6px 12px; border-radius: 6px; }
 
-        .header-right .status-badge {
-            background: #FFFFFF !important; color: #333333 !important; border: 1px solid rgba(0,0,0,0.1) !important;
-            font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.8rem;
-            padding: 6px 12px; border-radius: 6px; white-space: nowrap;
-        }
-
-        .btn-action, .btn {
-            border-radius: 6px; padding: 6px 14px; font-size: .8rem; font-weight: 800;
-            cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
-            gap: 6px; text-decoration: none; transition: all 0.25s ease-in-out; white-space: nowrap;
-            font-family: 'Inter', sans-serif; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
+        .btn-action, .btn { border-radius: 6px; padding: 6px 14px; font-size: .8rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; transition: all 0.25s ease-in-out; font-family: 'Inter', sans-serif; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .btn-blue { background: var(--accent-blue); color: #fff; border: none; }
-        .btn-blue:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .btn-blue:hover { transform: translateY(-2px); }
         .btn-green { background: var(--accent-green); color: #fff; border: none; }
-        .btn-green:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .btn-green:hover { transform: translateY(-2px); }
         .btn-red { background: var(--accent-red); color: #fff; border: none; }
-        .btn-red:hover { filter: brightness(1.1); transform: translateY(-2px); }
+        .btn-red:hover { transform: translateY(-2px); }
         .btn-dark { background: rgba(255, 255, 255, 0.15); color: var(--text-main); border: 1px solid var(--border-card); }
         .btn-dark:hover { background: rgba(255, 255, 255, 0.25); transform: translateY(-2px); }
         [data-theme="light"] .btn-dark { background: rgba(0, 0, 0, 0.05); color: var(--text-main); border: 1px solid var(--border-light); }
         [data-theme="light"] .btn-dark:hover { background: rgba(0, 0, 0, 0.1); transform: translateY(-2px); }
 
-        /* FILTROS E KPIS */
-        .filters-card {
-            background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card);
-            border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; 
-            display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; box-shadow: var(--shadow-card);
-        }
-
+        .filters-card { background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; box-shadow: var(--shadow-card); }
         .field label { display: block; color: var(--text-muted); font-size: .74rem; font-weight: 900; margin-bottom: 6px; text-transform: uppercase; }
-        .field input, .field select {
-            width: 100%; background: var(--bg-input); color: var(--text-main);
-            border: 1px solid var(--border-light); border-radius: 6px;
-            padding: 10px 11px; outline: none; font-size: .9rem; transition: 0.2s;
-        }
+        .field input, .field select { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 11px; outline: none; font-size: .9rem; transition: 0.2s; }
         .field input:focus, .field select:focus { border-color: var(--accent-blue); }
 
         .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
-        .summary-card {
-            background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card);
-            border-radius: 10px; padding: 12px; box-shadow: var(--shadow-card); border-left: 4px solid var(--accent-blue);
-        }
+        .summary-card { background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; padding: 12px; box-shadow: var(--shadow-card); border-left: 4px solid var(--accent-blue); }
         .summary-title { color: var(--text-muted); font-size: .72rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
         .summary-value { color: var(--text-title); font-size: 1.35rem; font-weight: 900; }
 
-        /* CARTÃO DE ITEM E CAIXAS DE INFORMAÇÃO */
         .items-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 10px; }
-
-        .item-card {
-            background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card);
-            border-radius: 10px; padding: 12px; box-shadow: var(--shadow-card); display: grid; grid-template-columns: 92px 1fr; gap: 12px; min-height: 150px;
-        }
-
-        .photo-box {
-            width: 92px; height: 92px; background: var(--bg-header); border: 1px solid var(--border-light); 
-            border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;
-            color: var(--text-muted); font-size: .72rem; font-weight: 800; text-align: center;
-        }
+        .item-card { background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; padding: 12px; box-shadow: var(--shadow-card); display: grid; grid-template-columns: 92px 1fr; gap: 12px; min-height: 150px; }
+        .photo-box { width: 92px; height: 92px; background: var(--bg-header); border: 1px solid var(--border-light); border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: .72rem; font-weight: 800; text-align: center; }
         .photo-box img { width: 100%; height: 100%; object-fit: cover; }
-
         .item-content { min-width: 0; display: flex; flex-direction: column;}
         .item-name { color: var(--text-title); font-size: .95rem; font-weight: 900; line-height: 1.25; margin-bottom: 5px; }
         .item-category { color: var(--accent-blue); font-size: .76rem; font-weight: 900; margin-bottom: 8px; }
-
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px; }
         .info { background: var(--bg-header); border: 1px solid var(--border-card); border-radius: 6px; padding: 7px 8px; min-width: 0; transition: background 0.3s;}
         .info-label { color: var(--text-muted); font-size: .64rem; font-weight: 900; text-transform: uppercase; margin-bottom: 2px; }
         .info-value { color: var(--text-main); font-size: .8rem; font-weight: 800; word-break: break-word; }
 
-        .info.bg-ok { background: rgba(0, 166, 80, 0.15); border-color: rgba(0, 166, 80, 0.3); }
-        .info.bg-ok .info-value { color: var(--accent-green); font-size: 0.9rem;}
-        .info.bg-warn { background: rgba(255, 176, 0, 0.15); border-color: rgba(255, 176, 0, 0.3); }
-        .info.bg-warn .info-value { color: var(--accent-warn); font-size: 0.9rem;}
-        .info.bg-bad { background: rgba(255, 82, 82, 0.15); border-color: rgba(255, 82, 82, 0.3); }
-        .info.bg-bad .info-value { color: var(--accent-red); font-size: 0.9rem;}
+        .info.bg-ok { background: rgba(0, 166, 80, 0.15); border-color: rgba(0, 166, 80, 0.3); } .info.bg-ok .info-value { color: var(--accent-green); font-size: 0.9rem;}
+        .info.bg-warn { background: rgba(255, 176, 0, 0.15); border-color: rgba(255, 176, 0, 0.3); } .info.bg-warn .info-value { color: var(--accent-warn); font-size: 0.9rem;}
+        .info.bg-bad { background: rgba(255, 82, 82, 0.15); border-color: rgba(255, 82, 82, 0.3); } .info.bg-bad .info-value { color: var(--accent-red); font-size: 0.9rem;}
 
         .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto;}
         .card-actions .btn { width: 100%; }
-
         .empty { grid-column: 1 / -1; background-color: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-muted); padding: 28px; border-radius: 8px; text-align: center; font-weight: 900; }
 
-        /* MODAIS */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center; padding: 14px; }
         .modal-overlay.active { display: flex; }
-
         .modal { width: 100%; max-width: 560px; max-height: calc(100vh - 28px); background-color: var(--bg-card); border: 1px solid var(--border-card); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; display: flex; flex-direction: column; }
         .modal-header { background-color: #FFF159 !important; color: #2D3277; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex: 0 0 auto; }
         .modal-title { font-size: .95rem; font-weight: 900; line-height: 1.3; }
         .modal-close { border: none; background: transparent; color: #2D3277; font-size: 1.4rem; font-weight: 900; cursor: pointer; }
         .modal-body { padding: 14px; overflow-y: auto; flex: 1 1 auto; }
-        
         .preview-row { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; margin-bottom: 14px; }
         .preview-img { width: 96px; height: 96px; border-radius: 10px; border: 1px solid var(--border-light); background: var(--bg-header); object-fit: cover; }
         .preview-text { color: var(--text-muted); font-size: .82rem; font-weight: 700; line-height: 1.45; }
-
         .modal-fields { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
         .field-full { grid-column: 1 / -1; }
         .readonly-box { background: var(--bg-header); border: 1px solid var(--border-card); border-radius: 7px; padding: 10px 11px; color: var(--text-muted); font-weight: 800; font-size: .88rem; }
         .modal-footer { padding: 12px 14px; display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--border-card); flex: 0 0 auto; }
 
-        @media (max-width: 900px) {
-            .top-header { flex-direction: column; align-items: center; }
-            .header-center { white-space: normal; }
-            .filters-card { grid-template-columns: 1fr; }
-            .summary { grid-template-columns: 1fr; }
-            .items-list { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 900px) { .top-header { flex-direction: column; align-items: center; } .header-center { white-space: normal; } .filters-card { grid-template-columns: 1fr; } .summary { grid-template-columns: 1fr; } .items-list { grid-template-columns: 1fr; } }
     </style>
 </head>
-
 <body data-theme="light">
     <div class="top-header">
-        <div class="header-left">
-            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre">
-        </div>
+        <div class="header-left"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre"></div>
         <div class="header-center">CONTAGEM DE INSUMOS</div>
         <div class="header-right">
             <span class="status-badge" id="data-status">Conectando...</span>
             <button class="btn btn-dark" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">Exportar 4K</button>
-            <a href="insumos.html" class="btn btn-blue">Visão Crítica</a>
             <button class="btn btn-dark" onclick="carregarDoFirebase()">Sync</button>
             <button class="btn btn-green" id="btn-novo-item" onclick="abrirModalAdicionar()">+ Novo Item</button>
         </div>
@@ -185,7 +124,7 @@
     <div class="filters-card">
         <div class="field"><label>Categoria</label><select id="filter-categoria"><option value="Todos">Todos</option></select></div>
         <div class="field"><label>Buscar material</label><input type="text" id="search-input" placeholder="Digite nome ou ID..."></div>
-        <button class="btn btn-dark" onclick="limparFiltros()">Resetar Filtros</button>
+        <button class="btn btn-dark" onclick="limparFiltros()">Resetar</button>
     </div>
 
     <div class="summary">
@@ -194,26 +133,21 @@
         <div class="summary-card" style="border-left-color: var(--accent-green);"><div class="summary-title">Filtrados</div><div class="summary-value" id="kpi-filtrados">0</div></div>
     </div>
 
-    <div class="items-list" id="items-list">
-        <div class="empty">Carregando itens...</div>
-    </div>
+    <div class="items-list" id="items-list"><div class="empty">Carregando itens...</div></div>
 
-    <!-- MODAIS DE EDIÇÃO -->
+    <!-- MODAL AJUSTE RÁPIDO -->
     <div class="modal-overlay" id="edit-modal">
         <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title">Ajuste Rápido</div>
-                <button class="modal-close" onclick="fecharModal('edit-modal')">×</button>
-            </div>
+            <div class="modal-header"><div class="modal-title">Ajuste Rápido</div><button class="modal-close" onclick="fecharModal('edit-modal')">×</button></div>
             <div class="modal-body">
                 <div class="preview-row">
-                    <img id="modal-preview" class="preview-img" src="" alt="Foto do item">
+                    <img id="modal-preview" class="preview-img" src="" alt="Foto">
                     <div class="preview-text">Altere apenas a foto e a quantidade atual.<br>A data da contagem será atualizada.</div>
                 </div>
                 <div class="modal-fields">
                     <div class="field field-full"><label>Material</label><div class="readonly-box" id="modal-material">-</div></div>
                     <div class="field field-full"><label>Foto (URL)</label><input type="text" id="modal-foto" placeholder="URL da imagem"></div>
-                    <div class="field field-full"><label>Estoque atual</label><input type="number" id="modal-estoque" style="font-size: 1.2rem; font-weight: 900;" placeholder="Digite o estoque atual"></div>
+                    <div class="field field-full"><label>Estoque atual</label><input type="number" id="modal-estoque" style="font-size: 1.2rem; font-weight: 900;"></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -223,26 +157,24 @@
         </div>
     </div>
 
+    <!-- MODAL COMPLETO -->
     <div class="modal-overlay" id="full-edit-modal">
         <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title" id="full-modal-title">Edição Completa</div>
-                <button class="modal-close" onclick="fecharModal('full-edit-modal')">×</button>
-            </div>
+            <div class="modal-header"><div class="modal-title" id="full-modal-title">Edição Completa</div><button class="modal-close" onclick="fecharModal('full-edit-modal')">×</button></div>
             <div class="modal-body">
                 <div class="modal-fields">
-                    <div class="field"><label>ID do Material</label><input type="text" id="full-id"></div>
-                    <div class="field"><label>Nome do Material</label><input type="text" id="full-nome"></div>
+                    <div class="field"><label>ID</label><input type="text" id="full-id"></div>
+                    <div class="field"><label>Nome</label><input type="text" id="full-nome"></div>
                     <div class="field"><label>Categoria</label><input type="text" id="full-categoria"></div>
                     <div class="field"><label>Unidade</label><input type="text" id="full-unidade"></div>
                     <div class="field"><label>Tamanho</label><input type="text" id="full-tamanho"></div>
-                    <div class="field"><label>URL da Foto</label><input type="text" id="full-foto"></div>
-                    <div class="field"><label>Estoque de Segurança</label><input type="number" id="full-estoque-seguranca"></div>
+                    <div class="field"><label>Foto URL</label><input type="text" id="full-foto"></div>
+                    <div class="field"><label>Estoque Seg.</label><input type="number" id="full-estoque-seguranca"></div>
                     <div class="field"><label>Estoque Atual</label><input type="number" id="full-estoque-atual"></div>
-                    <div class="field"><label>Pedidos Pendentes</label><input type="text" id="full-pedidos"></div>
-                    <div class="field"><label>Saldo Registrado</label><input type="text" id="full-saldo"></div>
-                    <div class="field"><label>Total Entradas</label><input type="text" id="full-entradas"></div>
-                    <div class="field"><label>Total Saídas</label><input type="text" id="full-saidas"></div>
+                    <div class="field"><label>Pedidos</label><input type="text" id="full-pedidos"></div>
+                    <div class="field"><label>Saldo</label><input type="text" id="full-saldo"></div>
+                    <div class="field"><label>Entradas</label><input type="text" id="full-entradas"></div>
+                    <div class="field"><label>Saídas</label><input type="text" id="full-saidas"></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -259,40 +191,30 @@
         const placeholderImg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzc3Nzc3NyI+U2VtIEZvdG88L3RleHQ+PC9zdmc+";
         const $ = (s) => document.querySelector(s);
 
-        let ALL_ITEMS = [];
-        let ITEM_KEYS = [];
-        let editingIndex = null;
-        let editingKey = null;
-        let isAdding = false;
+        let ALL_ITEMS = []; let ITEM_KEYS = []; let editingIndex = null; let editingKey = null; let isAdding = false;
 
-        // ============ SINCRONIZAÇÃO DE TEMA (VEM DO PAI) ============
-        function syncTheme() {
-            const theme = localStorage.getItem('themePreference') || 'light';
-            document.body.setAttribute('data-theme', theme);
-        }
-        syncTheme();
-        window.addEventListener('storage', (e) => { if (e.key === 'themePreference') syncTheme(); });
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme(); window.addEventListener('storage', (e) => { if (e.key === 'themePreference') syncTheme(); });
 
-        // ============ PERMISSÕES GLOBAIS ============
         const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
         let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
         let canEdit = ['editor', 'admin'].includes(userRole);
+        if(!canEdit) $('#btn-novo-item').style.display = 'none';
 
-        if(!canEdit) { $('#btn-novo-item').style.display = 'none'; }
+        // Manda o log para o feed do index!
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
 
-        // ============ FUNÇÕES ESSENCIAIS ============
         function setStatus(texto, cor = "#FF7733") { const el = $('#data-status'); el.innerText = texto; el.style.color = cor; }
         function escapeHtml(value) { return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;'); }
         function escapeAttr(value) { return escapeHtml(value); }
         function dataHoraAgora() { const agora = new Date(); return agora.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
-
-        function semaforoBgClass(atual, seguranca) {
-            let a = parseFloat(atual) || 0; let s = parseFloat(seguranca) || 0;
-            if (s <= 0) return a > 0 ? 'bg-ok' : 'bg-bad';
-            if (a > s) return 'bg-ok'; 
-            if (a >= (s * 0.3) && a > 0) return 'bg-warn'; 
-            return 'bg-bad'; 
-        }
+        function semaforoBgClass(a, s) { let at = parseFloat(a)||0; let se = parseFloat(s)||0; if(se<=0) return at>0?'bg-ok':'bg-bad'; if(at>se) return 'bg-ok'; if(at>=(se*0.3)&&at>0) return 'bg-warn'; return 'bg-bad'; }
 
         function getValue(item, keys, fallback = '') {
             if (!item) return fallback; 
@@ -317,80 +239,68 @@
         async function carregarDoFirebase() {
             setStatus('Conectando...', '#3483FA');
             try {
-                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
-                const dbData = await response.json();
+                const res = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`); const dbData = await res.json();
                 ALL_ITEMS = []; ITEM_KEYS = [];
                 if (dbData && dbData.lista) {
                     if (Array.isArray(dbData.lista)) { dbData.lista.forEach((row, index) => { if (row !== null && row !== undefined) { ITEM_KEYS.push(index); ALL_ITEMS.push(normalizeItem(row, index)); } }); } 
                     else { Object.keys(dbData.lista).forEach((key, index) => { const row = dbData.lista[key]; if (row !== null && row !== undefined) { ITEM_KEYS.push(key); ALL_ITEMS.push(normalizeItem(row, index)); } }); }
                 }
-                ALL_ITEMS = ALL_ITEMS.filter(x => String(x.nome_material).trim() !== '');
-                fillCategorias(); renderLista(); setStatus(dbData?.atualizadoEm ? dbData.atualizadoEm : 'Dados carregados', '#00A650');
-            } catch(error) { setStatus('Erro ao conectar no Firebase.', '#FF5252'); }
+                ALL_ITEMS = ALL_ITEMS.filter(x => String(x.nome_material).trim() !== ''); fillCategorias(); renderLista(); setStatus(dbData?.atualizadoEm ? dbData.atualizadoEm : 'Dados carregados', '#00A650');
+            } catch(error) { setStatus('Erro ao conectar.', '#FF5252'); }
         }
 
         function fillCategorias() {
-            const categorias = [...new Set(ALL_ITEMS.map(item => item.categoria_material || 'Sem categoria'))].filter(Boolean).sort((a,b) => a.localeCompare(b));
-            $('#filter-categoria').innerHTML = `<option value="Todos">Todos</option>` + categorias.map(cat => `<option value="${escapeAttr(cat)}">${escapeHtml(cat)}</option>`).join('');
-            $('#kpi-categorias').innerText = categorias.length;
+            const cats = [...new Set(ALL_ITEMS.map(i => i.categoria_material || 'Sem categoria'))].filter(Boolean).sort((a,b) => a.localeCompare(b));
+            $('#filter-categoria').innerHTML = `<option value="Todos">Todos</option>` + cats.map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('');
+            $('#kpi-categorias').innerText = cats.length;
         }
 
         function renderLista() {
-            const categoria = $('#filter-categoria').value;
-            const busca = String($('#search-input').value || '').trim().toLowerCase();
-
-            const filtered = ALL_ITEMS.map((item, index) => ({ item, index })).filter(({ item }) => {
-                const matchCategoria = categoria === 'Todos' || String(item.categoria_material).trim() === categoria;
-                const textoBusca = [item.id_material, item.nome_material, item.categoria_material].join(' ').toLowerCase();
-                return matchCategoria && (!busca || textoBusca.includes(busca));
+            const cat = $('#filter-categoria').value; const bus = String($('#search-input').value || '').trim().toLowerCase();
+            const filt = ALL_ITEMS.map((item, index) => ({ item, index })).filter(({ item }) => {
+                const matchCat = cat === 'Todos' || String(item.categoria_material).trim() === cat;
+                const txt = [item.id_material, item.nome_material, item.categoria_material].join(' ').toLowerCase();
+                return matchCat && (!bus || txt.includes(bus));
             });
-
-            $('#kpi-total').innerText = ALL_ITEMS.length; $('#kpi-filtrados').innerText = filtered.length;
-
-            if (filtered.length === 0) { $('#items-list').innerHTML = `<div class="empty">Nenhum item encontrado.</div>`; return; }
+            $('#kpi-total').innerText = ALL_ITEMS.length; $('#kpi-filtrados').innerText = filt.length;
+            if (filt.length === 0) { $('#items-list').innerHTML = `<div class="empty">Nenhum item encontrado.</div>`; return; }
 
             let html = '';
-            for (const { item, index } of filtered) {
-                const foto = item.Foto || '';
-                const fotoHtml = foto ? `<img src="${escapeAttr(foto)}" alt="${escapeAttr(item.nome_material)}" onerror="this.onerror=null; this.src='${placeholderImg}'">` : `<img src="${placeholderImg}">`;
-                const bgStockClass = semaforoBgClass(item.Estoque_atual, item.estoque_segurança);
-                let actionsHtml = '';
-                if (canEdit) { actionsHtml = `<div class="card-actions"><button class="btn btn-blue" onclick="abrirModal(${index})">Ajuste Rápido</button><button class="btn btn-dark" onclick="abrirModalCompleto(${index})">Editar Tudo</button></div>`; }
-
+            for (const { item, index } of filt) {
+                const fHtml = item.Foto ? `<img src="${escapeAttr(item.Foto)}" onerror="this.src='${placeholderImg}'">` : `<img src="${placeholderImg}">`;
+                const bgCls = semaforoBgClass(item.Estoque_atual, item.estoque_segurança);
+                let actHtml = ''; if (canEdit) { actHtml = `<div class="card-actions"><button class="btn btn-blue" onclick="abrirModal(${index})">Ajuste Rápido</button><button class="btn btn-dark" onclick="abrirModalCompleto(${index})">Editar Tudo</button></div>`; }
                 html += `
                     <div class="item-card">
-                        <div class="photo-box">${fotoHtml}</div>
+                        <div class="photo-box">${fHtml}</div>
                         <div class="item-content">
-                            <div class="item-name">${escapeHtml(item.nome_material)}</div>
-                            <div class="item-category">${escapeHtml(item.categoria_material)}</div>
+                            <div class="item-name">${escapeHtml(item.nome_material)}</div><div class="item-category">${escapeHtml(item.categoria_material)}</div>
                             <div class="info-grid">
                                 <div class="info"><div class="info-label">ID</div><div class="info-value">${escapeHtml(item.id_material)}</div></div>
-                                <div class="info"><div class="info-label">Unidade</div><div class="info-value">${escapeHtml(item.unidade || '-')}</div></div>
                                 <div class="info"><div class="info-label">Segurança</div><div class="info-value">${escapeHtml(item.estoque_segurança || 0)}</div></div>
-                                <div class="info ${bgStockClass}"><div class="info-label">Estoque atual</div><div class="info-value">${escapeHtml(item.Estoque_atual || 0)}</div></div>
-                                <div class="info"><div class="info-label">Tamanho</div><div class="info-value">${escapeHtml(item.tamanho || '-')}</div></div>
+                                <div class="info ${bgCls}"><div class="info-label">Estoque atual</div><div class="info-value">${escapeHtml(item.Estoque_atual || 0)}</div></div>
                                 <div class="info"><div class="info-label">Última contagem</div><div class="info-value">${escapeHtml(item["Ultima contagem"] || '-')}</div></div>
                             </div>
-                            ${actionsHtml}
+                            ${actHtml}
                         </div>
                     </div>`;
             }
             $('#items-list').innerHTML = html;
         }
 
-        // ============ AÇÕES DOS MODAIS ============
         function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
         function abrirModal(index) {
-            if (!canEdit) return alert('Sem permissão para editar.');
-            editingIndex = index; editingKey = ITEM_KEYS[index]; const item = ALL_ITEMS[index];
-            $('#modal-material').innerText = item.nome_material || '-'; $('#modal-foto').value = item.Foto || ''; $('#modal-estoque').value = item.Estoque_atual || 0; $('#modal-preview').src = item.Foto || placeholderImg;
+            if (!canEdit) return; editingIndex = index; editingKey = ITEM_KEYS[index]; const i = ALL_ITEMS[index];
+            $('#modal-material').innerText = i.nome_material || '-'; $('#modal-foto').value = i.Foto || ''; $('#modal-estoque').value = i.Estoque_atual || 0; $('#modal-preview').src = i.Foto || placeholderImg;
             $('#edit-modal').classList.add('active'); setTimeout(() => { $('#modal-estoque').focus(); }, 250);
         }
 
         async function salvarEdicaoRapida() {
             if (!canEdit || editingIndex === null) return;
-            const itemAtualizado = { ...ALL_ITEMS[editingIndex], Foto: $('#modal-foto').value.trim(), Estoque_atual: $('#modal-estoque').value, "Ultima contagem": dataHoraAgora() };
-            await commitarEdicaoFirebase(itemAtualizado); fecharModal('edit-modal');
+            const up = { ...ALL_ITEMS[editingIndex], Foto: $('#modal-foto').value.trim(), Estoque_atual: $('#modal-estoque').value, "Ultima contagem": dataHoraAgora() };
+            await commitarEdicaoFirebase(up);
+            await registrarLogFirebase("Contagem de Insumos", `Fez um ajuste rápido no estoque de: <b>${up.nome_material}</b>`);
+            fecharModal('edit-modal');
         }
 
         function preencherFullModal(i) {
@@ -408,29 +318,24 @@
             };
         }
 
-        function abrirModalCompleto(index) {
-            if (!canEdit) return;
-            isAdding = false; editingIndex = index; editingKey = ITEM_KEYS[index]; $('#full-modal-title').innerText = "Editar Todas as Informações";
-            preencherFullModal(ALL_ITEMS[index]); $('#btn-full-excluir').style.display = 'block'; $('#full-edit-modal').classList.add('active');
-        }
-
-        function abrirModalAdicionar() {
-            if (!canEdit) return;
-            isAdding = true; editingIndex = null; editingKey = null; $('#full-modal-title').innerText = "Adicionar Novo Item";
-            preencherFullModal({}); $('#btn-full-excluir').style.display = 'none'; $('#full-edit-modal').classList.add('active');
-        }
+        function abrirModalCompleto(index) { if (!canEdit) return; isAdding = false; editingIndex = index; editingKey = ITEM_KEYS[index]; $('#full-modal-title').innerText = "Editar Todas as Informações"; preencherFullModal(ALL_ITEMS[index]); $('#btn-full-excluir').style.display = 'block'; $('#full-edit-modal').classList.add('active'); }
+        function abrirModalAdicionar() { if (!canEdit) return; isAdding = true; editingIndex = null; editingKey = null; $('#full-modal-title').innerText = "Adicionar Novo Item"; preencherFullModal({}); $('#btn-full-excluir').style.display = 'none'; $('#full-edit-modal').classList.add('active'); }
 
         async function salvarEdicaoCompleta() {
-            if (!canEdit) return; const obj = obterObjetoFull();
-            if (!obj.nome_material) { alert("O nome do material é obrigatório!"); return; }
+            if (!canEdit) return; const obj = obterObjetoFull(); if (!obj.nome_material) { alert("Nome obrigatório!"); return; }
             if (isAdding) {
                 setStatus('Adicionando...', '#3483FA');
                 try {
                     await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/lista.json`, { method: 'POST', body: JSON.stringify(obj) });
                     await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PATCH', body: JSON.stringify({ atualizadoEm: obj["Ultima contagem"] }) });
+                    await registrarLogFirebase("Contagem de Insumos", `Adicionou o novo item: <b>${obj.nome_material}</b> no banco de dados.`);
                     fecharModal('full-edit-modal'); await carregarDoFirebase();
-                } catch(e) { alert('Erro ao adicionar no Firebase.'); }
-            } else { await commitarEdicaoFirebase(obj); fecharModal('full-edit-modal'); }
+                } catch(e) { alert('Erro no Firebase.'); }
+            } else { 
+                await commitarEdicaoFirebase(obj); 
+                await registrarLogFirebase("Contagem de Insumos", `Editou todas as informações do item: <b>${obj.nome_material}</b>`);
+                fecharModal('full-edit-modal'); 
+            }
         }
 
         async function commitarEdicaoFirebase(item) {
@@ -444,36 +349,34 @@
 
         async function excluirItem() {
             if (editingIndex === null || editingKey === null || !canEdit) return;
-            if (!confirm(`Deseja realmente excluir o item "${ALL_ITEMS[editingIndex].nome_material}"?`)) return;
+            const name = ALL_ITEMS[editingIndex].nome_material;
+            if (!confirm(`Excluir "${name}"?`)) return;
             setStatus('Excluindo...', '#FF5252');
             try {
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/lista/${editingKey}.json`, { method: 'DELETE' });
+                await registrarLogFirebase("Contagem de Insumos", `Removeu o item: <b>${name}</b> do sistema.`);
                 ALL_ITEMS.splice(editingIndex, 1); ITEM_KEYS.splice(editingIndex, 1);
                 fecharModal('edit-modal'); fecharModal('full-edit-modal'); renderLista(); setStatus(dataHoraAgora(), '#00A650');
-            } catch (error) { setStatus('Erro ao excluir.', '#FF5252'); }
+            } catch (error) { setStatus('Erro.', '#FF5252'); }
         }
 
-        // ============ INTERATIVIDADES ============
         function limparFiltros() { $('#filter-categoria').value = 'Todos'; $('#search-input').value = ''; renderLista(); }
         $('#filter-categoria').addEventListener('change', renderLista); $('#search-input').addEventListener('input', renderLista);
         $('#modal-foto').addEventListener('input', function() { $('#modal-preview').src = this.value || placeholderImg; });
 
         function baixarDashboardComoImagem() {
-            if (!ALL_ITEMS || ALL_ITEMS.length === 0) return alert("Nenhum dado para exportar.");
-            const s = $('#data-status'); const orig = s.innerText; const cor = s.style.color;
-            s.innerText = 'Processando UHD 4K...'; s.style.color = '#3483FA';
+            if (!ALL_ITEMS || ALL_ITEMS.length === 0) return;
+            const s = $('#data-status'); const orig = s.innerText; const cor = s.style.color; s.innerText = 'Processando...'; s.style.color = '#3483FA';
             const style = document.createElement('style'); style.id = 'temp-capture';
             style.innerHTML = `.btn-action, .filters-card, .card-actions { display: none !important; } ::-webkit-scrollbar { display: none !important; } body { overflow: visible !important; height: auto !important; } .items-list { overflow: visible !important; }`;
             document.head.appendChild(style);
-
             setTimeout(() => {
                 html2canvas(document.body, { scale: 3, useCORS: true, backgroundColor: document.body.getAttribute('data-theme') === 'light' ? '#ffffff' : '#0b121f' }).then(c => {
                     document.head.removeChild(style); s.innerText = orig; s.style.color = cor;
-                    const a = document.createElement('a'); a.download = `Contagem_Insumos_${new Date().toISOString().slice(0,10)}.png`; a.href = c.toDataURL('image/png'); a.click();
+                    const a = document.createElement('a'); a.download = `Insumos_${new Date().toISOString().slice(0,10)}.png`; a.href = c.toDataURL('image/png'); a.click();
                 }).catch(e => { document.head.removeChild(style); s.innerText = 'Erro captura'; s.style.color = '#FF5252'; });
             }, 300);
         }
-
         carregarDoFirebase();
     </script>
 </body>
