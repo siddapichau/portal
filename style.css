@@ -109,3 +109,46 @@ body { background-color: var(--bg-body); color: var(--text-main); min-height: 10
 .btn-auth { width: 100%; padding: 12px; background: var(--accent-blue); color: #fff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.2s;}
 .btn-auth:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(52, 131, 250, 0.4); }
 .auth-toggle { font-size: 0.85rem; color: var(--accent-blue); cursor: pointer; text-align: center; font-weight: 600; }
+
+/* =========================================
+   RESPONSIVIDADE GERAL E MOBILE
+   ========================================= */
+@media (max-width: 650px) {
+    /* Ajuste da Barra Superior */
+    .top-bar-wrapper { padding: 0 10px; }
+    .ml-logo { height: 28px; }
+    .btn-minimal { width: 34px; height: 34px; }
+    
+    /* Ajuste do Menu Lateral Duplo para Celulares */
+    .sidebar-wrapper {
+        width: 100vw; /* O menu ocupa a tela toda do celular */
+        left: -100vw; /* Esconde 100% da tela quando fechado */
+    }
+    .sidebar-wrapper.open { left: 0; }
+
+    /* Transforma a barra esquerda em uma "Slim Bar" */
+    .sidebar-left { 
+        width: 100px; 
+        border-right: 1px solid #444;
+    }
+    .sidebar-tabs { flex-direction: column; padding: 10px 5px; }
+    .cat-item { 
+        font-size: 0.7rem; 
+        padding: 12px 5px; 
+        flex-direction: column; 
+        text-align: center; 
+        gap: 5px;
+        border-radius: 0;
+        margin-right: 0;
+    }
+    .cat-item span { display: none; } /* Esconde a setinha ">" */
+
+    /* A barra direita ocupa o restante da tela */
+    .sidebar-right { 
+        width: calc(100vw - 100px); 
+    }
+    .subitem-link { 
+        padding: 12px 10px; 
+        font-size: 0.8rem;
+    }
+}
