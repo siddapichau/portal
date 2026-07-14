@@ -2,511 +2,488 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Reportes - Mercado Livre</title>
+    <title>Admin - Gerenciar Menu e Usuários</title>
     
-    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'admin.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
     <link rel="stylesheet" href="style.css">
-
     <style>
-        :root { --bg-gradient: radial-gradient(circle at top right, #1e3c72 0%, #0f172a 40%, #050505 100%); }
-        [data-theme="light"] { --bg-gradient: #ffffff; }
+        body { background: transparent !important; padding: 20px; }
+        #main-content { max-width: 1200px; margin: 0 auto; width: 100%; }
         
-        body { background: var(--bg-gradient); background-attachment: fixed; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-y: hidden; }
+        .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border-card); box-shadow: var(--shadow-card); }
+        .header-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .admin-tabs { display: flex; border-bottom: 2px solid var(--border-card); margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
+        .admin-tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; transition: 0.3s;}
+        .admin-tab.active { color: var(--accent-blue); border-bottom: 3px solid var(--accent-blue); }
+        .admin-tab:hover { color: var(--text-title); }
         
-        #main-content { margin-top: 80px; width: 100%; max-width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0 15px; flex: 1; transition: 0.3s; }
+        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: 0.2s; }
+        
+        /* Drop Zones visuais */
+        .drag-over { border: 2px dashed var(--accent-blue) !important; background: rgba(52, 131, 250, 0.05) !important; }
 
-        .main-title { font-size: 2.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; position: relative; padding-bottom: 12px; text-align: center; }
-        .main-title::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 4px; background-color: var(--accent-blue); border-radius: 2px; }
+        .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; align-items: center; transition: 0.2s; }
+        .sub-subitem-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: var(--bg-body); border: 1px dashed var(--accent-blue); border-radius: 6px; margin-left: 40px; margin-top: 5px; transition: 0.2s; }
+        
+        .subitem-row > input, .subitem-row > select, .sub-subitem-row > input, .sub-subitem-row > select { flex: 1; min-width: 100px; padding: 8px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); border-radius: 4px; font-size: 0.8rem;}
+        
+        .btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; justify-content: center;}
+        .btn:hover { transform: translateY(-2px); }
+        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #334155; } .btn-warn { background-color: var(--accent-warn); color: #333;}
 
-        .quote-container { background: var(--bg-card); border-left: 4px solid var(--accent-blue); border-radius: 8px; padding: 15px 25px; box-shadow: var(--shadow-card); max-width: 800px; width: 100%; margin-bottom: 30px; position: relative; overflow: hidden; text-align: center; }
-        .quote-text { font-size: 1rem; color: var(--text-main); font-style: italic; font-weight: 600; transition: opacity 0.5s ease; }
-        .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-blue); width: 0%; }
+        .user-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .user-table th, .user-table td { padding: 12px; border-bottom: 1px solid var(--border-card); font-size: 0.85rem;}
+        .user-table th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
+        .user-table select { padding: 5px; border-radius: 4px; background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border-card); outline: none;}
+        .user-table select:focus { border-color: var(--accent-blue); }
 
-        /* =========================================
-           GRID DE 3 COLUNAS (DENTRO DO HOME-VIEW)
-           ========================================= */
-        #home-view { width: 100%; max-width: 1500px; display: grid; grid-template-columns: 320px 1fr 300px; gap: 20px; height: calc(100vh - 250px); margin-bottom: 20px; }
+        /* EDITOR DE NOTÍCIAS RICAS */
+        .editor-toolbar { display: flex; gap: 5px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap; align-items: center;}
+        [data-theme="light"] .editor-toolbar { background: rgba(0,0,0,0.05); }
+        .editor-toolbar .btn-dark { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); font-size: 0.95rem; padding: 6px 10px; }
+        .editor-toolbar .btn-dark:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        .editor-toolbar .btn-dark.active-btn { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        
+        .toolbar-divider { width: 1px; height: 24px; background: var(--border-card); margin: 0 5px; }
 
-        .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden; }
-        
-        .panel-header { background: rgba(52, 131, 250, 0.05); padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; }
-        .panel-header h2 { font-size: 1rem; color: var(--text-title); display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 900;}
-        
-        .panel-content { flex: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column;}
-        
-        .panel-content::-webkit-scrollbar { width: 6px; }
-        .panel-content::-webkit-scrollbar-track { background: transparent; }
-        .panel-content::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 4px; }
-        
-        .muted-msg { text-align: center; padding: 40px 20px; color: var(--text-muted); font-weight: 600; }
-        .error-msg { text-align: center; padding: 40px 20px; color: #FF5252; font-weight: 600; }
-
-        /* --- COLUNA 1: LOGS --- */
-        .live-indicator { width: 8px; height: 8px; background-color: var(--accent-green); border-radius: 50%; box-shadow: 0 0 8px var(--accent-green); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
-
-        .feed-list { list-style: none; padding: 0; margin: 0; }
-        .feed-item { padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; transition: background 0.2s; }
-        .feed-item:hover { background: rgba(52, 131, 250, 0.05); }
-        .feed-item:last-child { border-bottom: none; }
-        
-        .feed-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
-        .feed-details { display: flex; flex-direction: column; gap: 3px; margin-top: -2px;}
-        .feed-module { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .feed-action { font-size: 0.85rem; color: var(--text-main); font-weight: 600; line-height: 1.3;}
-        .feed-meta { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 5px; margin-top: 4px;}
-        .feed-meta strong { color: var(--accent-blue); font-weight: 800; }
-
-        /* --- COLUNA 2: NOTÍCIAS --- */
-        .news-header-banner { background: #FFF159; color: #2D3277; padding: 10px; text-align: center; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: center; align-items: center; gap: 8px;}
-        
-        .post-card { padding: 20px; border-bottom: 4px solid var(--border-card); display: flex; flex-direction: column; gap: 12px; position: relative;}
-        .post-card:last-child { border-bottom: none; }
-        .post-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .post-author-box { display: flex; align-items: center; gap: 10px; }
-        .author-avatar { width: 40px; height: 40px; background: var(--accent-blue); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; text-transform: uppercase;}
-        .author-info { display: flex; flex-direction: column; }
-        .author-name { font-weight: 900; color: var(--text-title); font-size: 0.95rem; }
-        .post-date { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
-        .post-tag { background: rgba(52, 131, 250, 0.15); color: var(--accent-blue); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; border: 1px solid rgba(52, 131, 250, 0.3);}
-        
-        .post-title { font-size: 1.1rem; font-weight: 900; color: var(--text-title); line-height: 1.3;}
-        .post-body { font-size: 0.9rem; color: var(--text-main); line-height: 1.5; white-space: pre-wrap; word-break: break-word;}
-        .post-body img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
-        .post-body a { color: var(--accent-blue); font-weight: bold; text-decoration: underline; }
-        
-        .post-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 15px; border-top: 1px solid var(--border-card); }
-        .ml-signature { font-size: 0.75rem; color: var(--text-muted); font-weight: 800; display: flex; align-items: center; gap: 6px; font-style: italic;}
-        .ml-signature img { height: 14px; opacity: 0.7;}
-        
-        .btn-like { background: transparent; border: 1px solid var(--border-card); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.85rem; transition: 0.3s; position: relative; overflow: hidden;}
-        .btn-like:hover { background: rgba(52, 131, 250, 0.1); border-color: var(--accent-blue); color: var(--accent-blue); }
-        .btn-like.liked { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
-        
-        .like-anim-text { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font-weight: 900; color: var(--accent-blue); font-size: 0.8rem; opacity: 0; pointer-events: none; white-space: nowrap; text-shadow: 0 2px 4px rgba(0,0,0,0.5);}
-        @keyframes flyUp { 0% { bottom: 0%; opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { bottom: 150%; opacity: 0; transform: translate(-50%, -20px) scale(1.2); } }
-        .like-anim-text.animate { animation: flyUp 1s ease-out forwards; }
-
-        /* --- COLUNA 3: USUÁRIOS E STATUS --- */
-        .user-group-title { background: rgba(0,0,0,0.2); padding: 8px 15px; font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-card); border-top: 1px solid var(--border-card);}
-        [data-theme="light"] .user-group-title { background: rgba(0,0,0,0.03); }
-        .user-group-title:first-child { border-top: none; }
-        
-        .user-list { list-style: none; padding: 0; margin: 0; }
-        .user-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-card); }
-        .user-item:last-child { border-bottom: none; }
-        .user-avatar { width: 32px; height: 32px; background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; }
-        
-        .user-info { display: flex; flex-direction: column; gap: 2px;}
-        .user-name { font-weight: 800; font-size: 0.85rem; color: var(--text-title); display: flex; align-items: center; gap: 6px;}
-        .user-role { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;}
-        
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block;}
-        .dot-online { background-color: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
-        .dot-offline { background-color: var(--text-muted); }
-        .dot-new { background-color: var(--accent-warn); }
-
-        #app-frame { display: none; width: 100%; height: calc(100vh - 90px); border: none; border-radius: 12px; background: var(--bg-body); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-
-        @media (max-width: 1100px) {
-            #home-view { grid-template-columns: 1fr 300px; height: auto; }
-            .col-news { grid-column: 1 / -1; order: -1; max-height: 500px;}
-        }
-        @media (max-width: 768px) {
-            #home-view { grid-template-columns: 1fr; }
-            .col-news, .panel-box { max-height: 400px; }
-        }
+        .rich-editor { min-height: 250px; max-height: 500px; overflow-y: auto; padding: 15px; border: 1px solid var(--border-card); border-radius: 0 0 8px 8px; background: var(--bg-input); color: var(--text-main); outline: none; font-size: 0.95rem; line-height: 1.5; }
+        .rich-editor:focus { border-color: var(--accent-blue); }
+        .rich-editor img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+        .rich-editor a { color: var(--accent-blue); text-decoration: underline; font-weight: bold;}
     </style>
 </head>
 <body data-theme="light">
 
-    <script src="menu.js"></script>
-
     <div id="main-content">
-        <h1 class="main-title" id="page-title">Portal de Controles Internos</h1>
-
-        <div class="quote-container" id="quote-box">
-            <span id="animated-quote" class="quote-text">"Carregando a missão do dia..."</span>
-            <div class="progress-bar" id="progress-bar"></div>
-        </div>
-
-        <div id="home-view">
+        <div class="admin-container" id="adminPanel" style="display:none;">
+            <h2 style="margin-bottom: 20px; color: var(--text-title);">⚙️ Painel de Administração</h2>
             
-            <!-- COLUNA 1: LOGS -->
-            <div class="panel-box col-logs">
-                <div class="panel-header">
-                    <h2><div class="live-indicator" title="Monitorando ao vivo"></div> Radar de Atividades</h2>
+            <div class="admin-tabs">
+                <div class="admin-tab active" onclick="switchAdminTab('menus')">Gestão de Menus</div>
+                <div class="admin-tab" onclick="switchAdminTab('users')">Gestão de Usuários</div>
+                <div class="admin-tab" onclick="switchAdminTab('news')">Mural de Notícias</div>
+            </div>
+
+            <!-- ABA DE MENUS -->
+            <div id="tab-menus">
+                <div class="header-actions">
+                    <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar na Nuvem</button>
+                    <button class="btn btn-dark" onclick="baixarJSON()">⬇️ Baixar .json</button>
+                    <input type="file" id="jsonUpload" accept=".json" style="display:none" onchange="subirJSON(event)">
+                    <button class="btn btn-green" onclick="document.getElementById('jsonUpload').click()">⬆️ Subir .json</button>
                 </div>
-                <div class="panel-content">
-                    <ul class="feed-list" id="feed-list">
-                        <div class="muted-msg">Conectando à Central...</div>
-                    </ul>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
+                    Dica: Você pode arrastar as setinhas (↕️) para mover Menus de Nível 2 entre categorias diferentes, ou Menus de Nível 3 para dentro de qualquer Menu de Nível 2.
+                </div>
+                <div id="categorias-container"></div>
+                <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; font-size: 1rem;">+ Adicionar Nova Categoria (1º Nível)</button>
+            </div>
+
+            <!-- ABA DE USUÁRIOS -->
+            <div id="tab-users" style="display:none;">
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos. As alterações são salvas diretamente na planilha.</p>
+                <div style="overflow-x: auto;">
+                    <table class="user-table">
+                        <thead><tr><th>Usuário</th><th>E-mail</th><th>Status</th><th>Cargo</th><th>Ação</th></tr></thead>
+                        <tbody id="users-tbody"><tr><td colspan="5" style="text-align:center;">Carregando usuários...</td></tr></tbody>
+                    </table>
                 </div>
             </div>
 
-            <!-- COLUNA 2: NOTÍCIAS -->
-            <div class="panel-box col-news">
-                <div class="news-header-banner">
-                    📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS
-                </div>
-                <div class="panel-content" id="news-feed-container">
-                    <div class="muted-msg">Carregando mural...</div>
-                </div>
-            </div>
+            <!-- ABA DE NOTÍCIAS -->
+            <div id="tab-news" style="display:none;">
+                <div class="cat-card" style="padding: 25px;" id="news-editor-box">
+                    <h3 id="news-editor-title" style="color: var(--text-title); margin-bottom: 15px; font-weight: 900; text-transform: uppercase;">Criar Nova Publicação</h3>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <input type="text" id="news-title" placeholder="Título da Notícia..." style="flex: 2; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                        <input type="text" id="news-tag" placeholder="Tag (Ex: Atualização, Aviso...)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                    </div>
+                    
+                    <div class="editor-toolbar">
+                        <button class="btn btn-dark" onclick="formatText('bold')" title="Negrito"><b>B</b></button>
+                        <button class="btn btn-dark" onclick="formatText('italic')" title="Itálico"><i>I</i></button>
+                        <button class="btn btn-dark" onclick="formatText('underline')" title="Sublinhado"><u>U</u></button>
+                        
+                        <div class="toolbar-divider"></div>
+                        
+                        <button class="btn btn-dark" onclick="alignText('Left')" title="Alinhar à Esquerda">⬅️</button>
+                        <button class="btn btn-dark" onclick="alignText('Center')" title="Centralizar">↔️</button>
+                        <button class="btn btn-dark" onclick="alignText('Right')" title="Alinhar à Direita">➡️</button>
 
-            <!-- COLUNA 3: USUÁRIOS E PRESENÇA -->
-            <div class="panel-box col-users">
-                <div class="panel-header">
-                    <h2>👥 Equipe no Portal</h2>
+                        <div class="toolbar-divider"></div>
+
+                        <button class="btn btn-dark" onclick="insertLink()" title="Inserir Link de Texto">🔗 Link</button>
+                        <button class="btn btn-dark" onclick="document.getElementById('news-img-upload').click()" title="Subir Imagem do PC">🖼️ Subir Imagem</button>
+                        <input type="file" id="news-img-upload" accept="image/*" style="display:none;" onchange="insertImageUpload(this)">
+                        <button class="btn btn-dark" onclick="insertImageLink()" title="Inserir Imagem por Link (URL)">🔗 Img (Link)</button>
+                        <button class="btn btn-dark" onclick="insertVideoLink()" title="Inserir Vídeo do YouTube">🎥 Vídeo</button>
+                        <button class="btn btn-dark" onclick="insertFileLink()" title="Inserir botão de Download (PDF, Drive)">📄 Anexar Arquivo</button>
+                        
+                        <div class="toolbar-divider"></div>
+
+                        <button class="btn btn-dark" id="btn-toggle-html" onclick="toggleHTML()" title="Ver e Editar o Código HTML Puro">💻 </> Code</button>
+                    </div>
+                    <div id="news-body" contenteditable="true" class="rich-editor"></div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn btn-blue" id="btn-publicar" style="flex: 1; padding: 14px; font-size: 1.05rem;" onclick="publicarNoticia()">🚀 Publicar no Mural</button>
+                        <button class="btn btn-dark" id="btn-cancelar-edicao" style="display: none; padding: 14px;" onclick="cancelarEdicao()">✖ Cancelar Edição</button>
+                    </div>
                 </div>
-                <div class="panel-content" id="users-feed-container">
-                    <div class="muted-msg">Mapeando presenças...</div>
-                </div>
+                
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-title); font-weight: 900; text-transform: uppercase;">Publicações Anteriores</h3>
+                <div id="news-list-admin" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
 
         </div>
-
-        <iframe id="app-frame" src=""></iframe>
+        
+        <div id="acessoNegado" style="display:none; text-align:center; padding: 50px;"><h2 style="color: #FF5252;">Acesso Negado 🛑</h2><p>Faça login com cargo de 'admin'.</p></div>
     </div>
 
+    <datalist id="lista-usuarios"></datalist>
+
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const ICONES_LOGISTICA = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑", "↳"];
         
-        let CURRENT_LOGGED_USER = null;
-        try { CURRENT_LOGGED_USER = JSON.parse(localStorage.getItem('loggedUser')); } catch(e) {}
-        let currentUserStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.usuario) ? CURRENT_LOGGED_USER.usuario : 'Você';
-        let currentRoleStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.cargo) ? CURRENT_LOGGED_USER.cargo : 'Acesso Local';
+        let adMenuData = { categorias: [] }; 
+        let allUsers = [];
 
-        // ==========================================
-        // CITAÇÕES ANIMADAS
-        // ==========================================
-        const messages = [ "O talento vence jogos, mas o trabalho em equipe e a inteligência vencem campeonatos.", "Um inventário preciso é o coração da nossa logística.", "No Mercado Livre, não entregamos apenas pacotes, entregamos propósitos.", "Nossa força está na união. Juntos, fazemos do nosso inventário um modelo de eficiência." ];
-        let msgIndex = 0; const quoteEl = document.getElementById('animated-quote'); const progressBar = document.getElementById('progress-bar'); const INTERVAL_MS = 10000;
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } });
 
-        function startMessageCycle() {
-            if(!quoteEl) return; quoteEl.innerText = messages[msgIndex]; animateProgressBar();
-            setInterval(() => { quoteEl.style.opacity = 0; setTimeout(() => { msgIndex = (msgIndex + 1) % messages.length; quoteEl.innerText = messages[msgIndex]; quoteEl.style.opacity = 1; animateProgressBar(); }, 500); }, INTERVAL_MS);
-        }
-        function animateProgressBar() { progressBar.style.transition = 'none'; progressBar.style.width = '0%'; void progressBar.offsetWidth; progressBar.style.transition = `width ${INTERVAL_MS}ms linear`; progressBar.style.width = '100%'; }
-        
-        // ==========================================
-        // FUNÇÃO DE TIMEOUT PARA O FETCH (EVITAR TRAVAMENTOS)
-        // ==========================================
-        async function fetchWithTimeout(resource, options = {}) {
-            const { timeout = 8000 } = options;
-            const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), timeout);
-            const response = await fetch(resource, { ...options, signal: controller.signal });
-            clearTimeout(id);
-            return response;
-        }
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Admin';
 
-        // ==========================================
-        // COLUNA 1: LOGS DE ATIVIDADE
-        // ==========================================
-        async function carregarFeedAtualizacoes() {
-            const listEl = document.getElementById('feed-list');
+        async function registrarLogFirebase(modulo, acao) {
             try {
-                const res = await fetchWithTimeout(`${FIREBASE_URL}logs.json?_=${Date.now()}`); 
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        window.onload = async () => {
+            if(!currentUser || currentUser.cargo !== 'admin') { document.getElementById('acessoNegado').style.display = 'block'; return; }
+            document.getElementById('adminPanel').style.display = 'block';
+            try { const res = await fetch(`${FIREBASE_URL}menu_global.json`); const data = await res.json(); adMenuData = data && data.categorias ? data : { categorias: [] }; renderizarAdmin(); } catch (e) { console.error(e); }
+            fetchUsersFromSheet();
+        };
+
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById('tab-menus').style.display = tab === 'menus' ? 'block' : 'none';
+            document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
+            document.getElementById('tab-news').style.display = tab === 'news' ? 'block' : 'none';
+            event.target.classList.add('active');
+
+            if(tab === 'news') carregarNoticiasAdmin();
+        }
+
+        // ==========================================
+        // GESTÃO DE USUÁRIOS E MENUS (MANTIDO)
+        // ==========================================
+        async function fetchUsersFromSheet() {
+            try {
+                const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "getUsers" }) });
                 const data = await res.json();
-                
-                if(!data) { listEl.innerHTML = '<div class="muted-msg">Nenhuma atividade recente.</div>'; return; }
-                
-                let logs = [];
-                if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
-                
-                logs.sort((a, b) => b.timestamp - a.timestamp); logs = logs.slice(0, 15); 
-                listEl.innerHTML = '';
-                
-                logs.forEach(log => {
-                    const dataFormatada = new Date(log.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                    let icon = '📝'; let bgStyle = 'rgba(52, 131, 250, 0.1)'; let colorStyle = 'var(--accent-blue)';
-                    const actionTxt = String(log.acao || '').toLowerCase();
-                    
-                    if (actionTxt.includes('adicionou') || actionTxt.includes('criou') || actionTxt.includes('publicou')) { icon = '✨'; bgStyle = 'rgba(0, 166, 80, 0.1)'; colorStyle = 'var(--accent-green)'; } 
-                    else if (actionTxt.includes('removeu') || actionTxt.includes('excluiu') || actionTxt.includes('apagou')) { icon = '🗑️'; bgStyle = 'rgba(255, 82, 82, 0.1)'; colorStyle = 'var(--accent-red)'; }
-                    else if (actionTxt.includes('sincronizou')) { icon = '🔄'; bgStyle = 'rgba(255, 176, 0, 0.1)'; colorStyle = 'var(--accent-warn)'; }
-
-                    listEl.innerHTML += `
-                        <li class="feed-item">
-                            <div class="feed-icon" style="background: ${bgStyle}; color: ${colorStyle};">${icon}</div>
-                            <div class="feed-details">
-                                <span class="feed-module">${log.modulo || 'Sistema'}</span>
-                                <span class="feed-action">${log.acao}</span>
-                                <span class="feed-meta">Por <strong>${log.usuario || 'Desconhecido'}</strong> • ${dataFormatada}</span>
-                            </div>
-                        </li>
-                    `;
-                });
-            } catch (e) { 
-                console.error("Erro Logs:", e);
-                if(listEl.innerHTML.includes('Conectando')) listEl.innerHTML = '<div class="error-msg">Erro ao carregar o radar de atividades.</div>'; 
-            } 
+                if(data.success) { allUsers = data.users; renderUserTable(); populateDatalist(); }
+            } catch(e) {}
+        }
+        function populateDatalist() { const dl = document.getElementById('lista-usuarios'); dl.innerHTML = ''; allUsers.forEach(u => { dl.innerHTML += `<option value="${u.usuario}">`; }); }
+        function renderUserTable() {
+            const tbody = document.getElementById('users-tbody'); tbody.innerHTML = '';
+            allUsers.forEach((u, idx) => {
+                tbody.innerHTML += `<tr><td><strong>${u.usuario}</strong></td><td>${u.email}</td>
+                    <td><select id="status-${idx}"><option value="pendente" ${u.solicitacao === 'pendente' ? 'selected' : ''}>Pendente</option><option value="aprovado" ${u.solicitacao === 'aprovado' ? 'selected' : ''}>Aprovado</option><option value="bloqueado" ${u.solicitacao === 'bloqueado' ? 'selected' : ''}>Bloqueado</option></select></td>
+                    <td><select id="cargo-${idx}"><option value="view" ${u.cargo === 'view' ? 'selected' : ''}>View</option><option value="editor" ${u.cargo === 'editor' ? 'selected' : ''}>Editor</option><option value="admin" ${u.cargo === 'admin' ? 'selected' : ''}>Admin</option></select></td>
+                    <td><button class="btn btn-blue" onclick="salvarUsuario(${idx}, '${u.usuario}')">Atualizar</button></td></tr>`;
+            });
+        }
+        async function salvarUsuario(idx, username) {
+            const status = document.getElementById(`status-${idx}`).value; const cargo = document.getElementById(`cargo-${idx}`).value;
+            try { 
+                const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "updateUser", usuario: username, solicitacao: status, cargo: cargo }) }); 
+                const data = await res.json(); 
+                alert(data.message); 
+                await registrarLogFirebase("Painel Admin", `Alterou permissões/cargo do usuário: <b>${username}</b>`);
+            } catch(e) { alert("Erro ao atualizar."); }
         }
 
+        function getIconOptions(selected) { return ICONES_LOGISTICA.map(ico => `<option value="${ico}" ${ico === selected ? 'selected' : ''}>${ico}</option>`).join(''); }
+        function renderizarAdmin() {
+            const container = document.getElementById('categorias-container'); container.innerHTML = '';
+            adMenuData.categorias.forEach((cat, catIdx) => {
+                let itemsHtml = '';
+                (cat.items || []).forEach((item, itemIdx) => {
+                    let subItemsHtml = '';
+                    (item.subItems || []).forEach((sub, subIdx) => {
+                        subItemsHtml += `<div class="sub-subitem-row" draggable="true" ondragstart="dragStart(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})"><span style="color:var(--accent-blue); font-weight:bold; cursor: grab;">↕️ 3º Nível:</span><select onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(sub.icon)}</select><input type="text" placeholder="Nome" value="${sub.title || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'title', this.value)"><input type="text" placeholder="URL (.html)" value="${sub.url || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'url', this.value)"><input type="text" placeholder="Ver (view,editor)" value="${sub.viewRoles || 'view,editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'viewRoles', this.value)"><input type="text" placeholder="Editar (editor,admin)" value="${sub.uploadRoles || 'editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'uploadRoles', this.value)"><input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${sub.allowedUsers || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'allowedUsers', this.value)"><button class="btn btn-red" onclick="removerSubItem(${catIdx}, ${itemIdx}, ${subIdx})">✖</button></div>`;
+                    });
+                    itemsHtml += `<div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})"><span style="color:#888; font-weight:bold; cursor: grab; font-size:1.2rem;">↕️ 2º Nível</span><select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(item.icon)}</select><input type="text" placeholder="Nome do Menu" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)"><input type="text" placeholder="URL da Página" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)"><div style="flex-basis: 100%; height: 0; margin: 0;"></div><input type="text" placeholder="Ver (view,editor,admin)" value="${item.viewRoles || 'view,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)"><input type="text" placeholder="Editar (editor,admin)" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)"><input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${item.allowedUsers || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'allowedUsers', this.value)"><button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu</button><button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖ Remover</button><div style="width: 100%;">${subItemsHtml}</div></div>`;
+                });
+                container.innerHTML += `<div class="cat-card" draggable="true" ondragstart="dragStart(event, 'cat', ${catIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'cat', ${catIdx})"><div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap; border-bottom: 2px solid var(--border-card); padding-bottom: 15px;"><span style="font-weight:900; color:var(--text-title); font-size:1.1rem; cursor: grab;">↕️ 1º Nível:</span><select onchange="updateCat(${catIdx}, 'icon', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">${getIconOptions(cat.icon)}</select><input type="text" placeholder="Nome" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; min-width: 150px; padding:8px; font-weight:bold; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);"><input type="text" placeholder="Ver (view,editor,admin)" value="${cat.viewRoles || 'view,editor,admin'}" onchange="updateCat(${catIdx}, 'viewRoles', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);"><button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir Categoria</button></div><div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem; color: var(--text-muted);">Submenus associados a esta categoria:</div>${itemsHtml}<button class="btn btn-blue" style="margin-top:10px;" onclick="adicionarItem(${catIdx})">+ Adicionar Menu (2º Nível)</button></div>`;
+            });
+        }
+        let draggedItemInfo = null; function dragStart(e, type, catIdx, itemIdx = null, subIdx = null) { draggedItemInfo = { type, catIdx, itemIdx, subIdx }; e.stopPropagation(); } function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); } function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); } function drop(e, targetType, targetCatIdx, targetItemIdx = null, targetSubIdx = null) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('drag-over'); if (!draggedItemInfo) return; const dType = draggedItemInfo.type; if (dType === 'cat' && targetType === 'cat') { const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0]; adMenuData.categorias.splice(targetCatIdx, 0, temp); } else if (dType === 'item') { const sourceCat = adMenuData.categorias[draggedItemInfo.catIdx]; const itemMovido = sourceCat.items.splice(draggedItemInfo.itemIdx, 1)[0]; if (targetType === 'item') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.splice(targetItemIdx, 0, itemMovido); } else if (targetType === 'cat') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.push(itemMovido); } else { sourceCat.items.splice(draggedItemInfo.itemIdx, 0, itemMovido); } } else if (dType === 'subItem') { const sourceItem = adMenuData.categorias[draggedItemInfo.catIdx].items[draggedItemInfo.itemIdx]; const subItemMovido = sourceItem.subItems.splice(draggedItemInfo.subIdx, 1)[0]; if (targetType === 'subItem') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.splice(targetSubIdx, 0, subItemMovido); } else if (targetType === 'item') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.push(subItemMovido); } else { sourceItem.subItems.splice(draggedItemInfo.subIdx, 0, subItemMovido); } } renderizarAdmin(); }
+        function baixarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2)); const d = document.createElement('a'); d.href = dataStr; d.download = "menu_global.json"; document.body.appendChild(d); d.click(); d.remove(); } function subirJSON(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const parsed = JSON.parse(e.target.result); if(parsed.categorias) { adMenuData = parsed; renderizarAdmin(); alert("JSON carregado!"); } else alert("Estrutura inválida."); } catch (err) { alert("Erro ao ler JSON."); } }; reader.readAsText(file); } function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,editor,admin", items: [] }); renderizarAdmin(); } function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); } function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; } function adicionarItem(catIdx) { if(!adMenuData.categorias[catIdx].items) adMenuData.categorias[catIdx].items = []; adMenuData.categorias[catIdx].items.push({ icon: "📋", title: "Novo Link", url: "#", viewRoles: "view,editor,admin", uploadRoles: "editor,admin", allowedUsers: "", subItems: [] }); renderizarAdmin(); } function removerItem(catIdx, itemIdx) { adMenuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); } function updateItem(catIdx, itemIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx][field] = value; } function adicionarSubItem(catIdx, itemIdx) { if(!adMenuData.categorias[catIdx].items[itemIdx].subItems) adMenuData.categorias[catIdx].items[itemIdx].subItems = []; adMenuData.categorias[catIdx].items[itemIdx].subItems.push({ icon: "↳", title: "Sub-link", url: "#", viewRoles: "view,editor,admin", uploadRoles: "editor,admin", allowedUsers: "" }); renderizarAdmin(); } function removerSubItem(catIdx, itemIdx, subIdx) { adMenuData.categorias[catIdx].items[itemIdx].subItems.splice(subIdx, 1); renderizarAdmin(); } function updateSubItem(catIdx, itemIdx, subIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx].subItems[subIdx][field] = value; }
+        async function salvarNoFirebase() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
+
         // ==========================================
-        // COLUNA 2: MURAL DE NOTÍCIAS
+        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT + EDIÇÃO)
         // ==========================================
-        async function carregarNoticias() {
-            const container = document.getElementById('news-feed-container');
+        let isHtmlMode = false;
+        let editingNewsKey = null; // Guarda o ID se estivermos editando uma notícia já existente
+        let currentNewsData = {};  // Cache local das notícias ativas
+
+        function formatText(cmd) { 
+            if(isHtmlMode) return alert("Saia do modo de código (</>) para usar a formatação visual.");
+            document.execCommand(cmd, false, null); 
+            document.getElementById('news-body').focus(); 
+        }
+
+        function alignText(align) {
+            if(isHtmlMode) return alert("Saia do modo de código (</>) para alinhar.");
+            document.execCommand('justify' + align, false, null);
+            document.getElementById('news-body').focus();
+        }
+
+        function insertLink() { 
+            if(isHtmlMode) return;
+            let url = prompt("Cole a URL (Link) abaixo:"); 
+            if(url) {
+                if(!url.startsWith('http')) url = 'https://' + url;
+                document.execCommand('createLink', false, url); 
+            }
+        }
+
+        function insertImageUpload(input) {
+            if(isHtmlMode) return;
+            if(input.files && input.files[0]) {
+                if(input.files[0].size > 2000000) { alert("Aviso: Imagens maiores que 2MB podem deixar o mural lento."); }
+                let reader = new FileReader();
+                reader.onload = function(e) { document.execCommand('insertImage', false, e.target.result); };
+                reader.readAsDataURL(input.files[0]);
+            }
+            input.value = '';
+        }
+
+        function insertImageLink() {
+            if(isHtmlMode) return;
+            let url = prompt("Cole o link (URL) direto da imagem:"); 
+            if(url) document.execCommand('insertImage', false, url); 
+        }
+
+        function insertVideoLink() {
+            if(isHtmlMode) return;
+            let url = prompt("Cole o link do YouTube:");
+            if (url) {
+                let embedUrl = url;
+                if (url.includes('watch?v=')) {
+                    embedUrl = url.replace('watch?v=', 'embed/');
+                    let ampersandIndex = embedUrl.indexOf('&');
+                    if (ampersandIndex !== -1) embedUrl = embedUrl.substring(0, ampersandIndex);
+                } else if (url.includes('youtu.be/')) {
+                    embedUrl = url.replace('youtu.be/', 'youtube.com/embed/');
+                }
+                let html = `<br><iframe width="100%" height="315" src="${embedUrl}" frameborder="0" allowfullscreen style="border-radius:8px;"></iframe><br>&nbsp;`;
+                document.execCommand('insertHTML', false, html);
+            }
+        }
+
+        function insertFileLink() {
+            if(isHtmlMode) return;
+            let url = prompt("Cole o link direto do arquivo (Google Drive, PDF, etc):");
+            if (url) {
+                let nome = prompt("Digite o nome para o botão (Ex: Baixar Relatório):") || "Baixar Arquivo";
+                if(!url.startsWith('http')) url = 'https://' + url;
+                let html = `<br><a href="${url}" target="_blank" style="display:inline-block; padding:10px 15px; background:var(--accent-blue); color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; margin: 10px 0; box-shadow: 0 2px 6px rgba(52,131,250,0.3);">📎 ${nome}</a><br>&nbsp;`;
+                document.execCommand('insertHTML', false, html);
+            }
+        }
+
+        function toggleHTML() {
+            const editor = document.getElementById('news-body');
+            const btn = document.getElementById('btn-toggle-html');
+            if (isHtmlMode) {
+                editor.innerHTML = editor.innerText;
+                btn.classList.remove('active-btn');
+                isHtmlMode = false;
+            } else {
+                editor.innerText = editor.innerHTML;
+                btn.classList.add('active-btn');
+                isHtmlMode = true;
+            }
+        }
+
+        async function carregarNoticiasAdmin() {
+            let container = document.getElementById('news-list-admin');
+            container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando publicações...</div>';
             try {
-                const res = await fetchWithTimeout(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
+                let res = await fetch(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
                 let data = await res.json();
                 
-                if(!data) {
-                    container.innerHTML = '<div class="muted-msg">Ainda não há publicações no mural.</div>';
-                    return;
+                if(!data) { 
+                    container.innerHTML = '<div class="cat-card">Nenhuma notícia publicada ainda no mural.</div>'; 
+                    currentNewsData = {};
+                    return; 
                 }
-
+                
+                currentNewsData = data; // Guarda cache local para edição
+                
                 let newsList = [];
                 if (Array.isArray(data)) { newsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
                 else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
                 
                 newsList.sort((a,b) => b.data - a.data);
-                container.innerHTML = '';
-
-                newsList.forEach(news => {
-                    const dataFormatada = new Date(news.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                    const inicial = (news.autor || 'A').charAt(0).toUpperCase();
-                    
-                    let userHasLiked = false;
-                    if(news.likedBy && Array.isArray(news.likedBy) && news.likedBy.includes(currentUserStr)) {
-                        userHasLiked = true;
-                    }
-
-                    const btnClass = userHasLiked ? 'btn-like liked' : 'btn-like';
-                    
-                    container.innerHTML += `
-                        <div class="post-card">
-                            <div class="post-header">
-                                <div class="post-author-box">
-                                    <div class="author-avatar">${inicial}</div>
-                                    <div class="author-info">
-                                        <span class="author-name">${news.autor || 'Admin'}</span>
-                                        <span class="post-date">${dataFormatada}</span>
-                                    </div>
-                                </div>
-                                <span class="post-tag">${news.tag || 'Aviso'}</span>
+                
+                let html = '';
+                newsList.forEach(n => {
+                    let d = new Date(n.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                    html += `
+                        <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px;">
+                            <div>
+                                <span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block;">${n.tag || 'Aviso'}</span>
+                                <strong style="color:var(--text-title); font-size:1.1rem; display:block;">${n.titulo}</strong>
+                                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Por <b>${n.autor}</b> em ${d} • ${n.likes || 0} curtidas</div>
                             </div>
-                            
-                            <div class="post-title">${news.titulo || ''}</div>
-                            <div class="post-body">${news.corpo || ''}</div>
-                            
-                            <div class="post-footer">
-                                <div class="ml-signature">
-                                    <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="ML"> Equipe Inventário
-                                </div>
-                                <button class="${btnClass}" id="btn-like-${news.key}" onclick="darLikeNews('${news.key}')">
-                                    🚀 <span id="like-count-${news.key}">${news.likes || 0}</span>
-                                    <span class="like-anim-text" id="like-anim-${news.key}">Para Cima!</span>
-                                </button>
+                            <div style="display:flex; gap: 8px;">
+                                <button class="btn btn-warn" onclick="editarNoticia('${n.key}')">✏️ Editar</button>
+                                <button class="btn btn-red" onclick="excluirNoticia('${n.key}')">🗑️ Excluir</button>
                             </div>
                         </div>
                     `;
                 });
-                
-            } catch (e) {
-                console.error("Erro Noticias:", e);
-                if(container.innerHTML.includes('Carregando')) container.innerHTML = '<div class="error-msg">Falha ao obter mural de notícias.</div>';
-            }
-        }
-
-        async function darLikeNews(newsKey) {            
-            const btn = document.getElementById(`btn-like-${newsKey}`);
-            const countSpan = document.getElementById(`like-count-${newsKey}`);
-            const animSpan = document.getElementById(`like-anim-${newsKey}`);
-            
-            try {
-                const res = await fetch(`${FIREBASE_URL}portal_news/${newsKey}.json`);
-                const news = await res.json();
-                if(!news) return;
-
-                let likedBy = news.likedBy || [];
-                let currentLikes = parseInt(news.likes) || 0;
-
-                if (likedBy.includes(currentUserStr)) {
-                    likedBy = likedBy.filter(u => u !== currentUserStr);
-                    currentLikes--;
-                    btn.classList.remove('liked');
-                } else {
-                    likedBy.push(currentUserStr);
-                    currentLikes++;
-                    btn.classList.add('liked');
-                    
-                    animSpan.classList.remove('animate');
-                    void animSpan.offsetWidth; 
-                    animSpan.classList.add('animate');
-                }
-
-                countSpan.innerText = currentLikes;
-
-                await fetch(`${FIREBASE_URL}portal_news/${newsKey}.json`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ likes: currentLikes, likedBy: likedBy })
-                });
-
-            } catch(e) { console.error("Erro ao computar like."); }
-        }
-
-        // ==========================================
-        // COLUNA 3: USUÁRIOS E PRESENÇA AO VIVO
-        // ==========================================
-        function formatRoleName(role) {
-            if(!role) return 'Desconhecido';
-            const r = role.toLowerCase();
-            if(r === 'view2') return 'View Plus';
-            if(r === 'view') return 'Viewer';
-            if(r === 'editor') return 'Editor';
-            if(r === 'admin') return 'Admin';
-            return role;
-        }
-
-        function registrarPresenca() {
-            if(currentUserStr !== 'Você' && currentUserStr !== 'Sistema') {
-                fetch(`${FIREBASE_URL}presence/${currentUserStr}.json`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ cargo: currentRoleStr, lastSeen: Date.now() })
-                }).catch(e => console.log(e));
-            }
-        }
-
-        async function carregarPresencaUsuarios() {
-            const container = document.getElementById('users-feed-container');
-            
-            try {
-                let presenceData = {};
-                try {
-                    const resP = await fetchWithTimeout(`${FIREBASE_URL}presence.json?_=${Date.now()}`, { timeout: 5000 });
-                    presenceData = await resP.json() || {};
-                } catch(errP) { console.warn("Erro ao buscar presença do Firebase."); }
-                
-                const now = Date.now();
-                const onlineUsers = Object.keys(presenceData).filter(u => now - presenceData[u].lastSeen < 120000).map(u => ({ nome: u, cargo: formatRoleName(presenceData[u].cargo) }));
-
-                let allUsers = JSON.parse(sessionStorage.getItem('cachedUsersList')) || null;
-                
-                if (!allUsers) {
-                    try {
-                        const resU = await fetchWithTimeout(APP_SCRIPT_URL, { 
-                            method: 'POST', 
-                            headers: { "Content-Type": "text/plain;charset=utf-8" },
-                            redirect: "follow",
-                            body: JSON.stringify({ action: "getUsers" }),
-                            timeout: 8000
-                        });
-                        const dataU = await resU.json();
-                        if(dataU.success) { 
-                            allUsers = dataU.users; 
-                            sessionStorage.setItem('cachedUsersList', JSON.stringify(allUsers)); 
-                        } else { allUsers = []; }
-                    } catch(errScript) {
-                        console.error("Script demorou muito ou falhou:", errScript);
-                        allUsers = [];
-                    }
-                }
-                
-                let pendentes = allUsers.filter(u => u.solicitacao === 'pendente').slice(0, 2);
-                let ultimosLogados = allUsers.filter(u => u.solicitacao === 'aprovado' && u.usuario !== currentUserStr && !onlineUsers.some(ou => ou.nome === u.usuario)).slice(0, 5);
-
-                let html = '';
-
-                html += `<div class="user-group-title">🟢 Agora no Portal</div><ul class="user-list">`;
-                
-                if(currentUserStr !== 'Você') {
-                    html += `
-                        <li class="user-item">
-                            <div class="user-avatar" style="background: rgba(0, 166, 80, 0.1); color: var(--accent-green); border-color: var(--accent-green);">${currentUserStr.charAt(0).toUpperCase()}</div>
-                            <div class="user-info">
-                                <span class="user-name">${currentUserStr} (Você) <div class="status-dot dot-online"></div></span>
-                                <span class="user-role">${formatRoleName(currentRoleStr)}</span>
-                            </div>
-                        </li>
-                    `;
-                }
-
-                onlineUsers.forEach(ou => {
-                    if(ou.nome !== currentUserStr) {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar" style="background: rgba(52, 131, 250, 0.1); color: var(--accent-blue);">${ou.nome.charAt(0).toUpperCase()}</div>
-                                <div class="user-info">
-                                    <span class="user-name">${ou.nome} <div class="status-dot dot-online"></div></span>
-                                    <span class="user-role">${ou.cargo}</span>
-                                </div>
-                            </li>
-                        `;
-                    }
-                });
-                
-                if (onlineUsers.length === 0 && currentUserStr === 'Você') {
-                    html += `<li class="user-item"><div class="user-info"><span class="user-role" style="text-transform: none;">Ninguém online no momento.</span></div></li>`;
-                }
-                html += `</ul>`;
-
-                if(ultimosLogados.length > 0) {
-                    html += `<div class="user-group-title">⏱️ Acessos Recentes</div><ul class="user-list">`;
-                    ultimosLogados.forEach(u => {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar">${u.usuario.charAt(0).toUpperCase()}</div>
-                                <div class="user-info">
-                                    <span class="user-name">${u.usuario} <div class="status-dot dot-offline"></div></span>
-                                    <span class="user-role">${formatRoleName(u.cargo)}</span>
-                                </div>
-                            </li>
-                        `;
-                    });
-                    html += `</ul>`;
-                }
-
-                if(pendentes.length > 0) {
-                    html += `<div class="user-group-title">🆕 Novos Cadastros</div><ul class="user-list">`;
-                    pendentes.forEach(u => {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar" style="background: rgba(255, 176, 0, 0.1); border-color: var(--accent-warn); color: var(--accent-warn);">${u.usuario.charAt(0).toUpperCase()}</div>
-                                <div class="user-info">
-                                    <span class="user-name">${u.usuario} <div class="status-dot dot-new"></div></span>
-                                    <span class="user-role" style="color: var(--accent-warn);">Aguardando Aprovação</span>
-                                </div>
-                            </li>
-                        `;
-                    });
-                    html += `</ul>`;
-                }
-
                 container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar o histórico de notícias.</div>'; }
+        }
 
-            } catch (e) {
-                console.error("Erro painel de presença completo:", e);
-                if(container.innerHTML.includes('Mapeando')) container.innerHTML = '<div class="error-msg">Falha ao sincronizar usuários.</div>';
+        // === NOVA FUNÇÃO DE EDITAR ===
+        function editarNoticia(key) {
+            let n = currentNewsData[key];
+            if(!n) return alert("Erro ao localizar a notícia para edição.");
+
+            document.getElementById('news-title').value = n.titulo || '';
+            document.getElementById('news-tag').value = n.tag || '';
+            
+            // Verifica se está em html e converte antes de jogar o conteúdo
+            if (isHtmlMode) toggleHTML();
+            document.getElementById('news-body').innerHTML = n.corpo || '';
+
+            editingNewsKey = key;
+            
+            document.getElementById('news-editor-title').innerText = "Editando Publicação Existente";
+            const btnPub = document.getElementById('btn-publicar');
+            btnPub.innerText = "💾 Salvar Alterações";
+            btnPub.classList.replace('btn-blue', 'btn-green');
+            
+            document.getElementById('btn-cancelar-edicao').style.display = 'inline-flex';
+            
+            // Rola a página suavemente até o editor
+            document.getElementById('news-editor-box').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelarEdicao() {
+            editingNewsKey = null;
+            document.getElementById('news-title').value = '';
+            document.getElementById('news-tag').value = '';
+            if (isHtmlMode) toggleHTML();
+            document.getElementById('news-body').innerHTML = '';
+
+            document.getElementById('news-editor-title').innerText = "Criar Nova Publicação";
+            const btnPub = document.getElementById('btn-publicar');
+            btnPub.innerText = "🚀 Publicar no Mural";
+            btnPub.classList.replace('btn-green', 'btn-blue');
+            
+            document.getElementById('btn-cancelar-edicao').style.display = 'none';
+        }
+
+        async function publicarNoticia() {
+            if (isHtmlMode) {
+                alert("Por favor, saia do Modo Código (Clique em </> Code novamente) antes de publicar!");
+                return;
+            }
+
+            let titulo = document.getElementById('news-title').value.trim();
+            let tag = document.getElementById('news-tag').value.trim() || 'Aviso';
+            let corpo = document.getElementById('news-body').innerHTML.trim();
+            
+            if(!titulo || !corpo || corpo === '<br>') return alert("Preencha o título e o conteúdo da notícia antes de publicar/salvar.");
+            
+            const btnPub = document.getElementById('btn-publicar');
+            const textoOriginal = btnPub.innerText;
+            btnPub.innerText = "⏳ Salvando..."; btnPub.disabled = true;
+
+            try {
+                if (editingNewsKey) {
+                    // MODO EDIÇÃO: Atualiza apenas o necessário e mantém curtidas
+                    let nAnterior = currentNewsData[editingNewsKey];
+                    let noticiaEditada = {
+                        titulo: titulo,
+                        tag: tag,
+                        corpo: corpo,
+                        data_edit: Date.now() // Registro interno de que foi editada
+                    };
+                    
+                    await fetch(`${FIREBASE_URL}portal_news/${editingNewsKey}.json`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(noticiaEditada)
+                    });
+                    await registrarLogFirebase("Mural", `Editou a notícia: "${titulo}"`);
+                    alert("Notícia atualizada com sucesso!");
+                    
+                } else {
+                    // MODO CRIAÇÃO: Gera nova ID e novo objeto
+                    let idNoticia = "news_" + Date.now();
+                    let novaNoticia = {
+                        id: idNoticia,
+                        autor: userName,
+                        data: Date.now(),
+                        tag: tag,
+                        titulo: titulo,
+                        corpo: corpo,
+                        likes: 0,
+                        likedBy: []
+                    };
+                    
+                    await fetch(`${FIREBASE_URL}portal_news/${idNoticia}.json`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(novaNoticia)
+                    });
+                    await registrarLogFirebase("Mural", `Publicou uma nova notícia: "${titulo}"`);
+                    alert("Notícia publicada com sucesso! Ela já aparecerá na página inicial.");
+                }
+                
+                cancelarEdicao(); // Limpa a tela
+                carregarNoticiasAdmin(); // Recarrega a lista abaixo
+                
+            } catch(e) { 
+                alert("Erro ao publicar a notícia. Tente novamente."); 
+            } finally {
+                btnPub.innerText = textoOriginal; btnPub.disabled = false;
             }
         }
 
-        // ==========================================
-        // INICIALIZAÇÃO SEGURA E INDEPENDENTE
-        // ==========================================
-        setTimeout(() => { 
-            startMessageCycle(); 
-            registrarPresenca();
-            
-            // Cada função roda de forma paralela e independente! Se uma falhar, a outra continua.
-            carregarFeedAtualizacoes(); 
-            carregarNoticias();
-            carregarPresencaUsuarios();
-
-            setInterval(() => { 
-                registrarPresenca();
-                carregarFeedAtualizacoes(); 
-                carregarNoticias();
-                carregarPresencaUsuarios();
-            }, 30000); 
-
-        }, 500);
-
+        async function excluirNoticia(key) {
+            if(!confirm("Atenção: A notícia será apagada permanentemente da página inicial. Confirma a exclusão?")) return;
+            try {
+                await fetch(`${FIREBASE_URL}portal_news/${key}.json`, { method: 'DELETE' });
+                await registrarLogFirebase("Mural", "Excluiu uma publicação do mural de notícias.");
+                carregarNoticiasAdmin();
+            } catch(e) { alert("Erro de comunicação com o servidor ao excluir."); }
+        }
     </script>
 </body>
 </html>
