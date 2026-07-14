@@ -38,6 +38,9 @@
         .panel-content::-webkit-scrollbar { width: 6px; }
         .panel-content::-webkit-scrollbar-track { background: transparent; }
         .panel-content::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 4px; }
+        
+        .muted-msg { text-align: center; padding: 40px 20px; color: var(--text-muted); font-weight: 600; }
+        .error-msg { text-align: center; padding: 40px 20px; color: #FF5252; font-weight: 600; }
 
         /* --- COLUNA 1: LOGS --- */
         .live-indicator { width: 8px; height: 8px; background-color: var(--accent-green); border-radius: 50%; box-shadow: 0 0 8px var(--accent-green); animation: pulse 2s infinite; }
@@ -137,7 +140,7 @@
                 </div>
                 <div class="panel-content">
                     <ul class="feed-list" id="feed-list">
-                        <div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">Conectando à Central...</div>
+                        <div class="muted-msg">Conectando à Central...</div>
                     </ul>
                 </div>
             </div>
@@ -148,7 +151,7 @@
                     📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS
                 </div>
                 <div class="panel-content" id="news-feed-container">
-                    <div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">Carregando mural...</div>
+                    <div class="muted-msg">Carregando mural...</div>
                 </div>
             </div>
 
@@ -158,7 +161,7 @@
                     <h2>👥 Equipe no Portal</h2>
                 </div>
                 <div class="panel-content" id="users-feed-container">
-                    <div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">Mapeando presenças...</div>
+                    <div class="muted-msg">Mapeando presenças...</div>
                 </div>
             </div>
 
@@ -189,16 +192,27 @@
         function animateProgressBar() { progressBar.style.transition = 'none'; progressBar.style.width = '0%'; void progressBar.offsetWidth; progressBar.style.transition = `width ${INTERVAL_MS}ms linear`; progressBar.style.width = '100%'; }
         
         // ==========================================
+        // FUNÇÃO DE TIMEOUT PARA O FETCH (EVITAR TRAVAMENTOS)
+        // ==========================================
+        async function fetchWithTimeout(resource, options = {}) {
+            const { timeout = 8000 } = options;
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            const response = await fetch(resource, { ...options, signal: controller.signal });
+            clearTimeout(id);
+            return response;
+        }
+
+        // ==========================================
         // COLUNA 1: LOGS DE ATIVIDADE
         // ==========================================
         async function carregarFeedAtualizacoes() {
             const listEl = document.getElementById('feed-list');
             try {
-                // Previne cache pesado
-                const res = await fetch(`${FIREBASE_URL}logs.json?_=${Date.now()}`); 
+                const res = await fetchWithTimeout(`${FIREBASE_URL}logs.json?_=${Date.now()}`); 
                 const data = await res.json();
                 
-                if(!data) { listEl.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">Nenhuma atividade recente.</div>'; return; }
+                if(!data) { listEl.innerHTML = '<div class="muted-msg">Nenhuma atividade recente.</div>'; return; }
                 
                 let logs = [];
                 if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
@@ -226,7 +240,10 @@
                         </li>
                     `;
                 });
-            } catch (e) { listEl.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: #FF5252;">Erro ao carregar o radar.</div>'; } 
+            } catch (e) { 
+                console.error("Erro Logs:", e);
+                if(listEl.innerHTML.includes('Conectando')) listEl.innerHTML = '<div class="error-msg">Erro ao carregar o radar de atividades.</div>'; 
+            } 
         }
 
         // ==========================================
@@ -235,11 +252,11 @@
         async function carregarNoticias() {
             const container = document.getElementById('news-feed-container');
             try {
-                const res = await fetch(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
+                const res = await fetchWithTimeout(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
                 let data = await res.json();
                 
                 if(!data) {
-                    container.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">Ainda não há publicações no mural.</div>';
+                    container.innerHTML = '<div class="muted-msg">Ainda não há publicações no mural.</div>';
                     return;
                 }
 
@@ -291,7 +308,8 @@
                 });
                 
             } catch (e) {
-                container.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: #FF5252;">Falha ao obter mural de notícias.</div>';
+                console.error("Erro Noticias:", e);
+                if(container.innerHTML.includes('Carregando')) container.innerHTML = '<div class="error-msg">Falha ao obter mural de notícias.</div>';
             }
         }
 
@@ -336,6 +354,16 @@
         // ==========================================
         // COLUNA 3: USUÁRIOS E PRESENÇA AO VIVO
         // ==========================================
+        function formatRoleName(role) {
+            if(!role) return 'Desconhecido';
+            const r = role.toLowerCase();
+            if(r === 'view2') return 'View Plus';
+            if(r === 'view') return 'Viewer';
+            if(r === 'editor') return 'Editor';
+            if(r === 'admin') return 'Admin';
+            return role;
+        }
+
         function registrarPresenca() {
             if(currentUserStr !== 'Você' && currentUserStr !== 'Sistema') {
                 fetch(`${FIREBASE_URL}presence/${currentUserStr}.json`, {
@@ -349,26 +377,35 @@
             const container = document.getElementById('users-feed-container');
             
             try {
-                // 1. Pega os status ao vivo do Firebase (quem bateu ponto nos últimos 2 minutos)
-                const resP = await fetch(`${FIREBASE_URL}presence.json?_=${Date.now()}`);
-                const presenceData = await resP.json() || {};
+                let presenceData = {};
+                try {
+                    const resP = await fetchWithTimeout(`${FIREBASE_URL}presence.json?_=${Date.now()}`, { timeout: 5000 });
+                    presenceData = await resP.json() || {};
+                } catch(errP) { console.warn("Erro ao buscar presença do Firebase."); }
+                
                 const now = Date.now();
-                const onlineUsers = Object.keys(presenceData).filter(u => now - presenceData[u].lastSeen < 120000).map(u => ({ nome: u, cargo: presenceData[u].cargo }));
+                const onlineUsers = Object.keys(presenceData).filter(u => now - presenceData[u].lastSeen < 120000).map(u => ({ nome: u, cargo: formatRoleName(presenceData[u].cargo) }));
 
-                // 2. Pega os usuários registrados da Planilha (via Cache para não pesar, se não houver puxa do GS)
                 let allUsers = JSON.parse(sessionStorage.getItem('cachedUsersList')) || null;
+                
                 if (!allUsers) {
-                    const resU = await fetch(APP_SCRIPT_URL, { 
-                        method: 'POST', 
-                        headers: { "Content-Type": "text/plain;charset=utf-8" },
-                        redirect: "follow",
-                        body: JSON.stringify({ action: "getUsers" }) 
-                    });
-                    const dataU = await resU.json();
-                    if(dataU.success) { 
-                        allUsers = dataU.users; 
-                        sessionStorage.setItem('cachedUsersList', JSON.stringify(allUsers)); 
-                    } else { allUsers = []; }
+                    try {
+                        const resU = await fetchWithTimeout(APP_SCRIPT_URL, { 
+                            method: 'POST', 
+                            headers: { "Content-Type": "text/plain;charset=utf-8" },
+                            redirect: "follow",
+                            body: JSON.stringify({ action: "getUsers" }),
+                            timeout: 8000
+                        });
+                        const dataU = await resU.json();
+                        if(dataU.success) { 
+                            allUsers = dataU.users; 
+                            sessionStorage.setItem('cachedUsersList', JSON.stringify(allUsers)); 
+                        } else { allUsers = []; }
+                    } catch(errScript) {
+                        console.error("Script demorou muito ou falhou:", errScript);
+                        allUsers = [];
+                    }
                 }
                 
                 let pendentes = allUsers.filter(u => u.solicitacao === 'pendente').slice(0, 2);
@@ -378,14 +415,13 @@
 
                 html += `<div class="user-group-title">🟢 Agora no Portal</div><ul class="user-list">`;
                 
-                // Força você mesmo aparecer online se não for "Você" anônimo
                 if(currentUserStr !== 'Você') {
                     html += `
                         <li class="user-item">
                             <div class="user-avatar" style="background: rgba(0, 166, 80, 0.1); color: var(--accent-green); border-color: var(--accent-green);">${currentUserStr.charAt(0).toUpperCase()}</div>
                             <div class="user-info">
                                 <span class="user-name">${currentUserStr} (Você) <div class="status-dot dot-online"></div></span>
-                                <span class="user-role">${currentRoleStr}</span>
+                                <span class="user-role">${formatRoleName(currentRoleStr)}</span>
                             </div>
                         </li>
                     `;
@@ -404,6 +440,10 @@
                         `;
                     }
                 });
+                
+                if (onlineUsers.length === 0 && currentUserStr === 'Você') {
+                    html += `<li class="user-item"><div class="user-info"><span class="user-role" style="text-transform: none;">Ninguém online no momento.</span></div></li>`;
+                }
                 html += `</ul>`;
 
                 if(ultimosLogados.length > 0) {
@@ -414,7 +454,7 @@
                                 <div class="user-avatar">${u.usuario.charAt(0).toUpperCase()}</div>
                                 <div class="user-info">
                                     <span class="user-name">${u.usuario} <div class="status-dot dot-offline"></div></span>
-                                    <span class="user-role">${u.cargo}</span>
+                                    <span class="user-role">${formatRoleName(u.cargo)}</span>
                                 </div>
                             </li>
                         `;
@@ -441,22 +481,23 @@
                 container.innerHTML = html;
 
             } catch (e) {
-                console.error("Erro painel de presença:", e);
-                container.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: #FF5252;">Falha ao sincronizar usuários.</div>';
+                console.error("Erro painel de presença completo:", e);
+                if(container.innerHTML.includes('Mapeando')) container.innerHTML = '<div class="error-msg">Falha ao sincronizar usuários.</div>';
             }
         }
 
         // ==========================================
-        // INICIALIZAÇÃO
+        // INICIALIZAÇÃO SEGURA E INDEPENDENTE
         // ==========================================
         setTimeout(() => { 
             startMessageCycle(); 
             registrarPresenca();
+            
+            // Cada função roda de forma paralela e independente! Se uma falhar, a outra continua.
             carregarFeedAtualizacoes(); 
             carregarNoticias();
             carregarPresencaUsuarios();
 
-            // Sincroniza em Background a cada 30 segundos
             setInterval(() => { 
                 registrarPresenca();
                 carregarFeedAtualizacoes(); 
