@@ -3,148 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
 
     <title>Controle de Equipamentos - Dashboard</title>
-    <link class="page-icon" rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'equipamentos.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link class="page-icon" rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
+    <!-- CSS GLOBAL -->
+    <link rel="stylesheet" href="style.css">
+
     <style>
-        /* =========================================
-           SISTEMA DE TEMAS E GRADIENTES 
-           ========================================= */
+        /* Variáveis Exclusivas Desta Tela */
         :root {
-            --bg-gradient: radial-gradient(circle at top right, #1e3c72 0%, #0f172a 40%, #050505 100%);
-            --bg-card: rgba(30, 41, 59, 0.6); 
-            --bg-card-hover: rgba(30, 41, 59, 0.85);
             --bg-input: rgba(15, 23, 42, 0.6);
-            --border-card: rgba(255, 255, 255, 0.1);
             --border-input: rgba(255, 255, 255, 0.2);
-            --text-main: #EBEBEB;
-            --text-muted: #94a3b8;
-            --text-title: #FFFFFF;
-            --accent-yellow: #FFF159;
-            --accent-blue: #3483FA;
-            --accent-green: #00A650;
-            --accent-red: #FF5252;
-            --accent-warn: #FFB000;
         }
-
         [data-theme="light"] {
-            --bg-gradient: radial-gradient(circle at top right, #a1c4fd 0%, #e2ebf0 40%, #f1f5f9 100%);
-            --bg-card: rgba(255, 255, 255, 0.7);
             --bg-input: rgba(255, 255, 255, 0.6);
-            --border-card: rgba(255, 255, 255, 0.5);
             --border-input: rgba(0, 0, 0, 0.1);
-            --text-main: #334155;
-            --text-muted: #64748b;
-            --text-title: #1e293b;
-            --accent-yellow: #B48B00; 
-            --accent-blue: #3483FA;
-            --accent-green: #00A650;
-            --accent-red: #D32F2F;
-            --accent-warn: #B48B00;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            padding: 10px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            height: 100vh;
-            overflow: hidden; 
-            background: transparent !important;
-        }
+        html, body { width: 100%; min-height: 100%; background: transparent !important; }
+        body { padding: 10px; display: flex; flex-direction: column; gap: 10px; height: 100vh; overflow: hidden; }
 
-        body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; width: 100vw; height: 100vh;
-            background: var(--bg-gradient);
-            z-index: -999;
-        }
+        .glass-panel { background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; box-shadow: var(--shadow-card); transition: 0.3s; }
 
-        .glass-panel {
-            background: var(--bg-card);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-card);
-            border-radius: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            transition: background 0.3s, border-color 0.3s;
-        }
-
-        /* =========================================
-           CABEÇALHO ML CLEAN E COMPACTO
-           ========================================= */
+        /* CABEÇALHO ML CLEAN */
         .top-header { 
-            background-color: #FFF159 !important; 
-            padding: 8px 10px; 
-            display: flex; justify-content: space-between; align-items: center; 
-            gap: 8px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
-            flex: 0 0 auto;
+            position: relative; background-color: #FFF159 !important; padding: 10px 20px; 
+            display: flex; justify-content: space-between; align-items: center; gap: 20px; 
+            border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.18); flex: 0 0 auto;
+            min-height: 55px; flex-wrap: wrap; width: 100%;
         }
+        .header-left { display: flex; align-items: center; }
+        .ml-logo { height: 28px; width: auto; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); }
         
-        .ml-logo { 
-            height: 22px; object-fit: contain; cursor: pointer; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); 
-            flex-shrink: 0;
-        }
+        .header-center { flex: 1; text-align: center; font-size: clamp(1rem, 2vw, 1.15rem); font-weight: 900; color: #2D3277 !important; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;}
 
-        .header-center { 
-            flex: 1 1 auto;
-            text-align: center; 
-            font-size: 0.85rem; 
-            font-weight: 900; 
-            color: #2D3277 !important; 
-            letter-spacing: 0.5px; 
-            text-transform: uppercase; 
-            margin: 0 10px;
+        /* BOTOES CLEAN MINIMALISTAS */
+        .btn { 
+            background: #ffffff !important; color: #1e293b !important; 
+            border: 1px solid #cbd5e1 !important; border-radius: 6px; 
+            width: 36px; height: 36px; font-size: 0.95rem; font-weight: 700; 
+            cursor: pointer; display: inline-flex; align-items: center; 
+            justify-content: center; transition: all .2s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex-shrink: 0; padding: 0;
         }
-        
-        .header-right { 
-            display: flex; align-items: center; gap: 6px; justify-content: flex-end; flex-wrap: wrap; flex-shrink: 0;
-        }
+        .btn:hover:not(:disabled) { background: #f8fafc !important; border-color: #94a3b8 !important; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .btn svg { width: 16px; height: 16px; stroke: #1e293b; }
 
-        .btn-icon {
-            background: rgba(255, 255, 255, 0.5) !important; 
-            color: #2D3277 !important; 
-            border: 1px solid rgba(45, 50, 119, 0.2) !important;
-            border-radius: 6px; 
-            padding: 5px 8px; 
-            cursor: pointer; 
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center;
-            transition: all .2s ease; 
-        }
-        .btn-icon:hover { 
-            background: rgba(45, 50, 119, 0.1) !important; 
-            border-color: rgba(45, 50, 119, 0.4) !important;
-        }
-        .btn-icon svg { width: 15px; height: 15px; stroke: currentColor; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 10; }
 
-        .upload-btn-wrapper { position: relative; overflow: hidden; display: inline-flex; }
-        .upload-btn-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-
-        /* =========================================
-           BARRA DE FILTROS E CONTEÚDO
-           ========================================= */
+        /* BARRA DE FILTROS */
         #export-container { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
-
         .filters-container { padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; }
         .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: end; }
         
         .field label { display: block; color: var(--text-muted); font-size: .70rem; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
-        .field select, .field input { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-input); border-radius: 6px; padding: 6px 10px; outline: none; font-family: 'Inter', sans-serif; font-size: .80rem; font-weight: 600;}
+        .field select, .field input { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-input); border-radius: 6px; padding: 6px 10px; outline: none; font-family: 'Inter', sans-serif; font-size: .80rem; font-weight: 600; transition: 0.3s;}
         .field select:focus, .field input:focus { border-color: var(--accent-blue); }
         .field select option { background: #1e293b; color: #fff; } 
         [data-theme="light"] .field select option { background: #fff; color: #000; }
@@ -153,17 +84,17 @@
         .btn-clear:hover { background-color: rgba(255, 82, 82, 0.15); }
 
         .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; flex: 0 0 auto; }
-        .summary-card { padding: 12px; border-left: 6px solid var(--accent-blue); display: flex; flex-direction: column; justify-content: center; min-height: 0;}
+        .summary-card { padding: 12px; border-left: 6px solid var(--accent-blue); display: flex; flex-direction: column; justify-content: center; min-height: 0; text-align: center;}
         .summary-card.green { border-left-color: var(--accent-green); }
         .summary-card.red { border-left-color: var(--accent-red); }
         .summary-card.warn { border-left-color: var(--accent-warn); }
         .summary-title { color: var(--text-muted); font-size: .75rem; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
         .summary-value { color: var(--text-title); font-size: 1.8rem; font-weight: 900; }
 
-        .table-wrapper { flex: 1 1 auto; min-height: 120px; overflow: auto; border-radius: 10px; }
+        .table-wrapper { flex: 1 1 auto; min-height: 120px; overflow: auto; border-radius: 10px; padding: 0;}
         table { width: 100%; border-collapse: collapse; min-width: 1200px; text-align: left; }
         th, td { padding: 10px 12px; border-bottom: 1px solid var(--border-card); font-size: .85rem; vertical-align: middle; color: var(--text-main); }
-        th { background: rgba(0,0,0,0.6); color: var(--text-title); text-transform: uppercase; font-size: .75rem; font-weight: 900; position: sticky; top: 0; z-index: 2; backdrop-filter: blur(10px); }
+        th { background: rgba(0,0,0,0.4); color: var(--text-title); text-transform: uppercase; font-size: .75rem; font-weight: 900; position: sticky; top: 0; z-index: 2; backdrop-filter: blur(10px); }
         [data-theme="light"] th { background: rgba(255,255,255,0.9); }
         tr:hover td { background: rgba(255,255,255,0.08) !important; }
         [data-theme="light"] tr:hover td { background: rgba(0,0,0,0.04) !important; }
@@ -172,7 +103,6 @@
         .muted { color: var(--text-muted); text-align: center; padding: 28px !important; font-weight: 900; }
         .col-id { font-weight: 900; color: var(--accent-blue); }
 
-        /* BADGES EQUIPAMENTOS */
         .badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 4px; font-size: .70rem; font-weight: 900; min-width: 52px; text-transform: uppercase; letter-spacing: 0.5px;}
         .badge-sim { background: rgba(0,166,80,.15); color: var(--accent-green); border: 1px solid rgba(0,166,80,.35); }
         .badge-nao { background: rgba(255,82,82,.15); color: var(--accent-red); border: 1px solid rgba(255,82,82,.35); }
@@ -184,345 +114,164 @@
         .modelo-tag { font-weight: 900; color: var(--accent-blue); }
 
         /* MODAIS */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-            display: none; justify-content: center; align-items: center; z-index: 9999;
-            opacity: 0; transition: opacity 0.3s ease;
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
         .modal-overlay.active { display: flex; opacity: 1; }
         .modal-content { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; width: 95%; max-width: 1000px; height: 85vh; display: flex; flex-direction: column; box-shadow: 0 15px 50px rgba(0,0,0,0.5); overflow: hidden; }
         .modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); }
         .modal-title { font-size: 1.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; }
-        .close-modal { background: transparent; border: none; color: var(--text-main); font-size: 1.8rem; cursor: pointer; line-height: 1; font-weight: bold; }
+        .close-modal { background: transparent; border: none; color: var(--text-main); font-size: 1.8rem; cursor: pointer; line-height: 1; font-weight: bold; margin-top: -10px; }
         .close-modal:hover { color: var(--accent-red); }
         .modal-body { flex: 1; overflow-y: auto; padding: 0; position: relative; }
         .modal-filters { padding: 15px; border-bottom: 1px solid var(--border-card); display: flex; gap: 15px; align-items: center; background: rgba(0,0,0,0.1); }
 
-        /* Regras para a captura de imagem 4K ficar limpa */
         .exporting .header-actions, .exporting #btn-clear, .exporting #btn-delete-hist { display: none !important; }
         .exporting .table-wrapper { overflow: visible !important; max-height: none !important; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
 
         @media (max-width: 1100px) { .summary { grid-template-columns: 1fr 1fr; } }
-        @media (max-width: 900px) { body { overflow-y: auto; height: auto; } }
     </style>
 </head>
-<body>
+<body data-theme="light">
 
-    <div id="export-container">
-        
-        <div class="top-header" id="cabecalho-principal">
-            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre" onclick="window.location.href='index.html'">
-            
-            <div class="header-center" id="main-title">CONTROLE DE EQUIPAMENTOS</div>
-
-            <div class="header-right header-actions" id="action-buttons">
-                <button class="btn-icon" onclick="exportarImagem4K()" title="Exportar Foto 4K">
-                    <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
-                </button>
-                <button class="btn-icon" onclick="toggleTheme()" title="Modo Claro/Escuro">
-                    <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                </button>
-                <button class="btn-icon" onclick="abrirModalComparacao()" title="Comparar Datas">
-                    <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                </button>
-                <button class="btn-icon" onclick="baixarCSV()" title="Baixar CSV">
-                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                </button>
-                <div class="upload-btn-wrapper" title="Subir Nova Planilha">
-                    <button class="btn-icon">
-                        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    </button>
-                    <input type="file" id="csvFileInput" accept=".csv" />
-                </div>
+    <div class="top-header glass-panel" id="cabecalho-principal">
+        <div class="header-left"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
+        <div class="header-center" id="main-title">CONTROLE DE EQUIPAMENTOS</div>
+        <div class="header-actions" id="action-buttons">
+            <button class="btn" onclick="abrirModalComparacao()" title="Comparar Datas">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            </button>
+            <button class="btn" onclick="baixarCSV()" title="Baixar CSV">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            </button>
+            <button class="btn" onclick="exportarImagem4K()" title="Exportar Foto 4K">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </button>
+            <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Subir Nova Planilha">
+                <button class="btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg></button>
+                <input type="file" id="csvFileInput" accept=".csv" />
             </div>
         </div>
+    </div>
 
+    <div id="export-container">
         <div class="filters-container glass-panel">
             <div class="filters-grid">
-                
                 <div class="field">
                     <label style="color: var(--accent-blue);">Data Histórico:</label>
                     <div style="display: flex; gap: 8px;">
                         <select id="filter-data-historico" style="border-color: var(--accent-blue);" onchange="carregarDadosDaDataSelecionada()"><option value="">Carregando...</option></select>
-                        
-                        <button class="btn-clear" id="btn-delete-hist" onclick="deletarHistoricoAtual()" title="Apagar Histórico Selecionado" style="margin: 0; padding: 6px 10px; border-color: var(--accent-red); color: var(--accent-red);">
+                        <button class="btn-clear" id="btn-delete-hist" onclick="deletarHistoricoAtual()" title="Apagar Histórico Selecionado" style="margin: 0; padding: 6px 10px; border-color: var(--accent-red); color: var(--accent-red); display:none;">
                             <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                     </div>
                 </div>
-
-                <div class="field">
-                    <label>Área:</label>
-                    <select id="filter-area" onchange="renderTabela()"><option value="Todos">Todos</option></select>
-                </div>
-                <div class="field">
-                    <label>Inventariado:</label>
-                    <select id="filter-inventariado" onchange="renderTabela()">
-                        <option value="Todos">Todos</option>
-                        <option value="SIM">SIM</option>
-                        <option value="NÃO">NÃO</option>
-                    </select>
-                </div>
-                <div class="field">
-                    <label>Descrição:</label>
-                    <select id="filter-descricao" onchange="renderTabela()"><option value="Todos">Todos</option></select>
-                </div>
-                <div class="field">
-                    <label>Modelo:</label>
-                    <select id="filter-modelo" onchange="renderTabela()"><option value="Todos">Todos</option></select>
-                </div>
-                <div class="field" style="grid-column: span 1;">
-                    <label>Buscar (Livre)</label>
-                    <input type="text" id="search-input" placeholder="Digite para filtrar..." oninput="renderTabela()">
-                </div>
+                <div class="field"><label>Área:</label><select id="filter-area" onchange="renderTabela()"><option value="Todos">Todos</option></select></div>
+                <div class="field"><label>Inventariado:</label><select id="filter-inventariado" onchange="renderTabela()"><option value="Todos">Todos</option><option value="SIM">SIM</option><option value="NÃO">NÃO</option></select></div>
+                <div class="field"><label>Descrição:</label><select id="filter-descricao" onchange="renderTabela()"><option value="Todos">Todos</option></select></div>
+                <div class="field"><label>Modelo:</label><select id="filter-modelo" onchange="renderTabela()"><option value="Todos">Todos</option></select></div>
+                <div class="field" style="grid-column: span 1;"><label>Buscar (Livre)</label><input type="text" id="search-input" placeholder="Digite para filtrar..." oninput="renderTabela()"></div>
                 <button class="btn-clear" id="btn-clear" onclick="limparFiltros()">✖ Limpar</button>
             </div>
         </div>
 
         <div class="summary">
-            <div class="summary-card glass-panel">
-                <div class="summary-title">Total Equipamentos</div>
-                <div class="summary-value" id="kpi-total">0</div>
-            </div>
-            <div class="summary-card glass-panel green">
-                <div class="summary-title">Inventariados</div>
-                <div class="summary-value" id="kpi-sim">0</div>
-            </div>
-            <div class="summary-card glass-panel red">
-                <div class="summary-title">Não Inventariados</div>
-                <div class="summary-value" id="kpi-nao">0</div>
-            </div>
-            <div class="summary-card glass-panel warn">
-                <div class="summary-title">Localizados com Observação</div>
-                <div class="summary-value" id="kpi-observacao">0</div>
-            </div>
+            <div class="summary-card glass-panel"><div class="summary-title">Total Equipamentos</div><div class="summary-value" id="kpi-total">0</div></div>
+            <div class="summary-card glass-panel green"><div class="summary-title">Inventariados</div><div class="summary-value" id="kpi-sim">0</div></div>
+            <div class="summary-card glass-panel red"><div class="summary-title">Não Inventariados</div><div class="summary-value" id="kpi-nao">0</div></div>
+            <div class="summary-card glass-panel warn"><div class="summary-title">Localizados com Observação</div><div class="summary-value" id="kpi-observacao">0</div></div>
         </div>
 
         <div class="table-wrapper glass-panel" id="table-wrapper-id">
             <table>
-                <thead>
-                    <tr>
-                        <th style="width:12%;">ID</th>
-                        <th style="width:23%;">Descrição</th>
-                        <th style="width:12%;">Modelo</th>
-                        <th style="width:15%;">Área</th>
-                        <th class="center" style="width:10%;">Inventariado</th>
-                        <th style="width:15%;">Data Último Inventário</th>
-                        <th style="width:13%;">Observação</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody-equipamentos">
-                    <tr><td class="muted" colspan="7">Aguardando dados...</td></tr>
-                </tbody>
+                <thead><tr><th style="width:12%;">ID</th><th style="width:23%;">Descrição</th><th style="width:12%;">Modelo</th><th style="width:15%;">Área</th><th class="center" style="width:10%;">Inventariado</th><th style="width:15%;">Data Último Inventário</th><th style="width:13%;">Observação</th></tr></thead>
+                <tbody id="tbody-equipamentos"><tr><td class="muted" colspan="7">Aguardando dados...</td></tr></tbody>
             </table>
         </div>
     </div>
 
     <div class="modal-overlay" id="modal-comparacao">
         <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">⚖️ Comparativo de Inventário</div>
-                <button class="close-modal" onclick="fecharModalComparacao()">×</button>
-            </div>
+            <div class="modal-header"><div class="modal-title">⚖️ Comparativo de Inventário</div><button class="close-modal" onclick="fecharModalComparacao()">×</button></div>
             <div class="modal-filters">
-                <div class="field">
-                    <label>Data Mais Antiga (Base):</label>
-                    <select id="comp-data-antiga" onchange="renderizarComparacao()"></select>
-                </div>
-                <div class="field" style="margin-left: 20px;">
-                    <label>Data Mais Recente (Atual):</label>
-                    <select id="comp-data-recente" onchange="renderizarComparacao()"></select>
-                </div>
+                <div class="field"><label>Data Mais Antiga (Base):</label><select id="comp-data-antiga" onchange="renderizarComparacao()"></select></div>
+                <div class="field" style="margin-left: 20px;"><label>Data Mais Recente (Atual):</label><select id="comp-data-recente" onchange="renderizarComparacao()"></select></div>
             </div>
             <div class="modal-body">
                 <table>
-                    <thead>
-                        <tr>
-                            <th style="width:15%;">ID</th>
-                            <th style="width:20%;">Descrição / Área</th>
-                            <th class="center" style="width:25%;">Mudança de Status</th>
-                            <th style="width:40%;">Mudança de Observação</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbody-comparacao">
-                        <tr><td colspan="4" class="center muted">Selecione as datas para comparar.</td></tr>
-                    </tbody>
+                    <thead><tr><th style="width:15%;">ID</th><th style="width:20%;">Descrição / Área</th><th class="center" style="width:25%;">Mudança de Status</th><th style="width:40%;">Mudança de Observação</th></tr></thead>
+                    <tbody id="tbody-comparacao"><tr><td colspan="4" class="center muted">Selecione as datas para comparar.</td></tr></tbody>
                 </table>
             </div>
         </div>
-    </div>
-
-    <div id="status-toast" style="position: fixed; bottom: 20px; right: 20px; background: var(--accent-green); color: white; padding: 12px 24px; border-radius: 8px; font-weight: 800; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
-        Ação concluída!
     </div>
 
     <script>
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const FIREBASE_NODE = "equipamentos";
         
-        let HISTORICO_COMPLETO = {}; 
-        let ITEMS_ATUAIS = []; 
+        let HISTORICO_COMPLETO = {}; let ITEMS_ATUAIS = []; 
 
-        // ==========================================
-        // TOAST (MENSAGENS) E TEMAS
-        // ==========================================
-        function showToast(msg, color = "var(--accent-green)") {
-            const toast = document.getElementById('status-toast');
-            toast.innerText = msg;
-            toast.style.background = color;
-            toast.style.opacity = '1';
-            setTimeout(() => { toast.style.opacity = '0'; }, 4000);
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } });
+
+        // ============ PERMISSÕES GLOBAIS E LOGS ============
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        
+        const paginaNome = window.location.pathname.split('/').pop() || 'equipamentos.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        
+        if(canEdit) { 
+            document.getElementById('btnUploadArea').style.display = 'inline-flex'; 
+            document.getElementById('btn-delete-hist').style.display = 'flex'; 
         }
 
-        function toggleTheme() {
-            const body = document.body;
-            let newMode = body.getAttribute('data-theme') !== 'light' ? 'light' : 'dark';
-            if (newMode === 'light') body.setAttribute('data-theme', 'light');
-            else body.removeAttribute('data-theme');
-            try { localStorage.setItem('themePreference', newMode); } catch(e){}
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
         }
-        (function initTheme() {
-            try { if (localStorage.getItem('themePreference') === 'light') document.body.setAttribute('data-theme', 'light'); } catch(e) {}
-        })();
 
-        // ==========================================
-        // EXPORTAÇÃO 4K 
-        // ==========================================
         async function exportarImagem4K() {
-            showToast("Gerando Imagem 4K...", "var(--accent-warn)");
             document.body.classList.add('exporting'); 
-            
             setTimeout(async () => {
-                const container = document.body; 
                 const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#050505';
-
                 try {
-                    const canvas = await html2canvas(container, {
-                        scale: 3, 
-                        useCORS: true,
-                        allowTaint: true,
-                        backgroundColor: bgCor,
-                        logging: false,
-                        windowHeight: container.scrollHeight 
-                    });
-
-                    const link = document.createElement('a');
-                    link.download = `Equipamentos_Snapshot_${formatarDataHoraArquivo(new Date())}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    showToast("Imagem 4K salva com sucesso!");
-                } catch (error) {
-                    console.error("Erro no 4K:", error);
-                    showToast("Falha ao gerar foto 4K.", "var(--accent-red)");
-                } finally {
-                    document.body.classList.remove('exporting');
-                }
+                    const canvas = await html2canvas(document.body, { scale: 3, useCORS: true, allowTaint: true, backgroundColor: bgCor, logging: false, windowHeight: document.body.scrollHeight });
+                    const link = document.createElement('a'); link.download = `Equipamentos_Snapshot_${formatarDataHoraArquivo(new Date())}.png`; link.href = canvas.toDataURL('image/png'); link.click();
+                } catch (error) { console.error("Erro no 4K:", error); } finally { document.body.classList.remove('exporting'); }
             }, 500); 
         }
 
-        // ==========================================
-        // FORMATADORES E EXTRATORES (SEGURANÇA TOTAL)
-        // ==========================================
-        function formatarDataChaveDiaria(dateObj) { 
-            const ano = dateObj.getFullYear();
-            const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const dia = String(dateObj.getDate()).padStart(2, '0');
-            return `log_${ano}-${mes}-${dia}`; 
-        }
-
-        function formatarDataHoraArquivo(dateObj) { 
-            const ano = dateObj.getFullYear();
-            const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const dia = String(dateObj.getDate()).padStart(2, '0');
-            const hora = String(dateObj.getHours()).padStart(2, '0');
-            const min = String(dateObj.getMinutes()).padStart(2, '0');
-            const sec = String(dateObj.getSeconds()).padStart(2, '0');
-            return `${ano}-${mes}-${dia}_${hora}-${min}-${sec}`; 
-        }
-
-        function formatarDataBr(chaveStr) { 
-            if (!chaveStr) return chaveStr; 
-            let str = chaveStr.replace('log_', ''); 
-            if (str.includes('_')) str = str.split('_')[0]; // Pega apenas a data limpa, ignorando resto
-            if (str.includes('-')) { 
-                const [ano, mes, dia] = str.split('-');
-                return `${dia}/${mes}/${ano}`;
-            }
-            return str;
-        }
-
+        function formatarDataChaveDiaria(dateObj) { const ano = dateObj.getFullYear(); const mes = String(dateObj.getMonth() + 1).padStart(2, '0'); const dia = String(dateObj.getDate()).padStart(2, '0'); return `log_${ano}-${mes}-${dia}`; }
+        function formatarDataHoraArquivo(dateObj) { const ano = dateObj.getFullYear(); const mes = String(dateObj.getMonth() + 1).padStart(2, '0'); const dia = String(dateObj.getDate()).padStart(2, '0'); const hora = String(dateObj.getHours()).padStart(2, '0'); const min = String(dateObj.getMinutes()).padStart(2, '0'); const sec = String(dateObj.getSeconds()).padStart(2, '0'); return `${ano}-${mes}-${dia}_${hora}-${min}-${sec}`; }
+        function formatarDataBr(chaveStr) { if (!chaveStr) return chaveStr; let str = chaveStr.replace('log_', ''); if (str.includes('_')) str = str.split('_')[0]; if (str.includes('-')) { const [ano, mes, dia] = str.split('-'); return `${dia}/${mes}/${ano}`; } return str; }
         function escapeHtml(value) { return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;'); }
         function normalizeText(value) { return String(value ?? '').trim(); }
         function removerAcentos(value) { return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 
-        function normalizeArea(area) {
-            let s = normalizeText(area);
-            if (!s) return 'Sem área';
-            if (removerAcentos(s).toUpperCase() === 'OPERACAO') return 'OPERAÇÃO';
-            return s;
-        }
+        function normalizeArea(area) { let s = normalizeText(area); if (!s) return 'Sem área'; if (removerAcentos(s).toUpperCase() === 'OPERACAO') return 'OPERAÇÃO'; return s; }
+        function normalizeInventariado(value) { const s = removerAcentos(normalizeText(value)).toUpperCase(); if (s === 'SIM') return 'SIM'; if (s === 'NAO' || s === 'NÃO') return 'NÃO'; return s || 'NÃO INFORMADO'; }
+        function getIconForDesc(desc) { const d = String(desc || '').toLowerCase(); if (d.includes('handheld') || d.includes('coletor') || d.includes('pda') || d.includes('tc52') || d.includes('eda')) return '📱'; if (d.includes('impressora') || d.includes('zebra') || d.includes('hp') || d.includes('printer')) return '🖨️'; if (d.includes('monitor') || d.includes('tela') || d.includes('display')) return '🖥️'; if (d.includes('notebook') || d.includes('laptop') || d.includes('pc') || d.includes('computador') || d.includes('desktop') || d.includes('thinkpad')) return '💻'; if (d.includes('leitor') || d.includes('scanner') || d.includes('gun') || d.includes('ring')) return '📟'; if (d.includes('nobreak') || d.includes('ups') || d.includes('bateria')) return '🔋'; if (d.includes('tv') || d.includes('televisao')) return '📺'; return '📦'; }
+        function sanitizeForFirebase(items) { return items.map(item => ({ ID: String(item.ID ?? ''), Descricao: String(item.Descricao ?? ''), Modelo: String(item.Modelo ?? ''), AREA: String(item.AREA ?? ''), observacao: String(item.observacao ?? ''), Inventariado: String(item.Inventariado ?? ''), Data_ultimo_inventario: String(item.Data_ultimo_inventario ?? '') })); }
+        function badgeInventariado(value) { const v = normalizeInventariado(value); if (v === 'SIM') return `<span class="badge badge-sim">SIM</span>`; if (v === 'NÃO') return `<span class="badge badge-nao">NÃO</span>`; return `<span class="badge" style="background:#64748b; color:#fff;">${escapeHtml(v)}</span>`; }
 
-        function normalizeInventariado(value) {
-            const s = removerAcentos(normalizeText(value)).toUpperCase();
-            if (s === 'SIM') return 'SIM';
-            if (s === 'NAO' || s === 'NÃO') return 'NÃO';
-            return s || 'NÃO INFORMADO';
-        }
+        function extrairLista(dado) { if (!dado) return []; if (Array.isArray(dado)) return dado; if (dado.lista) return Array.isArray(dado.lista) ? dado.lista : Object.values(dado.lista); let vals = Object.values(dado); if (vals.length > 0 && typeof vals[0] === 'object' && (vals[0].ID || vals[0].Descricao)) return vals; return []; }
 
-        function getIconForDesc(desc) {
-            const d = String(desc || '').toLowerCase();
-            if (d.includes('handheld') || d.includes('coletor') || d.includes('pda') || d.includes('tc52') || d.includes('eda')) return '📱';
-            if (d.includes('impressora') || d.includes('zebra') || d.includes('hp') || d.includes('printer')) return '🖨️';
-            if (d.includes('monitor') || d.includes('tela') || d.includes('display')) return '🖥️';
-            if (d.includes('notebook') || d.includes('laptop') || d.includes('pc') || d.includes('computador') || d.includes('desktop') || d.includes('thinkpad')) return '💻';
-            if (d.includes('leitor') || d.includes('scanner') || d.includes('gun') || d.includes('ring')) return '📟';
-            if (d.includes('nobreak') || d.includes('ups') || d.includes('bateria')) return '🔋';
-            if (d.includes('tv') || d.includes('televisao')) return '📺';
-            return '📦';
-        }
-
-        function sanitizeForFirebase(items) {
-            return items.map(item => ({
-                ID: String(item.ID ?? ''), Descricao: String(item.Descricao ?? ''),
-                Modelo: String(item.Modelo ?? ''), AREA: String(item.AREA ?? ''),
-                observacao: String(item.observacao ?? ''), Inventariado: String(item.Inventariado ?? ''),
-                Data_ultimo_inventario: String(item.Data_ultimo_inventario ?? '')
-            }));
-        }
-
-        function badgeInventariado(value) {
-            const v = normalizeInventariado(value);
-            if (v === 'SIM') return `<span class="badge badge-sim">SIM</span>`;
-            if (v === 'NÃO') return `<span class="badge badge-nao">NÃO</span>`;
-            return `<span class="badge" style="background:#64748b; color:#fff;">${escapeHtml(v)}</span>`;
-        }
-
-        // Extrator Seguro: Busca os arrays não importa como o Firebase salvou na época
-        function extrairLista(dado) {
-            if (!dado) return [];
-            if (Array.isArray(dado)) return dado;
-            if (dado.lista) return Array.isArray(dado.lista) ? dado.lista : Object.values(dado.lista);
-            let vals = Object.values(dado);
-            if (vals.length > 0 && typeof vals[0] === 'object' && (vals[0].ID || vals[0].Descricao)) return vals;
-            return [];
-        }
-
-        // ==========================================
-        // LÓGICA DE DADOS E TABELAS
-        // ==========================================
         function atualizarDropdownsDeDatas() {
             const selectHist = document.getElementById('filter-data-historico');
             const chaves = Object.keys(HISTORICO_COMPLETO).sort().reverse(); 
-            let options = chaves.length === 0 ? '<option value="">Sem dados</option>' : chaves.map(c => `<option value="${c}">${formatarDataBr(c)}</option>`).join('');
-            selectHist.innerHTML = options;
+            selectHist.innerHTML = chaves.length === 0 ? '<option value="">Sem dados</option>' : chaves.map(c => `<option value="${c}">${formatarDataBr(c)}</option>`).join('');
         }
 
         function preencherFiltrosDinamicos(lista) {
-            const areaAtual = document.getElementById('filter-area').value;
-            const descAtual = document.getElementById('filter-descricao').value;
-            const modeloAtual = document.getElementById('filter-modelo').value;
-
+            const areaAtual = document.getElementById('filter-area').value; const descAtual = document.getElementById('filter-descricao').value; const modeloAtual = document.getElementById('filter-modelo').value;
             const areas = [...new Set(lista.map(i => i.AREA || 'Sem área'))].filter(Boolean).sort();
             const descricoes = [...new Set(lista.map(i => i.Descricao || 'Não informado'))].filter(Boolean).sort();
             const modelos = [...new Set(lista.map(i => i.Modelo || 'Não informado'))].filter(Boolean).sort();
@@ -539,8 +288,7 @@
         function carregarDadosDaDataSelecionada() {
             const chave = document.getElementById('filter-data-historico').value;
             ITEMS_ATUAIS = extrairLista(HISTORICO_COMPLETO[chave]);
-            preencherFiltrosDinamicos(ITEMS_ATUAIS);
-            renderTabela();
+            preencherFiltrosDinamicos(ITEMS_ATUAIS); renderTabela();
         }
 
         function atualizarKPIs(items) {
@@ -551,314 +299,131 @@
         }
 
         function renderTabela() {
-            const area = document.getElementById('filter-area').value;
-            const desc = document.getElementById('filter-descricao').value;
-            const inventariado = document.getElementById('filter-inventariado').value;
-            const modelo = document.getElementById('filter-modelo').value;
-            const busca = normalizeText(document.getElementById('search-input').value).toLowerCase();
+            const area = document.getElementById('filter-area').value; const desc = document.getElementById('filter-descricao').value; const inventariado = document.getElementById('filter-inventariado').value; const modelo = document.getElementById('filter-modelo').value; const busca = normalizeText(document.getElementById('search-input').value).toLowerCase();
 
             const filtrados = ITEMS_ATUAIS.filter(item => {
-                const matchArea = area === 'Todos' || item.AREA === area;
-                const matchDesc = desc === 'Todos' || item.Descricao === desc;
-                const matchInv = inventariado === 'Todos' || item.Inventariado === inventariado;
-                const matchMod = modelo === 'Todos' || item.Modelo === modelo;
-                const texto = [item.ID, item.Descricao, item.Modelo, item.AREA, item.observacao].join(' ').toLowerCase();
-                const matchBusca = !busca || texto.includes(busca);
-                return matchArea && matchDesc && matchInv && matchMod && matchBusca;
+                const matchArea = area === 'Todos' || item.AREA === area; const matchDesc = desc === 'Todos' || item.Descricao === desc; const matchInv = inventariado === 'Todos' || item.Inventariado === inventariado; const matchMod = modelo === 'Todos' || item.Modelo === modelo; const texto = [item.ID, item.Descricao, item.Modelo, item.AREA, item.observacao].join(' ').toLowerCase(); const matchBusca = !busca || texto.includes(busca); return matchArea && matchDesc && matchInv && matchMod && matchBusca;
             });
 
             atualizarKPIs(ITEMS_ATUAIS);
-
             const tbody = document.getElementById('tbody-equipamentos');
-            if (filtrados.length === 0) {
-                tbody.innerHTML = `<tr><td class="muted" colspan="7">Nenhum equipamento.</td></tr>`;
-                return;
-            }
+            if (filtrados.length === 0) { tbody.innerHTML = `<tr><td class="muted" colspan="7">Nenhum equipamento.</td></tr>`; return; }
 
-            filtrados.sort((a,b) => {
-                if (a.Inventariado === 'SIM' && b.Inventariado !== 'SIM') return -1;
-                if (a.Inventariado !== 'SIM' && b.Inventariado === 'SIM') return 1;
-                const priA = normalizeText(a.observacao) !== '' ? 0 : 1;
-                const priB = normalizeText(b.observacao) !== '' ? 0 : 1;
-                if (priA !== priB) return priA - priB;
-                return String(a.AREA).localeCompare(String(b.AREA));
-            });
+            filtrados.sort((a,b) => { if (a.Inventariado === 'SIM' && b.Inventariado !== 'SIM') return -1; if (a.Inventariado !== 'SIM' && b.Inventariado === 'SIM') return 1; const priA = normalizeText(a.observacao) !== '' ? 0 : 1; const priB = normalizeText(b.observacao) !== '' ? 0 : 1; if (priA !== priB) return priA - priB; return String(a.AREA).localeCompare(String(b.AREA)); });
 
             let html = '';
             filtrados.forEach(item => {
-                const temObs = normalizeText(item.observacao) !== '';
-                const obsClass = temObs ? 'obs-prioridade' : 'obs-normal';
-                html += `
-                    <tr>
-                        <td class="col-id">${escapeHtml(item.ID || '-')}</td>
-                        <td class="desc-name"><span class="desc-icon">${getIconForDesc(item.Descricao)}</span>${escapeHtml(item.Descricao || '-')}</td>
-                        <td class="modelo-tag">${escapeHtml(item.Modelo || '-')}</td>
-                        <td class="area-name">${escapeHtml(item.AREA || '-')}</td>
-                        <td class="center">${badgeInventariado(item.Inventariado)}</td>
-                        <td>${escapeHtml(item.Data_ultimo_inventario || '-')}</td>
-                        <td class="${obsClass}">${escapeHtml(item.observacao || '-')}</td>
-                    </tr>
-                `;
-            });
-            tbody.innerHTML = html;
+                const temObs = normalizeText(item.observacao) !== ''; const obsClass = temObs ? 'obs-prioridade' : 'obs-normal';
+                html += `<tr><td class="col-id">${escapeHtml(item.ID || '-')}</td><td class="desc-name"><span class="desc-icon">${getIconForDesc(item.Descricao)}</span>${escapeHtml(item.Descricao || '-')}</td><td class="modelo-tag">${escapeHtml(item.Modelo || '-')}</td><td class="area-name">${escapeHtml(item.AREA || '-')}</td><td class="center">${badgeInventariado(item.Inventariado)}</td><td>${escapeHtml(item.Data_ultimo_inventario || '-')}</td><td class="${obsClass}">${escapeHtml(item.observacao || '-')}</td></tr>`;
+            }); tbody.innerHTML = html;
         }
 
-        function limparFiltros() {
-            document.getElementById('filter-area').value = 'Todos'; 
-            document.getElementById('filter-descricao').value = 'Todos'; 
-            document.getElementById('filter-inventariado').value = 'Todos'; 
-            document.getElementById('filter-modelo').value = 'Todos'; 
-            document.getElementById('search-input').value = '';
-            renderTabela();
-        }
+        function limparFiltros() { document.getElementById('filter-area').value = 'Todos'; document.getElementById('filter-descricao').value = 'Todos'; document.getElementById('filter-inventariado').value = 'Todos'; document.getElementById('filter-modelo').value = 'Todos'; document.getElementById('search-input').value = ''; renderTabela(); }
 
-        // ==========================================
-        // FIREBASE COM SALVAMENTO DIÁRIO EXATO E DELEÇÃO (LIXEIRA)
-        // ==========================================
         async function carregarDoFirebase() {
             try {
                 const timestampParaQuebrarCache = new Date().getTime();
-                const url = `${FIREBASE_URL}${FIREBASE_NODE}.json?_=${timestampParaQuebrarCache}`;
-
-                const response = await fetch(url, {
-                    method: 'GET',
-                    cache: 'no-store',
-                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' }
-                });
-                
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json?_=${timestampParaQuebrarCache}`, { method: 'GET', cache: 'no-store', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
                 if (!response.ok) throw new Error("Erro");
                 const dbData = await response.json();
                 
                 HISTORICO_COMPLETO = {};
-                if (dbData) {
-                    for (let key in dbData) {
-                        if (key.startsWith('log_') || key.startsWith('202')) {
-                            HISTORICO_COMPLETO[key] = dbData[key];
-                        }
-                    }
-                }
+                if (dbData) { for (let key in dbData) { if (key.startsWith('log_') || key.startsWith('202')) { HISTORICO_COMPLETO[key] = dbData[key]; } } }
 
                 atualizarDropdownsDeDatas();
                 const chaves = Object.keys(HISTORICO_COMPLETO).sort().reverse();
-                if (chaves.length > 0) {
-                    document.getElementById('filter-data-historico').value = chaves[0];
-                    carregarDadosDaDataSelecionada();
-                } else {
-                    renderTabela();
-                }
-            } catch (err) {
-                console.error(err);
-            }
+                if (chaves.length > 0) { document.getElementById('filter-data-historico').value = chaves[0]; carregarDadosDaDataSelecionada(); } else { renderTabela(); }
+            } catch (err) {}
         }
 
         async function salvarNoFirebase(items) {
-            const hoje = new Date(); 
-            const chaveData = formatarDataChaveDiaria(hoje); // Será sempre ex: log_2026-07-06
-            
-            const payload = { 
-                atualizadoEm: hoje.toLocaleString('pt-BR'), 
-                totalRegistros: items.length, 
-                lista: sanitizeForFirebase(items) 
-            };
-
+            const hoje = new Date(); const chaveData = formatarDataChaveDiaria(hoje);
+            const payload = { atualizadoEm: hoje.toLocaleString('pt-BR'), totalRegistros: items.length, lista: sanitizeForFirebase(items) };
             try {
-                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/${chaveData}.json`, { 
-                    method: 'PUT', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify(payload) 
-                });
-                
-                HISTORICO_COMPLETO[chaveData] = payload;
-                atualizarDropdownsDeDatas();
-                document.getElementById('filter-data-historico').value = chaveData;
-                carregarDadosDaDataSelecionada();
-                
-                showToast("Upload salvo com sucesso!");
-
-            } catch (error) {
-                console.error(error);
-                showToast("Falha ao salvar no banco de dados da nuvem.", "var(--accent-red)");
-            }
+                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/${chaveData}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                await registrarLogFirebase("Equipamentos", `Realizou o backup diário dos equipamentos (${items.length} ITs)`);
+                HISTORICO_COMPLETO[chaveData] = payload; atualizarDropdownsDeDatas(); document.getElementById('filter-data-historico').value = chaveData; carregarDadosDaDataSelecionada();
+            } catch (error) { alert("Falha ao salvar no banco de dados."); }
         }
 
         async function deletarHistoricoAtual() {
-            const chaveSelecionada = document.getElementById('filter-data-historico').value;
-            if (!chaveSelecionada) return;
-
-            const senha = prompt("Acesso Restrito: Digite a senha para excluir este histórico.");
-            
-            if (senha !== "2026") {
-                if (senha !== null) showToast("Senha Incorreta!", "var(--accent-red)");
-                return;
-            }
-
-            const confirmacao = confirm(`ATENÇÃO: Você está prestes a apagar o registro selecionado de todo o banco de dados da nuvem.\n\nDeseja continuar?`);
-            if (!confirmacao) return;
+            const chaveSelecionada = document.getElementById('filter-data-historico').value; if (!chaveSelecionada) return;
+            const senha = prompt("Acesso Restrito: Digite a senha para excluir este histórico."); if (senha !== "2026") { if (senha !== null) alert("Senha Incorreta!"); return; }
+            if (!confirm(`ATENÇÃO: Você está prestes a apagar o registro selecionado de todo o banco de dados da nuvem.\n\nDeseja continuar?`)) return;
 
             try {
-                showToast("Excluindo registro da nuvem...", "var(--accent-warn)");
-
-                const url = `${FIREBASE_URL}${FIREBASE_NODE}/${chaveSelecionada}.json`;
-                const response = await fetch(url, {
-                    method: 'DELETE'
-                });
-
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/${chaveSelecionada}.json`, { method: 'DELETE' });
                 if (!response.ok) throw new Error("Falha ao deletar.");
-
-                // Remove do objeto local e atualiza a tela
-                delete HISTORICO_COMPLETO[chaveSelecionada];
-                atualizarDropdownsDeDatas();
+                
+                await registrarLogFirebase("Equipamentos", `Excluiu da nuvem o histórico do dia ${formatarDataBr(chaveSelecionada)}.`);
+                delete HISTORICO_COMPLETO[chaveSelecionada]; atualizarDropdownsDeDatas();
                 
                 const chaves = Object.keys(HISTORICO_COMPLETO).sort().reverse();
-                if (chaves.length > 0) {
-                    document.getElementById('filter-data-historico').value = chaves[0];
-                    carregarDadosDaDataSelecionada();
-                } else {
-                    ITEMS_ATUAIS = [];
-                    renderTabela();
-                }
-
-                showToast("Histórico apagado com sucesso!");
-
-            } catch (error) {
-                console.error(error);
-                showToast("Erro ao excluir. Tente novamente.", "var(--accent-red)");
-            }
+                if (chaves.length > 0) { document.getElementById('filter-data-historico').value = chaves[0]; carregarDadosDaDataSelecionada(); } else { ITEMS_ATUAIS = []; renderTabela(); }
+                alert("Histórico apagado com sucesso!");
+            } catch (error) { alert("Erro ao excluir."); }
         }
 
         document.getElementById('csvFileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
+            const file = e.target.files[0]; if (!file) return;
             document.getElementById('tbody-equipamentos').innerHTML = `<tr><td class="muted" colspan="7">Lendo arquivo CSV...</td></tr>`;
-            
-            Papa.parse(file, {
-                header: true, skipEmptyLines: true,
-                complete: async function(results) {
-                    const data = results.data;
-                    if (!data || data.length === 0) { alert('CSV vazio.'); return; }
-
-                    let novosItens = data.map(row => {
-                        const getVal = (possibleKeys) => { for(let key in row) { if(possibleKeys.includes(key.trim().toLowerCase())) return row[key]; } return ''; };
-                        return {
-                            ID: normalizeText(getVal(['id'])), Descricao: normalizeText(getVal(['descrição', 'descricao'])),
-                            Modelo: normalizeText(getVal(['modelo']) || 'Não informado'), AREA: normalizeArea(getVal(['area', 'área'])),
-                            observacao: normalizeText(getVal(['observação', 'observacao'])), Inventariado: normalizeInventariado(getVal(['inventariado'])),
-                            Data_ultimo_inventario: normalizeText(getVal(['data ultimo inventário', 'data ultimo inventario', 'data_ultimo_inventario']))
-                        };
-                    }).filter(item => item.ID || item.Descricao);
-
-                    await salvarNoFirebase(novosItens);
-                    e.target.value = ''; 
-                }
-            });
+            Papa.parse(file, { header: true, skipEmptyLines: true, complete: async function(results) {
+                const data = results.data; if (!data || data.length === 0) { alert('CSV vazio.'); return; }
+                let novosItens = data.map(row => {
+                    const getVal = (possibleKeys) => { for(let key in row) { if(possibleKeys.includes(key.trim().toLowerCase())) return row[key]; } return ''; };
+                    return { ID: normalizeText(getVal(['id'])), Descricao: normalizeText(getVal(['descrição', 'descricao'])), Modelo: normalizeText(getVal(['modelo']) || 'Não informado'), AREA: normalizeArea(getVal(['area', 'área'])), observacao: normalizeText(getVal(['observação', 'observacao'])), Inventariado: normalizeInventariado(getVal(['inventariado'])), Data_ultimo_inventario: normalizeText(getVal(['data ultimo inventário', 'data ultimo inventario', 'data_ultimo_inventario'])) };
+                }).filter(item => item.ID || item.Descricao);
+                await salvarNoFirebase(novosItens); e.target.value = ''; 
+            }});
         });
 
-        // ==========================================
-        // AUDITORIA / MODAL COMPARAÇÃO
-        // ==========================================
         function abrirModalComparacao() {
             const chaves = Object.keys(HISTORICO_COMPLETO).sort().reverse();
-            if (chaves.length < 2) {
-                showToast("Você precisa ter pelo menos 2 datas diferentes salvas no histórico para usar a comparação.", "var(--accent-warn)");
-                return;
-            }
-
-            const selectBase = document.getElementById('comp-data-antiga');
-            const selectRecente = document.getElementById('comp-data-recente');
-            
+            if (chaves.length < 2) { alert("Você precisa ter pelo menos 2 datas diferentes salvas no histórico para usar a comparação."); return; }
+            const selectBase = document.getElementById('comp-data-antiga'); const selectRecente = document.getElementById('comp-data-recente');
             let opcoesHtml = chaves.map(c => `<option value="${c}">${formatarDataBr(c)}</option>`).join('');
-            selectBase.innerHTML = opcoesHtml;
-            selectRecente.innerHTML = opcoesHtml;
-
-            selectRecente.value = chaves[0];
-            selectBase.value = chaves[1];
-
-            document.getElementById('modal-comparacao').classList.add('active');
-            renderizarComparacao();
+            selectBase.innerHTML = opcoesHtml; selectRecente.innerHTML = opcoesHtml; selectRecente.value = chaves[0]; selectBase.value = chaves[1];
+            document.getElementById('modal-comparacao').classList.add('active'); renderizarComparacao();
         }
-
         function fecharModalComparacao() { document.getElementById('modal-comparacao').classList.remove('active'); }
 
         function renderizarComparacao() {
-            const baseChave = document.getElementById('comp-data-antiga').value;
-            const recenteChave = document.getElementById('comp-data-recente').value;
-
+            const baseChave = document.getElementById('comp-data-antiga').value; const recenteChave = document.getElementById('comp-data-recente').value;
             if(!baseChave || !recenteChave) return;
-
-            const listBase = extrairLista(HISTORICO_COMPLETO[baseChave]);
-            const listRecente = extrairLista(HISTORICO_COMPLETO[recenteChave]);
-
-            const mapBase = new Map(listBase.map(i => [i.ID, i]));
-            const mapRecente = new Map(listRecente.map(i => [i.ID, i]));
+            const listBase = extrairLista(HISTORICO_COMPLETO[baseChave]); const listRecente = extrairLista(HISTORICO_COMPLETO[recenteChave]);
+            const mapBase = new Map(listBase.map(i => [i.ID, i])); const mapRecente = new Map(listRecente.map(i => [i.ID, i]));
             const todosIDs = new Set([...mapBase.keys(), ...mapRecente.keys()]);
-
-            let html = '';
-            let qtdMudancas = 0;
+            let html = ''; let qtdMudancas = 0;
 
             todosIDs.forEach(id => {
                 if(!id || id === '-') return;
-
-                const baseItem = mapBase.get(id);
-                const recItem = mapRecente.get(id);
-
-                let invBase = baseItem ? baseItem.Inventariado : 'N/A';
-                let invRec = recItem ? recItem.Inventariado : 'N/A';
-                
-                let obsBase = baseItem ? baseItem.observacao : '-';
-                let obsRec = recItem ? recItem.observacao : '-';
-                
-                let desc = recItem ? recItem.Descricao : (baseItem ? baseItem.Descricao : '-');
-                let area = recItem ? recItem.AREA : (baseItem ? baseItem.AREA : '-');
+                const baseItem = mapBase.get(id); const recItem = mapRecente.get(id);
+                let invBase = baseItem ? baseItem.Inventariado : 'N/A'; let invRec = recItem ? recItem.Inventariado : 'N/A';
+                let obsBase = baseItem ? baseItem.observacao : '-'; let obsRec = recItem ? recItem.observacao : '-';
+                let desc = recItem ? recItem.Descricao : (baseItem ? baseItem.Descricao : '-'); let area = recItem ? recItem.AREA : (baseItem ? baseItem.AREA : '-');
 
                 if (invBase !== invRec || obsBase !== obsRec) {
                     qtdMudancas++;
-                    
-                    let htmlInv = invBase === invRec 
-                        ? `<span style="color: var(--text-muted);">-</span>` 
-                        : `${badgeInventariado(invBase)} ➔ ${badgeInventariado(invRec)}`;
-
-                    let htmlObs = obsBase === obsRec 
-                        ? `<span style="color: var(--text-muted);">-</span>` 
-                        : `<span style="color: var(--text-muted);"><strike>${escapeHtml(obsBase)}</strike></span> ➔ <b style="color: var(--accent-warn);">${escapeHtml(obsRec)}</b>`;
-
-                    html += `<tr>
-                        <td class="col-id">${escapeHtml(id)}</td>
-                        <td><b>${escapeHtml(desc)}</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(area)}</span></td>
-                        <td class="center">${htmlInv}</td>
-                        <td>${htmlObs}</td>
-                    </tr>`;
+                    let htmlInv = invBase === invRec ? `<span style="color: var(--text-muted);">-</span>` : `${badgeInventariado(invBase)} ➔ ${badgeInventariado(invRec)}`;
+                    let htmlObs = obsBase === obsRec ? `<span style="color: var(--text-muted);">-</span>` : `<span style="color: var(--text-muted);"><strike>${escapeHtml(obsBase)}</strike></span> ➔ <b style="color: var(--accent-warn);">${escapeHtml(obsRec)}</b>`;
+                    html += `<tr><td class="col-id">${escapeHtml(id)}</td><td><b>${escapeHtml(desc)}</b><br><span style="font-size: 0.75rem; color: var(--text-muted);">${escapeHtml(area)}</span></td><td class="center">${htmlInv}</td><td>${htmlObs}</td></tr>`;
                 }
             });
 
-            if (qtdMudancas === 0) {
-                html = `<tr><td colspan="4" class="center muted" style="padding: 40px;">Nenhuma alteração encontrada entre essas datas.</td></tr>`;
-            }
-
+            if (qtdMudancas === 0) { html = `<tr><td colspan="4" class="center muted" style="padding: 40px;">Nenhuma alteração encontrada entre essas datas.</td></tr>`; }
             document.getElementById('tbody-comparacao').innerHTML = html;
         }
 
-        // ==========================================
-        // BAIXAR CSV
-        // ==========================================
         function baixarCSV() {
             if (!ITEMS_ATUAIS || ITEMS_ATUAIS.length === 0) return alert('Nenhum dado disponível.');
             const colunas = ['AREA', 'observacao', 'Inventariado', 'Data_ultimo_inventario', 'ID', 'Descricao', 'Modelo'];
             const linhas = [colunas.map(c => `"${c}"`).join(';')];
-            
-            ITEMS_ATUAIS.forEach(item => {
-                linhas.push(colunas.map(col => `"${String(item[col] ?? '').replaceAll('"', '""')}"`).join(';'));
-            });
-            
+            ITEMS_ATUAIS.forEach(item => { linhas.push(colunas.map(col => `"${String(item[col] ?? '').replaceAll('"', '""')}"`).join(';')); });
             const dataSelecionada = document.getElementById('filter-data-historico').value || formatarDataHoraArquivo(new Date());
-            const blob = new Blob(['\uFEFF' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `equipamentos_historico_${dataSelecionada}.csv`;
+            const blob = new Blob(['\uFEFF' + linhas.join('\n')], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `equipamentos_historico_${dataSelecionada}.csv`;
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        // INIT
         carregarDoFirebase();
     </script>
 </body>
