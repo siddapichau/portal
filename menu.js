@@ -13,7 +13,7 @@ async function carregarMenuGlobal() {
                 <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo" onclick="window.location.href='index.html'">
             </div>
             <div class="nav-right">
-                <button class="btn-minimal" id="btnAdminGlobal" style="display:none;" onclick="window.location.href='admin.html'" title="Admin">⚙️</button>
+                <button class="btn-minimal" id="btnAdminGlobal" style="display:none;" onclick="abrirPagina('admin.html', 'Admin')" title="Admin">⚙️</button>
                 <button class="btn-minimal" onclick="toggleTheme()" title="Alternar Tema"><svg id="themeIconSvg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
                 <button class="btn-minimal" onclick="abrirAuthModal()" title="Perfil / Login"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
             </div>
@@ -48,7 +48,7 @@ async function carregarMenuGlobal() {
                 <div class="auth-toggle" onclick="mudarAuthModo('login')">Já possui conta? Entrar</div>
             </div>
 
-            <!-- CAIXA DE PERFIL (NOVO) -->
+            <!-- CAIXA DE PERFIL -->
             <div class="auth-box" id="profileBox" style="display:none; max-width: 450px;">
                 <h2 style="margin-bottom: 5px; color: var(--text-title);">Meu Perfil</h2>
                 <div id="profileInfo" style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem; text-align: left; background: var(--bg-body); padding: 10px; border-radius: 6px; border: 1px solid var(--border-card);"></div>
@@ -88,7 +88,6 @@ async function carregarMenuGlobal() {
         renderizarMenuEsquerdo();
     } catch (e) { console.error("Erro Menu", e); }
 
-    // Fecha o modal ao clicar fora da caixa
     document.getElementById('authModal').addEventListener('click', function(e) {
         if(e.target === this) fecharAuthModal();
     });
@@ -107,21 +106,47 @@ function toggleMenu() {
     document.querySelector('.sidebar-overlay').classList.toggle('active');
 }
 
+// ==== ATUALIZADO: ROTEAMENTO DINÂMICO PARA A URL ====
 function abrirPagina(url, titulo) {
     if(!url || url === '#') return;
     const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
+    
     if (isIndex) {
-        document.getElementById('home-view').style.display = 'none';
-        document.getElementById('quote-box').style.display = 'none';
-        document.getElementById('page-title').style.display = 'none';
+        const homeView = document.getElementById('home-view');
+        const quoteBox = document.getElementById('quote-box');
+        const pageTitle = document.getElementById('page-title');
+        
+        if (homeView) homeView.style.display = 'none';
+        if (quoteBox) quoteBox.style.display = 'none';
+        if (pageTitle) pageTitle.style.display = 'none';
+        
         const frame = document.getElementById('app-frame');
-        frame.style.display = 'block';
-        frame.src = url;
-        toggleMenu(); 
+        if (frame) {
+            frame.style.display = 'block';
+            frame.src = url;
+            
+            // Atualiza a URL do navegador sem recarregar a página
+            window.history.pushState({ path: url }, '', `?page=${url}`);
+        }
+        
+        document.querySelector('.sidebar-wrapper').classList.remove('open');
+        document.querySelector('.sidebar-overlay').classList.remove('active');
     } else {
-        window.location.href = url;
+        window.location.href = `index.html?page=${url}`;
     }
 }
+
+// Intercepta os botões "Voltar" e "Avançar" do navegador
+window.addEventListener('popstate', (event) => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const pageToLoad = urlParams.get('page');
+    if (pageToLoad) {
+        const frame = document.getElementById('app-frame');
+        if (frame) frame.src = pageToLoad;
+    } else {
+        window.location.reload(); // Se voltar pro inicio puro, recarrega
+    }
+});
 
 function renderizarMenuEsquerdo() {
     const container = document.getElementById('cat-list-container');
@@ -273,8 +298,10 @@ function fazerLogout() {
         verificarAcesso();
         renderizarMenuEsquerdo();
         switchTab('todos');
-        document.getElementById('btnAdminGlobal').style.display = 'none'; // Esconde botão admin
-        alert("Você saiu com sucesso.");
+        document.getElementById('btnAdminGlobal').style.display = 'none';
+        
+        // Se estiver dentro de uma página que exija login, recarrega o index
+        window.location.href = 'index.html';
     }
 }
 
@@ -320,4 +347,22 @@ async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
 
 function verificarAcesso() { if(currentUser && currentUser.cargo === 'admin') document.getElementById('btnAdminGlobal').style.display = 'flex'; }
 function toggleTheme() { const body = document.body; let newMode = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; body.setAttribute('data-theme', newMode); localStorage.setItem('themePreference', newMode); }
-document.addEventListener("DOMContentLoaded", () => { if (localStorage.getItem('themePreference') === 'dark') document.body.setAttribute('data-theme', 'dark'); carregarMenuGlobal(); });
+
+// GATILHO INICIAL PARA LER A URL E ABRIR O IFRAME
+document.addEventListener("DOMContentLoaded", () => { 
+    if (localStorage.getItem('themePreference') === 'dark') document.body.setAttribute('data-theme', 'dark'); 
+    
+    carregarMenuGlobal().then(() => {
+        const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
+        if (isIndex) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const pageToLoad = urlParams.get('page');
+            if (pageToLoad) {
+                // Pequeno delay para garantir que o DOM do index renderizou a área do Iframe
+                setTimeout(() => {
+                    abrirPagina(pageToLoad, 'Portal');
+                }, 100);
+            }
+        }
+    });
+});
