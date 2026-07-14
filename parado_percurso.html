@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parado no Percurso - Mercado Livre</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'parado_percurso.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* Variáveis Específicas do Painel */
+        :root {
+            --bg-input: rgba(15, 23, 42, 0.6);
+            --border-input: rgba(255, 255, 255, 0.2);
+        }
+        [data-theme="light"] {
+            --bg-input: rgba(255, 255, 255, 0.7);
+            --border-input: rgba(0, 0, 0, 0.15);
+        }
+
+        body { 
+            padding: 10px; display: flex; flex-direction: column; gap: 10px; 
+            height: 100vh; overflow: hidden; background: transparent !important;
+        }
+
+        .glass-panel { background: var(--bg-card); backdrop-filter: blur(16px); border: 1px solid var(--border-card); border-radius: 10px; box-shadow: var(--shadow-card); transition: 0.3s; }
+
+        .top-header { background-color: #FFF159 !important; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); flex: 0 0 auto; }
+        .ml-logo { height: 22px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); flex-shrink: 0; }
+        .header-center { flex: 1 1 auto; text-align: center; font-size: 0.85rem; font-weight: 900; color: #2D3277 !important; letter-spacing: 0.5px; text-transform: uppercase; margin: 0 10px; line-height: 1.2; }
+        .header-right { display: flex; align-items: center; gap: 4px; justify-content: flex-end; flex-wrap: wrap; flex-shrink: 0; }
+        
+        .status-badge { font-size: .65rem; font-weight: 800; color: #333 !important; background: rgba(255,255,255,0.8); border: 1px solid rgba(0,0,0,0.1); padding: 4px 8px; border-radius: 4px; white-space: nowrap; }
+
+        .btn { background: #ffffff; color: #333333; border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; padding: 4px 8px; font-size: .65rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; transition: all .2s ease; text-decoration: none; font-family: 'Inter', sans-serif; white-space: nowrap; }
+        .btn svg { width: 12px; height: 12px; }
+        .btn:hover:not(:disabled) { background: #f1f1f1; transform: translateY(-1px); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .btn-blue { background: var(--accent-blue) !important; color: #fff !important; border-color: var(--accent-blue) !important; }
+        .btn-blue:hover:not(:disabled) { background: #226fe6 !important; }
+        .btn-compare { background: #6366f1 !important; color: #fff !important; border-color: #6366f1 !important; }
+        .btn-compare:hover:not(:disabled) { background: #4f46e5 !important; }
+        .btn-camera { background: var(--accent-green) !important; color: #fff !important; border-color: var(--accent-green) !important; }
+        
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; font-size: 100px; }
+
+        #export-container { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+        .filters-container { padding: 10px 16px; display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; }
+        .filters-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; align-items: end; }
+        .compare-row { display: none; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 6px; }
+        .compare-row.active { display: grid; }
+        .field label { display: block; color: var(--text-muted); font-size: .70rem; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
+        .field select, .field input { width: 100%; background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-input); border-radius: 6px; padding: 6px 10px; outline: none; font-family: 'Inter', sans-serif; font-size: .80rem; font-weight: 600;}
+        .field select:focus, .field input:focus { border-color: var(--accent-blue); }
+        .field select option { background: #1e293b; color: #fff; } 
+        [data-theme="light"] .field select option { background: #fff; color: #000; }
+
+        .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; flex: 0 0 auto; }
+        .summary-card { padding: 12px; border-left: 6px solid var(--accent-blue); display: flex; flex-direction: column; justify-content: center; text-align: center; min-height: 0;}
+        .summary-card.red { border-left-color: var(--accent-red); }
+        .summary-card.green { border-left-color: var(--accent-green); }
+        .summary-card.warn { border-left-color: var(--accent-warn); }
+        .summary-title { color: var(--text-muted); font-size: .75rem; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
+        .summary-value { color: var(--text-title); font-size: 1.8rem; font-weight: 900; }
+
+        .table-wrapper { flex: 1 1 35vh; min-height: 120px; overflow: auto; border-radius: 10px; transform: translateZ(0); }
+        table { width: 100%; border-collapse: collapse; min-width: 1200px; text-align: left; }
+        th, td { padding: 8px 12px; border-bottom: 1px solid var(--border-card); font-size: .85rem; vertical-align: middle; color: var(--text-main); }
+        th { background: rgba(0,0,0,0.6); color: var(--text-title); text-transform: uppercase; font-size: .75rem; font-weight: 900; position: sticky; top: 0; z-index: 2; backdrop-filter: blur(10px); }
+        [data-theme="light"] th { background: rgba(255,255,255,0.9); }
+        tr.clickable-row { cursor: pointer; transition: background 0.2s; }
+        tr.clickable-row:hover td { background: rgba(255,255,255,0.08) !important; }
+        [data-theme="light"] tr.clickable-row:hover td { background: rgba(0,0,0,0.04) !important; }
+
+        .center { text-align: center; }
+        .col-id { font-weight: 900; color: var(--text-title); display: flex; align-items: center; gap: 8px;}
+        .col-val { font-weight: 900; color: var(--accent-green); }
+        .col-dias { font-weight: 900; font-size: 0.95rem; }
+        
+        .action-icon { transition: transform 0.2s; display: inline-flex; cursor: pointer; padding: 4px; border-radius: 4px; }
+        .action-icon:hover { transform: scale(1.15); }
+        .lupa-icon { color: var(--accent-blue); background: rgba(52, 131, 250, 0.1); border: 1px solid rgba(52, 131, 250, 0.2); }
+        .planilha-icon { color: var(--accent-warn); background: rgba(255, 176, 0, 0.1); border: 1px solid rgba(255, 176, 0, 0.2); }
+
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.70rem; font-weight: 900; color: #fff; text-transform: uppercase; white-space: nowrap; display: inline-block; text-align: center; letter-spacing: 0.5px;}
+        .badge-resolvido { background-color: var(--accent-green, #00A650); }
+        .badge-novo { background-color: var(--accent-warn, #FFB000); color: #333; }
+        .badge-critico { background-color: var(--accent-red, #FF5252); }
+        .badge-sim { background-color: var(--accent-red, #FF5252); }
+        .badge-nao { background-color: var(--text-muted, #94a3b8); color: #fff; }
+
+        .chart-container { flex: 0 0 28vh; min-height: 200px; padding: 10px; width: 100%; display: flex; flex-direction: column; }
+        .chart-title { flex: 0 0 auto; font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-wrapper { position: relative; flex: 1; min-height: 0; height: 100%; width: 100%; display: flex; justify-content: center; align-items: center; }
+
+        .custom-modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(6px); padding: 16px; }
+        .custom-modal.active { display: flex; }
+        .modal-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; color: var(--text-main); box-shadow: 0 20px 40px rgba(0,0,0,0.5); backdrop-filter: blur(20px);}
+        .modal-header { padding: 15px 20px; background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); }
+        .modal-title { font-size: 1.1rem; font-weight: 900; color: var(--text-title); text-transform: uppercase;}
+        .modal-close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.6rem; cursor: pointer; display: inline-flex; line-height: 1; font-weight: bold;}
+        .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 0.9rem; }
+        .modal-grid-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); padding-bottom: 8px; }
+        .modal-label { font-weight: 800; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem; width: 40%;}
+        .modal-val-text { font-weight: 600; word-break: break-word; text-align: right; width: 60%;}
+
+        /* Ocultar elementos ao exportar para 4K */
+        .exporting .header-right, .exporting #sessao-filtros { display: none !important; }
+        .exporting .table-wrapper { overflow: hidden !important; max-height: none !important; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="top-header">
+        <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre">
+        <div class="header-center" id="main-title">Parado no Percurso (SSC1)</div>
+        <div class="header-right" id="botoes-topo">
+            <span class="status-badge" id="data-status">Conectando...</span>
+            <button class="btn btn-compare" onclick="toggleCompareMode()" id="btn-toggle-compare">⚖️ Comparar</button>
+            <button class="btn btn-camera" onclick="baixarImagemSnapshot()" id="btn-print">📸 Foto 4K</button>
+            
+            <button class="btn btn-blue" onclick="prepararEmailModal()" id="btn-email">✉️ E-mail</button>
+            
+            <div class="upload-wrapper" id="upload-dados-wrapper" title="Subir CSV Principal (Pacotes)" style="display:none;">
+                <button class="btn btn-blue">📤 Dados</button>
+                <input type="file" id="csvFileInput" accept=".csv">
+            </div>
+
+            <div class="upload-wrapper" id="upload-emails-wrapper" title="Subir CSV de Contatos / E-mails LP" style="display:none;">
+                <button class="btn">👥 E-mails</button>
+                <input type="file" id="csvEmailsInput" accept=".csv">
+            </div>
+        </div>
+    </div>
+
+    <div id="export-container">
+        
+        <div class="filters-container glass-panel" id="sessao-filtros">
+            <div class="compare-row" id="compare-row">
+                <div class="field"><label style="color: #6366f1;">Data Referência (A - Passado)</label><select id="filter-data-A" onchange="processarComparacao()"></select></div>
+                <div class="field"><label style="color: var(--accent-red);">Data Atual (B - Presente)</label><select id="filter-data-B" onchange="processarComparacao()"></select></div>
+            </div>
+
+            <div class="filters-grid">
+                <div class="field" id="box-data-unica"><label>Data Histórico</label><select id="filter-data-historico" onchange="carregarDadosDaDataSelecionada()"></select></div>
+                <div class="field"><label>Origem</label><select id="filter-origem" onchange="aplicarFiltros()"><option value="Todos">Todos</option></select></div>
+                <div class="field"><label>Valor do Pacote</label><select id="filter-valor" onchange="aplicarFiltros()"><option value="Todos">Todos</option><option value="Maior500">De R$ 500,00 para cima</option><option value="Menor500">Abaixo de R$ 500,00</option></select></div>
+                <div class="field"><label>Reclamação (CX)</label><select id="filter-reclamacao" onchange="aplicarFiltros()"><option value="Todos">Todos</option><option value="SIM">Sim</option><option value="NÃO">Não</option></select></div>
+                <div class="field" style="grid-column: span 1;"><label>Buscar (ID, Descrição)</label><input type="text" id="search-input" placeholder="Digite para filtrar..." oninput="aplicarFiltros()"></div>
+            </div>
+        </div>
+
+        <div class="summary" id="sessao-kpis">
+            <div class="summary-card glass-panel" id="kpi-box-1"><div class="summary-title" id="kpi-title-1">Total Pacotes</div><div class="summary-value" id="kpi-val-1">0</div></div>
+            <div class="summary-card warn glass-panel" id="kpi-box-2"><div class="summary-title" id="kpi-title-2">Valor Retido (R$)</div><div class="summary-value" id="kpi-val-2">R$ 0,00</div></div>
+            <div class="summary-card red glass-panel" id="kpi-box-3"><div class="summary-title" id="kpi-title-3">Média de Dias Estancados</div><div class="summary-value" id="kpi-val-3">0</div></div>
+            <div class="summary-card green glass-panel" id="kpi-box-4"><div class="summary-title" id="kpi-title-4">Com Reclamação</div><div class="summary-value" id="kpi-val-4">0</div></div>
+        </div>
+
+        <div class="table-wrapper glass-panel" id="tabela-conteiner" onscroll="carregarMaisPacotes()">
+            <table>
+                <thead>
+                    <tr id="table-head">
+                        <th style="width:15%;">ID do Pacote</th><th style="width:10%;">Origem</th><th style="width:35%;">Descrição</th><th style="width:13%;">Valor</th><th class="center" style="width:8%;">Dias Parado</th><th class="center" style="width:9%;">Reclamação</th><th style="width:10%;">Observação</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-dados"><tr><td class="center" colspan="7" style="padding: 30px;">Aguardando dados...</td></tr></tbody>
+            </table>
+        </div>
+
+        <div class="chart-container glass-panel" id="grafico-conteiner">
+            <div class="chart-title">Análise por HUB de Origem</div>
+            <div class="chart-wrapper"><canvas id="origensChart"></canvas></div>
+        </div>
+    </div>
+
+    <div class="custom-modal" id="info-modal" onclick="fecharModalExterno(event)">
+        <div class="modal-card" onclick="event.stopPropagation();">
+            <div class="modal-header"><div class="modal-title" id="modal-header-title">Detalhes</div><button class="modal-close-btn" onclick="fecharModal()">&times;</button></div>
+            <div class="modal-body" id="modal-header-body"></div>
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+
+        const FIREBASE_URL_BASE = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_NODE = "parado_percurso";
+        const FIREBASE_NODE_EMAILS = "parado_percurso_emails"; 
+        
+        let HISTORICO_COMPLETO = {}; let ITEMS_ATUAIS = []; let ITEMS_COMPARE = []; let IS_COMPARE_MODE = false;
+        let chartInstance = null; let DB_EMAILS = {}; 
+        let PAGE_SIZE = 50; let CUR_PAGE = 0; let DADOS_FILTRADOS = [];
+
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { 
+            if (event.data.type === 'THEME_CHANGED') { 
+                document.body.setAttribute('data-theme', event.data.theme); 
+                Chart.defaults.color = getChartTextColor();
+                if(DADOS_FILTRADOS.length > 0) renderGrafico(DADOS_FILTRADOS);
+            } 
+        });
+
+        // ============ PERMISSÕES GLOBAIS E LOGS ============
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        const paginaNome = window.location.pathname.split('/').pop() || 'parado_percurso.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        
+        if(canEdit) { 
+            document.getElementById('upload-dados-wrapper').style.display = 'inline-flex'; 
+            document.getElementById('upload-emails-wrapper').style.display = 'inline-flex'; 
+        }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL_BASE}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        function setStatus(texto, cor = "#333") { const el = document.getElementById('data-status'); if (el) { el.innerText = texto; el.style.color = cor; } }
+
+        function formatarDataChave(dateObj) { return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`; }
+        function formatarDataBr(chaveStr) { if (!chaveStr || !chaveStr.includes('-')) return chaveStr; const [ano, mes, dia] = chaveStr.split('-'); return `${dia}/${mes}/${ano}`; }
+        function parseCurrency(valStr) { if (!valStr) return 0; let s = String(valStr).replace('R$', '').replace(/\./g, '').replace(',', '.').trim(); return parseFloat(s) || 0; }
+        function formatCurrency(valNum) { return valNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function escapeHtml(value) { return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+        function normalizeText(value) { return String(value ?? '').trim(); }
+
+        // ==========================================
+        // GERAÇÃO DE E-MAILS (INTACTA)
+        // ==========================================
+        async function carregarEmailsDoFirebase() {
+            try { const response = await fetch(`${FIREBASE_URL_BASE}${FIREBASE_NODE_EMAILS}.json`); if (response.ok) { const data = await response.json(); if (data) { DB_EMAILS = data; } } } catch (err) {}
+        }
+
+        async function salvarEmailsNoFirebase(emailsObj) {
+            try { await fetch(`${FIREBASE_URL_BASE}${FIREBASE_NODE_EMAILS}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(emailsObj) }); } catch (err) {}
+        }
+
+        document.getElementById('csvEmailsInput').addEventListener('change', function(e) {
+            if(!canEdit) return;
+            const file = e.target.files[0]; if (!file) return;
+            setStatus('Lendo E-mails...', '#3483FA');
+            Papa.parse(file, { header: true, skipEmptyLines: true, complete: async function(results) {
+                let count = 0; const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/gi;
+                results.data.forEach(row => {
+                    const keys = Object.keys(row); const kOrigem = keys.find(k => k.trim().toLowerCase() === 'service' || k.trim().toLowerCase() === 'origem');
+                    if (kOrigem && row[kOrigem]) {
+                        let origem = row[kOrigem].trim(); const primeiraLetra = origem.charAt(0).toUpperCase();
+                        if (primeiraLetra === 'S' || primeiraLetra === 'X') { origem = 'BR' + origem; }
+                        let emailsEncontrados = []; keys.forEach(k => { const val = String(row[k] || '').trim(); let match; while ((match = emailRegex.exec(val)) !== null) { emailsEncontrados.push(match[1]); } });
+                        const emailsFixos = [ "uilliam.sena@mercadolivre.com", "walbert.vieira@mercadolivre.com", "guilherme.aalmeida@mercadolivre.com", "israel.fsilva@mercadolivre.com", "ext_sancpere@mercadolivre.com", "danilo.sanchezpereira@dhl.com", "alex.asilva@mercadolivre.com", "ext_heyago@mercadolivre.com", "gabriela.dasilva@mercadolivre.com" ];
+                        emailsEncontrados.push(...emailsFixos);
+                        if (emailsEncontrados.length > 0) { DB_EMAILS[origem] = [...new Set(emailsEncontrados)].join(', '); count++; }
+                    }
+                });
+                setStatus(`Salvando contatos no banco...`, '#FFB000');
+                await salvarEmailsNoFirebase(DB_EMAILS);
+                await registrarLogFirebase("Parado Percurso", "Subiu uma nova planilha de Contatos / E-mails de Origens.");
+                setStatus(`${count} origens atualizadas com e-mails!`, '#00A650'); setTimeout(() => setStatus('Pronto', '#333'), 4000);
+            }});
+        });
+
+        async function prepararEmailModal() {
+            const origemFiltro = document.getElementById('filter-origem').value;
+            if (origemFiltro === 'Todos') { alert("⚠️ Selecione uma Origem específica no filtro antes de gerar o E-mail."); return; }
+
+            const btn = document.getElementById('btn-email'); const textoOriginal = btn.innerText; btn.innerText = "⏳ Preparando..."; btn.disabled = true;
+
+            const valFilterEl = document.getElementById('filter-valor'); const originalFilterValue = valFilterEl.value; valFilterEl.value = 'Menor500';
+            const container = document.getElementById('export-container'); document.body.classList.add('exporting'); aplicarFiltros(); 
+            await new Promise(r => setTimeout(r, 600));
+
+            let imgData = "";
+            try {
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f';
+                const canvas = await html2canvas(container, { scale: 1.5, useCORS: true, allowTaint: true, backgroundColor: bgCor, windowWidth: document.documentElement.offsetWidth });
+                imgData = canvas.toDataURL('image/png', 1.0);
+            } catch (err) { console.error(err); alert("Erro ao capturar a imagem do dashboard."); } 
+            finally { document.body.classList.remove('exporting'); btn.innerText = textoOriginal; btn.disabled = false; valFilterEl.value = originalFilterValue; aplicarFiltros(); }
+
+            let saudacao = "Bom dia"; const hora = new Date().getHours(); if (hora >= 12 && hora < 18) saudacao = "Boa tarde"; else if (hora >= 18) saudacao = "Boa noite";
+            const itensDestaque = ITEMS_ATUAIS.filter(i => { return i.Origem === origemFiltro && i.DiasEstancados > 7 && parseCurrency(i.Valor) < 500; }).sort((a,b) => parseCurrency(b.Valor) - parseCurrency(a.Valor)); 
+            let linhasHtml = '';
+            if (itensDestaque.length > 0) { itensDestaque.forEach(i => { linhasHtml += `<tr><td style="border: 1px solid #c0c0c0; padding: 6px 8px; font-weight: bold; color: #3483FA;">${i.ID}</td><td style="border: 1px solid #c0c0c0; padding: 6px 8px; font-size: 13px;">${escapeHtml(i.Descricao)}</td><td style="border: 1px solid #c0c0c0; padding: 6px 8px; font-weight: bold; color: #00A650;">${i.Valor}</td><td style="border: 1px solid #c0c0c0; padding: 6px 8px; font-weight: bold; color: #FF5252; text-align: center;">${i.DiasEstancados}</td></tr>`; }); } 
+            else { linhasHtml = `<tr><td colspan="4" style="border: 1px solid #c0c0c0; padding: 10px; text-align: center;">Nenhum pacote retido por mais de 7 dias com valor abaixo de R$ 500.</td></tr>`; }
+
+            const htmlTabela = `<table style="border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 14px; text-align: left; margin: 15px 0; background-color: #ffffff; color: #333333;"><thead><tr style="background-color: #f2f2f2;"><th style="border: 1px solid #c0c0c0; padding: 8px;">ID</th><th style="border: 1px solid #c0c0c0; padding: 8px;">Descrição</th><th style="border: 1px solid #c0c0c0; padding: 8px;">Valor</th><th style="border: 1px solid #c0c0c0; padding: 8px; text-align: center;">Dias Parado</th></tr></thead><tbody>${linhasHtml}</tbody></table>`;
+            const emailDestino = DB_EMAILS[origemFiltro] || ""; const emailPlaceHolderText = emailDestino === "" ? "⚠️ Suba o CSV de E-mails para puxar automático" : emailDestino;
+
+            const richTextEmail = `
+            <div id="email-body-content" style="font-family: Arial, sans-serif; font-size: 14.5px; color: #2d2d2d; line-height: 1.6; max-width: 800px; padding: 10px;">
+                <p>${saudacao},</p>
+                <p>Gostaria de solicitar a verificação dos pacotes <i>onway</i> do SVC SSC1 referentes à origem <strong>${origemFiltro}</strong>, que estão pendentes há mais de 7 dias (Filtrados por itens de menor valor financeiro).</p>
+                <p>Seguem os dados para análise:</p>${htmlTabela}<p>Poderia, por gentileza, verificar e nos dar um retorno sobre estes itens?</p>
+                <p style="font-size: 12.5px; color: #777777; margin-top: 10px;"><i>Nota: Caso você não seja o responsável por esta origem, pedimos sinceras desculpas pelo incômodo. Por gentileza, nos informe para que possamos atualizar nosso banco de dados de contatos.</i></p>
+                <br><p>Atenciosamente,</p><p style="font-weight: bold; margin-bottom: 5px;">Equipe Inventario SSC1</p><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" style="height: 35px; display: block; margin-top: 5px;">
+            </div>`;
+
+            const htmlContent = `
+                <div class="modal-grid-row" style="flex-direction: column; align-items: flex-start; gap: 8px;"><span class="modal-label" style="width: auto;">Para (Destinatários):</span><div style="display:flex; gap:10px; width: 100%;"><input type="text" id="input-email-dest" value="${emailPlaceHolderText}" readonly style="flex:1; background:var(--bg-input); color:var(--accent-blue); border:1px solid var(--border-input); border-radius:4px; padding:8px 12px; font-weight:bold;"></div></div>
+                <div class="modal-grid-row" style="flex-direction:column; align-items: flex-start; gap:10px;"><div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px;"><span class="modal-label" style="width: auto;">1. Abra o Gmail já com assunto e texto:</span><button class="btn" style="background:#ea4335; color:#fff; border-color:#ea4335;" onclick="abrirNoGmail('${emailDestino}', '${origemFiltro}')">🚀 Abrir no Gmail (Ctrl+V)</button></div><div style="width:100%; max-height:200px; overflow-y:auto; background: #ffffff; color:#333; border:1px solid var(--border-input); border-radius:6px; padding:15px; opacity: 0.9;">${richTextEmail}</div></div>
+                <div class="modal-grid-row" style="flex-direction:column; align-items: flex-start; gap:8px; border-bottom:none;"><span class="modal-label" style="color:var(--accent-warn); width:100%;">2. Volte aqui e Copie a Imagem (Botão Direito > Copiar Imagem):</span><div style="border:1px solid var(--border-input); border-radius:8px; padding:5px; background:var(--bg-input); width: 100%; text-align: center;"><img src="${imgData}" style="max-width:100%; max-height: 250px; border-radius:4px; display:inline-block; object-fit: contain;"></div></div>`;
+            abrirModal(`Disparar E-mail: ${origemFiltro}`, htmlContent);
+        }
+
+        function abrirNoGmail(emailDestino, origem) {
+            const el = document.getElementById('email-body-content'); const range = document.createRange(); range.selectNodeContents(el); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+            try { document.execCommand('copy'); const assunto = encodeURIComponent(`Pacotes Estancados (>7 dias) - Origem: ${origem}`); const urlGmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(emailDestino)}&su=${assunto}`; alert("✅ Texto e Tabela copiados para o seu mouse!\n\nO Gmail vai abrir agora. Basta clicar no corpo do e-mail e apertar 'Ctrl + V' para colar."); window.open(urlGmail, '_blank'); } catch(err) { alert('Seu navegador bloqueou a cópia automática.'); } sel.removeAllRanges(); 
+        }
+
+        // ==========================================
+        // FIREBASE E MANIPULAÇÃO DOS DADOS
+        // ==========================================
+        async function carregarDoFirebase() {
+            setStatus('Buscando dados...', '#333');
+            try {
+                const response = await fetch(`${FIREBASE_URL_BASE}${FIREBASE_NODE}.json`);
+                if (!response.ok) throw new Error("Erro de rede");
+                const dbData = await response.json();
+                HISTORICO_COMPLETO = dbData || {}; 
+                atualizarDropdownsDeDatas();
+                const chaves = Object.keys(HISTORICO_COMPLETO).sort().reverse();
+                if (chaves.length > 0) { document.getElementById('filter-data-historico').value = chaves[0]; carregarDadosDaDataSelecionada(); const dataSincronizacao = HISTORICO_COMPLETO[chaves[0]].atualizadoEm || formatarDataBr(chaves[0]); setStatus(`Atualizado: ${dataSincronizacao}`, '#00A650'); } 
+                else { setStatus('Banco vazio.', '#FFB000'); }
+            } catch (err) { setStatus('Erro na rede', '#FF5252'); }
+        }
+
+        async function salvarNoFirebase(items) {
+            const hoje = new Date(); const chaveData = formatarDataChave(hoje);
+            const payload = { atualizadoEm: hoje.toLocaleString('pt-BR'), total: items.length, lista: items };
+            try { 
+                await fetch(`${FIREBASE_URL_BASE}${FIREBASE_NODE}/${chaveData}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); 
+                await registrarLogFirebase("Parado Percurso", `Atualizou a base de pacotes estancados (${items.length} itens).`);
+                HISTORICO_COMPLETO[chaveData] = payload; atualizarDropdownsDeDatas(); document.getElementById('filter-data-historico').value = chaveData; carregarDadosDaDataSelecionada(); 
+            } catch (err) { alert("Erro ao gravar."); }
+        }
+
+        function atualizarDropdownsDeDatas() {
+            const chaves = Object.keys(HISTORICO_COMPLETO).sort().reverse();
+            let options = chaves.length === 0 ? '<option value="">Sem dados</option>' : chaves.map(c => `<option value="${c}">${formatarDataBr(c)}</option>`).join('');
+            document.getElementById('filter-data-historico').innerHTML = options; document.getElementById('filter-data-A').innerHTML = options; document.getElementById('filter-data-B').innerHTML = options;
+            if (chaves.length > 1) { document.getElementById('filter-data-A').value = chaves[1]; document.getElementById('filter-data-B').value = chaves[0]; }
+        }
+
+        function carregarDadosDaDataSelecionada() {
+            if (IS_COMPARE_MODE) return processarComparacao();
+            const chave = document.getElementById('filter-data-historico').value;
+            if (HISTORICO_COMPLETO[chave] && HISTORICO_COMPLETO[chave].lista) { ITEMS_ATUAIS = HISTORICO_COMPLETO[chave].lista; } else { ITEMS_ATUAIS = []; }
+            preencherFiltrosDinamicos(ITEMS_ATUAIS); renderTabela();
+        }
+
+        function preencherFiltrosDinamicos(lista) {
+            const origemAtual = document.getElementById('filter-origem').value;
+            const origens = [...new Set(lista.map(i => i.Origem))].filter(Boolean).sort();
+            document.getElementById('filter-origem').innerHTML = `<option value="Todos">Todas as Origens</option>` + origens.map(o => `<option value="${escapeHtml(o)}">${escapeHtml(o)}</option>`).join('');
+            if ([...document.getElementById('filter-origem').options].some(opt => opt.value === origemAtual)) document.getElementById('filter-origem').value = origemAtual;
+        }
+
+        document.getElementById('csvFileInput').addEventListener('change', function(e) {
+            if(!canEdit) return;
+            const file = e.target.files[0]; if (!file) return;
+            setStatus('Lendo arquivo...', '#333');
+            Papa.parse(file, { header: true, skipEmptyLines: true, complete: async function(results) {
+                let data = results.data; if (!data || data.length === 0) return setStatus('Vazio', '#FF5252');
+                const parsedItems = data.map(row => {
+                    const getV = (keys) => { for(let k in row) if(keys.includes(k.trim().toLowerCase())) return row[k]; return ''; };
+                    return { ID: normalizeText(getV(['id'])), Status: normalizeText(getV(['status'])), Origem: normalizeText(getV(['origem'])), Descricao: normalizeText(getV(['descrição', 'descricao'])), Valor: normalizeText(getV(['valor'])), DiasEstancados: parseInt(getV(['dias estancados', 'dias_estancados', 'dias'])) || 0, Reclamacao: normalizeText(getV(['reclamação', 'reclamacao'])).toUpperCase(), Observacao: normalizeText(getV(['observação', 'observacao'])) };
+                }).filter(i => i.ID);
+                setStatus(`Carregando...`, '#333'); await salvarNoFirebase(parsedItems);
+                const dataAtual = new Date().toLocaleString('pt-BR'); setStatus(`Atualizado: ${dataAtual}`, '#00A650');
+            }});
+        });
+
+        // ==========================================
+        // RENDER TABELAS (LAZY LOAD) E COMPARAÇÃO
+        // ==========================================
+        function aplicarFiltros() { if (IS_COMPARE_MODE) processarComparacao(); else renderTabela(); }
+
+        function renderTabela() {
+            if (IS_COMPARE_MODE) return renderTabelaComparacao();
+            const origem = document.getElementById('filter-origem').value; const rec = document.getElementById('filter-reclamacao').value; const valorFiltro = document.getElementById('filter-valor').value; const busca = document.getElementById('search-input').value.toLowerCase();
+            
+            DADOS_FILTRADOS = ITEMS_ATUAIS.filter(item => {
+                const matchOrigem = origem === 'Todos' || item.Origem === origem; const matchRec = rec === 'Todos' || item.Reclamacao === rec; const txt = [item.ID, item.Descricao, item.Observacao].join(' ').toLowerCase(); const matchBusca = !busca || txt.includes(busca);
+                const valNum = parseCurrency(item.Valor); let matchValor = true;
+                if (valorFiltro === 'Maior500') matchValor = valNum >= 500; if (valorFiltro === 'Menor500') matchValor = valNum < 500;
+                return matchOrigem && matchRec && matchBusca && matchValor;
+            });
+
+            DADOS_FILTRADOS.sort((a,b) => parseCurrency(b.Valor) - parseCurrency(a.Valor)); renderGrafico(DADOS_FILTRADOS);
+            
+            let somaValor = 0; let somaDias = 0; let countRec = 0; DADOS_FILTRADOS.forEach(i => { somaValor += parseCurrency(i.Valor); somaDias += i.DiasEstancados; if (i.Reclamacao === 'SIM') countRec++; });
+            
+            document.getElementById('kpi-title-1').innerText = "Pacotes Parados"; document.getElementById('kpi-val-1').innerText = DADOS_FILTRADOS.length; document.getElementById('kpi-title-2').innerText = "Valor Retido"; document.getElementById('kpi-val-2').innerText = formatCurrency(somaValor); document.getElementById('kpi-title-3').innerText = "Média de Dias"; document.getElementById('kpi-val-3').innerText = DADOS_FILTRADOS.length ? Math.round(somaDias / DADOS_FILTRADOS.length) : 0; document.getElementById('kpi-title-4').innerText = "Com Reclamação CX"; document.getElementById('kpi-val-4').innerText = countRec;
+            
+            const selectData = document.getElementById('filter-data-historico'); const dataSelecionadaTxt = selectData.options[selectData.selectedIndex]?.text || '';
+            document.getElementById('main-title').innerText = `Parado no Percurso (SSC1) ${dataSelecionadaTxt} | Valor total: ${formatCurrency(somaValor)} de ${DADOS_FILTRADOS.length} Volumes.`;
+            document.getElementById('table-head').innerHTML = `<th style="width:16%;">ID do Pacote / Ações</th><th style="width:10%;">Origem</th><th style="width:36%;">Descrição</th><th style="width:13%;">Valor</th><th class="center" style="width:8%;">Dias Parado</th><th class="center" style="width:9%;">Reclamação</th><th style="width:8%;">Observação</th>`;
+            
+            CUR_PAGE = 0; document.getElementById('tbody-dados').innerHTML = ''; renderizarPedaçoTabela();
+        }
+
+        function toggleCompareMode() {
+            IS_COMPARE_MODE = !IS_COMPARE_MODE; const btn = document.getElementById('btn-toggle-compare');
+            if (IS_COMPARE_MODE) { btn.innerText = "❌ Sair"; btn.style.background = "var(--accent-red)"; btn.style.borderColor = "var(--accent-red)"; document.getElementById('compare-row').classList.add('active'); document.getElementById('box-data-unica').style.display = 'none'; processarComparacao(); } 
+            else { btn.innerText = "⚖️ Comparar"; btn.style.background = "#6366f1"; btn.style.borderColor = "#6366f1"; document.getElementById('compare-row').classList.remove('active'); document.getElementById('box-data-unica').style.display = 'block'; carregarDadosDaDataSelecionada(); }
+        }
+
+        function processarComparacao() {
+            if (!IS_COMPARE_MODE) return;
+            const chaveA = document.getElementById('filter-data-A').value; const chaveB = document.getElementById('filter-data-B').value;
+            const listaA = (HISTORICO_COMPLETO[chaveA] && HISTORICO_COMPLETO[chaveA].lista) ? HISTORICO_COMPLETO[chaveA].lista : []; const listaB = (HISTORICO_COMPLETO[chaveB] && HISTORICO_COMPLETO[chaveB].lista) ? HISTORICO_COMPLETO[chaveB].lista : [];
+            let mapA = {}; listaA.forEach(i => mapA[i.ID] = i); let mapB = {}; listaB.forEach(i => mapB[i.ID] = i);
+            let todosIDs = new Set([...Object.keys(mapA), ...Object.keys(mapB)]);
+            ITEMS_COMPARE = []; let countResolvidos = 0; let countNovos = 0; let countCriticos = 0;
+            
+            todosIDs.forEach(id => {
+                let itemA = mapA[id]; let itemB = mapB[id]; let infoBase = itemB || itemA; let stats = ''; let flag = '';
+                if (itemA && !itemB) { stats = 'Resolvido'; flag = 'RESOLVIDO'; countResolvidos++; } else if (!itemA && itemB) { stats = 'Novo Parado'; flag = 'NOVO'; countNovos++; } else { stats = 'Continua Parado'; flag = 'CRITICO'; countCriticos++; }
+                ITEMS_COMPARE.push({ ID: id, Origem: infoBase.Origem, Descricao: infoBase.Descricao, Valor: infoBase.Valor, DiasEstancados: infoBase.DiasEstancados, DiasA: itemA ? itemA.DiasEstancados : '-', DiasB: itemB ? itemB.DiasEstancados : '-', Flag: flag, StatsText: stats, Reclamacao: infoBase.Reclamacao });
+            });
+            
+            document.getElementById('kpi-title-1').innerText = `Total Data A`; document.getElementById('kpi-val-1').innerText = listaA.length; document.getElementById('kpi-title-2').innerText = `Total Data B`; document.getElementById('kpi-val-2').innerText = listaB.length; document.getElementById('kpi-box-3').className = "summary-card green glass-panel"; document.getElementById('kpi-title-3').innerText = `✅ Resolvidos`; document.getElementById('kpi-val-3').innerText = countResolvidos; document.getElementById('kpi-box-4').className = "summary-card red glass-panel"; document.getElementById('kpi-title-4').innerText = `🚨 Novos Parados`; document.getElementById('kpi-val-4').innerText = countNovos;
+            
+            renderTabelaComparacao();
+        }
+
+        function renderTabelaComparacao() {
+            const origem = document.getElementById('filter-origem').value; const rec = document.getElementById('filter-reclamacao').value; const valorFiltro = document.getElementById('filter-valor').value; const busca = document.getElementById('search-input').value.toLowerCase();
+            
+            DADOS_FILTRADOS = ITEMS_COMPARE.filter(item => { 
+                const matchOrigem = origem === 'Todos' || item.Origem === origem; const matchRec = rec === 'Todos' || item.Reclamacao === rec; const matchBusca = !busca || item.ID.includes(busca) || item.Descricao.toLowerCase().includes(busca); 
+                const valNum = parseCurrency(item.Valor); let matchValor = true; if (valorFiltro === 'Maior500') matchValor = valNum >= 500; if (valorFiltro === 'Menor500') matchValor = valNum < 500;
+                return matchOrigem && matchRec && matchBusca && matchValor; 
+            });
+            
+            renderGrafico(DADOS_FILTRADOS);
+            
+            let somaValorComp = 0; DADOS_FILTRADOS.forEach(i => somaValorComp += parseCurrency(i.Valor));
+            const selA = document.getElementById('filter-data-A'); const selB = document.getElementById('filter-data-B'); const dtA = selA.options[selA.selectedIndex]?.text || ''; const dtB = selB.options[selB.selectedIndex]?.text || '';
+            document.getElementById('main-title').innerText = `Comparação (${dtA} vs ${dtB}) | Total: ${formatCurrency(somaValorComp)} de ${DADOS_FILTRADOS.length} Vols.`;
+            
+            DADOS_FILTRADOS.sort((a,b) => { const pesos = { 'CRITICO': 1, 'NOVO': 2, 'RESOLVIDO': 3 }; if (pesos[a.Flag] !== pesos[b.Flag]) return pesos[a.Flag] - pesos[b.Flag]; return parseCurrency(b.Valor) - parseCurrency(a.Valor); });
+            
+            document.getElementById('table-head').innerHTML = `<th style="width:16%;">ID / Links</th><th style="width:10%;">Origem</th><th style="width:26%;">Descrição</th><th style="width:12%;">Valor</th><th class="center" style="width:8%;">Dias (A)</th><th class="center" style="width:8%;">Dias (B)</th><th class="center" style="width:20%;">Status Comparativo</th>`;
+            
+            CUR_PAGE = 0; document.getElementById('tbody-dados').innerHTML = ''; renderizarPedaçoTabela();
+        }
+
+        function renderizarPedaçoTabela() {
+            let start = CUR_PAGE * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_FILTRADOS.slice(start, end); let tbody = document.getElementById('tbody-dados');
+            if (pedaco.length === 0 && CUR_PAGE === 0) { tbody.innerHTML = `<tr><td colspan="7" class="center" style="padding: 40px; color: var(--accent-red);">Nenhum pacote encontrado.</td></tr>`; return; }
+
+            let html = '';
+            pedaco.forEach(item => {
+                let id = item.ID || '-'; let linkRastreio = id !== '-' ? `https://envios.adminml.com/logistics/package-management/package/${escapeHtml(id)}` : '#'; let linkSauron = id !== '-' ? `https://shipping-bo.adminml.com/sauron/shipments/shipment/${escapeHtml(id)}` : '#';
+                let linkHtml = id !== '-' ? `<div style="display:flex; gap: 6px;"><a href="${linkRastreio}" target="_blank" class="action-icon lupa-icon" title="Rastrear Pacote" onclick="event.stopPropagation();"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></a><a href="${linkSauron}" target="_blank" class="action-icon planilha-icon" title="Sauron" onclick="event.stopPropagation();"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg></a></div>` : '';
+
+                if (IS_COMPARE_MODE) {
+                    let badgeClass = item.Flag === 'RESOLVIDO' ? 'badge-resolvido' : (item.Flag === 'NOVO' ? 'badge-novo' : 'badge-critico');
+                    html += `<tr class="clickable-row" onclick="mostrarDetalhesPacote('${item.ID}', 'comparacao')"><td class="col-id">${linkHtml} <span style="font-weight:900; color:var(--accent-blue);">${escapeHtml(id)}</span></td><td>${escapeHtml(item.Origem)}</td><td style="font-size:.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 250px;">${escapeHtml(item.Descricao)}</td><td class="col-val">${escapeHtml(item.Valor)}</td><td class="center" style="color:var(--text-muted)">${item.DiasA}</td><td class="center col-dias">${item.DiasB}</td><td class="center"><span class="badge ${badgeClass}">${item.StatsText}</span></td></tr>`;
+                } else {
+                    let badgeRec = item.Reclamacao === 'SIM' ? `<span class="badge badge-sim">SIM</span>` : `<span class="badge badge-nao">NÃO</span>`; let corDias = item.DiasEstancados > 10 ? 'color: var(--accent-red);' : '';
+                    html += `<tr class="clickable-row" onclick="mostrarDetalhesPacote('${item.ID}', 'normal')"><td class="col-id">${linkHtml} <span style="font-weight:900; color:var(--accent-blue);">${escapeHtml(id)}</span></td><td>${escapeHtml(item.Origem)}</td><td style="font-size:.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;">${escapeHtml(item.Descricao)}</td><td class="col-val">${escapeHtml(item.Valor)}</td><td class="center col-dias" style="${corDias}">${item.DiasEstancados}</td><td class="center">${badgeRec}</td><td style="font-size:.75rem; color:var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;">${escapeHtml(item.Observacao)}</td></tr>`;
+                }
+            }); tbody.insertAdjacentHTML('beforeend', html);
+        }
+
+        document.getElementById('tabela-conteiner').addEventListener('scroll', function() { if (this.scrollTop + this.clientHeight >= this.scrollHeight - 100) { if ((CUR_PAGE + 1) * PAGE_SIZE < DADOS_FILTRADOS.length) { CUR_PAGE++; renderizarPedaçoTabela(); } } });
+
+        // ==========================================
+        // RENDER DO GRÁFICO (CHART.JS)
+        // ==========================================
+        function getChartTextColor() { return document.body.getAttribute('data-theme') === 'light' ? '#334155' : '#EBEBEB'; }
+        function getGridColor() { return document.body.getAttribute('data-theme') === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'; }
+
+        function renderGrafico(filtrados) {
+            const ctx = document.getElementById('origensChart').getContext('2d'); const stats = {};
+            filtrados.forEach(item => { if(!stats[item.Origem]) { stats[item.Origem] = { count: 0, dias: 0, valor: 0 }; } stats[item.Origem].count += 1; stats[item.Origem].dias += item.DiasEstancados; stats[item.Origem].valor += parseCurrency(item.Valor); });
+            const sortedOrigens = Object.keys(stats).sort((a,b) => stats[b].count - stats[a].count); const labels = sortedOrigens; const dataVolume = sortedOrigens.map(k => stats[k].count); const dataDias = sortedOrigens.map(k => Math.round(stats[k].dias / stats[k].count));
+            if (chartInstance) chartInstance.destroy();
+            Chart.defaults.color = getChartTextColor(); Chart.defaults.font.family = "'Inter', sans-serif";
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar', data: { labels: labels, datasets: [ { type: 'bar', label: 'Volume', data: dataVolume, backgroundColor: '#3483FA', borderRadius: 4, maxBarThickness: 50, yAxisID: 'y' }, { type: 'line', label: 'Média de Dias', data: dataDias, borderColor: '#FF5252', backgroundColor: '#FF5252', borderWidth: 3, tension: 0.3, pointRadius: 5, pointHoverRadius: 8, yAxisID: 'y1' } ] },
+                options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, animation: { enabled: false }, layout: { padding: { top: 30, bottom: 10 } }, onClick: (e, activeElements) => { if (activeElements && activeElements.length > 0) { const index = activeElements[0].index; mostrarPopupChart(chartInstance.data.labels[index]); } }, scales: { x: { grid: { display: false }, ticks: { font: {weight: 'bold'}, color: getChartTextColor() } }, y: { position: 'left', grid: { color: getGridColor() }, ticks: { color: getChartTextColor(), precision: 0 } }, y1: { position: 'right', grid: { display: false }, ticks: { color: getChartTextColor(), precision: 0 } } }, plugins: { legend: { position: 'top', labels: { font: { weight: 'bold'}, color: getChartTextColor() } }, datalabels: { color: function(context) { return context.dataset.type === 'bar' ? '#FFFFFF' : '#FF5252'; }, font: { weight: '900', size: 10 }, align: function(context) { return context.dataset.type === 'bar' ? 'center' : 'top'; }, anchor: function(context) { return context.dataset.type === 'bar' ? 'center' : 'center'; }, offset: function(context) { return context.dataset.type === 'bar' ? 0 : 8; }, formatter: function(value) { return value === 0 ? '' : value; } } } }
+            });
+        }
+
+        // ==========================================
+        // FOTO 4K
+        // ==========================================
+        function baixarImagemSnapshot() {
+            const btn = document.getElementById('btn-print'); btn.innerHTML = "⏳"; btn.disabled = true;
+            const valFilterEl = document.getElementById('filter-valor'); const originalFilterValue = valFilterEl.value; valFilterEl.value = 'Menor500'; aplicarFiltros();
+            document.body.classList.add('exporting');
+            setTimeout(() => {
+                const bodyH = document.body.scrollHeight; const bodyW = document.body.clientWidth; 
+                html2canvas(document.body, { scale: 3, useCORS: true, width: bodyW, windowWidth: bodyW, windowHeight: bodyH, backgroundColor: document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f' }).then(canvas => {
+                    document.body.classList.remove('exporting'); btn.innerHTML = "📸"; btn.disabled = false; valFilterEl.value = originalFilterValue; aplicarFiltros();
+                    let link = document.createElement('a'); let dtSelect = document.getElementById('filter-data-historico'); let dt = dtSelect.options.length > 0 && dtSelect.selectedIndex >= 0 ? dtSelect.options[dtSelect.selectedIndex].text.replace(/\//g, '-') : 'Geral';
+                    link.download = `Snapshot_Parado_Percurso_${dt}.png`; link.href = canvas.toDataURL('image/png'); link.click();
+                });
+            }, 600); 
+        }
+
+        function abrirModal(titulo, htmlConteudo) { document.getElementById('modal-header-title').innerText = titulo; document.getElementById('modal-header-body').innerHTML = htmlConteudo; document.getElementById('info-modal').classList.add('active'); }
+        function fecharModal() { document.getElementById('info-modal').classList.remove('active'); }
+        function fecharModalExterno(e) { if (e.target.id === 'info-modal') fecharModal(); }
+
+        carregarEmailsDoFirebase();
+        carregarDoFirebase();
+    </script>
+</body>
+</html>
