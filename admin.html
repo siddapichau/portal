@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin - Gerenciar Menu e Usuários</title>
+    
     <script>
         if (window === window.top) {
             const paginaAtual = window.location.pathname.split('/').pop() || 'admin.html';
@@ -40,13 +41,15 @@
         .user-table select { padding: 5px; border-radius: 4px; background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border-card); outline: none;}
         .user-table select:focus { border-color: var(--accent-blue); }
 
-        /* EDITOR DE NOTÍCIAS */
+        /* EDITOR DE NOTÍCIAS RICAS */
         .editor-toolbar { display: flex; gap: 5px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap; align-items: center;}
         [data-theme="light"] .editor-toolbar { background: rgba(0,0,0,0.05); }
         .editor-toolbar .btn-dark { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); font-size: 0.95rem; padding: 6px 10px; }
         .editor-toolbar .btn-dark:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
         .editor-toolbar .btn-dark.active-btn { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        
         .toolbar-divider { width: 1px; height: 24px; background: var(--border-card); margin: 0 5px; }
+
         .rich-editor { min-height: 250px; max-height: 500px; overflow-y: auto; padding: 15px; border: 1px solid var(--border-card); border-radius: 0 0 8px 8px; background: var(--bg-input); color: var(--text-main); outline: none; font-size: 0.95rem; line-height: 1.5; }
         .rich-editor:focus { border-color: var(--accent-blue); }
         .rich-editor img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
@@ -83,6 +86,9 @@
             <!-- ABA DE USUÁRIOS -->
             <div id="tab-users" style="display:none;">
                 <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos diretamente no banco Firebase.</p>
+                <div class="header-actions">
+                    <button class="btn btn-warn" id="btn-import-users" onclick="importarUsuariosDaPlanilha()">⬇️ Migrar Usuários da Planilha Antiga</button>
+                </div>
                 <div style="overflow-x: auto;">
                     <table class="user-table">
                         <thead><tr><th>Usuário</th><th>E-mail</th><th>Status</th><th>Cargo</th><th>Ação</th></tr></thead>
@@ -138,6 +144,7 @@
     <datalist id="lista-usuarios"></datalist>
 
     <script>
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const ICONES_LOGISTICA = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑", "↳"];
         
@@ -175,7 +182,7 @@
         }
 
         // ==========================================
-        // GESTÃO DE USUÁRIOS (DIRETO NO FIREBASE)
+        // GESTÃO DE USUÁRIOS (FIREBASE + MIGRATION)
         // ==========================================
         async function fetchUsersFromFirebase() {
             try {
@@ -187,9 +194,70 @@
                     populateDatalist(); 
                 } else {
                     allUsers = [];
-                    document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum usuário cadastrado no banco.</td></tr>';
+                    document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum usuário cadastrado no banco Firebase.</td></tr>';
                 }
             } catch(e) { console.error("Falha ao ler usuarios: ", e); }
+        }
+
+        async function importarUsuariosDaPlanilha() {
+            const btn = document.getElementById('btn-import-users');
+            btn.innerHTML = "⏳ Importando da Planilha (Aguarde...)";
+            btn.disabled = true;
+
+            try {
+                // 1. Puxa do Google Sheets
+                const resS = await fetch(APP_SCRIPT_URL, { 
+                    method: 'POST', 
+                    headers: { "Content-Type": "text/plain;charset=utf-8" }, 
+                    redirect: "follow", 
+                    body: JSON.stringify({ action: "getUsers" }) 
+                });
+                const dataS = await resS.json();
+                
+                if(dataS && dataS.success && dataS.users && dataS.users.length > 0) {
+                    let oldUsers = dataS.users;
+                    let count = 0;
+
+                    // Puxa do Firebase para não duplicar
+                    const resF = await fetch(`${FIREBASE_URL}users.json`);
+                    const dataF = await resF.json() || {};
+                    const fbUsernames = Object.keys(dataF).map(k => dataF[k].usuario.toLowerCase());
+
+                    for (let u of oldUsers) {
+                        if (!fbUsernames.includes(u.usuario.toLowerCase())) {
+                            // Criptografia base64 simples só para manter o padrão sem travar a importação
+                            const passString = u.senha || '12345678';
+                            let passFormatada = "";
+                            try {
+                                if (window.crypto && window.crypto.subtle) {
+                                    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder("utf-8").encode(passString));
+                                    passFormatada = Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
+                                } else { passFormatada = btoa(passString); }
+                            } catch(e) { passFormatada = btoa(passString); }
+
+                            const newUser = {
+                                usuario: u.usuario,
+                                email: u.email || '',
+                                senha: passFormatada,
+                                cargo: u.cargo || 'view',
+                                solicitacao: u.solicitacao || 'pendente',
+                                favorito: ''
+                            };
+                            await fetch(`${FIREBASE_URL}users.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) });
+                            count++;
+                        }
+                    }
+                    alert(`Migração concluída! ${count} usuários novos transferidos da planilha para o banco de dados.`);
+                    fetchUsersFromFirebase();
+                } else {
+                    alert("A planilha retornou vazia ou ocorreu um erro no script antigo.");
+                }
+            } catch(e) {
+                alert("Erro ao importar usuários: " + e.message);
+            } finally {
+                btn.innerHTML = "⬇️ Migrar Usuários da Planilha Antiga";
+                btn.disabled = false;
+            }
         }
 
         function populateDatalist() { const dl = document.getElementById('lista-usuarios'); dl.innerHTML = ''; allUsers.forEach(u => { dl.innerHTML += `<option value="${u.usuario}">`; }); }
@@ -246,7 +314,7 @@
         async function salvarNoFirebase() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
 
         // ==========================================
-        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT)
+        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT + EDIÇÃO)
         // ==========================================
         let isHtmlMode = false;
         let editingNewsKey = null; 
@@ -346,6 +414,7 @@
                 }
                 
                 currentNewsData = data;
+                
                 let newsList = [];
                 if (Array.isArray(data)) { newsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
                 else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
