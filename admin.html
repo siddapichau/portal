@@ -3,8 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Admin - Gerenciar Menu e Usuários</title>
-    
-    <!-- SISTEMA ANTI-ACESSO DIRETO -->
     <script>
         if (window === window.top) {
             const paginaAtual = window.location.pathname.split('/').pop() || 'admin.html';
@@ -25,7 +23,6 @@
         .admin-tab:hover { color: var(--text-title); }
         
         .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: 0.2s; }
-        
         .drag-over { border: 2px dashed var(--accent-blue) !important; background: rgba(52, 131, 250, 0.05) !important; }
 
         .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; align-items: center; transition: 0.2s; }
@@ -43,15 +40,13 @@
         .user-table select { padding: 5px; border-radius: 4px; background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border-card); outline: none;}
         .user-table select:focus { border-color: var(--accent-blue); }
 
-        /* EDITOR DE NOTÍCIAS RICAS */
+        /* EDITOR DE NOTÍCIAS */
         .editor-toolbar { display: flex; gap: 5px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap; align-items: center;}
         [data-theme="light"] .editor-toolbar { background: rgba(0,0,0,0.05); }
         .editor-toolbar .btn-dark { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); font-size: 0.95rem; padding: 6px 10px; }
         .editor-toolbar .btn-dark:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
         .editor-toolbar .btn-dark.active-btn { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
-        
         .toolbar-divider { width: 1px; height: 24px; background: var(--border-card); margin: 0 5px; }
-
         .rich-editor { min-height: 250px; max-height: 500px; overflow-y: auto; padding: 15px; border: 1px solid var(--border-card); border-radius: 0 0 8px 8px; background: var(--bg-input); color: var(--text-main); outline: none; font-size: 0.95rem; line-height: 1.5; }
         .rich-editor:focus { border-color: var(--accent-blue); }
         .rich-editor img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
@@ -87,7 +82,7 @@
 
             <!-- ABA DE USUÁRIOS -->
             <div id="tab-users" style="display:none;">
-                <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos. As alterações são salvas diretamente na planilha.</p>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos diretamente no banco Firebase.</p>
                 <div style="overflow-x: auto;">
                     <table class="user-table">
                         <thead><tr><th>Usuário</th><th>E-mail</th><th>Status</th><th>Cargo</th><th>Ação</th></tr></thead>
@@ -110,24 +105,18 @@
                         <button class="btn btn-dark" onclick="formatText('bold')" title="Negrito"><b>B</b></button>
                         <button class="btn btn-dark" onclick="formatText('italic')" title="Itálico"><i>I</i></button>
                         <button class="btn btn-dark" onclick="formatText('underline')" title="Sublinhado"><u>U</u></button>
-                        
                         <div class="toolbar-divider"></div>
-                        
                         <button class="btn btn-dark" onclick="alignText('Left')" title="Alinhar à Esquerda">⬅️</button>
                         <button class="btn btn-dark" onclick="alignText('Center')" title="Centralizar">↔️</button>
                         <button class="btn btn-dark" onclick="alignText('Right')" title="Alinhar à Direita">➡️</button>
-
                         <div class="toolbar-divider"></div>
-
                         <button class="btn btn-dark" onclick="insertLink()" title="Inserir Link de Texto">🔗 Link</button>
-                        <button class="btn btn-dark" onclick="document.getElementById('news-img-upload').click()" title="Subir Imagem do PC">🖼️ Subir Imagem</button>
+                        <button class="btn btn-dark" onclick="document.getElementById('news-img-upload').click()" title="Subir Imagem do PC">🖼️ Imagem (PC)</button>
                         <input type="file" id="news-img-upload" accept="image/*" style="display:none;" onchange="insertImageUpload(this)">
-                        <button class="btn btn-dark" onclick="insertImageLink()" title="Inserir Imagem por Link (URL)">🔗 Img (Link)</button>
+                        <button class="btn btn-dark" onclick="insertImageLink()" title="Inserir Imagem por Link (URL)">🔗 Img (URL)</button>
                         <button class="btn btn-dark" onclick="insertVideoLink()" title="Inserir Vídeo do YouTube">🎥 Vídeo</button>
                         <button class="btn btn-dark" onclick="insertFileLink()" title="Inserir botão de Download (PDF, Drive)">📄 Anexar Arquivo</button>
-                        
                         <div class="toolbar-divider"></div>
-
                         <button class="btn btn-dark" id="btn-toggle-html" onclick="toggleHTML()" title="Ver e Editar o Código HTML Puro">💻 </> Code</button>
                     </div>
                     <div id="news-body" contenteditable="true" class="rich-editor"></div>
@@ -141,7 +130,6 @@
                 <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-title); font-weight: 900; text-transform: uppercase;">Publicações Anteriores</h3>
                 <div id="news-list-admin" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
-
         </div>
         
         <div id="acessoNegado" style="display:none; text-align:center; padding: 50px;"><h2 style="color: #FF5252;">Acesso Negado 🛑</h2><p>Faça login com cargo de 'admin'.</p></div>
@@ -150,7 +138,6 @@
     <datalist id="lista-usuarios"></datalist>
 
     <script>
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const ICONES_LOGISTICA = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑", "↳"];
         
@@ -175,7 +162,7 @@
             if(!currentUser || currentUser.cargo !== 'admin') { document.getElementById('acessoNegado').style.display = 'block'; return; }
             document.getElementById('adminPanel').style.display = 'block';
             try { const res = await fetch(`${FIREBASE_URL}menu_global.json`); const data = await res.json(); adMenuData = data && data.categorias ? data : { categorias: [] }; renderizarAdmin(); } catch (e) { console.error(e); }
-            fetchUsersFromSheet();
+            fetchUsersFromFirebase();
         };
 
         function switchAdminTab(tab) {
@@ -184,25 +171,32 @@
             document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
             document.getElementById('tab-news').style.display = tab === 'news' ? 'block' : 'none';
             event.target.classList.add('active');
-
             if(tab === 'news') carregarNoticiasAdmin();
         }
 
         // ==========================================
-        // GESTÃO DE USUÁRIOS COM VIEW2 INCORPORADO
+        // GESTÃO DE USUÁRIOS (DIRETO NO FIREBASE)
         // ==========================================
-        async function fetchUsersFromSheet() {
+        async function fetchUsersFromFirebase() {
             try {
-                const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "getUsers" }) });
+                const res = await fetch(`${FIREBASE_URL}users.json?_=${Date.now()}`);
                 const data = await res.json();
-                if(data.success) { allUsers = data.users; renderUserTable(); populateDatalist(); }
-            } catch(e) {}
+                if(data) { 
+                    allUsers = Object.keys(data).map(k => ({...data[k], key: k})); 
+                    renderUserTable(); 
+                    populateDatalist(); 
+                } else {
+                    allUsers = [];
+                    document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum usuário cadastrado no banco.</td></tr>';
+                }
+            } catch(e) { console.error("Falha ao ler usuarios: ", e); }
         }
+
         function populateDatalist() { const dl = document.getElementById('lista-usuarios'); dl.innerHTML = ''; allUsers.forEach(u => { dl.innerHTML += `<option value="${u.usuario}">`; }); }
+        
         function renderUserTable() {
             const tbody = document.getElementById('users-tbody'); tbody.innerHTML = '';
             allUsers.forEach((u, idx) => {
-                // Adicionado a opção view2
                 tbody.innerHTML += `<tr><td><strong>${u.usuario}</strong></td><td>${u.email}</td>
                     <td><select id="status-${idx}"><option value="pendente" ${u.solicitacao === 'pendente' ? 'selected' : ''}>Pendente</option><option value="aprovado" ${u.solicitacao === 'aprovado' ? 'selected' : ''}>Aprovado</option><option value="bloqueado" ${u.solicitacao === 'bloqueado' ? 'selected' : ''}>Bloqueado</option></select></td>
                     <td><select id="cargo-${idx}">
@@ -211,21 +205,26 @@
                         <option value="editor" ${u.cargo === 'editor' ? 'selected' : ''}>Editor</option>
                         <option value="admin" ${u.cargo === 'admin' ? 'selected' : ''}>Admin</option>
                     </select></td>
-                    <td><button class="btn btn-blue" onclick="salvarUsuario(${idx}, '${u.usuario}')">Atualizar</button></td></tr>`;
+                    <td><button class="btn btn-blue" onclick="salvarUsuario(${idx}, '${u.key}', '${u.usuario}')">Atualizar</button></td></tr>`;
             });
         }
-        async function salvarUsuario(idx, username) {
-            const status = document.getElementById(`status-${idx}`).value; const cargo = document.getElementById(`cargo-${idx}`).value;
+
+        async function salvarUsuario(idx, key, username) {
+            const status = document.getElementById(`status-${idx}`).value; 
+            const cargo = document.getElementById(`cargo-${idx}`).value;
             try { 
-                const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "updateUser", usuario: username, solicitacao: status, cargo: cargo }) }); 
-                const data = await res.json(); 
-                alert(data.message); 
+                await fetch(`${FIREBASE_URL}users/${key}.json`, { 
+                    method: 'PATCH', 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ solicitacao: status, cargo: cargo }) 
+                }); 
+                alert("Usuário atualizado com sucesso!"); 
                 await registrarLogFirebase("Painel Admin", `Alterou permissões/cargo do usuário: <b>${username}</b>`);
-            } catch(e) { alert("Erro ao atualizar."); }
+            } catch(e) { alert("Erro ao atualizar o usuário."); }
         }
 
         // ==========================================
-        // GESTÃO DE MENUS
+        // GESTÃO DE MENUS E DRAG/DROP
         // ==========================================
         function getIconOptions(selected) { return ICONES_LOGISTICA.map(ico => `<option value="${ico}" ${ico === selected ? 'selected' : ''}>${ico}</option>`).join(''); }
         function renderizarAdmin() {
@@ -247,7 +246,7 @@
         async function salvarNoFirebase() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
 
         // ==========================================
-        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT + EDIÇÃO)
+        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT)
         // ==========================================
         let isHtmlMode = false;
         let editingNewsKey = null; 
@@ -347,7 +346,6 @@
                 }
                 
                 currentNewsData = data;
-                
                 let newsList = [];
                 if (Array.isArray(data)) { newsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
                 else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
@@ -393,7 +391,6 @@
             btnPub.classList.replace('btn-blue', 'btn-green');
             
             document.getElementById('btn-cancelar-edicao').style.display = 'inline-flex';
-            
             document.getElementById('news-editor-box').scrollIntoView({ behavior: 'smooth' });
         }
 
