@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador Global - Salvados e Pendências</title>
+    <title>Buscador Global - Salvados</title>
     
     <!-- SISTEMA ANTI-ACESSO DIRETO -->
     <script>
         if (window === window.top) {
-            const paginaAtual = window.location.pathname.split('/').pop() || 'buscador_global.html';
+            const paginaAtual = window.location.pathname.split('/').pop() || 'salvados_procurar.html';
             window.location.replace('index.html?page=' + paginaAtual);
         }
     </script>
@@ -21,15 +21,13 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
-        /* Variáveis específicas desta tela */
         :root { --th-bg: rgba(0,0,0,0.05); }
         [data-theme="dark"] { --th-bg: rgba(0,0,0,0.4); }
 
-        body { padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; height: 100vh; overflow: hidden; background: transparent; }
+        body { padding: 8px 12px; display: flex; flex-direction: column; gap: 8px; height: 100vh; overflow: hidden; background: transparent !important; }
 
         .glass-panel { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; box-shadow: var(--shadow-card); transition: 0.3s ease; }
 
-        /* CABEÇALHO */
         .top-navbar { background: #FFF159 !important; border-radius: 8px; padding: 8px 14px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 16px; flex: 0 0 auto; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .nav-logo-wrapper { display: flex; align-items: center; }
         .ml-logo { height: 26px; width: auto; object-fit: contain; }
@@ -45,36 +43,30 @@
         .btn { background: var(--bg-body); color: var(--text-title); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: 0.2s; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-        /* TICKER */
         .status-ticker-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 4px; flex: 0 0 auto; scrollbar-width: none; }
         .status-ticker-row::-webkit-scrollbar { display: none; } 
         .status-pill { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 20px; padding: 6px 12px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-card); color: var(--text-main); }
         .pill-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-        .pill-date { color: var(--text-muted); font-weight: 500; font-size: 0.65rem; }
 
-        /* ÁREA DE RESULTADOS */
         .resultados-container { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 8px; }
         .section-exatos { display: none; flex-direction: column; gap: 4px; flex: 0 1 auto; max-height: 45%; }
         .section-aproximados { display: none; flex-direction: column; gap: 4px; flex: 1 1 0%; min-height: 120px; }
-        .section-title { font-size: 0.8rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; padding: 0 4px; }
+        .section-title { font-size: 0.8rem; font-weight: 900; text-transform: uppercase; padding: 0 4px; }
         .title-exatos { color: var(--accent-green); }
         .title-aproximados { color: var(--accent-warn); }
 
-        /* TABELAS */
         .table-wrapper { flex: 1 1 auto; min-height: 0; overflow: auto; border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; min-width: 1100px; text-align: left; }
         th, td { padding: 8px 10px; border-bottom: 1px solid var(--border-card); font-size: .8rem; vertical-align: middle; }
         th { background: var(--th-bg); color: var(--text-title); text-transform: uppercase; font-size: 0.75rem; font-weight: 900; position: sticky; top: 0; z-index: 2; box-shadow: 0 1px 0 var(--border-card); }
         tr:hover td { background: rgba(52, 131, 250, 0.05); }
 
-        .center { text-align: center; }
         .col-id { font-weight: 900; color: var(--text-title); display: flex; align-items: center; gap: 6px;}
         .col-val { font-weight: 900; color: var(--accent-green); }
 
         .action-icon { color: var(--accent-blue); transition: transform 0.1s; display: inline-flex; text-decoration: none; padding: 3px; border-radius: 4px; background: rgba(52, 131, 250, 0.1); border: 1px solid rgba(52, 131, 250, 0.15); }
         .action-icon:hover { transform: scale(1.1); background: rgba(52, 131, 250, 0.2); }
         .action-icon.sauron { color: var(--accent-warn); background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.2); }
-        .action-icon.sauron:hover { background: rgba(245, 158, 11, 0.2); }
 
         .badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 12px; font-size: .65rem; font-weight: 900; text-transform: uppercase; margin: 2px;}
         .origem-devolucao { color: #e11d48; border: 1px solid rgba(225, 29, 72, 0.3); background: rgba(225, 29, 72, 0.1); }
@@ -101,14 +93,6 @@
         .upload-wrapper input[type=file] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
         .upload-wrapper .btn { width: 100%; pointer-events: none; }
 
-        @media (max-width: 900px) {
-            .top-navbar { grid-template-columns: auto 1fr auto; gap: 10px; flex-wrap: wrap;}
-            .nav-center { max-width: 100%; order: 3; width: 100%; }
-            .nav-title { display: none; } 
-            .section-exatos { max-height: 50%; }
-            th, td { padding: 6px 8px; font-size: 0.75rem; }
-        }
-        
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-body); }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
@@ -117,19 +101,13 @@
 <body data-theme="light">
 
     <div class="top-navbar">
-        <div class="nav-logo-wrapper">
-            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
-        </div>
-        
+        <div class="nav-logo-wrapper"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
         <div class="nav-center">
             <div class="nav-title">Buscador Global</div>
-            <div class="search-input-wrapper" style="width: 100%;">
-                <input type="text" class="search-input" id="search-input" placeholder="🔍 Buscar ID, Rastreio ou Descrição (Ex: Máquina Fazer Pão)..." oninput="executarSmartSearch()">
-            </div>
+            <div style="width: 100%;"><input type="text" class="search-input" id="search-input" placeholder="🔍 Buscar ID, Rastreio ou Descrição..." oninput="executarSmartSearch()"></div>
         </div>
-
         <div class="nav-right" style="display: flex; gap: 8px;">
-            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()">📂 Gerenciar Arquivos</button>
+            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none;">📂 Gerenciar Arquivos</button>
         </div>
     </div>
 
@@ -144,61 +122,37 @@
     </div>
 
     <div class="resultados-container" id="resultados-container">
-        
         <div class="table-wrapper glass-panel" id="container-vazio">
             <table>
-                <thead>
-                    <tr>
-                        <th style="width:16%;">ID / Rastreio</th><th style="width:16%;">Base de Origem</th><th style="width:30%;">Descrição do Item</th>
-                        <th style="width:12%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:12%;">Valor</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody-vazio">
-                    <tr><td colspan="6" class="center" style="padding: 35px; color: var(--text-muted); font-weight: 600;">Digite os termos acima para cruzar dados em todas as bases na nuvem.</td></tr>
-                </tbody>
+                <thead><tr><th style="width:16%;">ID / Rastreio</th><th style="width:16%;">Base de Origem</th><th style="width:30%;">Descrição do Item</th><th style="width:12%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:12%;">Valor</th></tr></thead>
+                <tbody id="tbody-vazio"><tr><td colspan="6" class="center" style="padding: 35px; color: var(--text-muted); font-weight: 600;">Digite os termos acima para cruzar dados nas bases.</td></tr></tbody>
             </table>
         </div>
-
         <div class="section-exatos" id="section-exatos">
             <div class="section-title title-exatos" id="titulo-exatos">🎯 CORRESPONDÊNCIA EXATA (0)</div>
             <div class="table-wrapper glass-panel" id="scroll-exatos" onscroll="carregarMaisExatos()">
                 <table>
-                    <thead>
-                        <tr>
-                            <th style="width:16%;">ID / Rastreio</th><th style="width:16%;">Base de Origem</th><th style="width:30%;">Descrição do Item</th>
-                            <th style="width:12%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:12%;">Valor</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th style="width:16%;">ID / Rastreio</th><th style="width:16%;">Base de Origem</th><th style="width:30%;">Descrição do Item</th><th style="width:12%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:12%;">Valor</th></tr></thead>
                     <tbody id="tbody-exatos"></tbody>
                 </table>
             </div>
         </div>
-
         <div class="section-aproximados" id="section-aproximados">
             <div class="section-title title-aproximados" id="titulo-aproximados">💡 RESULTADOS APROXIMADOS (0)</div>
             <div class="table-wrapper glass-panel" id="scroll-aproximados" onscroll="carregarMaisAproximados()">
                 <table>
-                    <thead>
-                        <tr>
-                            <th style="width:16%;">ID / Rastreio</th><th style="width:16%;">Base de Origem</th><th style="width:30%;">Descrição do Item</th>
-                            <th style="width:12%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:12%;">Valor</th>
-                        </tr>
-                    </thead>
+                    <thead><tr><th style="width:16%;">ID / Rastreio</th><th style="width:16%;">Base de Origem</th><th style="width:30%;">Descrição do Item</th><th style="width:12%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:12%;">Valor</th></tr></thead>
                     <tbody id="tbody-aproximados"></tbody>
                 </table>
             </div>
         </div>
-
     </div>
 
-    <!-- MODAL DE UPLOAD (Apenas Editores/Admins) -->
+    <!-- MODAL DE UPLOAD -->
     <div class="modal-overlay" id="modal-gerenciador">
         <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">📂 Gerenciar Planilhas na Nuvem</div>
-                <button class="close-modal" onclick="fecharModalGerenciador()">×</button>
-            </div>
-            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Atenção: Ao enviar um novo arquivo, a base correspondente será completamente substituída pela versão mais atual.</div>
+            <div class="modal-header"><div class="modal-title">📂 Gerenciar Planilhas</div><button class="close-modal" onclick="fecharModalGerenciador()">×</button></div>
+            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Atenção: A base será substituída.</div>
             <div class="modal-grid">
                 <div class="modal-upload-row"><div><b>📦 Devolução 2.0</b></div><div class="upload-wrapper"><button class="btn">Subir CSV</button><input type="file" accept=".csv" onchange="processarUpload(this, 'devolucao')" /></div></div>
                 <div class="modal-upload-row"><div><b>💾 ID Data</b></div><div class="upload-wrapper"><button class="btn">Subir CSV</button><input type="file" accept=".csv" onchange="processarUpload(this, 'iddata')" /></div></div>
@@ -213,37 +167,23 @@
 
     <script>
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
-        const DB_NODES = {
-            'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata', 'q10': 'salvados_q10',
-            'q15': 'salvados_q15', 'qonhub': 'salvados_qonhub', 'cftv': 'salvados_cftv', 'parado': 'salvados_parado'
-        };
+        const DB_NODES = { 'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata', 'q10': 'salvados_q10', 'q15': 'salvados_q15', 'qonhub': 'salvados_qonhub', 'cftv': 'salvados_cftv', 'parado': 'salvados_parado' };
 
-        let BANCO_GLOBAL = []; 
-        let DADOS_EXATOS = []; 
-        let DADOS_APROXIMADOS = []; 
-        
-        let PAGE_SIZE = 50; 
-        let CUR_PAGE_EXATOS = 0;
-        let CUR_PAGE_APROX = 0;
+        let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; 
+        let PAGE_SIZE = 50; let CUR_PAGE_EXATOS = 0; let CUR_PAGE_APROX = 0;
         const STOPWORDS = ['de', 'para', 'com', 'o', 'a', 'os', 'as', 'em', 'um', 'uma', 'uns', 'umas', 'no', 'na', 'nos', 'nas', 'do', 'da', 'dos', 'das', 'por', 'sem'];
 
-        // ============ SINCRONIZAÇÃO DE TEMA ============
-        function syncTheme() {
-            const theme = localStorage.getItem('themePreference') || 'light';
-            document.body.setAttribute('data-theme', theme);
-        }
+        // ============ SINCRONIZAÇÃO TEMA E PERMISSÕES (VERIFICA NO PAI) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
         syncTheme();
-        window.addEventListener('storage', (e) => { if (e.key === 'themePreference') syncTheme(); });
+        window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') document.body.setAttribute('data-theme', event.data.theme); });
 
-        // ============ PERMISSÕES GLOBAIS E LOGS ============
         const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
-        let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
         let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
-        let canEdit = ['editor', 'admin'].includes(userRole);
         
-        if(!canEdit) {
-            document.getElementById('btn-gerenciar').style.display = 'none';
-        }
+        const paginaNome = window.location.pathname.split('/').pop() || 'salvados_procurar.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        if(canEdit) { document.getElementById('btn-gerenciar').style.display = 'inline-flex'; }
 
         async function registrarLogFirebase(modulo, acao) {
             try {
@@ -252,7 +192,6 @@
             } catch(e) {}
         }
 
-        // ============ LÓGICA DO BUSCADOR ============
         function abrirModalGerenciador() { document.getElementById('modal-gerenciador').classList.add('active'); }
         function fecharModalGerenciador() { document.getElementById('modal-gerenciador').classList.remove('active'); }
 
@@ -263,30 +202,13 @@
             if (!valStr) return 0;
             let s = String(valStr).replace(/R\$/gi, '').replace(/\s/g, '').trim();
             let lastComma = s.lastIndexOf(','); let lastPeriod = s.lastIndexOf('.');
-            if (lastComma > lastPeriod) { s = s.replace(/\./g, '').replace(',', '.'); } 
-            else if (lastPeriod > lastComma) { s = s.replace(/,/g, ''); }
+            if (lastComma > lastPeriod) { s = s.replace(/\./g, '').replace(',', '.'); } else if (lastPeriod > lastComma) { s = s.replace(/,/g, ''); }
             return parseFloat(s) || 0;
         }
 
         function cleanKey(k) { return k.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-        
-        function getVal(row, possibleKeys) {
-            let keys = Object.keys(row);
-            for (let pk of possibleKeys) {
-                let cleanPk = cleanKey(pk);
-                let found = keys.find(k => cleanKey(k) === cleanPk);
-                if (found && row[found] !== undefined && row[found] !== null && String(row[found]).trim() !== '') return String(row[found]).trim();
-            }
-            return '';
-        }
-
-        function extrairID(row) {
-            let val = getVal(row, ['id', 'id do pacote', 'pacote', 'shipment', 'tracking', 'numero', 'n pacote', 'rastreio', 'shipment id']);
-            if (val) return val;
-            let chaves = Object.keys(row);
-            if (chaves.length > 0) return String(row[chaves[0]]).trim(); 
-            return '';
-        }
+        function getVal(row, possibleKeys) { let keys = Object.keys(row); for (let pk of possibleKeys) { let cleanPk = cleanKey(pk); let found = keys.find(k => cleanKey(k) === cleanPk); if (found && row[found] !== undefined && row[found] !== null && String(row[found]).trim() !== '') { return String(row[found]).trim(); } } return ''; }
+        function extrairID(row) { let val = getVal(row, ['id', 'id do pacote', 'pacote', 'shipment', 'tracking', 'numero', 'n pacote', 'rastreio', 'shipment id']); if (val) return val; let chaves = Object.keys(row); if (chaves.length > 0) return String(row[chaves[0]]).trim(); return ''; }
 
         async function carregarTodosBancos() {
             BANCO_GLOBAL = [];
@@ -296,76 +218,35 @@
                     if (response.ok) {
                         const data = await response.json();
                         let listaReal = []; let dataAtualizacao = "Sem data";
-
-                        if (data) {
-                            if (Array.isArray(data)) { listaReal = data; } 
-                            else if (data.lista) { listaReal = Array.isArray(data.lista) ? data.lista : Object.values(data.lista); dataAtualizacao = data.atualizadoEm || "Sem data"; } 
-                            else { listaReal = Object.values(data); }
-                        }
-
+                        if (data) { if (Array.isArray(data)) { listaReal = data; } else if (data.lista) { listaReal = Array.isArray(data.lista) ? data.lista : Object.values(data.lista); dataAtualizacao = data.atualizadoEm || "Sem data"; } else { listaReal = Object.values(data); } }
                         const lbl = document.getElementById(`lbl-${key}`);
-                        if (listaReal.length > 0) {
-                            let itensMapeados = listaReal.map(i => ({ ...i, OrigemDb: key }));
-                            BANCO_GLOBAL.push(...itensMapeados);
-                            if (lbl) lbl.innerHTML = `${listaReal.length} u. <span class="upload-date">(${dataAtualizacao.split(',')[0]})</span>`;
-                        } else {
-                            if (lbl) lbl.innerText = `Vazio`;
-                        }
+                        if (listaReal.length > 0) { let itensMapeados = listaReal.map(i => ({ ...i, OrigemDb: key })); BANCO_GLOBAL.push(...itensMapeados); if (lbl) lbl.innerHTML = `${listaReal.length} u. <span class="upload-date">(${dataAtualizacao.split(',')[0]})</span>`; } 
+                        else { if (lbl) lbl.innerText = `Vazio`; }
                     }
-                } catch (e) {
-                    const lbl = document.getElementById(`lbl-${key}`);
-                    if (lbl) lbl.innerText = `Erro ❌`;
-                }
+                } catch (e) { const lbl = document.getElementById(`lbl-${key}`); if (lbl) lbl.innerText = `Erro ❌`; }
             }
             if(document.getElementById('search-input').value.trim() !== '') executarSmartSearch();
         }
 
         function processarUpload(inputElement, dbKey) {
             if(!canEdit) return;
-            const file = inputElement.files[0];
-            if (!file) return;
-
+            const file = inputElement.files[0]; if (!file) return;
             document.getElementById(`lbl-${dbKey}`).innerText = 'Processando...';
-            
             Papa.parse(file, {
                 header: true, skipEmptyLines: true,
                 complete: async function(results) {
                     let data = results.data;
                     let dadosLimpos = data.map(row => {
                         let valText = getVal(row, ['valor_real', 'valor_brl', 'valor', 'preco', 'preço', 'price', 'total', 'vl']);
-                        return {
-                            ID: extrairID(row), 
-                            Descricao: getVal(row, ['descricao', 'descrição', 'descricao_do_produto', 'descricao do produto', 'produto', 'item', 'title', 'titulo', 'nome']),
-                            Status: getVal(row, ['shp_lg_status', 'status_logistics', 'status', 'staus', 'status do pacote', 'staus do pacote', 'estado', 'situacao', 'situação']),
-                            Substatus: getVal(row, ['shp_lg_sub_status', 'substatus_logistics', 'substatus', 'sub status', 'sub-status', 'ultimo status', 'ultimo_status', 'resolucao', 'resolução', 'motivo', 'detalhe', 'final analise']),
-                            Valor: valText, 
-                            ValorNum: parseCurrency(valText)
-                        };
+                        return { ID: extrairID(row), Descricao: getVal(row, ['descricao', 'descrição', 'descricao_do_produto', 'descricao do produto', 'produto', 'item', 'title', 'titulo', 'nome']), Status: getVal(row, ['shp_lg_status', 'status_logistics', 'status', 'staus', 'status do pacote', 'staus do pacote', 'estado', 'situacao', 'situação']), Substatus: getVal(row, ['shp_lg_sub_status', 'substatus_logistics', 'substatus', 'sub status', 'sub-status', 'ultimo status', 'ultimo_status', 'resolucao', 'resolução', 'motivo', 'detalhe', 'final analise']), Valor: valText, ValorNum: parseCurrency(valText) };
                     }).filter(i => i.ID && i.ID.toLowerCase() !== 'nan' && i.ID.toLowerCase() !== 'undefined');
-
-                    if(dadosLimpos.length === 0) {
-                        alert("Arquivo inválido, vazio ou colunas não reconhecidas.");
-                        document.getElementById(`lbl-${dbKey}`).innerText = 'Falha ❌';
-                        return;
-                    }
-
+                    if(dadosLimpos.length === 0) { alert("Arquivo inválido."); document.getElementById(`lbl-${dbKey}`).innerText = 'Falha ❌'; return; }
                     try {
-                        const dataHoraAgora = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-                        const payload = { atualizadoEm: dataHoraAgora, lista: dadosLimpos };
-
-                        await fetch(`${FIREBASE_URL}${DB_NODES[dbKey]}.json`, { 
-                            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) 
-                        });
-                        
+                        const payload = { atualizadoEm: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }), lista: dadosLimpos };
+                        await fetch(`${FIREBASE_URL}${DB_NODES[dbKey]}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                         await registrarLogFirebase("Buscador Global", `Atualizou a base <b>${dbKey.toUpperCase()}</b> via CSV (${dadosLimpos.length} itens).`);
-                        
-                        carregarTodosBancos();
-                        fecharModalGerenciador();
-                        inputElement.value = ""; 
-                    } catch (e) {
-                        alert('Erro ao fazer upload para a nuvem.');
-                        document.getElementById(`lbl-${dbKey}`).innerText = 'Erro Nuvem ❌';
-                    }
+                        carregarTodosBancos(); fecharModalGerenciador(); inputElement.value = ""; 
+                    } catch (e) { alert('Erro na nuvem.'); document.getElementById(`lbl-${dbKey}`).innerText = 'Erro Nuvem ❌'; }
                 }
             });
         }
@@ -380,44 +261,32 @@
                     if ((item.ValorNum || 0) > (mapa[idReal].ValorNum || 0)) { mapa[idReal].ValorNum = item.ValorNum; mapa[idReal].Valor = item.Valor; }
                     if (!mapa[idReal].Descricao && item.Descricao) mapa[idReal].Descricao = item.Descricao;
                 }
-            });
-            return Object.values(mapa);
+            }); return Object.values(mapa);
         }
 
         function executarSmartSearch() {
             let query = document.getElementById('search-input').value;
-            const contVazio = document.getElementById('container-vazio');
-            const secExatos = document.getElementById('section-exatos');
-            const secAprox = document.getElementById('section-aproximados');
-            const tbodyExatos = document.getElementById('tbody-exatos');
-            const tbodyAprox = document.getElementById('tbody-aproximados');
+            const contVazio = document.getElementById('container-vazio'); const secExatos = document.getElementById('section-exatos'); const secAprox = document.getElementById('section-aproximados');
+            const tbodyExatos = document.getElementById('tbody-exatos'); const tbodyAprox = document.getElementById('tbody-aproximados');
 
             if (!query || query.trim().length < 2) {
                 DADOS_EXATOS = []; DADOS_APROXIMADOS = [];
-                contVazio.style.display = 'block'; secExatos.style.display = 'none'; secAprox.style.display = 'none';
-                return;
+                contVazio.style.display = 'block'; secExatos.style.display = 'none'; secAprox.style.display = 'none'; return;
             }
 
             let qNormalizado = removerAcentos(query).toLowerCase().trim();
             let queryTokens = qNormalizado.split(/\s+/).filter(w => !STOPWORDS.includes(w) && w.length > 1);
-
             let exatosBrutos = []; let aproximadosBrutos = [];
 
             for (let i = 0; i < BANCO_GLOBAL.length; i++) {
-                let item = BANCO_GLOBAL[i];
-                if (!item) continue;
-
-                let id = String(item.ID || '').toLowerCase().trim();
-                let desc = removerAcentos(String(item.Descricao || '')).toLowerCase().trim();
+                let item = BANCO_GLOBAL[i]; if (!item) continue;
+                let id = String(item.ID || '').toLowerCase().trim(); let desc = removerAcentos(String(item.Descricao || '')).toLowerCase().trim();
                 
-                if (id === qNormalizado || id.includes(qNormalizado) || desc.includes(qNormalizado)) {
-                    exatosBrutos.push(item); continue; 
-                }
+                if (id === qNormalizado || id.includes(qNormalizado) || desc.includes(qNormalizado)) { exatosBrutos.push(item); continue; }
                 
                 if (queryTokens.length > 0) {
                     let descTokens = desc.split(/\s+/); let matchedTokens = 0;
                     queryTokens.forEach(qt => { if (descTokens.some(dt => dt.includes(qt))) matchedTokens++; });
-
                     if (matchedTokens > 0) {
                         let score = 0;
                         if (matchedTokens === queryTokens.length) score = 2000 + matchedTokens;
@@ -429,38 +298,22 @@
                 }
             }
 
-            let exatosAgrupados = agruparResultados(exatosBrutos);
-            let aproximadosAgrupados = agruparResultados(aproximadosBrutos);
-
+            let exatosAgrupados = agruparResultados(exatosBrutos); let aproximadosAgrupados = agruparResultados(aproximadosBrutos);
             exatosAgrupados.sort((a, b) => (b.ValorNum || 0) - (a.ValorNum || 0));
-            aproximadosAgrupados.sort((a, b) => {
-                let scoreA = a.scoreTemp || 0; let scoreB = b.scoreTemp || 0;
-                if (scoreB !== scoreA) return scoreB - scoreA;
-                return (b.ValorNum || 0) - (a.ValorNum || 0);
-            });
+            aproximadosAgrupados.sort((a, b) => { let scoreA = a.scoreTemp || 0; let scoreB = b.scoreTemp || 0; if (scoreB !== scoreA) return scoreB - scoreA; return (b.ValorNum || 0) - (a.ValorNum || 0); });
 
-            DADOS_EXATOS = exatosAgrupados; DADOS_APROXIMADOS = aproximadosAgrupados;
-            CUR_PAGE_EXATOS = 0; CUR_PAGE_APROX = 0; tbodyExatos.innerHTML = ''; tbodyAprox.innerHTML = '';
-            
-            contVazio.style.display = 'none';
-            secExatos.style.display = 'flex';
-            secAprox.style.display = 'flex';
+            DADOS_EXATOS = exatosAgrupados; DADOS_APROXIMADOS = aproximadosAgrupados; CUR_PAGE_EXATOS = 0; CUR_PAGE_APROX = 0; tbodyExatos.innerHTML = ''; tbodyAprox.innerHTML = '';
+            contVazio.style.display = 'none'; secExatos.style.display = 'flex'; secAprox.style.display = 'flex';
 
             document.getElementById('titulo-exatos').innerText = `🎯 CORRESPONDÊNCIA EXATA (${DADOS_EXATOS.length})`;
-            if (DADOS_EXATOS.length > 0) { renderizarPedaçoExatos(); } 
-            else { tbodyExatos.innerHTML = `<tr><td colspan="6" class="center" style="color:var(--text-muted); padding:20px;">Nenhuma correspondência exata.</td></tr>`; }
+            if (DADOS_EXATOS.length > 0) { renderizarPedaçoExatos(); } else { tbodyExatos.innerHTML = `<tr><td colspan="6" class="center" style="color:var(--text-muted); padding:20px;">Nenhuma correspondência exata.</td></tr>`; }
 
             document.getElementById('titulo-aproximados').innerText = `💡 RESULTADOS APROXIMADOS (${DADOS_APROXIMADOS.length})`;
-            if (DADOS_APROXIMADOS.length > 0) { renderizarPedaçoAproximados(); } 
-            else { tbodyAprox.innerHTML = `<tr><td colspan="6" class="center" style="color:var(--text-muted); padding:20px;">Nenhum resultado aproximado.</td></tr>`; }
+            if (DADOS_APROXIMADOS.length > 0) { renderizarPedaçoAproximados(); } else { tbodyAprox.innerHTML = `<tr><td colspan="6" class="center" style="color:var(--text-muted); padding:20px;">Nenhum resultado aproximado.</td></tr>`; }
         }
 
         function getClassOrigem(origemKey) {
-            const map = {
-                'devolucao': ['Devolução 2.0', 'origem-devolucao'], 'iddata': ['ID Data', 'origem-iddata'],
-                'q10': ['Q 10 Dias', 'origem-q10'], 'q15': ['Q 15 Dias', 'origem-q15'],
-                'qonhub': ['Q OnHub', 'origem-qonhub'], 'cftv': ['Pendências CFTV', 'origem-cftv'], 'parado': ['Parado Percurso', 'origem-parado']
-            };
+            const map = { 'devolucao': ['Devolução 2.0', 'origem-devolucao'], 'iddata': ['ID Data', 'origem-iddata'], 'q10': ['Q 10 Dias', 'origem-q10'], 'q15': ['Q 15 Dias', 'origem-q15'], 'qonhub': ['Q OnHub', 'origem-qonhub'], 'cftv': ['Pendências CFTV', 'origem-cftv'], 'parado': ['Parado Percurso', 'origem-parado'] };
             return map[origemKey] || ['Desconhecido', ''];
         }
 
@@ -470,51 +323,17 @@
             let linkSauron = id !== '-' ? `https://shipping-bo.adminml.com/sauron/shipments/shipment/${escapeHtml(id)}` : '#';
             let linkHtml = id !== '-' ? `<div style="display:flex; gap: 4px;"><a href="${linkRastreio}" target="_blank" class="action-icon">🔍</a><a href="${linkSauron}" target="_blank" class="action-icon sauron">📋</a></div>` : '';
             
-            let badgesHtml = '';
-            if (i.OrigensDb && i.OrigensDb.length > 0) {
-                badgesHtml = i.OrigensDb.map(origem => { let [nome, classe] = getClassOrigem(origem); return `<span class="badge ${classe}">${nome}</span>`; }).join('');
-            }
+            let badgesHtml = ''; if (i.OrigensDb && i.OrigensDb.length > 0) { badgesHtml = i.OrigensDb.map(origem => { let [nome, classe] = getClassOrigem(origem); return `<span class="badge ${classe}">${nome}</span>`; }).join(''); }
             let matchClass = ehExato ? 'match-exact' : 'match-partial';
 
-            return `
-                <tr class="${matchClass}">
-                    <td class="col-id">${linkHtml}<span>${escapeHtml(id)}</span></td>
-                    <td><div style="display: flex; flex-wrap: wrap; gap: 4px;">${badgesHtml}</div></td>
-                    <td style="font-weight:600;">${escapeHtml(i.Descricao || '-')}</td>
-                    <td>${escapeHtml(i.Status || '-')}</td>
-                    <td style="color:var(--text-muted);">${escapeHtml(i.Substatus || '-')}</td>
-                    <td class="col-val">R$ ${i.ValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                </tr>
-            `;
+            return `<tr class="${matchClass}"><td class="col-id">${linkHtml}<span>${escapeHtml(id)}</span></td><td><div style="display: flex; flex-wrap: wrap; gap: 4px;">${badgesHtml}</div></td><td style="font-weight:600;">${escapeHtml(i.Descricao || '-')}</td><td>${escapeHtml(i.Status || '-')}</td><td style="color:var(--text-muted);">${escapeHtml(i.Substatus || '-')}</td><td class="col-val">R$ ${i.ValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
         }
 
-        function renderizarPedaçoExatos() {
-            let start = CUR_PAGE_EXATOS * PAGE_SIZE; let end = start + PAGE_SIZE;
-            let pedaco = DADOS_EXATOS.slice(start, end);
-            let html = pedaco.map(i => renderizarLinha(i, true)).join('');
-            document.getElementById('tbody-exatos').insertAdjacentHTML('beforeend', html);
-        }
+        function renderizarPedaçoExatos() { let start = CUR_PAGE_EXATOS * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_EXATOS.slice(start, end); let html = pedaco.map(i => renderizarLinha(i, true)).join(''); document.getElementById('tbody-exatos').insertAdjacentHTML('beforeend', html); }
+        function carregarMaisExatos() { let container = document.getElementById('scroll-exatos'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 60) { if ((CUR_PAGE_EXATOS + 1) * PAGE_SIZE < DADOS_EXATOS.length) { CUR_PAGE_EXATOS++; renderizarPedaçoExatos(); } } }
 
-        function carregarMaisExatos() {
-            let container = document.getElementById('scroll-exatos');
-            if (container.scrollTop + container.clientHeight >= container.scrollHeight - 60) {
-                if ((CUR_PAGE_EXATOS + 1) * PAGE_SIZE < DADOS_EXATOS.length) { CUR_PAGE_EXATOS++; renderizarPedaçoExatos(); }
-            }
-        }
-
-        function renderizarPedaçoAproximados() {
-            let start = CUR_PAGE_APROX * PAGE_SIZE; let end = start + PAGE_SIZE;
-            let pedaco = DADOS_APROXIMADOS.slice(start, end);
-            let html = pedaco.map(i => renderizarLinha(i, false)).join('');
-            document.getElementById('tbody-aproximados').insertAdjacentHTML('beforeend', html);
-        }
-
-        function carregarMaisAproximados() {
-            let container = document.getElementById('scroll-aproximados');
-            if (container.scrollTop + container.clientHeight >= container.scrollHeight - 60) {
-                if ((CUR_PAGE_APROX + 1) * PAGE_SIZE < DADOS_APROXIMADOS.length) { CUR_PAGE_APROX++; renderizarPedaçoAproximados(); }
-            }
-        }
+        function renderizarPedaçoAproximados() { let start = CUR_PAGE_APROX * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_APROXIMADOS.slice(start, end); let html = pedaco.map(i => renderizarLinha(i, false)).join(''); document.getElementById('tbody-aproximados').insertAdjacentHTML('beforeend', html); }
+        function carregarMaisAproximados() { let container = document.getElementById('scroll-aproximados'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 60) { if ((CUR_PAGE_APROX + 1) * PAGE_SIZE < DADOS_APROXIMADOS.length) { CUR_PAGE_APROX++; renderizarPedaçoAproximados(); } } }
 
         carregarTodosBancos();
     </script>
