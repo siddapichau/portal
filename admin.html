@@ -26,6 +26,7 @@
         
         .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: 0.2s; }
         
+        /* Drop Zones visuais */
         .drag-over { border: 2px dashed var(--accent-blue) !important; background: rgba(52, 131, 250, 0.05) !important; }
 
         .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; align-items: center; transition: 0.2s; }
@@ -35,7 +36,7 @@
         
         .btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; justify-content: center;}
         .btn:hover { transform: translateY(-2px); }
-        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #334155; }
+        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #334155; } .btn-warn { background-color: var(--accent-warn); color: #333;}
 
         .user-table { width: 100%; border-collapse: collapse; text-align: left; }
         .user-table th, .user-table td { padding: 12px; border-bottom: 1px solid var(--border-card); font-size: 0.85rem;}
@@ -43,12 +44,9 @@
         .user-table select { padding: 5px; border-radius: 4px; background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border-card); outline: none;}
         .user-table select:focus { border-color: var(--accent-blue); }
 
-        /* =========================================
-           EDITOR DE NOTÍCIAS RICAS (ATUALIZADO)
-           ========================================= */
-        .editor-toolbar { display: flex; gap: 6px; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap; align-items: center;}
+        /* EDITOR DE NOTÍCIAS RICAS */
+        .editor-toolbar { display: flex; gap: 5px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap; align-items: center;}
         [data-theme="light"] .editor-toolbar { background: rgba(0,0,0,0.05); }
-        
         .editor-toolbar .btn-dark { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); font-size: 0.95rem; padding: 6px 10px; }
         .editor-toolbar .btn-dark:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
         .editor-toolbar .btn-dark.active-btn { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
@@ -101,55 +99,44 @@
 
             <!-- ABA DE NOTÍCIAS -->
             <div id="tab-news" style="display:none;">
-                <div class="cat-card" style="padding: 25px;">
-                    <h3 style="color: var(--text-title); margin-bottom: 15px; font-weight: 900; text-transform: uppercase;">Criar Nova Publicação</h3>
+                <div class="cat-card" style="padding: 25px;" id="news-editor-box">
+                    <h3 id="news-editor-title" style="color: var(--text-title); margin-bottom: 15px; font-weight: 900; text-transform: uppercase;">Criar Nova Publicação</h3>
                     
                     <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                         <input type="text" id="news-title" placeholder="Título da Notícia..." style="flex: 2; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
                         <input type="text" id="news-tag" placeholder="Tag (Ex: Atualização, Aviso...)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
                     </div>
                     
-                    <!-- BARRA DE FERRAMENTAS DO EDITOR -->
                     <div class="editor-toolbar">
-                        <!-- Texto -->
                         <button class="btn btn-dark" onclick="formatText('bold')" title="Negrito"><b>B</b></button>
                         <button class="btn btn-dark" onclick="formatText('italic')" title="Itálico"><i>I</i></button>
                         <button class="btn btn-dark" onclick="formatText('underline')" title="Sublinhado"><u>U</u></button>
                         
                         <div class="toolbar-divider"></div>
                         
-                        <!-- Alinhamento -->
                         <button class="btn btn-dark" onclick="alignText('Left')" title="Alinhar à Esquerda">⬅️</button>
                         <button class="btn btn-dark" onclick="alignText('Center')" title="Centralizar">↔️</button>
                         <button class="btn btn-dark" onclick="alignText('Right')" title="Alinhar à Direita">➡️</button>
 
                         <div class="toolbar-divider"></div>
 
-                        <!-- Anexos e Links -->
                         <button class="btn btn-dark" onclick="insertLink()" title="Inserir Link de Texto">🔗 Link</button>
-                        
-                        <!-- Imagem: Upload ou Link -->
                         <button class="btn btn-dark" onclick="document.getElementById('news-img-upload').click()" title="Subir Imagem do PC">🖼️ Subir Imagem</button>
                         <input type="file" id="news-img-upload" accept="image/*" style="display:none;" onchange="insertImageUpload(this)">
-                        
                         <button class="btn btn-dark" onclick="insertImageLink()" title="Inserir Imagem por Link (URL)">🔗 Img (Link)</button>
-                        
-                        <!-- Vídeo Youtube -->
                         <button class="btn btn-dark" onclick="insertVideoLink()" title="Inserir Vídeo do YouTube">🎥 Vídeo</button>
-                        
-                        <!-- Anexos (PDF, Drive) -->
                         <button class="btn btn-dark" onclick="insertFileLink()" title="Inserir botão de Download (PDF, Drive)">📄 Anexar Arquivo</button>
                         
                         <div class="toolbar-divider"></div>
 
-                        <!-- Modo Código Fonte HTML -->
                         <button class="btn btn-dark" id="btn-toggle-html" onclick="toggleHTML()" title="Ver e Editar o Código HTML Puro">💻 </> Code</button>
                     </div>
-
-                    <!-- Div em modo editável -->
-                    <div id="news-body" contenteditable="true" class="rich-editor" placeholder="Escreva o conteúdo da notícia..."></div>
+                    <div id="news-body" contenteditable="true" class="rich-editor"></div>
                     
-                    <button class="btn btn-blue" id="btn-publicar" style="width: 100%; margin-top: 15px; padding: 14px; font-size: 1.05rem;" onclick="publicarNoticia()">🚀 Publicar no Mural</button>
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn btn-blue" id="btn-publicar" style="flex: 1; padding: 14px; font-size: 1.05rem;" onclick="publicarNoticia()">🚀 Publicar no Mural</button>
+                        <button class="btn btn-dark" id="btn-cancelar-edicao" style="display: none; padding: 14px;" onclick="cancelarEdicao()">✖ Cancelar Edição</button>
+                    </div>
                 </div>
                 
                 <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-title); font-weight: 900; text-transform: uppercase;">Publicações Anteriores</h3>
@@ -171,6 +158,7 @@
         let adMenuData = { categorias: [] }; 
         let allUsers = [];
 
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
         syncTheme();
         window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } });
@@ -252,18 +240,20 @@
         async function salvarNoFirebase() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
 
         // ==========================================
-        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT)
+        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT + EDIÇÃO)
         // ==========================================
         let isHtmlMode = false;
+        let editingNewsKey = null; // Guarda o ID se estivermos editando uma notícia já existente
+        let currentNewsData = {};  // Cache local das notícias ativas
 
         function formatText(cmd) { 
-            if(isHtmlMode) return alert("Saiga do modo de código (</>) para usar a formatação visual.");
+            if(isHtmlMode) return alert("Saia do modo de código (</>) para usar a formatação visual.");
             document.execCommand(cmd, false, null); 
             document.getElementById('news-body').focus(); 
         }
 
         function alignText(align) {
-            if(isHtmlMode) return alert("Saiga do modo de código (</>) para alinhar.");
+            if(isHtmlMode) return alert("Saia do modo de código (</>) para alinhar.");
             document.execCommand('justify' + align, false, null);
             document.getElementById('news-body').focus();
         }
@@ -326,16 +316,96 @@
             const editor = document.getElementById('news-body');
             const btn = document.getElementById('btn-toggle-html');
             if (isHtmlMode) {
-                // Voltar para visual (Lê o texto que a pessoa escreveu e injeta como HTML puro)
                 editor.innerHTML = editor.innerText;
                 btn.classList.remove('active-btn');
                 isHtmlMode = false;
             } else {
-                // Entrar em Código (Pega as Tags Reais e joga como Texto legível)
                 editor.innerText = editor.innerHTML;
                 btn.classList.add('active-btn');
                 isHtmlMode = true;
             }
+        }
+
+        async function carregarNoticiasAdmin() {
+            let container = document.getElementById('news-list-admin');
+            container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando publicações...</div>';
+            try {
+                let res = await fetch(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
+                let data = await res.json();
+                
+                if(!data) { 
+                    container.innerHTML = '<div class="cat-card">Nenhuma notícia publicada ainda no mural.</div>'; 
+                    currentNewsData = {};
+                    return; 
+                }
+                
+                currentNewsData = data; // Guarda cache local para edição
+                
+                let newsList = [];
+                if (Array.isArray(data)) { newsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
+                else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
+                
+                newsList.sort((a,b) => b.data - a.data);
+                
+                let html = '';
+                newsList.forEach(n => {
+                    let d = new Date(n.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                    html += `
+                        <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px;">
+                            <div>
+                                <span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block;">${n.tag || 'Aviso'}</span>
+                                <strong style="color:var(--text-title); font-size:1.1rem; display:block;">${n.titulo}</strong>
+                                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Por <b>${n.autor}</b> em ${d} • ${n.likes || 0} curtidas</div>
+                            </div>
+                            <div style="display:flex; gap: 8px;">
+                                <button class="btn btn-warn" onclick="editarNoticia('${n.key}')">✏️ Editar</button>
+                                <button class="btn btn-red" onclick="excluirNoticia('${n.key}')">🗑️ Excluir</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar o histórico de notícias.</div>'; }
+        }
+
+        // === NOVA FUNÇÃO DE EDITAR ===
+        function editarNoticia(key) {
+            let n = currentNewsData[key];
+            if(!n) return alert("Erro ao localizar a notícia para edição.");
+
+            document.getElementById('news-title').value = n.titulo || '';
+            document.getElementById('news-tag').value = n.tag || '';
+            
+            // Verifica se está em html e converte antes de jogar o conteúdo
+            if (isHtmlMode) toggleHTML();
+            document.getElementById('news-body').innerHTML = n.corpo || '';
+
+            editingNewsKey = key;
+            
+            document.getElementById('news-editor-title').innerText = "Editando Publicação Existente";
+            const btnPub = document.getElementById('btn-publicar');
+            btnPub.innerText = "💾 Salvar Alterações";
+            btnPub.classList.replace('btn-blue', 'btn-green');
+            
+            document.getElementById('btn-cancelar-edicao').style.display = 'inline-flex';
+            
+            // Rola a página suavemente até o editor
+            document.getElementById('news-editor-box').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelarEdicao() {
+            editingNewsKey = null;
+            document.getElementById('news-title').value = '';
+            document.getElementById('news-tag').value = '';
+            if (isHtmlMode) toggleHTML();
+            document.getElementById('news-body').innerHTML = '';
+
+            document.getElementById('news-editor-title').innerText = "Criar Nova Publicação";
+            const btnPub = document.getElementById('btn-publicar');
+            btnPub.innerText = "🚀 Publicar no Mural";
+            btnPub.classList.replace('btn-green', 'btn-blue');
+            
+            document.getElementById('btn-cancelar-edicao').style.display = 'none';
         }
 
         async function publicarNoticia() {
@@ -348,68 +418,62 @@
             let tag = document.getElementById('news-tag').value.trim() || 'Aviso';
             let corpo = document.getElementById('news-body').innerHTML.trim();
             
-            if(!titulo || !corpo || corpo === '<br>') return alert("Preencha o título e o conteúdo da notícia antes de publicar.");
+            if(!titulo || !corpo || corpo === '<br>') return alert("Preencha o título e o conteúdo da notícia antes de publicar/salvar.");
             
             const btnPub = document.getElementById('btn-publicar');
-            btnPub.innerText = "⏳ Publicando..."; btnPub.disabled = true;
+            const textoOriginal = btnPub.innerText;
+            btnPub.innerText = "⏳ Salvando..."; btnPub.disabled = true;
 
-            let idNoticia = "news_" + Date.now();
-            let novaNoticia = {
-                id: idNoticia,
-                autor: userName,
-                data: Date.now(),
-                tag: tag,
-                titulo: titulo,
-                corpo: corpo,
-                likes: 0,
-                likedBy: []
-            };
-            
             try {
-                await fetch(`${FIREBASE_URL}portal_news/${idNoticia}.json`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(novaNoticia)
-                });
-                await registrarLogFirebase("Mural", `Publicou uma nova notícia: "${titulo}"`);
-                alert("Notícia publicada com sucesso! Ela já aparecerá na página inicial.");
+                if (editingNewsKey) {
+                    // MODO EDIÇÃO: Atualiza apenas o necessário e mantém curtidas
+                    let nAnterior = currentNewsData[editingNewsKey];
+                    let noticiaEditada = {
+                        titulo: titulo,
+                        tag: tag,
+                        corpo: corpo,
+                        data_edit: Date.now() // Registro interno de que foi editada
+                    };
+                    
+                    await fetch(`${FIREBASE_URL}portal_news/${editingNewsKey}.json`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(noticiaEditada)
+                    });
+                    await registrarLogFirebase("Mural", `Editou a notícia: "${titulo}"`);
+                    alert("Notícia atualizada com sucesso!");
+                    
+                } else {
+                    // MODO CRIAÇÃO: Gera nova ID e novo objeto
+                    let idNoticia = "news_" + Date.now();
+                    let novaNoticia = {
+                        id: idNoticia,
+                        autor: userName,
+                        data: Date.now(),
+                        tag: tag,
+                        titulo: titulo,
+                        corpo: corpo,
+                        likes: 0,
+                        likedBy: []
+                    };
+                    
+                    await fetch(`${FIREBASE_URL}portal_news/${idNoticia}.json`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(novaNoticia)
+                    });
+                    await registrarLogFirebase("Mural", `Publicou uma nova notícia: "${titulo}"`);
+                    alert("Notícia publicada com sucesso! Ela já aparecerá na página inicial.");
+                }
                 
-                document.getElementById('news-title').value = '';
-                document.getElementById('news-tag').value = '';
-                document.getElementById('news-body').innerHTML = '';
-                carregarNoticiasAdmin();
+                cancelarEdicao(); // Limpa a tela
+                carregarNoticiasAdmin(); // Recarrega a lista abaixo
+                
             } catch(e) { 
                 alert("Erro ao publicar a notícia. Tente novamente."); 
             } finally {
-                btnPub.innerText = "🚀 Publicar no Mural"; btnPub.disabled = false;
+                btnPub.innerText = textoOriginal; btnPub.disabled = false;
             }
-        }
-
-        async function carregarNoticiasAdmin() {
-            let container = document.getElementById('news-list-admin');
-            container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando publicações...</div>';
-            try {
-                let res = await fetch(`${FIREBASE_URL}portal_news.json`);
-                let data = await res.json();
-                if(!data) { container.innerHTML = '<div class="cat-card">Nenhuma notícia publicada ainda no mural.</div>'; return; }
-                
-                let newsList = Object.keys(data).map(k => ({...data[k], key: k})).sort((a,b) => b.data - a.data);
-                let html = '';
-                newsList.forEach(n => {
-                    let d = new Date(n.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-                    html += `
-                        <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px;">
-                            <div>
-                                <span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block;">${n.tag}</span>
-                                <strong style="color:var(--text-title); font-size:1.1rem; display:block;">${n.titulo}</strong>
-                                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Por <b>${n.autor}</b> em ${d} • ${n.likes || 0} curtidas</div>
-                            </div>
-                            <button class="btn btn-red" onclick="excluirNoticia('${n.key}')">🗑️ Excluir Publicação</button>
-                        </div>
-                    `;
-                });
-                container.innerHTML = html;
-            } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar o histórico de notícias.</div>'; }
         }
 
         async function excluirNoticia(key) {
