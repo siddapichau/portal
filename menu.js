@@ -4,7 +4,7 @@ let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
 // ==========================================
-// FUNÇÃO GLOBAL DE PERMISSÕES
+// FUNÇÃO GLOBAL DE PERMISSÕES (INCLUINDO VIEW2)
 // ==========================================
 window.verificarPermissaoUpload = function(urlPagina) {
     if (!currentUser) return false;
@@ -14,13 +14,11 @@ window.verificarPermissaoUpload = function(urlPagina) {
 
     menuData.categorias.forEach(cat => {
         (cat.items || []).forEach(item => {
-            // Verifica no 2º nível
             if (item.url && item.url.includes(urlPagina)) {
                 let roles = (item.uploadRoles || 'editor,admin').toLowerCase().split(',').map(r=>r.trim());
                 let users = (item.allowedUsers || '').toLowerCase().split(',').map(u=>u.trim());
                 if (roles.includes(userRole) || users.includes(userName)) permitted = true;
             }
-            // Verifica no 3º nível (Sub-submenus)
             (item.subItems || []).forEach(sub => {
                 if (sub.url && sub.url.includes(urlPagina)) {
                     let roles = (sub.uploadRoles || 'editor,admin').toLowerCase().split(',').map(r=>r.trim());
@@ -224,7 +222,7 @@ function switchTab(tab) {
 }
 
 // ==========================================
-// AUTH: MIGRADO 100% PARA O FIREBASE (USERS.JSON)
+// AUTH FIREBASE: LOGIN, REGISTRO, TROCA DE SENHA
 // ==========================================
 function abrirAuthModal() { document.getElementById('authModal').classList.add('active'); if(currentUser) { mudarAuthModo('profile'); carregarPerfil(); } else { mudarAuthModo('login'); } }
 function fecharAuthModal() { document.getElementById('authModal').classList.remove('active'); }
@@ -236,20 +234,27 @@ function carregarPerfil() {
     document.getElementById('profileInfo').innerHTML = `<strong>Usuário:</strong> ${currentUser.usuario} <br><strong>E-mail:</strong> ${currentUser.email} <br><strong>Cargo:</strong> <span style="text-transform: uppercase; color: var(--accent-blue); font-weight:bold;">${cargoDisplay}</span>`;
 }
 
-// Geração de hash simples para armazenar senhas (MUITO BÁSICO, APENAS PARA FINS DEMONSTRATIVOS LOCAIS)
+// Criptografia básica local para não transitar senha em texto puro
 async function hashPassword(str) {
-    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder("utf-8").encode(str));
-    return Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
+    if (window.crypto && window.crypto.subtle) {
+        try {
+            const buf = await crypto.subtle.digest("SHA-256", new TextEncoder("utf-8").encode(str));
+            return Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
+        } catch(e) { return btoa(str); }
+    }
+    return btoa(str);
 }
 
-// Busca a Key correta no Firebase a partir do nome de usuário
+// Busca usuário no Firebase
 async function fetchUserKey(username) {
-    const res = await fetch(`${FIREBASE_URL}users.json`);
-    const data = await res.json();
-    if(!data) return null;
-    let foundKey = null;
-    Object.keys(data).forEach(k => { if(data[k].usuario.toLowerCase() === username.toLowerCase()) foundKey = k; });
-    return { key: foundKey, user: foundKey ? data[foundKey] : null };
+    try {
+        const res = await fetch(`${FIREBASE_URL}users.json`);
+        const data = await res.json();
+        if(!data) return { key: null, user: null };
+        let foundKey = null;
+        Object.keys(data).forEach(k => { if(data[k].usuario && data[k].usuario.toLowerCase() === username.toLowerCase()) foundKey = k; });
+        return { key: foundKey, user: foundKey ? data[foundKey] : null };
+    } catch(e) { throw new Error("Falha na requisição ao Firebase."); }
 }
 
 async function fazerRegistro() {
@@ -274,8 +279,8 @@ async function fazerRegistro() {
             const newUser = {
                 usuario: user,
                 email: email,
-                senha: hashedPass, // Senha encriptada
-                cargo: "view", // Por padrão cai como view comum
+                senha: hashedPass,
+                cargo: "view",
                 solicitacao: "pendente",
                 favorito: ""
             };
@@ -299,30 +304,29 @@ async function fazerLogin() {
     try {
         const account = await fetchUserKey(user);
         if(!account.key) {
-            alert("Usuário não encontrado.");
+            alert("Usuário não encontrado no banco de dados.");
         } else {
             const dbUser = account.user;
             const inputHash = await hashPassword(pass);
             
-            if (dbUser.senha !== inputHash && dbUser.senha !== pass) { // Valida contra hash ou senha antiga em texto puro
+            if (dbUser.senha !== inputHash && dbUser.senha !== pass) { 
                 alert("Senha Incorreta.");
             } else if (dbUser.solicitacao === "pendente") {
                 alert("Seu acesso ainda está pendente de aprovação!");
             } else if (dbUser.solicitacao === "bloqueado") {
                 alert("Seu acesso foi bloqueado.");
             } else {
-                // SUCESSO!
                 currentUser = dbUser;
-                currentUser.key = account.key; // Salva a chave para updates futuros
+                currentUser.key = account.key; 
                 localStorage.setItem('loggedUser', JSON.stringify(currentUser));
                 fecharAuthModal();
                 verificarAcesso();
                 renderizarMenuEsquerdo();
                 switchTab('todos');
-                location.reload(); // Recarrega para forçar atualização no index.html
+                location.reload(); 
             }
         }
-    } catch(e) { alert("Erro de conexão ao validar dados."); } 
+    } catch(e) { alert(`Erro ao validar: ${e.message}`); } 
     finally { btn.innerText = "Entrar"; btn.disabled = false; }
 }
 
@@ -345,13 +349,9 @@ async function trocarSenha() {
             alert("Sua Senha Atual está incorreta.");
         } else {
             const newHash = await hashPassword(newPass1);
-            
             await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { 
-                method: 'PATCH', 
-                headers: { "Content-Type": "application/json" }, 
-                body: JSON.stringify({ senha: newHash }) 
+                method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senha: newHash }) 
             });
-            
             currentUser.senha = newHash;
             localStorage.setItem('loggedUser', JSON.stringify(currentUser));
             alert("Senha alterada com sucesso!");
@@ -377,13 +377,10 @@ async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
     localStorage.setItem('loggedUser', JSON.stringify(currentUser)); 
     if(reloadFavs) switchTab('favs');
     
-    // Salva direto no Firebase
     if(currentUser.key) {
         try { 
             await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { 
-                method: 'PATCH', 
-                headers: { "Content-Type": "application/json" }, 
-                body: JSON.stringify({ favorito: currentUser.favorito }) 
+                method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ favorito: currentUser.favorito }) 
             }); 
         } catch(e) {}
     }
