@@ -16,7 +16,6 @@
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     
-    <!-- Bibliotecas -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -25,7 +24,6 @@
     <link rel="stylesheet" href="style.css">
 
     <style>
-        /* Variáveis Específicas do Painel */
         :root {
             --bg-header: rgba(15, 23, 42, 0.6);
             --border-light: rgba(255, 255, 255, 0.2);
@@ -37,83 +35,100 @@
 
         body { padding: 10px; display: flex; flex-direction: column; gap: 10px; height: 100vh; overflow: hidden; background: transparent !important; }
         
-        .header { background-color: #FFF159 !important; color: #2D3277; padding: 8px 16px; font-size: 1.1rem; font-weight: 800; border-radius: 6px; flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .header-left { flex: 1; display: flex; justify-content: flex-start; align-items: center; }
-        .ml-logo { height: 28px; width: auto; object-fit: contain; }
-        .header-title-wrapper { position: absolute; left: 50%; transform: translateX(-50%); display: flex; align-items: center; color: #2D3277; white-space: nowrap; }
-        .header-controls { flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+        .glass-panel { background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; box-shadow: var(--shadow-card); transition: 0.3s; }
+
+        /* CABEÇALHO ML CLEAN */
+        .top-header { 
+            position: relative; background-color: #FFF159 !important; padding: 10px 20px; 
+            display: flex; justify-content: space-between; align-items: center; gap: 20px; 
+            border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.18); flex: 0 0 auto;
+            min-height: 55px; flex-wrap: wrap; width: 100%;
+        }
+        .header-left { display: flex; align-items: center; }
+        .ml-logo { height: 28px; width: auto; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); }
         
-        .status-badge { font-size: 0.8rem; background: rgba(0,0,0,0.1); padding: 6px 10px; border-radius: 4px; color: #2D3277; font-weight: 800; }
+        .header-center { flex: 1; text-align: center; font-size: clamp(1rem, 2vw, 1.15rem); font-weight: 900; color: #2D3277 !important; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;}
 
-        .btn-header { background: transparent; border: 2px solid #2D3277; color: #2D3277; border-radius: 6px; padding: 6px 12px; font-size: 0.85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .2s ease; }
-        .btn-header:hover { background: #2D3277; color: var(--accent-yellow); }
+        /* BOTOES CLEAN MINIMALISTAS */
+        .btn { 
+            background: #ffffff !important; color: #1e293b !important; 
+            border: 1px solid #cbd5e1 !important; border-radius: 6px; 
+            width: 36px; height: 36px; font-size: 0.95rem; font-weight: 700; 
+            cursor: pointer; display: inline-flex; align-items: center; 
+            justify-content: center; transition: all .2s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex-shrink: 0; padding: 0;
+        }
+        .btn:hover:not(:disabled) { background: #f8fafc !important; border-color: #94a3b8 !important; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .btn svg { width: 16px; height: 16px; stroke: #1e293b; }
 
-        .upload-btn-wrapper { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
-        .btn-upload { border: 2px solid #2D3277; color: #2D3277; background-color: transparent; width: 34px; height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; padding: 0; }
-        .btn-upload:hover { background-color: #2D3277; color: var(--accent-yellow); }
-        .upload-btn-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .status-badge { font-size: .75rem; font-weight: 900; color: #2D3277; background: rgba(0,0,0,0.1); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 10; }
 
         /* LAYOUT GERAL */
         .row { display: flex; gap: 10px; flex: 1; min-height: 0; width: 100%; }
         .sidebar { flex: 0 0 250px; display: flex; flex-direction: column; gap: 10px; }
         .main-content { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 
-        .chart-card, .kpi-card { background-color: var(--bg-card); border-radius: 6px; padding: 15px; box-shadow: var(--shadow-card); border: 1px solid var(--border-card); transition: 0.3s; }
-        .chart-card { flex: 1; display: flex; flex-direction: column; }
+        .chart-card, .kpi-card { padding: 15px; display: flex; flex-direction: column; }
+        .chart-card { flex: 1; }
         
-        .kpi-card { display: flex; flex-direction: column; justify-content: center; align-items: center; border-left: 4px solid var(--accent-blue); background-color: var(--bg-header); }
-        .kpi-title { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; text-align: center; }
+        .kpi-card { justify-content: center; align-items: center; border-left: 4px solid var(--accent-blue); }
+        .kpi-title { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; text-align: center; font-weight: 800;}
         .kpi-value { font-size: 2.2rem; font-weight: 900; color: var(--accent-green); }
 
-        .info-card { background-color: var(--bg-header); border-left: 4px solid var(--accent-yellow); padding: 20px; flex: 1; border-radius: 6px; display: flex; flex-direction: column; gap: 12px; color: var(--text-main); border: 1px solid var(--border-card); transition: 0.3s;}
-        .info-title { font-size: 1rem; font-style: italic; color: var(--text-muted); border-bottom: 1px solid var(--border-card); padding-bottom: 8px; margin-bottom: 5px; }
+        .info-card { border-left: 4px solid var(--accent-yellow); padding: 20px; flex: 1; display: flex; flex-direction: column; gap: 12px; color: var(--text-main); }
+        .info-title { font-size: 1rem; font-style: italic; color: var(--text-muted); border-bottom: 1px solid var(--border-card); padding-bottom: 8px; margin-bottom: 5px; font-weight: 800;}
         .info-item { font-size: 0.9rem; line-height: 1.4; }
         .info-label { color: var(--text-muted); font-weight: 800; }
 
         /* TABELA */
-        .table-wrapper { flex: 1.5; overflow-y: auto; overflow-x: auto; border-radius: 6px; background-color: var(--bg-card); box-shadow: var(--shadow-card); border: 1px solid var(--border-card); transition: 0.3s; }
+        .table-wrapper { flex: 1.5; overflow-y: auto; overflow-x: auto; padding: 0;}
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
-        thead { background-color: var(--bg-header); color: var(--text-title); position: sticky; top: 0; z-index: 1; }
+        thead th { background-color: rgba(0,0,0,0.4); color: var(--text-title); position: sticky; top: 0; z-index: 1; padding: 10px 12px; backdrop-filter: blur(10px); }
+        [data-theme="light"] thead th { background: rgba(255,255,255,0.9); }
         th, td { padding: 10px 12px; border-bottom: 1px solid var(--border-card); white-space: nowrap; }
         th { font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; }
-        tbody tr:nth-child(even) { background-color: rgba(0,0,0,0.05); }
         tbody tr:hover { background-color: rgba(52, 131, 250, 0.05); }
         .col-valor { font-weight: 800; color: var(--accent-green); }
 
         .td-id { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 800; }
-        .btn-detalhes { color: var(--accent-blue); background: transparent; border: none; cursor: pointer; transition: 0.2s; display: flex; align-items: center; padding: 2px; border-radius: 4px;}
+        .btn-detalhes { color: var(--accent-blue); background: transparent; border: 1px solid rgba(52, 131, 250, 0.2); cursor: pointer; transition: 0.2s; display: flex; align-items: center; padding: 3px; border-radius: 4px;}
         .btn-detalhes:hover { background: rgba(52, 131, 250, 0.2); transform: scale(1.1); }
 
-        .chart-title { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-title { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; text-align: center;}
         .chart-wrapper { flex: 1; min-height: 0; width: 100%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 0.85rem; }
 
-        /* Esconder UI na hora da foto */
-        .exporting .header-controls { display: none !important; }
+        .exporting .header-actions { display: none !important; }
         .exporting .table-wrapper { overflow: hidden !important; } 
         
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-header); }
+        ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
     </style>
 </head>
 <body data-theme="light">
 
-    <!-- CABEÇALHO ML -->
-    <div class="header">
-        <div class="header-left"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
-        <div class="header-title-wrapper"><span id="main-title">Aging Devolução - Carregando...</span></div>
+    <div class="top-header glass-panel">
+        <div class="header-left">
+            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
+        </div>
         
-        <div class="header-controls">
-            <span class="status-badge" id="data-status">Conectando ao banco...</span>
+        <div class="header-center" id="main-title">
+            AGING DEVOLUÇÃO - CARREGANDO...
+        </div>
+        
+        <div class="header-actions">
+            <span class="status-badge" id="data-status">Conectando...</span>
             
-            <button class="btn-header" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg> Exportar 4K
+            <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
             </button>
 
-            <!-- BOTÃO DE UPLOAD MANUAL -->
-            <div class="upload-btn-wrapper" id="btnUploadArea" style="display:none;" title="Carregar Planilha Local (CSV)">
-                <button class="btn-upload">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Subir Base de Dados CSV">
+                <button class="btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                 </button>
                 <input type="file" id="csvFileInput" accept=".csv" />
             </div>
@@ -121,16 +136,16 @@
     </div>
 
     <!-- LAYOUT PRINCIPAL -->
-    <div class="row" id="dashboard-container">
+    <div class="row">
         
         <!-- SIDEBAR (ESQUERDA) -->
         <div class="sidebar">
-            <div class="kpi-card">
+            <div class="kpi-card glass-panel">
                 <div class="kpi-title">Pacotes Pendentes</div>
                 <div class="kpi-value" id="kpi-qtd">0</div>
             </div>
             
-            <div class="info-card">
+            <div class="info-card glass-panel">
                 <div class="info-title">Diário de Bordo:</div>
                 <div class="info-item" id="info-data">Devolução: --/--</div>
                 <div class="info-item" id="info-prep"><span class="info-label">Preparação:</span><br>-</div>
@@ -141,18 +156,29 @@
 
         <!-- CONTEÚDO PRINCIPAL (DIREITA) -->
         <div class="main-content">
-            <div class="table-wrapper">
+            <div class="table-wrapper glass-panel">
                 <table id="data-table">
-                    <thead><tr><th>ID do envio</th><th>Substatus do envio</th><th>Aging Sorting</th><th>Aging Devolução</th><th>Valor declarado</th></tr></thead>
-                    <tbody><tr><td colspan="5" style="text-align:center; padding: 20px;">Carregando dados na nuvem...</td></tr></tbody>
+                    <thead>
+                        <tr>
+                            <th>ID do envio</th>
+                            <th>Substatus do envio</th>
+                            <th>Aging Sorting</th>
+                            <th>Aging Devolução</th>
+                            <th>Valor declarado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="5" style="text-align:center; padding: 20px;">Carregando dados na nuvem...</td></tr>
+                    </tbody>
                 </table>
             </div>
 
-            <div class="chart-card">
+            <div class="chart-card glass-panel">
                 <div class="chart-title">Sub Status de Envio</div>
                 <div id="chart-substatus" class="chart-wrapper">Aguardando dados...</div>
             </div>
         </div>
+
     </div>
 
     <script>
@@ -167,7 +193,7 @@
         window.addEventListener('message', (event) => { 
             if (event.data.type === 'THEME_CHANGED') { 
                 document.body.setAttribute('data-theme', event.data.theme); 
-                if(globalData.length > 0) renderizarDashboard(); // Recria gráfico com cor certa
+                if(globalData.length > 0) renderizarDashboard(); 
             } 
         });
 
@@ -178,7 +204,7 @@
         const paginaNome = window.location.pathname.split('/').pop() || 'aging-devolucao.html';
         let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
         
-        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'flex'; }
+        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
 
         async function registrarLogFirebase(modulo, acao) {
             try {
@@ -198,7 +224,7 @@
             document.body.classList.add('exporting');
 
             setTimeout(() => {
-                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f';
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#ffffff' : '#0b121f';
 
                 html2canvas(document.body, { scale: 3, useCORS: true, backgroundColor: bgCor, logging: false }).then(canvas => {
                     document.body.classList.remove('exporting');
@@ -229,7 +255,7 @@
 
         const datasHoje = obterDatas();
         document.getElementById('info-data').innerText = `Devolução: ${datasHoje.curta}`;
-        document.getElementById('main-title').innerText = `Aging Devolução (${datasHoje.completa}) - Aguardando Arquivo`;
+        document.getElementById('main-title').innerText = `AGING DEVOLUÇÃO (${datasHoje.completa}) - AGUARDANDO ARQUIVO`;
 
         window.onload = async function() {
             const statusBadge = document.getElementById('data-status');
@@ -319,7 +345,7 @@
             dadosValidos.sort((a, b) => { let valA = parseInt(a[colSort]?.toString().replace(/\D/g, '')) || 0; let valB = parseInt(b[colSort]?.toString().replace(/\D/g, '')) || 0; return valB - valA; });
 
             let totalPacotes = dadosValidos.length;
-            document.getElementById('main-title').innerText = `Aging Devolução (${datasHoje.completa}) Total: ${totalPacotes} Pacotes`;
+            document.getElementById('main-title').innerText = `AGING DEVOLUÇÃO (${datasHoje.completa}) - TOTAL: ${totalPacotes} PACOTES`;
             document.getElementById('kpi-qtd').innerText = totalPacotes;
 
             let txtPrep = (colPrep && globalData.length > 0) ? (globalData[0][colPrep] || '-') : '-';
@@ -341,7 +367,7 @@
 
                 let iconeLinkHTML = idPacote ? `<a href="https://envios.adminml.com/logistics/package-management/package/${idPacote}" target="_blank" class="btn-detalhes" title="Ver detalhes"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>` : '-';
 
-                tbodyHTML += `<tr><td class="td-id">${idPacote || '-'}${iconeLinkHTML}</td><td>${substatus}</td><td>${row[colSort] || '-'}</td><td>${row[colDev] || '-'}</td><td class="col-valor">${valorOriginal}</td></tr>`;
+                tbodyHTML += `<tr><td class="td-id">${idPacote || '-'}${iconeLinkHTML}</td><td>${substatus}</td><td style="text-align:center;">${row[colSort] || '-'}</td><td style="text-align:center;">${row[colDev] || '-'}</td><td class="col-valor">R$ ${valorOriginal}</td></tr>`;
             });
 
             document.querySelector('#data-table tbody').innerHTML = tbodyHTML || "<tr><td colspan='5' style='text-align:center;'>Nenhum dado encontrado.</td></tr>";
