@@ -43,19 +43,19 @@
 
         .dashboard-container { max-width: 1520px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding: 10px; }
 
-        .glass-panel { background-color: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); transition: 0.3s; }
+        .glass-panel { background-color: var(--bg-card); backdrop-filter: blur(16px); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); transition: 0.3s; }
 
         .top-header { position: relative; background-color: #FFF159 !important; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; gap: 20px; border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.18); flex: 0 0 auto; min-height: 55px; flex-wrap: wrap; width: 100%; }
         .ml-logo { z-index: 2; position: relative; height: 28px; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); flex-shrink: 0; }
-        .header-center { flex: 1 1 auto; text-align: center; font-size: clamp(1rem, 2vw, 1.35rem); font-weight: 900; color: #2D3277 !important; letter-spacing: 0.6px; text-transform: uppercase; line-height: 1.4; }
-        .header-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
+        .header-center { flex: 1 1 auto; text-align: center; font-size: clamp(1rem, 2vw, 1.15rem); font-weight: 900; color: #2D3277 !important; letter-spacing: 0.6px; text-transform: uppercase; line-height: 1.4; }
+        .header-actions { display: flex; align-items: center; gap: 8px; justify-content: flex-end; }
 
         .btn { background: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1 !important; border-radius: 6px; width: 36px; height: 36px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .2s ease-in-out; box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex-shrink: 0; padding:0;}
         .btn:hover:not(:disabled) { background: #f8fafc !important; border-color: #94a3b8 !important; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
         .btn svg { width: 16px; height: 16px; stroke: #1e293b; }
         
         .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
-        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 10; }
 
         .row { display: flex; gap: 20px; flex-wrap: wrap; width: 100%; }
         .col-kpi { flex: 1 1 320px; display: flex; flex-direction: column; gap: 15px; }
@@ -76,7 +76,7 @@
         .chart-wrapper { position: relative; flex: 1; width: 100%; min-height: 270px; display: flex; justify-content: center; align-items: center;}
 
         /* Ocultar os botões na hora do Snapshot 4K */
-        .exporting .header-right { display: none !important; }
+        .exporting .header-actions { display: none !important; }
 
         @media (max-width: 1024px) { 
             .row { flex-direction: column; }
@@ -89,22 +89,20 @@
 
     <div class="dashboard-container" id="dashboard-container">
 
-        <div class="top-header" id="cabecalho-principal">
+        <div class="top-header glass-panel" id="cabecalho-principal">
             <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
             
             <div class="header-center" id="main-title">
                 EXPEDIÇÃO DEVOLUÇÃO PARA DIA --/--/---- COM TOTAL DE 0 PACOTES E 0 PALETES
             </div>
             
-            <div class="header-right">
-                <!-- BOTÃO EXPORTAR 4K -->
+            <div class="header-actions">
                 <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Foto 4K">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
                     </svg>
                 </button>
                 
-                <!-- BOTÃO UPLOAD XLSX/CSV -->
                 <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Subir Base de Dados CSV/XLSX">
                     <button class="btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -174,6 +172,7 @@
                 </div>
             </div>
         </div>
+
     </div> 
 
     <script>
@@ -184,23 +183,21 @@
         
         let chartInstances = {};
 
-        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        // ============ SINCRONIZAÇÃO DE TEMA E PERMISSÕES (Pai p/ Filho) ============
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
         syncTheme();
         window.addEventListener('message', (event) => { 
             if (event.data.type === 'THEME_CHANGED') { 
                 document.body.setAttribute('data-theme', event.data.theme); 
-                renderizarGraficos(); // Atualiza cores do Chart.js
+                renderizarGraficos(); // Atualiza cores do Chart.js instantaneamente
             } 
         });
 
-        // ============ PERMISSÕES GLOBAIS E LOGS ============
         const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
         let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
         
         const paginaNome = window.location.pathname.split('/').pop() || 'expedir_devolucao.html';
         let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
-        
         if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
 
         async function registrarLogFirebase(modulo, acao) {
@@ -248,7 +245,7 @@
                     if(!BANCO_GLOBAL.motivos) BANCO_GLOBAL.motivos = {}; 
                     renderizarGraficos();
                 }
-            } catch(e) {}
+            } catch(e) { console.error("Erro ao carregar banco", e); }
         }
         document.addEventListener('DOMContentLoaded', carregarDoFirebase);
 
@@ -335,7 +332,7 @@
                         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ultimaAtualizacao: timestamp, dados: BANCO_GLOBAL })
                     });
                     await registrarLogFirebase("Expedir Devolução", `Atualizou a base de expedição do dia: <b>${BANCO_GLOBAL.data}</b>`);
-                } catch(e) {}
+                } catch(e) { console.error(e); }
             };
             
             reader.readAsArrayBuffer(file);
@@ -343,7 +340,7 @@
         });
 
         // ==========================================
-        // RENDERIZAÇÃO DE GRÁFICOS (CHART.JS)
+        // RENDERIZAÇÃO DE GRÁFICOS
         // ==========================================
         function getChartTextColor() { return document.body.getAttribute('data-theme') === 'light' ? '#334155' : '#EBEBEB'; }
         function getGridColor() { return document.body.getAttribute('data-theme') === 'light' ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'; }
@@ -397,7 +394,10 @@
                     data: { labels: motivosLabels, datasets: [{ data: motivosDados, backgroundColor: '#FFB000', borderRadius: 6, maxBarThickness: 75 }] },
                     options: {
                         responsive: true, maintainAspectRatio: false, animation: false, layout: { padding: { top: 30, bottom: 10 } },
-                        scales: { y: { grid: { color: getGridColor(), drawBorder: false }, ticks: { font: { weight: 'bold' } } }, x: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 12 }, autoSkip: false } } },
+                        scales: { 
+                            y: { grid: { color: getGridColor(), drawBorder: false }, ticks: { font: { weight: 'bold' } } }, 
+                            x: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 12 }, autoSkip: false } } 
+                        },
                         plugins: { legend: false, datalabels: { color: getChartTextColor(), font: { weight: 'bold', size: 14 }, align: 'top', anchor: 'end', offset: 4 } }
                     }
                 });
@@ -407,28 +407,21 @@
             }
         }
 
-        // ==========================================
-        // EXPORTAÇÃO 4K
-        // ==========================================
         function baixarDashboardComoImagem() {
-            const btn = document.getElementById('btnExportar');
-            btn.disabled = true;
             document.body.classList.add('exporting');
 
             setTimeout(() => {
-                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f';
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#ffffff' : '#0b121f';
                 const targetElement = document.getElementById('dashboard-container');
 
                 html2canvas(targetElement, { scale: 3, useCORS: true, backgroundColor: bgCor, logging: false }).then(canvas => {
                     document.body.classList.remove('exporting');
-                    btn.disabled = false;
                     const link = document.createElement('a');
                     link.download = `Snapshot_Expedicao_${BANCO_GLOBAL.data.replace(/\//g, '-')}_4K.png`;
                     link.href = canvas.toDataURL('image/png');
                     link.click();
                 }).catch(() => {
                     document.body.classList.remove('exporting');
-                    btn.disabled = false;
                 });
             }, 150);
         }
