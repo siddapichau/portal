@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poka Avarias - Dashboard Mercado Livre</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'poka-avaria.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- CSS GLOBAL -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        :root {
+            --bg-input: rgba(15, 23, 42, 0.6);
+            --border-light: rgba(255, 255, 255, 0.2);
+            --accent-warn: #FFB000;
+        }
+
+        [data-theme="light"] {
+            --bg-input: rgba(255, 255, 255, 0.6);
+            --border-light: rgba(0, 0, 0, 0.1);
+            --accent-warn: #B48B00;
+        }
+
+        html, body { width: 100%; min-height: 100%; background: transparent !important; }
+        body { padding: 10px; display: flex; flex-direction: column; gap: 10px; height: 100vh; overflow: hidden; }
+
+        .glass-panel { background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; box-shadow: var(--shadow-card); transition: 0.3s; }
+
+        .header { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; flex: 0 0 auto; background-color: #FFF159 !important; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .header-left { display: flex; align-items: center; }
+        .ml-logo { height: 28px; width: auto; object-fit: contain; }
+        .header-center { flex: 1; text-align: center; font-size: 1.1rem; font-weight: 900; color: #2D3277 !important; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end;}
+
+        .btn { background: var(--bg-body); color: var(--text-title); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all .3s ease; text-decoration: none; white-space: nowrap; }
+        .btn:hover { background: var(--bg-card-hover); transform: translateY(-2px); }
+        .btn-blue { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        .btn-blue:hover { background: #2968c8; color: #fff; }
+        .btn-cyan { background: #06b6d4; color: #fff; border-color: #06b6d4; }
+        .btn-cyan:hover { background: #0891b2; color: #fff; }
+
+        .status-badge { font-size: .75rem; font-weight: 900; color: #2D3277; background: rgba(0,0,0,0.1); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
+        .upload-btn-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-btn-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+        .filter-bar { display: flex; gap: 15px; padding: 12px 16px; align-items: center; flex: 0 0 auto; flex-wrap: wrap; justify-content: center; }
+        .filter-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+        .filter-group select { background-color: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-card); padding: 6px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer; min-width: 120px; font-size: 0.85rem; font-weight: 600; transition: 0.3s; }
+        .filter-group select:focus { border-color: var(--accent-blue); }
+        
+        .btn-clear { background-color: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 800; cursor: pointer; transition: 0.2s; margin-left: auto; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; }
+        .btn-clear:hover { background-color: rgba(255, 82, 82, 0.15); }
+
+        .row { display: flex; gap: 10px; flex: 1; min-height: 0; }
+        .chart-card { padding: 10px; flex: 1; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s; }
+        .chart-card:hover { transform: scale(1.01); border-color: rgba(52, 131, 250, 0.5); }
+        .chart-title { font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-wrapper { flex: 1; min-height: 0; width: 100%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 0.85rem;}
+        .col-2 { flex: 1.8; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); display: none; justify-content: center; align-items: center; z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; width: 95%; max-width: 1400px; height: 90vh; display: flex; flex-direction: column; box-shadow: 0 15px 50px rgba(0,0,0,0.6); overflow: hidden; }
+        .modal-content.small { max-width: 700px; height: auto; max-height: 80vh; }
+        .modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); flex-wrap: wrap; gap: 15px; }
+        .modal-title { font-size: 1.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; }
+        .modal-search { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 12px; outline: none; font-family: 'Inter', sans-serif; font-size: .9rem; width: 280px; }
+        .modal-search:focus { border-color: var(--accent-blue); }
+        .close-modal { background: transparent; border: none; color: var(--text-main); font-size: 1.8rem; cursor: pointer; line-height: 1; font-weight: bold; transition: color 0.2s; margin-top: -10px;}
+        .close-modal:hover { color: var(--accent-red); }
+        .modal-body { flex: 1; overflow-y: auto; padding: 0; position: relative; }
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-card); font-size: .85rem; color: var(--text-main); vertical-align: middle; }
+        th { background: rgba(0,0,0,0.4); color: var(--text-title); text-transform: uppercase; font-size: .75rem; font-weight: 900; position: sticky; top: 0; z-index: 2; backdrop-filter: blur(10px); }
+        [data-theme="light"] th { background: rgba(255,255,255,0.9); }
+        tr:hover td { background: rgba(255,255,255,0.05); }
+        [data-theme="light"] tr:hover td { background: rgba(0,0,0,0.03); }
+
+        .center { text-align: center; }
+        .col-id { font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; gap: 8px;}
+        .col-val { font-weight: 900; color: var(--accent-green); }
+        
+        .lupa-icon { color: var(--accent-blue); transition: transform 0.2s; display: inline-flex; } .lupa-icon:hover { transform: scale(1.2); }
+        .photo-icon { color: var(--accent-warn); transition: transform 0.2s; display: inline-flex; } .photo-icon:hover { transform: scale(1.2); color: #f59e0b; }
+
+        /* Ocultar elementos na Exportação 4K */
+        .exporting .header-actions, .exporting .filter-bar { display: none !important; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+
+        @media (max-width: 900px) { .header-center { font-size: 0.9rem; } .modal-header { flex-direction: column; align-items: flex-start; } .modal-search { width: 100%; } }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="header glass-panel">
+        <div class="header-left"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
+        <div class="header-center" id="main-dynamic-title">AVARIAS LANÇADAS E APROVADAS MENSAIS</div>
+        
+        <div class="header-actions">
+            <span class="status-badge" id="data-status">Conectando...</span>
+            <button class="btn btn-cyan" onclick="abrirModalMensal()">📊 Comparativo Mensal</button>
+            <button class="btn btn-blue" onclick="abrirModalLista(null, null)">📄 Lista de Pacotes</button>
+            <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Imagem UHD 4K">Exportar 4K</button>
+            
+            <div class="upload-btn-wrapper" id="btnUploadArea" style="display:none;" title="Mesclar Nova Planilha (Ignora Duplicados)">
+                <button class="btn">📥 Subir CSV</button>
+                <input type="file" id="csvFileInput" accept=".csv" />
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-bar glass-panel">
+        <div class="filter-group"><label>Mês:</label><select id="filter-mes"><option value="Todos">Todos</option></select></div>
+        <div class="filter-group"><label>Semana do Ano:</label><select id="filter-semana"><option value="Todos">Todos</option></select></div>
+        <div class="filter-group"><label>Categoria:</label><select id="filter-categoria"><option value="Todos">Todos</option></select></div>
+        <div class="filter-group"><label>Problem Solver:</label><select id="filter-ps"><option value="Todos">Todos</option></select></div>
+        <div class="filter-group"><label>Turno:</label><select id="filter-turno"><option value="Todos">Todos</option></select></div>
+        <div class="filter-group"><label>Dia da Semana:</label><select id="filter-dia"><option value="Todos">Todos</option></select></div>
+        <button class="btn-clear" onclick="limparFiltros()">✖ Limpar</button>
+    </div>
+
+    <div class="row">
+        <div class="chart-card glass-panel" title="Clique em uma fatia para ver os pacotes"><div class="chart-title">Lançado por Turno</div><div id="chart-turno" class="chart-wrapper">Aguardando dados...</div></div>
+        <div class="chart-card glass-panel" title="Clique em uma fatia para ver os pacotes"><div class="chart-title">Lançado por PS</div><div id="chart-ps" class="chart-wrapper">Aguardando dados...</div></div>
+        <div class="chart-card glass-panel" title="Clique em uma fatia para ver os pacotes"><div class="chart-title">Resolução</div><div id="chart-resolucao" class="chart-wrapper">Aguardando dados...</div></div>
+        <div class="chart-card glass-panel" title="Clique em uma fatia para ver os pacotes"><div class="chart-title">Origem do Dano</div><div id="chart-origem" class="chart-wrapper">Aguardando dados...</div></div>
+    </div>
+
+    <div class="row" style="flex: 1.4;"> 
+        <div class="chart-card glass-panel" title="Clique na barra para ver os pacotes"><div class="chart-title">Classificação por Categoria (Top 8)</div><div id="chart-categoria" class="chart-wrapper">Aguardando dados...</div></div>
+        <div class="chart-card glass-panel col-2" title="Clique no ponto para ver os pacotes"><div class="chart-title">Evolução por Dia da Semana</div><div id="chart-dias" class="chart-wrapper">Aguardando dados...</div></div>
+    </div>
+
+    <div class="modal-overlay" id="modal-pacotes">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-titulo">Lista de Pacotes Detalhada</div>
+                <input type="text" class="modal-search" id="modal-search-input" placeholder="Pesquisar ID, PS, Categoria..." oninput="filtrarRenderizarTabelaModal()">
+                <button class="close-modal" onclick="fecharModalPacotes()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body-scroll" onscroll="carregarMaisPacotes()">
+                <table>
+                    <thead><tr><th style="width:15%;">ID do Pacote</th><th style="width:10%;">Data</th><th style="width:12%;">Dia / Turno</th><th style="width:15%;">Problem Solver</th><th style="width:15%;">Categoria</th><th style="width:15%;">Resolução</th><th style="width:11%;">Valor</th></tr></thead>
+                    <tbody id="tbody-pacotes"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-mensal">
+        <div class="modal-content small">
+            <div class="modal-header"><div class="modal-title">📊 Comparativo Mensal - Visão Geral</div><button class="close-modal" onclick="fecharModalMensal()">×</button></div>
+            <div class="modal-body" style="padding: 20px;">
+                <table>
+                    <thead><tr><th>Mês / Ano</th><th class="center">Quantidade (Volumes)</th><th>Valor Total Retido</th></tr></thead>
+                    <tbody id="tbody-mensal"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_NODE = "poka_avarias_consolidado";
+        
+        let BANCO_GLOBAL = []; let DADOS_FILTRADOS = []; let chartInstances = {};
+        let colSemanaNome = 'Semana do ano'; let psTopLabels = []; 
+        const mlColors = ['#3483FA', '#00A650', '#FF7733', '#4A90E2', '#FFF159', '#FF5252', '#B48B00'];
+
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { 
+            if (event.data.type === 'THEME_CHANGED') { 
+                document.body.setAttribute('data-theme', event.data.theme); 
+                window.Apex = { theme: { mode: event.data.theme } };
+                if(globalData.length > 0) renderizarDashboard(DADOS_FILTRADOS);
+            } 
+        });
+
+        // ============ PERMISSÕES GLOBAIS E LOGS ============
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        
+        const paginaNome = window.location.pathname.split('/').pop() || 'poka-avaria.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        function setStatus(texto, cor = "#00A650") { const el = document.getElementById('data-status'); if (el) { el.innerText = texto; el.style.color = cor; } }
+
+        function getVal(row, possibleKeys) { let keys = Object.keys(row); for (let pk of possibleKeys) { let found = keys.find(k => k.toLowerCase().trim() === pk.toLowerCase().trim()); if (found && row[found] !== undefined && row[found] !== null) { return String(row[found]).trim(); } } return ''; }
+        function extrairID(row) { return getVal(row, ['id do pacote', 'pacote', 'shipment', 'tracking', 'nº pacote', 'numero pacote', 'id_pacote']); }
+        function extrairIdAvaria(row) { return getVal(row, ['id', 'id avaria', 'id_avaria', 'avaria', 'id. avaria', 'id da avaria']); }
+        function parseCurrency(valStr) { if (!valStr) return 0; let s = String(valStr).replace('R$', '').replace(/\./g, '').replace(',', '.').trim(); return parseFloat(s) || 0; }
+        function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+        function formatarMesAno(dataStr) { if (!dataStr) return 'Desconhecido'; let parts = dataStr.split('/'); if (parts.length >= 3) return `${parts[1]}/${parts[2]}`; if (dataStr.includes('-')) { let p = dataStr.split('-'); if (p.length >= 3) return `${p[1]}/${p[0]}`; } return 'Desconhecido'; }
+
+        window.onload = async function() {
+            try {
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
+                const dbData = await response.json();
+                if(dbData && Array.isArray(dbData)) {
+                    BANCO_GLOBAL = dbData;
+                    if(BANCO_GLOBAL.length > 0) {
+                        let cols = Object.keys(BANCO_GLOBAL[0]);
+                        colSemanaNome = cols.find(k => k.toLowerCase().trim() === 'semana do ano' || k.toLowerCase().trim() === 'semana') || 'Semana do ano';
+                    }
+                    setStatus(`Sincronizado: ${BANCO_GLOBAL.length} registros`, '#00A650');
+                } else { BANCO_GLOBAL = []; setStatus('Banco vazio. Suba a primeira planilha.', '#FFB000'); }
+                preencherDropdowns(); aplicarFiltros();
+            } catch (err) { setStatus('Erro ao carregar', '#FF5252'); }
+        };
+
+        async function mesclarESalvarFirebase(novosDados) {
+            setStatus('Sincronizando IDs (Atualizando existentes e inserindo novos)...', '#3483FA');
+            let mapExistentes = new Map();
+            BANCO_GLOBAL.forEach(row => { let id = extrairID(row); if(id) mapExistentes.set(id, row); });
+
+            let qtdNovos = 0; let qtdAtualizados = 0;
+            novosDados.forEach(row => {
+                let id = extrairID(row);
+                if (id) {
+                    if (!mapExistentes.has(id)) qtdNovos++; else qtdAtualizados++;
+                    mapExistentes.set(id, row); 
+                }
+            });
+
+            if (qtdNovos === 0 && qtdAtualizados === 0) { alert("Nenhum pacote reconhecido na planilha."); setStatus(`Sincronizado: ${BANCO_GLOBAL.length} registros`, '#00A650'); return; }
+            let bancoAtualizado = Array.from(mapExistentes.values());
+            setStatus(`Salvando (${qtdNovos} novos, ${qtdAtualizados} atualizados)...`, '#3483FA');
+            
+            try {
+                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bancoAtualizado) });
+                await registrarLogFirebase("Avarias Mensal", "Sincronizou a base de dados consolidada via CSV.");
+                BANCO_GLOBAL = bancoAtualizado; preencherDropdowns(); aplicarFiltros();
+                alert(`Sucesso! ${qtdNovos} pacotes novos adicionados e ${qtdAtualizados} pacotes existentes atualizados.`);
+                setStatus(`Sincronizado: ${BANCO_GLOBAL.length} registros`, '#00A650');
+            } catch (err) { alert("Erro ao salvar na nuvem."); setStatus('Erro ao salvar', '#FF5252'); }
+        }
+
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            if(!canEdit) return;
+            const file = event.target.files[0]; if (!file) return;
+            Papa.parse(file, {
+                header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    let data = results.data;
+                    if(data.length > 0) {
+                        let cols = Object.keys(data[0]);
+                        colSemanaNome = cols.find(k => k.toLowerCase().trim() === 'semana do ano' || k.toLowerCase().trim() === 'semana') || 'Semana do ano';
+                    }
+                    mesclarESalvarFirebase(data); event.target.value = ''; 
+                }
+            });
+        });
+
+        function preencherDropdowns() {
+            let psSet = new Set(), turnoSet = new Set(), diaSet = new Set(), semanaSet = new Set(), catSet = new Set(), mesSet = new Set();
+            BANCO_GLOBAL.forEach(row => {
+                if (row['Problem Solver']) psSet.add(row['Problem Solver']); if (row['Turno']) turnoSet.add(row['Turno']);
+                if (row['Dia da Semana']) diaSet.add(row['Dia da Semana']); if (row['Categoria']) catSet.add(row['Categoria']);
+                if (row[colSemanaNome]) semanaSet.add(row[colSemanaNome]);
+                let mesAno = formatarMesAno(row['Data de criação'] || row['Data']); if(mesAno !== 'Desconhecido') mesSet.add(mesAno);
+            });
+            function popSel(id, vals, def) { let s = document.getElementById(id); let a = s.value; s.innerHTML = `<option value="Todos">${def}</option>`; vals.forEach(v => { if(v&&v.toString().trim()!=='') s.innerHTML += `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`; }); if([...s.options].some(o=>o.value===a)) s.value=a; }
+
+            let arrS = Array.from(semanas).sort((a,b)=> (parseInt(b.replace(/\D/g,''))||0)-(parseInt(a.replace(/\D/g,''))||0));
+            let arrM = Array.from(mesSet).sort((a,b)=> { let [mA,yA]=a.split('/'); let [mB,yB]=b.split('/'); if(yA!==yB) return parseInt(yA)-parseInt(yB); return parseInt(mA)-parseInt(mB); });
+            popSel('filter-mes', arrM, 'Todos'); popSel('filter-semana', arrS, 'Todos'); popSel('filter-categoria', Array.from(catSet).sort(), 'Todos');
+            popSel('filter-ps', Array.from(psSet).sort(), 'Todos'); popSel('filter-turno', Array.from(turnoSet).sort(), 'Todos');
+            popSel('filter-dia', ['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'].filter(d=>diaSet.has(d)), 'Todos');
+        }
+
+        function limparFiltros() { ['filter-mes','filter-semana','filter-categoria','filter-ps','filter-turno','filter-dia'].forEach(id => document.getElementById(id).value = 'Todos'); aplicarFiltros(); }
+
+        function aplicarFiltros() {
+            let fMes = document.getElementById('filter-mes').value; let fSem = document.getElementById('filter-semana').value; let fCat = document.getElementById('filter-categoria').value; let fPS = document.getElementById('filter-ps').value; let fTurno = document.getElementById('filter-turno').value; let fDia = document.getElementById('filter-dia').value;
+            DADOS_FILTRADOS = BANCO_GLOBAL.filter(row => {
+                let m = formatarMesAno(row['Data de criação'] || row['Data']);
+                return (fMes === 'Todos' || m === fMes) && (fSem === 'Todos' || row[colSemanaNome] == fSem) && (fCat === 'Todos' || row['Categoria'] === fCat) && (fPS === 'Todos' || row['Problem Solver'] === fPS) && (fTurno === 'Todos' || row['Turno'] === fTurno) && (fDia === 'Todos' || row['Dia da Semana'] === fDia);
+            });
+            renderizarDashboard(DADOS_FILTRADOS);
+        }
+
+        function getChartTextColor() { return document.body.getAttribute('data-theme') === 'light' ? '#334155' : '#EBEBEB'; }
+
+        function getDonutOptions(series, labels, chartTypeStr) {
+            return {
+                series: series, labels: labels, chart: { type: 'donut', height: '100%', background: 'transparent', events: { dataPointSelection: function(e, c, config) { abrirModalLista(chartTypeStr, config.w.config.labels[config.dataPointIndex]); } } },
+                colors: mlColors, stroke: { colors: ['transparent'], width: 0 }, dataLabels: { enabled: false },
+                theme: { mode: document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark' },
+                legend: { show: true, position: 'bottom', fontSize: '11px', fontFamily: 'Inter', labels: { colors: getChartTextColor() }, formatter: function(sn, opts) { return sn + " (" + opts.w.globals.series[opts.seriesIndex] + ")"; } }
+            };
+        }
+
+        function renderizarDashboard(data) {
+            let totalValor = 0; let dadosTurno = {}, dadosPS = {}, dadosResolucao = {}, dadosOrigem = {}, dadosCategoria = {};
+            let dadosDias = { 'Domingo': {qtd:0,valor:0}, 'Segunda-feira': {qtd:0,valor:0}, 'Terça-feira': {qtd:0,valor:0}, 'Quarta-feira': {qtd:0,valor:0}, 'Quinta-feira': {qtd:0,valor:0}, 'Sexta-feira': {qtd:0,valor:0}, 'Sábado': {qtd:0,valor:0} };
+
+            data.forEach(row => {
+                let v = parseCurrency(row['Valor']); totalValor += v;
+                let t = row['Turno'] || 'N/A'; dadosTurno[t] = (dadosTurno[t] || 0) + 1;
+                let p = row['Problem Solver'] || 'Não Definido'; dadosPS[p] = (dadosPS[p] || 0) + 1;
+                let r = row['Status de resolução'] || row['Resolução'] || 'Outros'; dadosResolucao[r] = (dadosResolucao[r] || 0) + 1;
+                let o = row['Origem de dano'] || 'Outros'; dadosOrigem[o] = (dadosOrigem[o] || 0) + 1;
+                let c = row['Categoria'] || 'OUTROS'; if(!dadosCategoria[c]) dadosCategoria[c] = { valor: 0, qtd: 0 }; dadosCategoria[c].valor += v; dadosCategoria[c].qtd += 1;
+                let d = row['Dia da Semana'] || ''; if (dadosDias[d]) { dadosDias[d].qtd += 1; dadosDias[d].valor += v; }
+            });
+
+            document.getElementById('main-dynamic-title').innerText = `AVARIAS LANÇADAS E APROVADAS MENSAIS | VALOR TOTAL: ${totalValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} DE ${data.length} VOLUMES`;
+            Object.keys(chartInstances).forEach(key => { if(chartInstances[key]) chartInstances[key].destroy(); });
+
+            if (data.length === 0) { ['chart-turno','chart-ps','chart-resolucao','chart-origem','chart-categoria','chart-dias'].forEach(id => document.getElementById(id).innerHTML = 'Nenhum dado.'); return; }
+            else { ['chart-turno','chart-ps','chart-resolucao','chart-origem','chart-categoria','chart-dias'].forEach(id => document.getElementById(id).innerHTML = ''); }
+
+            chartInstances.turno = new ApexCharts(document.querySelector("#chart-turno"), getDonutOptions(Object.values(dadosTurno), Object.keys(dadosTurno), 'Turno')); chartInstances.turno.render();
+            chartInstances.resolucao = new ApexCharts(document.querySelector("#chart-resolucao"), getDonutOptions(Object.values(dadosResolucao), Object.keys(dadosResolucao), 'Resolucao')); chartInstances.resolucao.render();
+            chartInstances.origem = new ApexCharts(document.querySelector("#chart-origem"), getDonutOptions(Object.values(dadosOrigem), Object.keys(dadosOrigem), 'Origem')); chartInstances.origem.render();
+            
+            let psArray = Object.entries(dadosPS).sort((a, b) => b[1] - a[1]); psTopLabels = psArray.slice(0,6).map(p=>p[0]);
+            let fPSLabels = [...psTopLabels]; let fPSSeries = psArray.slice(0,6).map(p=>p[1]); let psOutros = psArray.slice(6).reduce((a,c)=>a+c[1],0); if(psOutros>0){ fPSLabels.push('Outros'); fPSSeries.push(psOutros); }
+            chartInstances.ps = new ApexCharts(document.querySelector("#chart-ps"), getDonutOptions(fPSSeries, fPSLabels, 'PS')); chartInstances.ps.render();
+
+            let catOrd = Object.entries(dadosCategoria).sort((a,b)=>b[1].valor - a[1].valor).slice(0,8);
+            chartInstances.categoria = new ApexCharts(document.querySelector("#chart-categoria"), {
+                series: [{ name: 'Valor Total', data: catOrd.map(c => Math.round(c[1].valor)) }], chart: { type: 'bar', height: '100%', background: 'transparent', events: { dataPointSelection: function(e, c, config) { abrirModalLista('Categoria', config.w.config.xaxis.categories[config.dataPointIndex]); } } },
+                theme: { mode: document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark' }, plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '55%', dataLabels: { position: 'right' } } },
+                dataLabels: { enabled: true, textAnchor: 'start', style: { colors: [getChartTextColor()], fontSize: '11px', fontWeight: 'bold' }, formatter: function (val, opts) { return "R$ " + val.toLocaleString('pt-BR') + " | " + catOrd[opts.dataPointIndex][1].qtd + " un"; }, offsetX: 5 },
+                xaxis: { categories: catOrd.map(c => c[0]), labels: { show: false }, axisBorder:{show:false}, axisTicks:{show:false} }, yaxis: { labels: { style: { colors: getChartTextColor(), fontWeight: 'bold' } } }, colors: ['#3483FA'], grid: { show: false }
+            }); chartInstances.categoria.render();
+
+            const dLabels = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado']; const dValores = dLabels.map(d => Math.round(dadosDias[d].valor)); const dQtds = dLabels.map(d => dadosDias[d].qtd);
+            chartInstances.dias = new ApexCharts(document.querySelector("#chart-dias"), {
+                series: [ { name: 'Valor (R$)', type: 'column', data: dValores }, { name: 'Quantidade', type: 'line', data: dQtds } ],
+                chart: { type: 'line', height: '100%', background: 'transparent', events: { dataPointSelection: function(e, c, config) { abrirModalLista('Dia', dLabels[config.dataPointIndex]); } } },
+                theme: { mode: document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark' }, stroke: { width: [0, 4], curve: 'smooth' }, markers: { size: [0, 6], colors: ['#2B2B2B'], strokeColors: ['transparent', '#FFF159'], strokeWidth: 3 }, colors: ['#3483FA', '#FFF159'], 
+                xaxis: { categories: ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'], labels: { style: { colors: getChartTextColor(), fontWeight: 'bold' } } },
+                dataLabels: { enabled: true, enabledOnSeries: [0, 1], style: { fontSize: '12px', fontWeight: '900', colors: [getChartTextColor(), '#FFF159'] }, background: { enabled: false }, dropShadow: { enabled: false }, offsetY: -6, formatter: function(val, opts) { if (opts.seriesIndex === 0) return val >= 1000 ? "R$ " + (val/1000).toFixed(1).replace('.',',') + "k" : (val > 0 ? "R$ " + val : ""); return val > 0 ? val : ""; } },
+                yaxis: [ { labels: { style: { colors: getChartTextColor() }, formatter: (v) => "R$ " + v.toLocaleString('pt-BR') } }, { opposite: true, labels: { style: { colors: getChartTextColor() } } } ], plotOptions: { bar: { borderRadius: 4, columnWidth: '40%' } }, grid: { borderColor: 'rgba(255,255,255,0.1)' }
+            }); chartInstances.dias.render();
+        }
+
+        // ==========================================
+        // LAZY LOAD E MODAIS
+        // ==========================================
+        let DADOS_MODAL_BASE = []; let DADOS_MODAL_FILTRADOS = []; let PAGE_SIZE = 50; let CUR_PAGE = 0;
+        function abrirModalLista(filtroKey = null, filtroVal = null) {
+            DADOS_MODAL_BASE = DADOS_FILTRADOS; let titulo = "Lista Consolidada - Todos os Pacotes em Tela";
+            if (filtroKey && filtroVal) {
+                DADOS_MODAL_BASE = DADOS_FILTRADOS.filter(row => {
+                    if (filtroKey === 'Turno') return row['Turno'] === filtroVal; if (filtroKey === 'Resolucao') return (row['Status de resolução'] || row['Resolução'] || 'Outros') === filtroVal;
+                    if (filtroKey === 'Origem') return (row['Origem de dano'] || 'Outros') === filtroVal; if (filtroKey === 'Categoria') return (row['Categoria'] || 'OUTROS') === filtroVal;
+                    if (filtroKey === 'Dia') return row['Dia da Semana'] === filtroVal; if (filtroKey === 'PS') return filtroVal === 'Outros' ? !psTopLabels.includes(row['Problem Solver']) : row['Problem Solver'] === filtroVal; return true;
+                }); titulo = `Lista Detalhada - ${filtroKey}: ${filtroVal}`;
+            }
+            document.getElementById('modal-titulo').innerText = titulo + ` (${DADOS_MODAL_BASE.length} pacotes)`; document.getElementById('modal-search-input').value = ''; 
+            DADOS_MODAL_BASE.sort((a,b) => parseCurrency(b['Valor']) - parseCurrency(a['Valor'])); DADOS_MODAL_FILTRADOS = DADOS_MODAL_BASE; CUR_PAGE = 0;
+            document.getElementById('tbody-pacotes').innerHTML = ''; document.getElementById('modal-pacotes').classList.add('active'); renderizarPedaçoTabela();
+        }
+
+        function filtrarRenderizarTabelaModal() {
+            let busca = document.getElementById('modal-search-input').value.toLowerCase();
+            if (!busca) DADOS_MODAL_FILTRADOS = DADOS_MODAL_BASE;
+            else DADOS_MODAL_FILTRADOS = DADOS_MODAL_BASE.filter(item => { let id = extrairID(item) || ''; let ps = item['Problem Solver'] || ''; let cat = item['Categoria'] || ''; return [id, ps, cat].join(' ').toLowerCase().includes(busca); });
+            CUR_PAGE = 0; document.getElementById('tbody-pacotes').innerHTML = ''; document.getElementById('modal-titulo').innerText = `Lista Filtrada (${DADOS_MODAL_FILTRADOS.length} pacotes)`; renderizarPedaçoTabela();
+        }
+
+        function renderizarPedaçoTabela() {
+            let start = CUR_PAGE * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_MODAL_FILTRADOS.slice(start, end);
+            if (pedaco.length === 0 && CUR_PAGE === 0) { document.getElementById('tbody-pacotes').innerHTML = `<tr><td colspan="7" class="center" style="padding: 40px;">Nenhum pacote.</td></tr>`; return; }
+            let html = '';
+            pedaco.forEach(item => {
+                let idPacote = extrairID(item) || '-'; let idAvaria = extrairIdAvaria(item);
+                let linkRastreio = idPacote !== '-' ? `https://envios.adminml.com/logistics/package-management/package/${escapeHtml(idPacote)}` : '#';
+                let lupaHtml = idPacote !== '-' ? `<a href="${linkRastreio}" target="_blank" class="lupa-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></a>` : '';
+                let linkFoto = idAvaria !== '' ? `https://envios.adminml.com/logistics/problem-solving/detail/${escapeHtml(idAvaria)}` : '#';
+                let fotoHtml = idAvaria !== '' ? `<a href="${linkFoto}" target="_blank" class="photo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg></a>` : '';
+                
+                html += `<tr><td class="col-id"><div style="display:flex; gap:8px; margin-right: 5px;">${lupaHtml}${fotoHtml}</div><span>${escapeHtml(idPacote)}</span></td>
+                    <td class="center">${escapeHtml(item['Data de criação'] || item['Data'] || '-')}</td><td>${escapeHtml(item['Dia da Semana'] || '-')} / ${escapeHtml(item['Turno'] || '-')}</td><td>${escapeHtml(item['Problem Solver'] || '-')}</td><td>${escapeHtml(item['Categoria'] || '-')}</td><td>${escapeHtml(item['Status de resolução'] || item['Resolução'] || '-')}</td><td class="col-val">R$ ${parseCurrency(item['Valor']).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
+            });
+            document.getElementById('tbody-pacotes').insertAdjacentHTML('beforeend', html);
+        }
+
+        function carregarMaisPacotes() { let container = document.getElementById('modal-body-scroll'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) { if ((CUR_PAGE + 1) * PAGE_SIZE < DADOS_MODAL_FILTRADOS.length) { CUR_PAGE++; renderizarPedaçoTabela(); } } }
+        function fecharModalPacotes() { document.getElementById('modal-pacotes').classList.remove('active'); }
+
+        function abrirModalMensal() {
+            let dadosMes = {};
+            BANCO_GLOBAL.forEach(row => {
+                let mesAno = formatarMesAno(row['Data de criação'] || row['Data']); let val = parseCurrency(row['Valor']);
+                if(!dadosMes[mesAno]) dadosMes[mesAno] = { qtd: 0, valor: 0 }; dadosMes[mesAno].qtd++; dadosMes[mesAno].valor += val;
+            });
+            let sortedMonths = Object.keys(dadosMes).sort((a, b) => { if (a === 'Desconhecido') return 1; if (b === 'Desconhecido') return -1; let [mA, yA] = a.split('/'); let [mB, yB] = b.split('/'); if (yA !== yB) return parseInt(yB) - parseInt(yA); return parseInt(mB) - parseInt(mA); });
+            let html = '';
+            sortedMonths.forEach(m => { html += `<tr><td style="font-weight: 900; color: var(--accent-blue); font-size: 1rem;">${m}</td><td class="center" style="font-weight: bold; font-size: 1rem;">${dadosMes[m].qtd}</td><td class="col-val" style="font-size: 1rem;">${dadosMes[m].valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</td></tr>`; });
+            document.getElementById('tbody-mensal').innerHTML = html || '<tr><td colspan="3" class="center">Sem dados.</td></tr>'; document.getElementById('modal-mensal').classList.add('active');
+        }
+        function fecharModalMensal() { document.getElementById('modal-mensal').classList.remove('active'); }
+
+        // ==========================================
+        // EXPORTAÇÃO 4K
+        // ==========================================
+        function baixarDashboardComoImagem() {
+            document.body.classList.add('exporting');
+            setTimeout(() => {
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f';
+                html2canvas(document.body, { scale: 3, useCORS: true, backgroundColor: bgCor, logging: false }).then(canvas => {
+                    document.body.classList.remove('exporting');
+                    const link = document.createElement('a');
+                    link.download = `Avarias_Mensais_${new Date().toISOString().slice(0,10)}_4K.png`;
+                    link.href = canvas.toDataURL('image/png'); link.click();
+                }).catch(err => { document.body.classList.remove('exporting'); });
+            }, 100);
+        }
+
+        carregarDoFirebase();
+    </script>
+</body>
+</html>
