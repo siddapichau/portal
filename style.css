@@ -1,7 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
 
 :root {
-    --bg-body: #f1f5f9;
+    /* Fundo sólido branco no tema claro */
+    --bg-body: #ffffff; 
     --bg-card: #ffffff;
     --border-card: rgba(0, 0, 0, 0.1);
     --text-main: #334155;
@@ -12,7 +13,7 @@
     --accent-blue: #3483FA; 
     --accent-green: #00A650;
     
-    /* Botões Sólidos - Tema Claro */
+    /* Botões Sólidos - Sempre Branco */
     --btn-minimal-bg: #ffffff; 
     --btn-minimal-border: #cbd5e1; 
     --btn-minimal-icon: #2D3277; 
@@ -27,10 +28,10 @@
     --text-muted: #94a3b8;
     --text-title: #ffffff;
     
-    /* Botões Sólidos - Tema Escuro */
-    --btn-minimal-bg: #334155;
-    --btn-minimal-border: #475569;
-    --btn-minimal-icon: #FFF159;
+    /* Botões Sólidos - Sempre Branco mesmo no tema escuro */
+    --btn-minimal-bg: #ffffff;
+    --btn-minimal-border: #cbd5e1;
+    --btn-minimal-icon: #2D3277; /* Ícone escuro para contrastar com o botão branco */
     --btn-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
