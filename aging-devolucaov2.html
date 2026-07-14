@@ -17,7 +17,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- CSS GLOBAL -->
@@ -63,8 +62,13 @@
         .btn svg { width: 16px; height: 16px; stroke: #1e293b; }
 
         .status-badge { font-size: .75rem; font-weight: 900; color: #2D3277; background: rgba(0,0,0,0.1); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
-        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
-        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 10; }
+        
+        /* BOTÃO SYNC SHEETS NOVO */
+        .btn-sync {
+            width: auto !important; padding: 0 12px !important; gap: 6px;
+            background: var(--accent-blue) !important; color: #fff !important; border-color: var(--accent-blue) !important;
+        }
+        .btn-sync:hover:not(:disabled) { background: #2968c8 !important; }
 
         /* LAYOUT GERAL */
         .row { display: flex; gap: 10px; flex: 1; min-height: 0; width: 100%; }
@@ -126,12 +130,11 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
             </button>
 
-            <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Subir Base de Dados CSV">
-                <button class="btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                </button>
-                <input type="file" id="csvFileInput" accept=".csv" />
-            </div>
+            <!-- NOVO BOTÃO DE SINCRONIZAÇÃO AUTOMÁTICA -->
+            <button class="btn btn-sync" id="btnSyncSheets" style="display:none;" onclick="puxarDadosDaPlanilhaSheets()" title="Baixar dados em tempo real do Google Sheets">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Sync Planilha
+            </button>
         </div>
     </div>
 
@@ -181,8 +184,13 @@
 
     </div>
 
+    <!-- CARREGAR O SCRIPT GLOBAL DO SEU PROJETO -->
+    <script src="js/app.js"></script>
+
     <script>
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        // ESTA É A URL DO SEU GOOGLE APPS SCRIPT (MESMA DO LOGIN/USERS)
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
 
         let globalData = [];
         let chartInst = null;
@@ -204,13 +212,69 @@
         const paginaNome = window.location.pathname.split('/').pop() || 'aging-devolucao.html';
         let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
         
-        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
+        if(canEdit) { document.getElementById('btnSyncSheets').style.display = 'inline-flex'; }
 
         async function registrarLogFirebase(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
             } catch(e) {}
+        }
+
+        // ============ LÓGICA DE SINCRONIZAÇÃO AUTOMÁTICA COM GOOGLE SHEETS ============
+        async function puxarDadosDaPlanilhaSheets() {
+            const btn = document.getElementById('btnSyncSheets');
+            const txtOriginal = btn.innerHTML;
+            const statusBadge = document.getElementById('data-status');
+            
+            btn.innerHTML = "⏳ Sincronizando...";
+            btn.disabled = true;
+            statusBadge.innerText = "Lendo Sheets...";
+            statusBadge.style.color = "#3483FA";
+
+            try {
+                // A requisição bate no código .gs (na action getAging) que construímos!
+                const res = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action: "getAging" })
+                });
+
+                const obj = await res.json();
+                
+                if (obj.success && obj.lista && obj.lista.length > 0) {
+                    
+                    // Exibe a tabela instantaneamente pro usuário
+                    iniciarDashboard(obj.lista);
+                    
+                    // Salva a cópia consolidada no Firebase pra não travar quem apenas vizualiza e não tem acesso
+                    try {
+                        const fbRes = await fetch(`${FIREBASE_URL}devolucao.json`, { 
+                            method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lista: obj.lista }) 
+                        });
+                        if (fbRes.ok) {
+                            statusBadge.innerText = 'Online (Sincronizado)';
+                            statusBadge.style.color = '#00A650';
+                            await registrarLogFirebase("Aging Devolução", `Sincronizou a base de dados em tempo real com o Google Sheets (${obj.lista.length} pacotes).`);
+                        }
+                    } catch(fbErr) {
+                        statusBadge.innerText = 'Exibindo Dados Atuais (Falha ao salvar cache)';
+                    }
+                    
+                } else {
+                    alert("A planilha no Sheets parece estar vazia ou ocorreu um erro.");
+                    statusBadge.innerText = 'Erro na Planilha';
+                    statusBadge.style.color = '#FF5252';
+                }
+            } catch(error) {
+                console.error("Falha no Google Sheets:", error);
+                alert("Falha de conexão com o banco do Sheets. Verifique o código no .gs.");
+                statusBadge.innerText = 'Erro Conexão';
+                statusBadge.style.color = '#FF5252';
+            } finally {
+                btn.innerHTML = txtOriginal;
+                btn.disabled = false;
+            }
         }
 
         // ============ EXPORTAÇÃO 4K ============
@@ -255,66 +319,32 @@
 
         const datasHoje = obterDatas();
         document.getElementById('info-data').innerText = `Devolução: ${datasHoje.curta}`;
-        document.getElementById('main-title').innerText = `AGING DEVOLUÇÃO (${datasHoje.completa}) - AGUARDANDO ARQUIVO`;
+        document.getElementById('main-title').innerText = `AGING DEVOLUÇÃO (${datasHoje.completa}) - AGUARDANDO PLANILHA`;
 
         window.onload = async function() {
             const statusBadge = document.getElementById('data-status');
             try {
+                // Tenta puxar o CACHE do Firebase primeiro, pra carregar rápido se já foi syncado no dia
                 const response = await fetch(`${FIREBASE_URL}devolucao.json`);
                 const dbData = await response.json();
                 
                 if(dbData && dbData.lista) {
                     iniciarDashboard(dbData.lista);
-                    statusBadge.innerText = "Online (Firebase Nuvem)";
+                    statusBadge.innerText = "Online (Último Cache)";
+                    statusBadge.style.color = "#00A650";
                 } else {
-                    definirEstadoVazio("Banco Vazio. Faça Upload.");
+                    definirEstadoVazio("Banco Vazio. Sincronize com a nuvem.");
                 }
             } catch(e) {
-                definirEstadoVazio("Offline (Aguardando CSV)");
+                definirEstadoVazio("Offline (Aguardando Dados)");
             }
         };
 
         function definirEstadoVazio(mensagem) {
             const statusBadge = document.getElementById('data-status');
             statusBadge.innerText = mensagem;
-            document.querySelector('#data-table tbody').innerHTML = "<tr><td colspan='5' style='text-align:center; padding: 20px;'>Nenhum dado ativo. Carregue um CSV local.</td></tr>";
+            document.querySelector('#data-table tbody').innerHTML = "<tr><td colspan='5' style='text-align:center; padding: 20px;'>Nenhum dado ativo. Sincronize com a planilha mestre.</td></tr>";
         }
-
-        document.getElementById('csvFileInput').addEventListener('change', function(event) {
-            if(!canEdit) return;
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const statusBadge = document.getElementById('data-status');
-            statusBadge.innerText = 'Gravando na nuvem...';
-
-            Papa.parse(file, {
-                header: true, skipEmptyLines: true,
-                complete: async function(results) {
-                    if (results.data && results.data.length > 0) {
-                        const dadosFiltrados = results.data.filter(row => Object.values(row).some(val => val !== null && val.trim() !== ''));
-                        iniciarDashboard(dadosFiltrados);
-
-                        const dadosFirebase = dadosFiltrados.map(row => {
-                            let obj = {};
-                            for(let k in row) {
-                                let safeKey = String(k).replace(/[\.\#\$\/\[\]]/g, '_').trim();
-                                if(!safeKey) safeKey = "coluna_vazia"; 
-                                obj[safeKey] = (row[k] === null || row[k] === undefined) ? "" : String(row[k]);
-                            }
-                            return obj;
-                        });
-
-                        try {
-                            const response = await fetch(`${FIREBASE_URL}devolucao.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lista: dadosFirebase }) });
-                            await registrarLogFirebase("Aging Devolução", `Atualizou a base de dados via CSV (${dadosFirebase.length} pacotes).`);
-                            if(response.ok) { statusBadge.innerText = 'Salvo com sucesso (Nuvem)!'; } 
-                        } catch(err) { statusBadge.innerText = 'Arquivo Carregado (Local)'; }
-                    }
-                }
-            });
-            event.target.value = ''; 
-        });
 
         function iniciarDashboard(dados) {
             globalData = dados;
