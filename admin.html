@@ -23,9 +23,13 @@
         .admin-tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; }
         .admin-tab.active { color: var(--accent-blue); border-bottom: 3px solid var(--accent-blue); }
         
-        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; align-items: center; }
-        .sub-subitem-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: var(--bg-body); border: 1px dashed var(--accent-blue); border-radius: 6px; margin-left: 40px; margin-top: 5px; }
+        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: 0.2s; }
+        
+        /* Drop Zones visuais */
+        .drag-over { border: 2px dashed var(--accent-blue) !important; background: rgba(52, 131, 250, 0.05) !important; }
+
+        .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; align-items: center; transition: 0.2s; }
+        .sub-subitem-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: var(--bg-body); border: 1px dashed var(--accent-blue); border-radius: 6px; margin-left: 40px; margin-top: 5px; transition: 0.2s; }
         
         .subitem-row > input, .subitem-row > select, .sub-subitem-row > input, .sub-subitem-row > select { flex: 1; min-width: 100px; padding: 8px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); border-radius: 4px; font-size: 0.8rem;}
         
@@ -57,8 +61,11 @@
                     <input type="file" id="jsonUpload" accept=".json" style="display:none" onchange="subirJSON(event)">
                     <button class="btn btn-green" onclick="document.getElementById('jsonUpload').click()">⬆️ Subir .json</button>
                 </div>
+                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
+                    Dica: Você pode arrastar as setinhas (↕️) para mover Menus de Nível 2 entre categorias diferentes, ou Menus de Nível 3 para dentro de qualquer Menu de Nível 2.
+                </div>
                 <div id="categorias-container"></div>
-                <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; font-size: 1rem;">+ Adicionar Nova Categoria</button>
+                <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; font-size: 1rem;">+ Adicionar Nova Categoria (1º Nível)</button>
             </div>
 
             <div id="tab-users" style="display:none;">
@@ -93,12 +100,11 @@
         const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
         let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
 
-        // LÓGICA DE LOGS NO FIREBASE
         async function registrarLogFirebase(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
-            } catch(e) { console.error("Erro log:", e); }
+            } catch(e) {}
         }
 
         window.onload = async () => {
@@ -152,8 +158,8 @@
                     let subItemsHtml = '';
                     (item.subItems || []).forEach((sub, subIdx) => {
                         subItemsHtml += `
-                            <div class="sub-subitem-row">
-                                <span style="color:var(--accent-blue);">↳ 3º Nível:</span>
+                            <div class="sub-subitem-row" draggable="true" ondragstart="dragStart(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})">
+                                <span style="color:var(--accent-blue); font-weight:bold; cursor: grab;">↕️ 3º Nível:</span>
                                 <select onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(sub.icon)}</select>
                                 <input type="text" placeholder="Nome" value="${sub.title || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'title', this.value)">
                                 <input type="text" placeholder="URL (.html)" value="${sub.url || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'url', this.value)">
@@ -165,8 +171,8 @@
                     });
 
                     itemsHtml += `
-                        <div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="allowDrop(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})">
-                            <span style="color:#888; font-weight:bold; cursor: grab;">2º Nível</span>
+                        <div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})">
+                            <span style="color:#888; font-weight:bold; cursor: grab; font-size:1.2rem;">↕️ 2º Nível</span>
                             <select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(item.icon)}</select>
                             <input type="text" placeholder="Nome do Menu" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)">
                             <input type="text" placeholder="URL da Página" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)">
@@ -174,7 +180,7 @@
                             <input type="text" placeholder="Ver (view,editor,admin)" value="${item.viewRoles || 'view,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)">
                             <input type="text" placeholder="Editar (editor,admin)" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)">
                             <input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${item.allowedUsers || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'allowedUsers', this.value)">
-                            <button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu</button>
+                            <button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu (3º Nível)</button>
                             <button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖ Remover</button>
                             <div style="width: 100%;">${subItemsHtml}</div>
                         </div>
@@ -182,14 +188,15 @@
                 });
 
                 container.innerHTML += `
-                    <div class="cat-card" draggable="true" ondragstart="dragStart(event, 'cat', ${catIdx}, null)" ondragover="allowDrop(event)" ondrop="drop(event, 'cat', ${catIdx}, null)">
+                    <div class="cat-card" draggable="true" ondragstart="dragStart(event, 'cat', ${catIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'cat', ${catIdx})">
                         <div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap; border-bottom: 2px solid var(--border-card); padding-bottom: 15px;">
-                            <span style="font-weight:900; color:var(--text-title); font-size:1.1rem; cursor: grab;">1º Nível:</span>
+                            <span style="font-weight:900; color:var(--text-title); font-size:1.1rem; cursor: grab;">↕️ 1º Nível:</span>
                             <select onchange="updateCat(${catIdx}, 'icon', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">${getIconOptions(cat.icon)}</select>
                             <input type="text" placeholder="Nome" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; min-width: 150px; padding:8px; font-weight:bold; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">
                             <input type="text" placeholder="Ver (view,editor,admin)" value="${cat.viewRoles || 'view,editor,admin'}" onchange="updateCat(${catIdx}, 'viewRoles', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">
                             <button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir Categoria</button>
                         </div>
+                        <div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem; color: var(--text-muted);">Submenus associados a esta categoria:</div>
                         ${itemsHtml}
                         <button class="btn btn-blue" style="margin-top:10px;" onclick="adicionarItem(${catIdx})">+ Adicionar Menu (2º Nível)</button>
                     </div>
@@ -197,21 +204,87 @@
             });
         }
 
+        // ==========================================
+        // LÓGICA MULTI-NÍVEL DE DRAG AND DROP
+        // ==========================================
         let draggedItemInfo = null;
-        function dragStart(e, type, catIdx, itemIdx) { draggedItemInfo = { type, catIdx, itemIdx }; e.stopPropagation(); }
-        function allowDrop(e) { e.preventDefault(); }
-        function drop(e, targetType, targetCatIdx, targetItemIdx) {
-            e.preventDefault(); e.stopPropagation();
-            if (!draggedItemInfo || draggedItemInfo.type !== targetType) return;
-            if(targetType === 'cat') {
-                const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0]; adMenuData.categorias.splice(targetCatIdx, 0, temp);
-            } else if (targetType === 'item' && draggedItemInfo.catIdx === targetCatIdx) {
-                const cat = adMenuData.categorias[targetCatIdx];
-                const temp = cat.items.splice(draggedItemInfo.itemIdx, 1)[0]; cat.items.splice(targetItemIdx, 0, temp);
+
+        function dragStart(e, type, catIdx, itemIdx = null, subIdx = null) {
+            draggedItemInfo = { type, catIdx, itemIdx, subIdx };
+            e.stopPropagation(); // Impede que níveis pai iniciem o arrasto junto com o filho
+        }
+
+        function dragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function dragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function drop(e, targetType, targetCatIdx, targetItemIdx = null, targetSubIdx = null) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('drag-over');
+
+            if (!draggedItemInfo) return;
+            const dType = draggedItemInfo.type;
+
+            // REGRA 1: Reordenar Categorias (Nível 1 só interage com Nível 1)
+            if (dType === 'cat' && targetType === 'cat') {
+                const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0];
+                adMenuData.categorias.splice(targetCatIdx, 0, temp);
             }
+            
+            // REGRA 2: Movimentar Menus de Nível 2 (Para outra categoria ou alterar ordem)
+            else if (dType === 'item') {
+                const sourceCat = adMenuData.categorias[draggedItemInfo.catIdx];
+                const itemMovido = sourceCat.items.splice(draggedItemInfo.itemIdx, 1)[0];
+
+                if (targetType === 'item') {
+                    // Soltou em cima de outro Menu Nível 2 (Pega o lugar dele)
+                    const targetCat = adMenuData.categorias[targetCatIdx];
+                    if (!targetCat.items) targetCat.items = [];
+                    targetCat.items.splice(targetItemIdx, 0, itemMovido);
+                } else if (targetType === 'cat') {
+                    // Soltou no título da Categoria (Vai pro final da categoria)
+                    const targetCat = adMenuData.categorias[targetCatIdx];
+                    if (!targetCat.items) targetCat.items = [];
+                    targetCat.items.push(itemMovido);
+                } else {
+                    // Se soltou errado, devolve pro lugar original
+                    sourceCat.items.splice(draggedItemInfo.itemIdx, 0, itemMovido);
+                }
+            }
+            
+            // REGRA 3: Movimentar Sub-Submenus de Nível 3 (Para outro Menu ou alterar ordem)
+            else if (dType === 'subItem') {
+                const sourceItem = adMenuData.categorias[draggedItemInfo.catIdx].items[draggedItemInfo.itemIdx];
+                const subItemMovido = sourceItem.subItems.splice(draggedItemInfo.subIdx, 1)[0];
+
+                if (targetType === 'subItem') {
+                    // Soltou em cima de outro Sub-submenu Nível 3
+                    const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx];
+                    if (!targetItem.subItems) targetItem.subItems = [];
+                    targetItem.subItems.splice(targetSubIdx, 0, subItemMovido);
+                } else if (targetType === 'item') {
+                    // Soltou no corpo do Menu Nível 2 (Vai pro final dos sub-submenus dele)
+                    const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx];
+                    if (!targetItem.subItems) targetItem.subItems = [];
+                    targetItem.subItems.push(subItemMovido);
+                } else {
+                    // Devolve se errar
+                    sourceItem.subItems.splice(draggedItemInfo.subIdx, 0, subItemMovido);
+                }
+            }
+
             renderizarAdmin();
         }
 
+        // ==========================================
+        // FUNÇÕES PADRÕES
+        // ==========================================
         function baixarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2)); const d = document.createElement('a'); d.href = dataStr; d.download = "menu_global.json"; document.body.appendChild(d); d.click(); d.remove(); }
         function subirJSON(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const parsed = JSON.parse(e.target.result); if(parsed.categorias) { adMenuData = parsed; renderizarAdmin(); alert("JSON carregado!"); } else alert("Estrutura inválida."); } catch (err) { alert("Erro ao ler JSON."); } }; reader.readAsText(file); }
 
