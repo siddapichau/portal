@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendências CFTV - Dashboard Mercado Livre</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'pendencias_cftv.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- CSS GLOBAL -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        :root {
+            --bg-input: rgba(15, 23, 42, 0.6);
+            --border-input: rgba(255, 255, 255, 0.2);
+        }
+
+        [data-theme="light"] {
+            --bg-input: rgba(255, 255, 255, 0.7);
+            --border-input: rgba(0, 0, 0, 0.15);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            padding: 10px; display: flex; flex-direction: column; gap: 10px; 
+            height: 100vh; overflow: hidden; background: transparent !important;
+        }
+
+        .glass-panel { background: var(--bg-card); backdrop-filter: blur(16px); border: 1px solid var(--border-card); border-radius: 10px; box-shadow: var(--shadow-card); transition: 0.3s; }
+
+        /* CABEÇALHO ML CLEAN */
+        .top-header { 
+            position: relative; background-color: #FFF159 !important; padding: 10px 20px; 
+            display: flex; justify-content: space-between; align-items: center; gap: 20px; 
+            border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.18); flex: 0 0 auto;
+            min-height: 55px; flex-wrap: wrap; width: 100%;
+        }
+        .header-left { display: flex; align-items: center; }
+        .ml-logo { height: 28px; width: auto; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); }
+        
+        .header-center { flex: 1; text-align: center; font-size: clamp(1rem, 2vw, 1.15rem); font-weight: 900; color: #2D3277 !important; text-transform: uppercase; letter-spacing: 0.5px; }
+        .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;}
+
+        /* BOTOES CLEAN MINIMALISTAS */
+        .btn { 
+            background: #ffffff !important; color: #1e293b !important; 
+            border: 1px solid #cbd5e1 !important; border-radius: 6px; 
+            width: 36px; height: 36px; font-size: 0.95rem; font-weight: 700; 
+            cursor: pointer; display: inline-flex; align-items: center; 
+            justify-content: center; transition: all .2s ease-in-out;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex-shrink: 0; padding: 0;
+        }
+        .btn:hover:not(:disabled) { background: #f8fafc !important; border-color: #94a3b8 !important; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .btn svg { width: 16px; height: 16px; stroke: #1e293b; }
+
+        .btn-text { width: auto; padding: 0 12px; gap: 6px; font-size: 0.8rem; }
+        .btn-blue { background: var(--accent-blue) !important; color: #fff !important; border-color: var(--accent-blue) !important; }
+        .btn-blue:hover:not(:disabled) { background: #2968c8 !important; }
+
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 10; }
+
+        /* BARRA DE FILTROS CRUZADOS */
+        .filter-bar { display: flex; gap: 15px; padding: 12px 16px; align-items: center; flex: 0 0 auto; flex-wrap: wrap; justify-content: center; }
+        .filter-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: var(--text-title); text-transform: uppercase; }
+        .filter-group select { background-color: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-input); padding: 6px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer; min-width: 120px; font-size: 0.85rem; font-weight: 600; transition: border-color .3s; }
+        .filter-group select:focus { border-color: var(--accent-blue); }
+        .filter-group select option { background: #1e293b; color: #fff; }
+        [data-theme="light"] .filter-group select option { background: #fff; color: #000; }
+
+        .btn-clear { background-color: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 800; cursor: pointer; transition: 0.2s; margin-left: auto; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; }
+        .btn-clear:hover { background-color: rgba(255, 82, 82, 0.15); }
+
+        /* CARDS KPIS */
+        .kpi-container { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; flex: 0 0 auto; }
+        .kpi-card { padding: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-left: 4px solid var(--accent-blue); text-align: center; }
+        .kpi-title { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .kpi-value { font-size: 1.4rem; font-weight: 900; color: var(--text-title); }
+
+        /* GRÁFICOS */
+        .row { display: flex; gap: 10px; flex: 1; min-height: 0; width: 100%;}
+        .chart-card { padding: 10px; flex: 1; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s; }
+        .chart-card:hover { transform: scale(1.01); border-color: rgba(52, 131, 250, 0.5); }
+        .chart-title { font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-bottom: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-wrapper { flex: 1; min-height: 0; width: 100%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 0.85rem;}
+        .col-2 { flex: 2; }
+
+        /* MODALS (POP-UP) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 9999; opacity: 0; transition: opacity 0.3s ease; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        
+        .modal-content { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; width: 95%; max-width: 1400px; height: 90vh; display: flex; flex-direction: column; box-shadow: 0 15px 50px rgba(0,0,0,0.5); overflow: hidden; backdrop-filter: blur(16px); }
+        .modal-header { padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); gap: 15px; flex-wrap: wrap; }
+        .modal-title { font-size: 1.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; flex: 1; }
+        
+        .modal-search { background: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-input); border-radius: 6px; padding: 8px 12px; outline: none; font-family: 'Inter', sans-serif; font-size: .9rem; width: 280px; }
+        .modal-search:focus { border-color: var(--accent-blue); }
+
+        .close-modal { background: transparent; border: none; color: var(--text-main); font-size: 1.8rem; cursor: pointer; line-height: 1; font-weight: bold; transition: color 0.2s; margin-top: -10px; }
+        .close-modal:hover { color: var(--accent-red); }
+
+        .modal-body { flex: 1; overflow-y: auto; padding: 0; position: relative;}
+        
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 12px 15px; border-bottom: 1px solid var(--border-card); font-size: .85rem; color: var(--text-main); vertical-align: middle; }
+        th { background: rgba(0,0,0,0.4); color: var(--text-title); text-transform: uppercase; font-size: .75rem; font-weight: 900; position: sticky; top: 0; z-index: 2; backdrop-filter: blur(10px); }
+        [data-theme="light"] th { background: rgba(255,255,255,0.7); }
+        tr:hover td { background: rgba(255,255,255,0.08); }
+        [data-theme="light"] tr:hover td { background: rgba(0,0,0,0.05); }
+
+        .center { text-align: center; }
+        .col-id { font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; gap: 8px;}
+        .col-val { font-weight: 900; color: var(--accent-green); }
+        
+        .lupa-icon { color: var(--accent-blue); transition: transform 0.2s; display: inline-flex; }
+        .lupa-icon:hover { transform: scale(1.2); }
+
+        .badge { display: inline-flex; align-items: center; justify-content: center; padding: 4px 8px; border-radius: 20px; font-size: .7rem; font-weight: 900; }
+        .badge-analisado { background: rgba(0,166,80,.2); color: var(--accent-green); border: 1px solid rgba(0,166,80,.5); }
+        .badge-em-analise { background: rgba(255,176,0,.2); color: var(--accent-warn); border: 1px solid rgba(255,176,0,.5); }
+        .badge-allowance { background: rgba(52,131,250,.2); color: var(--accent-blue); border: 1px solid rgba(52,131,250,.5); }
+        .badge-default { background: rgba(255,255,255,.1); color: var(--text-main); border: 1px solid rgba(255,255,255,.3); }
+        [data-theme="light"] .badge-default { background: rgba(0,0,0,.05); border-color: rgba(0,0,0,.15); }
+
+        .exporting .header-actions, .exporting .filter-bar { display: none !important; }
+
+        @media (max-width: 1100px) { .kpi-container { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 900px) { .modal-header { flex-direction: column; align-items: flex-start; } .modal-search { width: 100%; } }
+        @media (max-width: 600px) { .kpi-container { grid-template-columns: repeat(2, 1fr); } }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="top-header glass-panel" id="cabecalho-principal">
+        <div class="header-left"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
+        <div class="header-center" id="main-dynamic-title">CFTV ANALISADOS | CARREGANDO...</div>
+        
+        <div class="header-actions">
+            <button class="btn btn-text btn-blue" onclick="abrirModalLista(null, null)">
+                <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                Lista de Pacotes
+            </button>
+            <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </button>
+            <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Substituir e Atualizar Dados CFTV">
+                <button class="btn btn-text btn-blue">
+                    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Subir CSV
+                </button>
+                <input type="file" id="csvFileInput" accept=".csv" />
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTROS CRUZADOS -->
+    <div class="filter-bar glass-panel">
+        <div class="filter-group"><label style="color: var(--accent-blue);">Data Recebido:</label><select id="filter-data-recebido" style="border-color: var(--accent-blue);"><option value="Todos">Todos</option></select></div>
+        <div class="filter-group"><label style="color: var(--accent-blue);">Data Finalização:</label><select id="filter-data-fim" style="border-color: var(--accent-blue);"><option value="Todos">Todos</option></select></div>
+        <div class="filter-group"><label>Status CFTV:</label><select id="filter-status"><option value="Todos">Todos</option></select></div>
+        <div class="filter-group"><label>Final Análise:</label><select id="filter-final"><option value="Todos">Todos</option></select></div>
+        <div class="filter-group"><label>Status Pacote:</label><select id="filter-pacote"><option value="Todos">Todos</option></select></div>
+        <button class="btn-clear" onclick="limparFiltros()">✖ Limpar</button>
+    </div>
+
+    <!-- KPIS -->
+    <div class="kpi-container">
+        <div class="kpi-card glass-panel" style="border-left-color: var(--border-card);"><div class="kpi-title">Total Pacotes</div><div class="kpi-value" id="kpi-qtd">0</div></div>
+        <div class="kpi-card glass-panel" style="border-left-color: var(--accent-green);"><div class="kpi-title">Total Analisados</div><div class="kpi-value" id="kpi-analisados">0</div></div>
+        <div class="kpi-card glass-panel" style="border-left-color: var(--accent-warn);"><div class="kpi-title">Total Em Análise</div><div class="kpi-value" id="kpi-em-analise">0</div></div>
+        <div class="kpi-card glass-panel" style="border-left-color: var(--border-card);"><div class="kpi-title">Valor Total</div><div class="kpi-value" id="kpi-valor-total">R$ 0,00</div></div>
+        <div class="kpi-card glass-panel" style="border-left-color: var(--accent-green);"><div class="kpi-title">Valor Analisados</div><div class="kpi-value" id="kpi-valor-analisados">R$ 0,00</div></div>
+        <div class="kpi-card glass-panel" style="border-left-color: var(--accent-red);"><div class="kpi-title">Média Dias Aging</div><div class="kpi-value" id="kpi-aging">0</div></div>
+    </div>
+
+    <div class="row">
+        <div class="chart-card glass-panel" title="Clique para filtrar"><div class="chart-title">Status da Análise CFTV</div><div id="chart-status" class="chart-wrapper">Aguardando dados...</div></div>
+        <div class="chart-card glass-panel" title="Clique para filtrar"><div class="chart-title">Status do Pacote (Logística)</div><div id="chart-pacote" class="chart-wrapper">Aguardando dados...</div></div>
+    </div>
+
+    <div class="row" style="flex: 1.4;"> 
+        <div class="chart-card glass-panel col-2" title="Evolução Diária"><div class="chart-title">Fluxo de Análise: Recebidos vs Finalizados (Por Dia)</div><div id="chart-timeline" class="chart-wrapper">Aguardando dados...</div></div>
+        <div class="chart-card glass-panel col-2" title="Clique na barra para ver os pacotes"><div class="chart-title">Resultado / Final Análise (Top Motivos)</div><div id="chart-final" class="chart-wrapper">Aguardando dados...</div></div>
+    </div>
+
+    <div class="modal-overlay" id="modal-pacotes">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-titulo">Lista de Pacotes CFTV</div>
+                <input type="text" class="modal-search" id="modal-search-input" placeholder="Pesquisar ID, Descrição, Status..." oninput="filtrarRenderizarTabelaModal()">
+                <button class="close-modal" onclick="fecharModalPacotes()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body-scroll" onscroll="carregarMaisPacotes()">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:12%;">ID Pacote</th>
+                            <th style="width:25%;">Descrição</th>
+                            <th style="width:10%;">Status CFTV</th>
+                            <th style="width:16%;">Resultado (Final Análise)</th>
+                            <th style="width:12%;">Status Pacote</th>
+                            <th class="center" style="width:8%;">Aging (Dias)</th>
+                            <th style="width:12%;">Datas (Rec / Fim)</th>
+                            <th style="width:10%;">Valor</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-pacotes"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_NODE = "pendencias_cftv_consolidado";
+        
+        let BANCO_GLOBAL = []; let DADOS_FILTRADOS = []; let chartInstances = {};
+        const mlColors = ['#3483FA', '#00A650', '#FF7733', '#4A90E2', '#FFF159', '#FF5252', '#B48B00', '#06b6d4', '#8b5cf6'];
+
+        // ============ SINCRONIZAÇÃO DE TEMA E PERMISSÕES (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { 
+            if (event.data.type === 'THEME_CHANGED') { 
+                document.body.setAttribute('data-theme', event.data.theme); 
+                window.Apex = { theme: { mode: event.data.theme } };
+                if(BANCO_GLOBAL.length > 0) renderizarDashboard(DADOS_FILTRADOS);
+            } 
+        });
+
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        
+        const paginaNome = window.location.pathname.split('/').pop() || 'pendencias_cftv.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        // ============ EXPORTAÇÃO 4K ============
+        function baixarDashboardComoImagem() {
+            document.body.classList.add('exporting'); 
+            setTimeout(async () => {
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#050505';
+                try {
+                    const canvas = await html2canvas(document.body, { scale: 3, useCORS: true, allowTaint: true, backgroundColor: bgCor, logging: false, windowHeight: document.body.scrollHeight });
+                    const link = document.createElement('a'); link.download = `CFTV_Snapshot_${new Date().toISOString().slice(0,10)}_4K.png`; link.href = canvas.toDataURL('image/png'); link.click();
+                } catch (error) { console.error("Erro no 4K:", error); } finally { document.body.classList.remove('exporting'); }
+            }, 500); 
+        }
+
+        function getVal(row, possibleKeys) { let keys = Object.keys(row); for (let pk of possibleKeys) { let found = keys.find(k => k.toLowerCase().trim() === pk.toLowerCase().trim()); if (found && row[found] !== undefined && row[found] !== null) { return String(row[found]).trim(); } } return ''; }
+        function extrairID(row) { let chaves = Object.keys(row); let val = getVal(row, ['id', 'id do pacote', 'pacote', 'shipment', 'tracking']); if (val) return val; if (chaves.length > 0) return String(row[chaves[0]]).trim(); return ''; }
+        function parseCurrency(valStr) { if (!valStr) return 0; let s = String(valStr).replace('R$', '').replace(/\./g, '').replace(',', '.').trim(); return parseFloat(s) || 0; }
+        function formatCurrency(valNum) { return valNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+        function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+
+        async function carregarDoFirebase() {
+            try {
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
+                if (!response.ok) throw new Error("Erro de rede");
+                const dbData = await response.json();
+                if (dbData && Array.isArray(dbData)) { BANCO_GLOBAL = dbData; } else { BANCO_GLOBAL = []; }
+                preencherDropdowns(); aplicarFiltros();
+            } catch (err) { console.error(err); }
+        }
+
+        async function sobrescreverFirebase(dados) {
+            try {
+                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
+                await registrarLogFirebase("CFTV Dashboard", `Substituiu a base consolidada de CFTV via CSV (${dados.length} itens).`);
+                BANCO_GLOBAL = dados; preencherDropdowns(); aplicarFiltros(); alert(`Sucesso! Banco CFTV atualizado com ${dados.length} pacotes.`);
+            } catch (err) { alert("Erro ao salvar na nuvem."); }
+        }
+
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0]; if (!file) return;
+            Papa.parse(file, {
+                header: true, skipEmptyLines: true,
+                complete: function(results) {
+                    let data = results.data;
+                    let dadosLimpos = data.map(row => {
+                        return { ID: extrairID(row), Descricao: getVal(row, ['descrição', 'descricao']), StatusPacote: getVal(row, ['status do pacote']), Aging: parseInt(getVal(row, ['agin ult', 'aging'])) || 0, Valor: getVal(row, ['valor']), DataRecebido: getVal(row, ['data recebido da analise', 'data recebido']), DataFim: getVal(row, ['data finalização da analise', 'data finalizacao', 'data finalização']), StatusAnalise: getVal(row, ['status']), FinalAnalise: getVal(row, ['final analise', 'final']), Observacao: getVal(row, ['observação da analise', 'observacao']) };
+                    }).filter(i => i.ID && i.ID.toLowerCase() !== 'nan');
+                    if(dadosLimpos.length === 0) { alert("Arquivo CSV vazio ou sem ID."); return; }
+                    sobrescreverFirebase(dadosLimpos); event.target.value = ''; 
+                }
+            });
+        });
+
+        function preencherDropdowns() {
+            let dataRecSet = new Set(), dataFimSet = new Set(); let statusSet = new Set(), finalSet = new Set(), pacoteSet = new Set();
+            BANCO_GLOBAL.forEach(row => { if (row.DataRecebido) dataRecSet.add(row.DataRecebido); if (row.DataFim) dataFimSet.add(row.DataFim); if (row.StatusAnalise) statusSet.add(row.StatusAnalise); if (row.FinalAnalise) finalSet.add(row.FinalAnalise); if (row.StatusPacote) pacoteSet.add(row.StatusPacote); });
+            let datasRecArray = Array.from(dataRecSet).filter(d => d.trim() !== ''); let datasFimArray = Array.from(dataFimSet).filter(d => d.trim() !== '');
+            preencherSelectData('filter-data-recebido', datasRecArray); preencherSelectData('filter-data-fim', datasFimArray);
+            preencherSelect('filter-status', Array.from(statusSet).sort()); preencherSelect('filter-final', Array.from(finalSet).sort()); preencherSelect('filter-pacote', Array.from(pacoteSet).sort());
+        }
+
+        function preencherSelect(id, valores) {
+            let select = document.getElementById(id); let valAtual = select.value; select.innerHTML = '<option value="Todos">Todos</option>';
+            valores.forEach(val => { if(val && val.trim() !== '') { let option = document.createElement('option'); option.value = val; option.text = val; select.appendChild(option); } });
+            select.addEventListener('change', aplicarFiltros); if ([...select.options].some(opt => opt.value === valAtual)) select.value = valAtual;
+        }
+
+        function preencherSelectData(id, valores) {
+            let select = document.getElementById(id); let valAtual = select.value; select.innerHTML = '<option value="Todos">Todas as Datas</option><option value="VAZIO">Sem Data</option>';
+            valores.sort((a,b) => { let pA = a.split('/'); let pB = b.split('/'); if(pA.length === 3 && pB.length === 3) return new Date(`${pB[2]}-${pB[1]}-${pB[0]}`) - new Date(`${pA[2]}-${pA[1]}-${pA[0]}`); return 0; });
+            valores.forEach(val => { let option = document.createElement('option'); option.value = val; option.text = val; select.appendChild(option); });
+            select.addEventListener('change', aplicarFiltros); if ([...select.options].some(opt => opt.value === valAtual)) select.value = valAtual;
+        }
+
+        function limparFiltros() { document.getElementById('filter-data-recebido').value = 'Todos'; document.getElementById('filter-data-fim').value = 'Todos'; document.getElementById('filter-status').value = 'Todos'; document.getElementById('filter-final').value = 'Todos'; document.getElementById('filter-pacote').value = 'Todos'; aplicarFiltros(); }
+
+        function aplicarFiltros() {
+            let fDataRec = document.getElementById('filter-data-recebido').value; let fDataFim = document.getElementById('filter-data-fim').value; let fStatus = document.getElementById('filter-status').value; let fFinal = document.getElementById('filter-final').value; let fPacote = document.getElementById('filter-pacote').value;
+            DADOS_FILTRADOS = BANCO_GLOBAL.filter(row => {
+                let dtRec = row.DataRecebido ? row.DataRecebido.trim() : ''; let matchDataRec = true; if (fDataRec === 'VAZIO') matchDataRec = dtRec === ''; else if (fDataRec !== 'Todos') matchDataRec = dtRec === fDataRec;
+                let dtFim = row.DataFim ? row.DataFim.trim() : ''; let matchDataFim = true; if (fDataFim === 'VAZIO') matchDataFim = dtFim === ''; else if (fDataFim !== 'Todos') matchDataFim = dtFim === fDataFim;
+                let matchStatus = (fStatus === 'Todos' || row.StatusAnalise === fStatus); let matchFinal = (fFinal === 'Todos' || row.FinalAnalise === fFinal); let matchPacote = (fPacote === 'Todos' || row.StatusPacote === fPacote);
+                return matchDataRec && matchDataFim && matchStatus && matchFinal && matchPacote;
+            });
+            renderizarDashboard(DADOS_FILTRADOS);
+        }
+
+        function getChartTextColor() { return document.body.getAttribute('data-theme') === 'light' ? '#334155' : '#EBEBEB'; }
+
+        function getDonutOptions(series, labels, chartTypeStr) {
+            return {
+                series: series, labels: labels, chart: { type: 'donut', height: '100%', background: 'transparent', events: { dataPointSelection: function(e, c, config) { abrirModalLista(chartTypeStr, config.w.config.labels[config.dataPointIndex]); } } },
+                colors: mlColors, stroke: { colors: ['transparent'], width: 0 }, dataLabels: { enabled: false }, theme: { mode: document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark' },
+                legend: { show: true, position: 'bottom', fontSize: '11px', fontFamily: 'Inter', labels: { colors: getChartTextColor() }, formatter: function(sn, opts) { return sn + " (" + opts.w.globals.series[opts.seriesIndex] + ")"; } }
+            };
+        }
+
+        function isAnalisado(status) { let s = String(status).toUpperCase().trim(); if (s === 'EM ANALISE' || s === 'NÃO INFORMADO' || s === '') return false; return true; }
+
+        function renderizarDashboard(data) {
+            let totalPacotes = data.length; let totalAnalisados = 0; let totalEmAnalise = 0; let valorTotal = 0; let valorAnalisados = 0; let somaAging = 0; 
+            let dadosStatus = {}, dadosFinal = {}, dadosPacote = {}; let timelineData = {};
+
+            data.forEach(row => {
+                let v = parseCurrency(row.Valor); valorTotal += v; somaAging += row.Aging;
+                let sA = row.StatusAnalise || 'Não Informado'; if(isAnalisado(sA)) { totalAnalisados++; valorAnalisados += v; } else { totalEmAnalise++; }
+                dadosStatus[sA] = (dadosStatus[sA] || 0) + 1;
+                let sF = row.FinalAnalise || 'Aguardando / Outros'; dadosFinal[sF] = (dadosFinal[sF] || 0) + 1;
+                let sP = row.StatusPacote || 'Não Informado'; dadosPacote[sP] = (dadosPacote[sP] || 0) + 1;
+                let dR = row.DataRecebido ? row.DataRecebido.trim() : null; let dF = row.DataFim ? row.DataFim.trim() : null;
+                if (dR) { if(!timelineData[dR]) timelineData[dR] = { rec:0, fim:0 }; timelineData[dR].rec++; }
+                if (dF) { if(!timelineData[dF]) timelineData[dF] = { rec:0, fim:0 }; timelineData[dF].fim++; }
+            });
+
+            let fDataFim = document.getElementById('filter-data-fim').value; let dataTexto = fDataFim === 'Todos' ? '(GERAL)' : (fDataFim === 'VAZIO' ? '(SEM DATA FINALIZAÇÃO)' : fDataFim);
+            document.getElementById('main-dynamic-title').innerText = `CFTV ANALISADOS ${dataTexto} | VALOR TOTAL ANALISADO: R$ ${valorAnalisados.toLocaleString('pt-BR', {minimumFractionDigits: 2})} DE ${totalAnalisados} PACOTES ANALISADOS`;
+            
+            document.getElementById('kpi-qtd').innerText = totalPacotes; document.getElementById('kpi-analisados').innerText = totalAnalisados; document.getElementById('kpi-em-analise').innerText = totalEmAnalise;
+            document.getElementById('kpi-valor-total').innerText = formatCurrency(valorTotal); document.getElementById('kpi-valor-analisados').innerText = formatCurrency(valorAnalisados); document.getElementById('kpi-aging').innerText = totalPacotes > 0 ? Math.round(somaAging / totalPacotes) : 0;
+
+            Object.keys(chartInstances).forEach(key => { if(chartInstances[key]) chartInstances[key].destroy(); });
+
+            if (data.length === 0) { ['chart-status', 'chart-pacote', 'chart-final', 'chart-timeline'].forEach(id => document.getElementById(id).innerHTML = 'Nenhum dado.'); return; } 
+            else { ['chart-status', 'chart-pacote', 'chart-final', 'chart-timeline'].forEach(id => document.getElementById(id).innerHTML = ''); }
+
+            chartInstances.status = new ApexCharts(document.querySelector("#chart-status"), getDonutOptions(Object.values(dadosStatus), Object.keys(dadosStatus), 'StatusAnalise')); chartInstances.status.render();
+            chartInstances.pacote = new ApexCharts(document.querySelector("#chart-pacote"), getDonutOptions(Object.values(dadosPacote), Object.keys(dadosPacote), 'StatusPacote')); chartInstances.pacote.render();
+
+            let sortedDates = Object.keys(timelineData).sort((a,b) => { let pA = a.split('/'); let pB = b.split('/'); if(pA.length===3 && pB.length===3) return new Date(`${pA[2]}-${pA[1]}-${pA[0]}`) - new Date(`${pB[2]}-${pB[1]}-${pB[0]}`); return 0; });
+            chartInstances.timeline = new ApexCharts(document.querySelector("#chart-timeline"), {
+                series: [ { name: 'Entraram P/ Análise', data: sortedDates.map(d => timelineData[d].rec) }, { name: 'Saíram (Finalizados)', data: sortedDates.map(d => timelineData[d].fim) } ],
+                chart: { type: 'area', height: '100%', background: 'transparent', toolbar: { show: false } }, theme: { mode: document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark' }, colors: ['#FFB000', '#00A650'], stroke: { curve: 'smooth', width: 3 },
+                xaxis: { categories: sortedDates, labels: { style: { colors: getChartTextColor(), fontWeight: 'bold' } } }, yaxis: { labels: { style: { colors: getChartTextColor() } } }, dataLabels: { enabled: false }, legend: { position: 'top', labels: { colors: getChartTextColor() } }, grid: { borderColor: 'rgba(255,255,255,0.1)' }
+            }); chartInstances.timeline.render();
+
+            let finaisOrdenados = Object.entries(dadosFinal).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            chartInstances.final = new ApexCharts(document.querySelector("#chart-final"), {
+                series: [{ name: 'Volumes', data: finaisOrdenados.map(c => c[1]) }], chart: { type: 'bar', height: '100%', background: 'transparent', events: { dataPointSelection: function(e, c, config) { abrirModalLista('FinalAnalise', config.w.config.xaxis.categories[config.dataPointIndex]); } } },
+                theme: { mode: document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark' }, plotOptions: { bar: { horizontal: true, borderRadius: 4, barHeight: '60%', dataLabels: { position: 'right' } } },
+                dataLabels: { enabled: true, textAnchor: 'start', style: { colors: [getChartTextColor()], fontSize: '12px', fontWeight: 'bold' }, offsetX: 10 }, xaxis: { categories: finaisOrdenados.map(c => c[0]), labels: { show: false }, axisBorder:{show:false}, axisTicks:{show:false} }, yaxis: { labels: { style: { colors: getChartTextColor(), fontWeight: 'bold' }, maxWidth: 200 } }, colors: ['#3483FA'], grid: { show: false }
+            }); chartInstances.final.render();
+        }
+
+        let DADOS_MODAL_BASE = []; let DADOS_MODAL_FILTRADOS = []; let PAGE_SIZE = 50; let CUR_PAGE = 0;
+        function abrirModalLista(filtroKey = null, filtroVal = null) {
+            DADOS_MODAL_BASE = DADOS_FILTRADOS; let titulo = "Lista de Pacotes - Visão Geral";
+            if (filtroKey && filtroVal) { DADOS_MODAL_BASE = DADOS_FILTRADOS.filter(row => { let val = row[filtroKey] || (filtroKey === 'FinalAnalise' ? 'Aguardando / Outros' : 'Não Informado'); return val === filtroVal; }); let tituloAmigavel = filtroKey === 'StatusAnalise' ? 'Status CFTV' : (filtroKey === 'StatusPacote' ? 'Status Logística' : 'Final Análise'); titulo = `Filtro: ${tituloAmigavel} -> ${filtroVal}`; }
+            DADOS_MODAL_BASE.sort((a,b) => parseCurrency(b.Valor) - parseCurrency(a.Valor));
+            document.getElementById('modal-titulo').innerText = titulo + ` (${DADOS_MODAL_BASE.length} volumes)`; document.getElementById('modal-search-input').value = ''; DADOS_MODAL_FILTRADOS = DADOS_MODAL_BASE; CUR_PAGE = 0; document.getElementById('tbody-pacotes').innerHTML = ''; document.getElementById('modal-pacotes').classList.add('active'); renderizarPedaçoTabela();
+        }
+
+        function filtrarRenderizarTabelaModal() {
+            let busca = document.getElementById('modal-search-input').value.toLowerCase();
+            if (!busca) { DADOS_MODAL_FILTRADOS = DADOS_MODAL_BASE; } else { DADOS_MODAL_FILTRADOS = DADOS_MODAL_BASE.filter(item => { let txt = [item.ID, item.Descricao, item.StatusAnalise, item.FinalAnalise, item.StatusPacote].join(' ').toLowerCase(); return txt.includes(busca); }); }
+            CUR_PAGE = 0; document.getElementById('tbody-pacotes').innerHTML = ''; document.getElementById('modal-titulo').innerText = `Lista Filtrada (${DADOS_MODAL_FILTRADOS.length} volumes)`; renderizarPedaçoTabela();
+        }
+
+        function getStatusBadge(statusStr) {
+            let s = String(statusStr).toUpperCase(); if (s.includes('ANALISADO')) return `<span class="badge badge-analisado">${statusStr}</span>`; if (s.includes('EM ANALISE')) return `<span class="badge badge-em-analise">${statusStr}</span>`; if (s.includes('ALLOWANCE')) return `<span class="badge badge-allowance">${statusStr}</span>`; return `<span class="badge badge-default">${statusStr || '-'}</span>`;
+        }
+
+        function renderizarPedaçoTabela() {
+            let start = CUR_PAGE * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_MODAL_FILTRADOS.slice(start, end);
+            if (pedaco.length === 0 && CUR_PAGE === 0) { document.getElementById('tbody-pacotes').innerHTML = `<tr><td colspan="8" class="center" style="padding: 40px;">Nenhum pacote encontrado.</td></tr>`; return; }
+            let html = '';
+            pedaco.forEach(item => {
+                let id = item.ID || '-'; let linkRastreio = id !== '-' ? `https://envios.adminml.com/logistics/package-management/package/${escapeHtml(id)}` : '#';
+                let lupaHtml = id !== '-' ? `<a href="${linkRastreio}" target="_blank" class="lupa-icon" title="Rastrear Pacote"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></a>` : '';
+                let corDias = item.Aging > 10 ? 'color: var(--accent-red);' : '';
+                let datasInfo = `<span style="color:var(--accent-warn); font-size: 0.75rem;">Rec: ${escapeHtml(item.DataRecebido || '-')}</span><br><span style="color:var(--accent-green); font-size: 0.75rem;">Fim: ${escapeHtml(item.DataFim || '-')}</span>`;
+                html += `<tr><td class="col-id">${lupaHtml} ${escapeHtml(id)}</td><td style="font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:250px;" title="${escapeHtml(item.Descricao)}">${escapeHtml(item.Descricao)}</td><td class="center">${getStatusBadge(item.StatusAnalise)}</td><td style="font-size:0.8rem;">${escapeHtml(item.FinalAnalise || '-')}</td><td style="font-size:0.8rem; color:var(--text-muted);">${escapeHtml(item.StatusPacote)}</td><td class="center col-dias" style="${corDias}">${item.Aging}</td><td style="white-space:nowrap;">${datasInfo}</td><td class="col-val">R$ ${parseCurrency(item.Valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
+            }); document.getElementById('tbody-pacotes').insertAdjacentHTML('beforeend', html);
+        }
+
+        function carregarMaisPacotes() { let container = document.getElementById('modal-body-scroll'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) { if ((CUR_PAGE + 1) * PAGE_SIZE < DADOS_MODAL_FILTRADOS.length) { CUR_PAGE++; renderizarPedaçoTabela(); } } }
+        function fecharModalPacotes() { document.getElementById('modal-pacotes').classList.remove('active'); }
+
+        carregarDoFirebase();
+    </script>
+</body>
+</html>
