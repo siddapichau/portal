@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Pendentes do Inventário - Ofensores</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'analise_ofensores.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- CSS GLOBAL -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Variáveis Específicas do Painel */
+        :root {
+            --bg-input: rgba(15, 23, 42, 0.6);
+            --border-input: rgba(255, 255, 255, 0.2);
+        }
+        [data-theme="light"] {
+            --bg-input: rgba(255, 255, 255, 0.7);
+            --border-input: rgba(0, 0, 0, 0.15);
+        }
+
+        body { 
+            padding: 10px; display: flex; flex-direction: column; gap: 10px; 
+            height: 100vh; overflow-x: hidden; background: transparent !important;
+        }
+
+        .top-header { background-color: #FFF159 !important; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; gap: 8px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); flex: 0 0 auto; }
+        .ml-logo { height: 26px; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); }
+        .header-center { flex: 1; text-align: center; font-size: 1.1rem; font-weight: 900; color: #2D3277 !important; letter-spacing: 0.5px; text-transform: uppercase; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+
+        .status-badge { font-size: 0.85rem; font-weight: 800; color: #333 !important; background: rgba(255,255,255,0.9); border: 1px solid rgba(0,0,0,0.1); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
+
+        .btn { background: #ffffff; color: #333333; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
+        .btn-icon { font-size: 1.4rem; width: 42px; height: 42px; padding: 0; }
+        .btn:hover:not(:disabled) { background: #f8f9fa; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.12); }
+        .btn-white { padding: 0 12px; height: 42px; gap: 6px; font-size: 0.9rem; }
+        .btn-blue { background: var(--accent-blue) !important; color: #fff !important; box-shadow: 0 4px 10px rgba(52, 131, 250, 0.3); }
+        .btn-blue:hover:not(:disabled) { box-shadow: 0 6px 15px rgba(52, 131, 250, 0.4); }
+        .btn-upload-yellow { background-color: #FFF159 !important; color: #2D3277 !important; padding: 0 12px; height: 45px; gap: 6px; border: none !important; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .btn-upload-yellow:hover { background-color: #F3E34C !important; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
+        
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; font-size: 100px; }
+
+        .glass-panel { background: var(--bg-card); border: 1px solid var(--border-card); backdrop-filter: blur(10px); border-radius: 10px; }
+
+        .filter-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; flex: 0 0 auto; }
+        .filter-group { display: flex; align-items: center; gap: 10px; }
+        .filter-label { font-weight: 900; color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; flex: 0 0 auto; }
+        .summary-card { padding: 8px 15px; border-left: 5px solid var(--accent-blue); display: flex; flex-direction: column; justify-content: center; text-align: center; }
+        .summary-card.green { border-left-color: var(--accent-green); }
+        .summary-card.red { border-left-color: var(--accent-red); }
+        .summary-title { color: var(--text-muted); font-size: 0.8rem; font-weight: 900; text-transform: uppercase; margin-bottom: 2px; }
+        .summary-value { color: var(--text-title); font-size: 1.8rem; font-weight: 900; line-height: 1; }
+
+        .workspace { display: flex; gap: 10px; flex: 1.5; min-height: 0; }
+        .left-col { display: flex; flex-direction: column; gap: 10px; flex: 1.3; min-width: 0; }
+        .right-col { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; }
+
+        .table-wrapper { overflow: auto; padding: 0; transform: translateZ(0); }
+        table { width: 100%; border-collapse: collapse; min-width: 100%; text-align: left; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid var(--border-card); font-size: 0.9rem; vertical-align: middle; color: var(--text-main); }
+        th { background: rgba(0,0,0,0.6); color: var(--text-title); text-transform: uppercase; font-size: 0.8rem; font-weight: 900; position: sticky; top: 0; z-index: 2; backdrop-filter: blur(10px); }
+        [data-theme="light"] th { background: rgba(255,255,255,0.9); }
+        
+        .chart-container { min-height: 0; padding: 10px; display: flex; flex-direction: column; }
+        .chart-title { flex: 0 0 auto; font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 6px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;}
+        .chart-wrapper { position: relative; flex: 1; min-height: 0; }
+
+        .aderencia-table th, .aderencia-table td { padding: 6px 8px; font-size: 0.75rem; white-space: nowrap; }
+        .aderencia-table th { font-size: 0.7rem; }
+        .col-ver { color: var(--accent-green) !important; font-weight: bold; }
+        .col-pend { color: var(--accent-red) !important; font-weight: bold; }
+        .col-perc { color: var(--accent-warn) !important; font-weight: bold; }
+        .row-fechamento td { background-color: rgba(0,0,0,0.1); font-weight: 900; font-size: 0.8rem !important; color: var(--text-title); border-top: 2px solid var(--border-card); }
+        [data-theme="light"] .row-fechamento td { background-color: rgba(0,0,0,0.05); }
+        .aderencia-table td { text-align: center; }
+        .aderencia-table td:first-child { text-align: left; font-weight: bold; color: var(--text-title); }
+
+        .custom-modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(6px); padding: 16px; }
+        .custom-modal.active { display: flex; }
+        .modal-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; width: 100%; max-width: 800px; max-height: 85vh; overflow-y: auto; color: var(--text-main); box-shadow: 0 20px 40px rgba(0,0,0,0.5); backdrop-filter: blur(20px);}
+        .modal-header { padding: 15px 20px; background: rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); }
+        [data-theme="light"] .modal-header { background: rgba(255,255,255,0.9); }
+        .modal-title { font-size: 1.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase;}
+        .modal-close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.8rem; cursor: pointer; display: inline-flex; line-height: 1; font-weight: bold;}
+        .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 1rem; }
+        .modal-grid-row { display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-card); padding-bottom: 8px; }
+        .modal-label { font-weight: 800; color: var(--text-muted); text-transform: uppercase; font-size: 0.85rem; width: 30%;}
+        .modal-val-text { font-weight: 600; width: 70%; text-align: right;}
+
+        #toast-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast-content { display: flex; flex-direction: column; }
+        .toast-title { font-size: 0.9rem; opacity: 0.9; margin-bottom: 4px; font-weight: 600; }
+        .toast-message { font-size: 1.25rem; font-weight: 900; letter-spacing: 0.5px; }
+        .toast-xpt { background: linear-gradient(135deg, #FFF159 0%, #E6D22E 100%); border: 1px solid #D6C72A; color: #2D3277; }
+        .toast-xpt .toast-icon { background: rgba(45, 50, 119, 0.1); }
+        .toast-normal { background: linear-gradient(135deg, #00A650 0%, #1D5A33 100%); border: 1px solid #00C863; color: #FFFFFF; }
+        .toast-icon { font-size: 2rem; background: rgba(255,255,255,0.2); padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .modern-toast { min-width: 450px; padding: 24px 32px; padding-right: 50px; border-radius: 16px; font-family: 'Inter', sans-serif; box-shadow: 0 15px 35px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 20px; transform: translateY(30px) scale(0.9); opacity: 0; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); position: relative; cursor: pointer; pointer-events: auto; }
+        .modern-toast.show { transform: translateY(0) scale(1); opacity: 1; }
+        .toast-footer-msg { margin-top: 12px; font-size: 0.85rem; font-weight: 600; opacity: 0.85; font-style: italic; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 8px; }
+
+        .exporting { height: auto !important; min-height: 100vh !important; overflow-y: visible !important; overflow-x: hidden !important; max-width: 100vw !important; }
+        .exporting body { height: auto !important; overflow-y: visible !important; overflow-x: hidden !important; max-width: 100vw !important; width: 100% !important; }
+        .exporting #export-container { height: auto !important; overflow: visible !important; width: 100% !important; max-width: 100vw !important; }
+        .exporting .header-right { display: none !important; }
+        .exporting .filter-bar { border: none !important; background: transparent !important; }
+        .exporting *::-webkit-scrollbar { display: none !important; }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
+    </style>
+</head>
+<body data-theme="dark">
+
+    <div id="toast-container"></div>
+
+    <div class="top-header">
+        <a href="index.html"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre"></a>
+        <div class="header-center" id="main-header-title">Análise Pendentes do Inventário - Ofensores</div>
+        
+        <div class="header-right">
+            <span class="status-badge" id="data-atualizacao">Atualizado: --/--/----</span>
+            <button class="btn btn-icon" onclick="baixarFoto4K()" id="btn-print" title="Baixar Snapshot em 4K">📸</button>
+            
+            <div class="upload-wrapper" id="upload-aderencia-wrapper" style="display:none;">
+                <button class="btn btn-white" title="Fazer Upload do CSV da Aderência">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    CSV Aderência
+                </button>
+                <input type="file" id="csvFileInput" accept=".csv" title="Escolha o CSV da Aderência">
+            </div>
+
+            <div class="upload-wrapper" id="upload-excel-wrapper" style="display:none;">
+                <button class="btn btn-icon btn-blue" id="btn-upload" title="Fazer Upload da Planilha de Inventário (.XLSX)">📤</button>
+                <input type="file" id="excelFileInput" accept=".xlsx, .xls" title="Escolha um arquivo XLSX">
+            </div>
+        </div>
+    </div>
+
+    <div id="export-container">
+        
+        <div class="filter-bar glass-panel">
+            <div class="filter-group">
+                <span class="filter-label">📅 Data do Relatório (DHS):</span>
+                <select id="filter-data" class="btn" style="outline:none; font-size: 0.85rem; padding: 4px 10px; min-width: 130px; justify-content: flex-start;" onchange="aplicarFiltroData()">
+                    <option value="">Aguardando Dados...</option>
+                </select>
+            </div>
+            <div style="font-weight: 900; color: var(--accent-blue); font-size: 0.85rem; text-transform: uppercase;" id="pacotes-count">
+                0 Pacotes Vinculados
+            </div>
+        </div>
+
+        <div class="summary">
+            <div class="summary-card glass-panel"><div class="summary-title">Planejado</div><div class="summary-value" id="kpi-planejado">0</div></div>
+            <div class="summary-card green glass-panel"><div class="summary-title">Verificados</div><div class="summary-value" id="kpi-verificados">0</div></div>
+            <div class="summary-card red glass-panel"><div class="summary-title">Pendente</div><div class="summary-value" id="kpi-pendente">0</div></div>
+            <div class="summary-card glass-panel" style="border-left-color: #3483FA;"><div class="summary-title" style="text-transform: none; font-size: 0.95rem;">Total Geral %</div><div class="summary-value" id="kpi-total-geral">0,00%</div></div>
+        </div>
+
+        <div class="workspace">
+            <div class="left-col">
+                <div style="display: flex; gap: 10px; flex: 1;">
+                    <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
+                        <div class="chart-title" id="title-t1" style="padding: 10px 10px 0 10px; margin-bottom: 5px;">Aderência de Inventário Geral</div>
+                        <div class="table-wrapper" style="flex: 1;"><table class="aderencia-table">
+                            <thead><tr><th>Areas</th><th class="col-ver">VERIFICADOS</th><th class="col-pend">PENDENTES</th><th>TOTAL</th><th class="col-perc">%</th></tr></thead>
+                            <tbody id="tbody-geral"><tr><td colspan="5">Sem dados</td></tr></tbody>
+                        </table></div>
+                    </div>
+
+                    <div class="glass-panel" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
+                        <div class="chart-title" id="title-t2" style="padding: 10px 10px 0 10px; margin-bottom: 5px;">Aderência Sem Ativos</div>
+                        <div class="table-wrapper" style="flex: 1;"><table class="aderencia-table">
+                            <thead><tr><th>Areas</th><th class="col-ver">VERIFICADOS</th><th class="col-pend">PENDENTES</th><th>TOTAL</th><th class="col-perc">%</th></tr></thead>
+                            <tbody id="tbody-sem-ativos"><tr><td colspan="5">Sem dados</td></tr></tbody>
+                        </table></div>
+                    </div>
+                </div>
+
+                <div class="chart-container glass-panel" style="flex: 1;">
+                    <div class="chart-title">Turnos (% Impacto)</div>
+                    <div class="chart-wrapper"><canvas id="chartTurnos"></canvas></div>
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="glass-panel" style="flex: 0 0 auto; display: flex; flex-direction: column; overflow: hidden; padding: 0;">
+                    <div class="chart-title" id="title-t3" style="padding: 10px 10px 0 10px; margin-bottom: 5px;">TOTAL POR AREA ATIVOS POC E DC</div>
+                    <div class="table-wrapper"><table class="aderencia-table">
+                        <thead><tr><th>Areas</th><th>COM ATIVO POC</th><th>DC</th><th>TOTAL</th></tr></thead>
+                        <tbody id="tbody-ativos"><tr><td colspan="5">Sem dados</td></tr></tbody>
+                    </table></div>
+                </div>
+
+                <div class="chart-container glass-panel" style="flex: 1;">
+                    <div class="chart-title">Setores Ofensores (% Impacto)</div>
+                    <div class="chart-wrapper"><canvas id="chartSetores"></canvas></div>
+                </div>
+
+                <div class="chart-container glass-panel" style="flex: 1;">
+                    <div class="chart-title">Ofensores / Causa Raiz (%)</div>
+                    <div class="chart-wrapper"><canvas id="chartOfensores"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 10px; flex: 0.6; min-height: 0; margin-bottom: 15px;">
+            <div class="chart-container glass-panel" style="flex: 1;"><div class="chart-title">Perfil</div><div class="chart-wrapper"><canvas id="chartPerfil"></canvas></div></div>
+            <div class="chart-container glass-panel" style="flex: 1;"><div class="chart-title">Tipo de Pacote</div><div class="chart-wrapper"><canvas id="chartTipo"></canvas></div></div>
+        </div>
+
+    </div>
+
+    <!-- MODAIS DE SELEÇÃO E INFOS -->
+    <div class="custom-modal" id="info-modal" onclick="fecharModalExterno(event)">
+        <div class="modal-card" onclick="event.stopPropagation();">
+            <div class="modal-header"><div class="modal-title" id="modal-header-title">Ficha Informativa</div><button class="modal-close-btn" onclick="fecharModal()">&times;</button></div>
+            <div class="modal-body" id="modal-header-body"></div>
+        </div>
+    </div>
+    
+    <div class="custom-modal" id="date-select-modal" onclick="fecharModalDataExterno(event)">
+        <div class="modal-card" style="max-width: 400px; text-align: center;" onclick="event.stopPropagation();">
+            <div class="modal-header"><div class="modal-title">Selecionar Data</div><button class="modal-close-btn" onclick="fecharModalData()">&times;</button></div>
+            <div class="modal-body">
+                <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 10px; text-align: left; color: var(--text-main);">Qual data da planilha você deseja salvar no sistema?</p>
+                <select id="modal-date-select" class="btn" style="width: 100%; border-color: var(--accent-blue); height: 45px; font-size: 1rem;"></select>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; text-align: left;">* Apenas as linhas desta data serão importadas. O Total do DHS será atrelado a ela.</p>
+                <button class="btn btn-blue" style="margin-top: 15px; width: 100%; height: 45px; font-size: 1rem;" onclick="confirmarImportacaoData()">Importar Dados</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="custom-modal" id="csv-date-select-modal" onclick="fecharModalCsvDataExterno(event)">
+        <div class="modal-card" style="max-width: 400px; text-align: center;" onclick="event.stopPropagation();">
+            <div class="modal-header"><div class="modal-title">Data da Aderência</div><button class="modal-close-btn" onclick="fecharModalCsvData()">&times;</button></div>
+            <div class="modal-body">
+                <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 10px; text-align: left; color: var(--text-main);">Para qual data você está subindo esta Aderência?</p>
+                <select id="modal-csv-date-select" class="btn" style="width: 100%; border-color: var(--accent-warn); height: 45px; font-size: 1rem;"></select>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; text-align: left;">* A aderência será vinculada e salvará no banco sob o dia escolhido.</p>
+                <button class="btn-upload-yellow" style="margin-top: 15px; width: 100%; height: 45px; font-size: 1rem; justify-content: center;" onclick="confirmarImportacaoCsv()">Salvar Aderência</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        Chart.register(ChartDataLabels);
+
+        const FIREBASE_URL_BASE = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_NODE = "inventario_dhs_separado_v1";
+        const NODE_ADERENCIA = "aderencia_historico";
+        
+        let DB_LOCAL = {}; let DB_ADERENCIA = {};
+        let DADOS_ATUAIS = []; let KPI_ATUAL = { planejado: 0, verificados: 0, pendente: 0 };
+        let chartsInst = {};
+        
+        let temporaryExcelPayload = {}; let temporaryDHSKpis = { planejado: 0, verificados: 0, pendente: 0 }; let temporaryCsvFile = null;
+
+        // ============ SINCRONIZAÇÃO DE TEMA E PERMISSÕES (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { 
+            if (event.data.type === 'THEME_CHANGED') { 
+                document.body.setAttribute('data-theme', event.data.theme); 
+                renderizarGraficos(); // Atualiza cores do Chart.js
+            } 
+        });
+
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        
+        // Pega o nome do arquivo atual, ex: analise_ofensores.html
+        const paginaNome = window.location.pathname.split('/').pop() || 'analise_ofensores.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        
+        if(canEdit) { 
+            document.getElementById('upload-aderencia-wrapper').style.display = 'inline-flex'; 
+            document.getElementById('upload-excel-wrapper').style.display = 'inline-flex'; 
+        }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL_BASE}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        function showModernToast(hasXPT, title, msg) {
+            const container = document.getElementById('toast-container'); const toast = document.createElement('div'); const isXPT = hasXPT;
+            const themeClass = isXPT ? 'toast-xpt' : 'toast-normal';
+            const iconSvg = isXPT ? `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>` : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+            const closeIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+            const titleText = title || "Aderência gravada com sucesso!"; const messageText = msg || (isXPT ? "Tabela com XPT" : "Tabela Normal<br><span style='font-size:1.1rem; font-weight:700; opacity:0.9;'>Sem XPT!</span>");
+            toast.className = `modern-toast ${themeClass}`; toast.innerHTML = `<div class="toast-close">${closeIcon}</div><div class="toast-icon">${iconSvg}</div><div class="toast-content" style="flex: 1;"><span class="toast-title">${titleText}</span><span class="toast-message">${messageText}</span><div class="toast-footer-msg">Opa, sincronizamos isso pro BD! 🚀</div></div>`;
+            const closeToast = () => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); }; toast.addEventListener('click', closeToast); container.appendChild(toast); setTimeout(() => toast.classList.add('show'), 10);
+        }
+
+        function getTextColor() { return document.body.getAttribute('data-theme') === 'light' ? '#334155' : '#EBEBEB'; }
+        function parseExcelDate(val) { if (!val || String(val).trim() === '') return null; if (typeof val === 'number') { let d = new Date(Math.round((val - 25569) * 86400 * 1000)); d.setUTCHours(12); return d.toISOString().split('T')[0]; } let str = String(val).trim().split(' ')[0]; if (str.match(/^\d{4}-\d{2}-\d{2}$/)) return str; if (str.includes('/') || str.includes('-')) { const sep = str.includes('/') ? '/' : '-'; const pts = str.split(sep); if (pts.length === 3) { if (pts[0].length === 4) return `${pts[0]}-${pts[1].padStart(2, '0')}-${pts[2].padStart(2, '0')}`; let y = pts[2]; if (y.length === 2) y = '20' + y; return `${y}-${pts[1].padStart(2, '0')}-${pts[0].padStart(2, '0')}`; } } return null; }
+
+        document.getElementById('excelFileInput').addEventListener('change', async function(e) {
+            if(!canEdit) return;
+            const file = e.target.files[0]; if (!file) return;
+            const btnUpload = document.getElementById('btn-upload'); const txtOriginal = btnUpload.innerHTML; btnUpload.innerHTML = "⏳";
+            
+            const reader = new FileReader();
+            reader.onload = async function(evt) {
+                const workbook = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
+                temporaryDHSKpis = { planejado: 0, verificados: 0, pendente: 0 }; temporaryExcelPayload = {};
+
+                if (workbook.SheetNames.includes("DHS")) {
+                    const wsDHS = workbook.Sheets["DHS"]; const rawDHS = XLSX.utils.sheet_to_json(wsDHS, { header: 1, defval: "" });
+                    for (let r of rawDHS) { if (r && r.length > 1 && String(r[1]).trim().toLowerCase() === 'total') { temporaryDHSKpis.planejado = parseInt(r[2]) || 0; temporaryDHSKpis.verificados = parseInt(r[3]) || 0; temporaryDHSKpis.pendente = parseInt(r[4]) || 0; break; } }
+                }
+
+                const abaAlvo = workbook.SheetNames.includes("Analise pendente v1") ? "Analise pendente v1" : workbook.SheetNames[0];
+                const rowsBruto = XLSX.utils.sheet_to_json(workbook.Sheets[abaAlvo], { header: 1, defval: "" });
+                
+                if(rowsBruto.length > 0) {
+                    const headers = rowsBruto[0].map(h => String(h).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+                    const getCol = (keys) => headers.findIndex(h => keys.some(k => h.includes(k)));
+                    const idxID = headers.indexOf('id'), idxData = headers.findIndex(h => h.includes('data'));
+                    const idxArea = getCol(['area']), idxSetor = getCol(['setor']), idxCausa = getCol(['causa']), idxDesc = getCol(['descri']), idxPerfil = getCol(['perfil']), idxTurno = getCol(['turno']), idxTipo = getCol(['tipo']), idxStatus = getCol(['status']);
+
+                    for (let i = 1; i < rowsBruto.length; i++) {
+                        const row = rowsBruto[i]; const idVal = String(row[idxID] || '').trim();
+                        if (!idVal || idVal === 'undefined' || idVal === '') continue;
+                        const dataReal = parseExcelDate(row[idxData >= 0 ? idxData : 0]); if (!dataReal) continue; 
+                        if (!temporaryExcelPayload[dataReal]) temporaryExcelPayload[dataReal] = [];
+                        temporaryExcelPayload[dataReal].push({ id: idVal, area: String(row[idxArea] || 'OUTROS').trim(), setor: String(row[idxSetor] || 'OUTROS').trim(), causa: String(row[idxCausa] || 'NÃO IDENTIFICADO').trim(), descricao: String(row[idxDesc] || '').trim(), perfil: String(row[idxPerfil] || 'OUTROS').trim(), turno: String(row[idxTurno] || 'OUTROS').trim(), tipo: String(row[idxTipo] || 'OUTROS').trim(), status: String(row[idxStatus] || '').trim() });
+                    }
+                }
+
+                btnUpload.innerHTML = txtOriginal; e.target.value = ''; 
+                const datasEncontradas = Object.keys(temporaryExcelPayload).sort().reverse();
+                if(datasEncontradas.length === 0) { alert("Aviso: Nenhuma data válida encontrada na planilha!"); return; }
+                
+                const selectModal = document.getElementById('modal-date-select'); selectModal.innerHTML = '';
+                datasEncontradas.forEach(d => { const p = d.split('-'); selectModal.innerHTML += `<option value="${d}">${p[2]}/${p[1]}/${p[0]} (${temporaryExcelPayload[d].length} pacotes)</option>`; });
+                
+                const hojeStr = new Date().toISOString().split('T')[0]; if(datasEncontradas.includes(hojeStr)) { selectModal.value = hojeStr; }
+                document.getElementById('date-select-modal').classList.add('active');
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        async function confirmarImportacaoData() {
+            const dChave = document.getElementById('modal-date-select').value;
+            if(!dChave || !temporaryExcelPayload[dChave]) return;
+            fecharModalData();
+            
+            const btnUpload = document.getElementById('btn-upload');
+            const txtOriginal = btnUpload.innerHTML; btnUpload.innerHTML = "☁️";
+            const dataAtualizacao = new Date().toLocaleString('pt-BR'); document.getElementById('data-atualizacao').innerText = `Atualizado: ${dataAtualizacao}`;
+            
+            let pacotes = temporaryExcelPayload[dChave];
+            let payloadDia = { atualizadoEm: dataAtualizacao, pacotes: pacotes, kpis: { planejado: pacotes.length, verificados: 0, pendente: pacotes.length } };
+            
+            if (temporaryDHSKpis.planejado > 0) { payloadDia.kpis.planejado = temporaryDHSKpis.planejado; payloadDia.kpis.verificados = temporaryDHSKpis.verificados; payloadDia.kpis.pendente = temporaryDHSKpis.pendente > 0 ? temporaryDHSKpis.pendente : pacotes.length; } else if (DB_LOCAL[dChave] && DB_LOCAL[dChave].kpis) { payloadDia.kpis = DB_LOCAL[dChave].kpis; }
+            DB_LOCAL[dChave] = payloadDia; 
+            
+            try {
+                const req = await fetch(`${FIREBASE_URL_BASE}${FIREBASE_NODE}/${dChave}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadDia) });
+                await registrarLogFirebase("Análise Ofensores", `Atualizou a planilha de Ofensores do inventário do dia: <b>${dChave.split('-').reverse().join('/')}</b>`);
+                if(req.ok) { showModernToast(false, "Ofensores Importados!", `Data ${dChave.split('-').reverse().join('/')} salva com sucesso.`); }
+            } catch(e) { console.warn("Erro ao sincronizar com a Nuvem."); }
+            
+            btnUpload.innerHTML = txtOriginal; montarDropdownDatas(); document.getElementById('filter-data').value = dChave; aplicarFiltroData(); 
+        }
+        
+        function fecharModalData() { document.getElementById('date-select-modal').classList.remove('active'); }
+        function fecharModalDataExterno(e) { if(e.target.id === 'date-select-modal') fecharModalData(); }
+
+        // ==========================================
+        // UPLOAD CSV (ADERÊNCIA)
+        // ==========================================
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            if(!canEdit) return;
+            const file = event.target.files[0]; if (!file) return;
+            temporaryCsvFile = file;
+            const selectModal = document.getElementById('modal-csv-date-select'); selectModal.innerHTML = '';
+            for(let i = 0; i <= 4; i++) {
+                const d = new Date(); d.setDate(d.getDate() - i); const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0');
+                const dbDateKey = `${y}-${m}-${day}`; const dataBR = `${day}/${m}/${y}`;
+                let label = dataBR; if(i === 0) label += " (Hoje)"; else if(i === 1) label += " (Ontem)";
+                selectModal.innerHTML += `<option value="${dbDateKey}">${label}</option>`;
+            }
+            document.getElementById('csv-date-select-modal').classList.add('active'); 
+        });
+
+        function fecharModalCsvData() { document.getElementById('csv-date-select-modal').classList.remove('active'); document.getElementById('csvFileInput').value = ''; temporaryCsvFile = null; }
+        function fecharModalCsvDataExterno(e) { if(e.target.id === 'csv-date-select-modal') fecharModalCsvData(); }
+
+        function confirmarImportacaoCsv() {
+            if(!temporaryCsvFile) return;
+            const dbDateKey = document.getElementById('modal-csv-date-select').value; const p = dbDateKey.split('-'); const dataBRFormatada = `${p[2]}/${p[1]}/${p[0]}`;
+            document.getElementById('csv-date-select-modal').classList.remove('active');
+
+            Papa.parse(temporaryCsvFile, {
+                header: false, skipEmptyLines: false,
+                complete: async function(results) {
+                    let globalHasXPT = processarMatrizCSV_Aderencia(results.data, dataBRFormatada);
+                    const payloadData = { dataArquivo: dataBRFormatada, matriz: results.data, ultimaAtualizacao: `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` };
+                    DB_ADERENCIA[dbDateKey] = payloadData;
+                    
+                    try {
+                        const response = await fetch(`${FIREBASE_URL_BASE}${NODE_ADERENCIA}/${dbDateKey}.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
+                        await fetch(`${FIREBASE_URL_BASE}aderencia.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
+                        await registrarLogFirebase("Análise Ofensores", `Atualizou o CSV de Aderência do inventário do dia: <b>${dataBRFormatada}</b>`);
+
+                        if(response.ok) {
+                            showModernToast(globalHasXPT, "Aderência Salva!", globalHasXPT ? "Com XPT Calculado" : "Tabela Padrão (Sem XPT)");
+                            if (!DB_LOCAL[dbDateKey]) { DB_LOCAL[dbDateKey] = { atualizadoEm: payloadData.ultimaAtualizacao, pacotes: [], kpis: { planejado: 0, verificados: 0, pendente: 0 } }; }
+                            montarDropdownDatas(); document.getElementById('filter-data').value = dbDateKey; aplicarFiltroData(); 
+                        }
+                    } catch(err) {}
+                    document.getElementById('csvFileInput').value = ''; temporaryCsvFile = null;
+                }
+            });
+        }
+
+        async function carregarDoFirebase() {
+            try {
+                const resPendentes = await fetch(`${FIREBASE_URL_BASE}${FIREBASE_NODE}.json`);
+                if (resPendentes.ok) { const dbP = await resPendentes.json(); if(dbP) DB_LOCAL = dbP; }
+                const resAderencia = await fetch(`${FIREBASE_URL_BASE}${NODE_ADERENCIA}.json`);
+                if (resAderencia.ok) { const dbA = await resAderencia.json(); if(dbA) DB_ADERENCIA = dbA; }
+            } catch(e) { console.warn(e); }
+            montarDropdownDatas();
+        }
+
+        function formatValAderencia(val) { return val !== undefined && val !== null && val.toString().trim() !== '' ? val.toString().trim() : '0'; }
+        function encontrarLinhaAderencia(data, keyword, colIndex) { for(let i = 0; i < data.length; i++) { if(data[i] && formatValAderencia(data[i][colIndex]).toLowerCase() === keyword) return i; } return -1; }
+
+        function processarMatrizCSV_Aderencia(data, dataBR) {
+            let resultHasXPT = false; let t1_col = 0; let t2_col = 6; let t3_col = -1; let t3_row = -1; let hasXPT = false;
+            for(let r = 0; r < 5; r++) { if(!data[r]) continue; let contVerificados = 0; for(let c = 0; c < data[r].length; c++) { if(formatValAderencia(data[r][c]).toLowerCase() === 'verificados') { if(contVerificados === 0) { t1_col = c - 1; contVerificados++; } else if(contVerificados === 1) { t2_col = c - 1; contVerificados++; } } } }
+            for(let r = 0; r < data.length; r++) { if(!data[r]) continue; for(let c = 0; c < data[r].length; c++) { let cell = formatValAderencia(data[r][c]).toLowerCase(); if(cell === 'com ativo poc' || cell === 'atico poc' || cell === 'ativo poc') { t3_col = c - 1; t3_row = r + 1; for(let h = 0; h < data[r].length; h++) { if(formatValAderencia(data[r][h]).toLowerCase() === 'xpt') { hasXPT = true; resultHasXPT = true; break; } } break; } } if(t3_row !== -1) break; }
+
+            let htmlT1 = ''; let inicioT1 = encontrarLinhaAderencia(data, 'problem solving', t1_col);
+            if(inicioT1 !== -1) {
+                for(let i = inicioT1; i < data.length; i++) {
+                    let area = formatValAderencia(data[i][t1_col]); if(area === '0' || area === '') continue;
+                    let v = formatValAderencia(data[i][t1_col+1]); let p = formatValAderencia(data[i][t1_col+2]); let t = formatValAderencia(data[i][t1_col+3]); let perc = formatValAderencia(data[i][t1_col+4]);
+                    if(area.toLowerCase().includes('fechamento') || area.toLowerCase() === 'total') {
+                        htmlT1 += `<tr class="row-fechamento"><td>${area}</td><td class="col-ver">${v}</td><td class="col-pend">${p}</td><td>${t}</td><td class="col-perc">${perc}</td></tr>`;
+                        document.getElementById('title-t1').innerText = `Aderência de Inventário Geral ${dataBR} - ${perc}`; document.getElementById('kpi-total-geral').innerText = perc; document.getElementById('main-header-title').innerText = `Aderência ${perc} ${dataBR} e Análise Pendentes do Inventário - Ofensores`; break;
+                    } else { htmlT1 += `<tr><td>${area}</td><td class="col-ver">${v}</td><td class="col-pend">${p}</td><td>${t}</td><td class="col-perc">${perc}</td></tr>`; }
+                } document.getElementById('tbody-geral').innerHTML = htmlT1;
+            } else { document.getElementById('kpi-total-geral').innerText = "0,00%"; document.getElementById('main-header-title').innerText = `Aderência 0,00% ${dataBR} e Análise Pendentes do Inventário - Ofensores`; }
+
+            let htmlT2 = ''; let inicioT2 = encontrarLinhaAderencia(data, 'problem solving', t2_col); const titleT2Base = hasXPT ? `Sem Ativos Poc / DC / XPT` : `Sem Ativos Poc / DC`;
+            if(inicioT2 !== -1) {
+                for(let i = inicioT2; i < data.length; i++) {
+                    let area = formatValAderencia(data[i][t2_col]); if(area === '0' || area === '') continue;
+                    let v = formatValAderencia(data[i][t2_col+1]); let p = formatValAderencia(data[i][t2_col+2]); let t = formatValAderencia(data[i][t2_col+3]); let perc = formatValAderencia(data[i][t2_col+4]);
+                    if(area.toLowerCase().includes('fechamento') || area.toLowerCase() === 'total') { htmlT2 += `<tr class="row-fechamento"><td>${area}</td><td class="col-ver">${v}</td><td class="col-pend">${p}</td><td>${t}</td><td class="col-perc">${perc}</td></tr>`; document.getElementById('title-t2').innerText = `Aderência ${titleT2Base} ${dataBR} - ${perc}`; break; } else { htmlT2 += `<tr><td>${area}</td><td class="col-ver">${v}</td><td class="col-pend">${p}</td><td>${t}</td><td class="col-perc">${perc}</td></tr>`; }
+                } document.getElementById('tbody-sem-ativos').innerHTML = htmlT2;
+            }
+
+            if(t3_row !== -1 && t3_col !== -1) {
+                document.getElementById('title-t3').innerText = hasXPT ? `TOTAL POR AREA ATIVOS POC, DC E XPT ${dataBR}` : `TOTAL POR AREA ATIVOS POC E DC ${dataBR}`;
+                const theadT3 = document.querySelector('#tbody-ativos').previousElementSibling;
+                if(hasXPT) { theadT3.innerHTML = `<tr><th>Areas</th><th>COM ATIVO POC</th><th>DC</th><th>XPT</th><th>TOTAL</th></tr>`; } else { theadT3.innerHTML = `<tr><th>Areas</th><th>COM ATIVO POC</th><th>DC</th><th>TOTAL</th></tr>`; }
+                let htmlT3 = '';
+                for(let i = t3_row; i < data.length; i++) {
+                    let area = formatValAderencia(data[i][t3_col]); if(area === '0' || area === '') continue;
+                    let poc = formatValAderencia(data[i][t3_col+1]); let dc = formatValAderencia(data[i][t3_col+2]); 
+                    if(hasXPT) {
+                        let xpt = formatValAderencia(data[i][t3_col+3]); let tot = formatValAderencia(data[i][t3_col+4]);
+                        if(area.toLowerCase().includes('total')) { htmlT3 += `<tr class="row-fechamento"><td>${area}</td><td>${poc}</td><td>${dc}</td><td>${xpt}</td><td class="col-perc">${tot}</td></tr>`; break; } else { htmlT3 += `<tr><td>${area}</td><td>${poc}</td><td>${dc}</td><td>${xpt}</td><td class="col-perc">${tot}</td></tr>`; }
+                    } else {
+                        let tot = formatValAderencia(data[i][t3_col+3]);
+                        if(area.toLowerCase().includes('total')) { htmlT3 += `<tr class="row-fechamento"><td>${area}</td><td>${poc}</td><td>${dc}</td><td class="col-perc">${tot}</td></tr>`; break; } else { htmlT3 += `<tr><td>${area}</td><td>${poc}</td><td>${dc}</td><td class="col-perc">${tot}</td></tr>`; }
+                    }
+                } document.getElementById('tbody-ativos').innerHTML = htmlT3;
+            } return resultHasXPT;
+        }
+
+        function montarDropdownDatas() {
+            const datas = Object.keys(DB_LOCAL).sort().reverse();
+            const select = document.getElementById('filter-data');
+            if (datas.length === 0) { select.innerHTML = `<option value="">Nenhuma Data Disponível</option>`; return; }
+            let html = ''; datas.forEach(d => { const p = d.split('-'); html += `<option value="${d}">${p[2]}/${p[1]}/${p[0]}</option>`; });
+            select.innerHTML = html; select.selectedIndex = 0; aplicarFiltroData();
+        }
+
+        function aplicarFiltroData() {
+            const dataSelect = document.getElementById('filter-data').value;
+            if (!dataSelect || !DB_LOCAL[dataSelect]) return;
+            const baseData = DB_LOCAL[dataSelect]; DADOS_ATUAIS = baseData.pacotes || []; KPI_ATUAL = baseData.kpis || { planejado: DADOS_ATUAIS.length, verificados: 0, pendente: DADOS_ATUAIS.length };
+            if (baseData.atualizadoEm) { document.getElementById('data-atualizacao').innerText = `Atualizado: ${baseData.atualizadoEm}`; }
+            if (KPI_ATUAL.planejado === 0) KPI_ATUAL.planejado = DADOS_ATUAIS.length;
+            document.getElementById('kpi-planejado').innerText = KPI_ATUAL.planejado; document.getElementById('kpi-verificados').innerText = KPI_ATUAL.verificados; document.getElementById('kpi-pendente').innerText = KPI_ATUAL.pendente; document.getElementById('pacotes-count').innerText = `${DADOS_ATUAIS.length} Pacotes Vinculados`;
+            renderizarGraficos();
+            const p = dataSelect.split('-'); const dataBR = `${p[2]}/${p[1]}/${p[0]}`;
+            if (DB_ADERENCIA[dataSelect] && DB_ADERENCIA[dataSelect].matriz) { processarMatrizCSV_Aderencia(DB_ADERENCIA[dataSelect].matriz, dataBR); } 
+            else {
+                let sMsg = `<tr><td colspan="5">Sem aderência subida para a data ${dataBR}</td></tr>`; document.getElementById('tbody-geral').innerHTML = sMsg; document.getElementById('tbody-sem-ativos').innerHTML = sMsg; document.getElementById('tbody-ativos').innerHTML = sMsg; document.getElementById('title-t1').innerText = `Aderência de Inventário Geral ${dataBR}`; document.getElementById('title-t2').innerText = `Aderência Sem Ativos ${dataBR}`; document.getElementById('title-t3').innerText = `TOTAL POR AREA ATIVOS POC E DC ${dataBR}`; document.getElementById('kpi-total-geral').innerText = "0,00%"; document.getElementById('main-header-title').innerText = `Aderência 0,00% ${dataBR} e Análise Pendentes do Inventário - Ofensores`;
+            }
+        }
+
+        function abrirModal(titulo, conteudo) { document.getElementById('modal-header-title').innerText = titulo; document.getElementById('modal-header-body').innerHTML = conteudo; document.getElementById('info-modal').classList.add('active'); }
+        function fecharModal() { document.getElementById('info-modal').classList.remove('active'); }
+        function fecharModalExterno(e) { if(e.target.id === 'info-modal') fecharModal(); }
+
+        function calcularImpactoDHS(campo) { let contagem = {}; DADOS_ATUAIS.forEach(i => { let val = i[campo]; if (!val || String(val).trim() === '' || val === 'undefined') val = 'NÃO IDENTIFICADO'; contagem[val] = (contagem[val] || 0) + 1; }); let baseTotal = KPI_ATUAL.planejado > 0 ? KPI_ATUAL.planejado : 1; return Object.entries(contagem).map(([nome, qtd]) => ({ nome: nome, pct: parseFloat(((qtd / baseTotal) * 100).toFixed(2)) })).sort((a,b) => b.pct - a.pct); }
+
+        function renderizarGraficos() {
+            const txtCor = getTextColor(); const corGrade = document.body.getAttribute('data-theme') === 'light' ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+            Chart.defaults.color = txtCor; Chart.defaults.font.family = "'Inter', sans-serif";
+            const criarGrafico = (idCanvas, dados, cor, isHorizontal, instNome) => {
+                if(chartsInst[instNome]) chartsInst[instNome].destroy(); if(!dados || dados.length === 0) dados = [{nome: "Sem Dados", pct: 0}];
+                chartsInst[instNome] = new Chart(document.getElementById(idCanvas), { type: 'bar', data: { labels: dados.slice(0, 10).map(d => d.nome), datasets: [{ data: dados.slice(0, 10).map(d => d.pct), backgroundColor: cor, borderRadius: 4, maxBarThickness: isHorizontal ? 25 : 40 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: isHorizontal ? 'y' : 'x', layout: { padding: { right: isHorizontal ? 55 : 0, top: !isHorizontal ? 30 : 0 } }, plugins: { legend: { display: false }, datalabels: { color: txtCor, anchor: 'end', align: isHorizontal ? 'right' : 'top', offset: 4, formatter: (v) => v + '%', font: { weight: 'normal', size: 14 } } }, scales: { x: { grid:{display:false}, ticks: { font:{size:12, weight: 'bold'}, color: txtCor } }, y: { grid:{color: corGrade}, ticks: { font:{size:12, weight: 'bold'}, color: txtCor } } }, onClick: (e, el) => { if(el.length > 0) abrirPopupGrafico(idCanvas, dados[el[0].index].nome); } } });
+            };
+            criarGrafico('chartSetores', calcularImpactoDHS('setor'), '#3483FA', true, 'setor'); criarGrafico('chartOfensores', calcularImpactoDHS('causa'), '#FF5252', true, 'causa'); criarGrafico('chartTurnos', calcularImpactoDHS('turno'), '#FFB000', true, 'turno'); criarGrafico('chartPerfil', calcularImpactoDHS('perfil'), '#00A650', false, 'perfil'); criarGrafico('chartTipo', calcularImpactoDHS('tipo'), '#6366f1', false, 'tipo');
+        }
+
+        function abrirPopupGrafico(idCanvas, valorClicado) {
+            let atributo = ''; if(idCanvas === 'chartSetores') atributo = 'setor'; if(idCanvas === 'chartOfensores') atributo = 'causa'; if(idCanvas === 'chartTurnos') atributo = 'turno'; if(idCanvas === 'chartPerfil') atributo = 'perfil'; if(idCanvas === 'chartTipo') atributo = 'tipo';
+            const lista = DADOS_ATUAIS.filter(i => { let v = i[atributo]; if (!v || v.trim() === '' || v === 'undefined') v = 'NÃO IDENTIFICADO'; return v === valorClicado; });
+            let html = `<table style="width:100%; font-size:0.95rem; text-align:left;"><thead><tr><th>ID</th><th>Área</th><th>Causa Raiz</th></tr></thead><tbody>${lista.map(i => `<tr><td><span style="color:var(--accent-blue); font-weight:700;">${i.id}</span></td><td>${i.area}</td><td style="color:var(--accent-red);">${i.causa}</td></tr>`).join('')}</tbody></table>`;
+            abrirModal(`Filtro: ${valorClicado} (${lista.length} pacotes)`, html);
+        }
+
+        function baixarFoto4K() {
+            const btn = document.getElementById('btn-print'); btn.innerHTML = "⏳"; document.body.classList.add('exporting');
+            setTimeout(() => {
+                const bodyH = document.body.scrollHeight; const bodyW = document.body.clientWidth; 
+                html2canvas(document.body, { scale: 3, useCORS: true, width: bodyW, windowWidth: bodyW, windowHeight: bodyH, backgroundColor: document.body.getAttribute('data-theme') === 'light' ? '#f1f5f9' : '#0b121f' }).then(canvas => {
+                    document.body.classList.remove('exporting'); btn.innerHTML = "📸";
+                    let link = document.createElement('a'); let dtSelect = document.getElementById('filter-data'); let dt = dtSelect.options.length > 0 && dtSelect.selectedIndex >= 0 ? dtSelect.options[dtSelect.selectedIndex].text.replace(/\//g, '-') : 'Geral';
+                    link.download = `Snapshot_DHS_Ofensores_${dt}.png`; link.href = canvas.toDataURL('image/png'); link.click();
+                });
+            }, 500); 
+        }
+
+        carregarDoFirebase();
+    </script>
+</body>
+</html>
