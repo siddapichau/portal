@@ -14,7 +14,8 @@
         
         body { background: var(--bg-gradient); background-attachment: fixed; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-y: hidden; }
         
-        #main-content { margin-top: 80px; width: 100%; max-width: 1400px; display: flex; flex-direction: column; align-items: center; padding: 0 20px; flex: 1; transition: 0.3s; }
+        /* MUDANÇA AQUI: max-width alterado para 100% para usar toda a lateral da tela */
+        #main-content { margin-top: 80px; width: 100%; max-width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0 15px; flex: 1; transition: 0.3s; }
 
         .main-title { font-size: 2.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; position: relative; padding-bottom: 12px; text-align: center; }
         .main-title::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 4px; background-color: var(--accent-blue); border-radius: 2px; }
@@ -23,14 +24,11 @@
         .quote-text { font-size: 1rem; color: var(--text-main); font-style: italic; font-weight: 600; transition: opacity 0.5s ease; }
         .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-blue); width: 0%; }
 
-        /* =========================================
-           FEED DE ATUALIZAÇÕES PROFISSIONAL
-           ========================================= */
         .feed-box {
             background: var(--bg-card);
             border: 1px solid var(--border-card);
             border-radius: 12px;
-            padding: 0; /* Removido para o header colar nas bordas */
+            padding: 0;
             max-width: 700px;
             width: 100%;
             box-shadow: var(--shadow-card);
@@ -46,17 +44,12 @@
         
         .feed-header h2 { font-size: 1.15rem; color: var(--text-title); display: flex; align-items: center; gap: 10px; margin: 0; }
         
-        /* Ponto Pulsante Ao Vivo */
         .live-indicator {
             width: 8px; height: 8px; background-color: var(--accent-green);
             border-radius: 50%; box-shadow: 0 0 8px var(--accent-green);
             animation: pulse 2s infinite;
         }
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.3); }
-            100% { opacity: 1; transform: scale(1); }
-        }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
 
         .feed-refresh { background: transparent; border: none; color: var(--accent-blue); font-size: 0.85rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
         .feed-refresh:hover { opacity: 0.7; }
@@ -80,13 +73,12 @@
         .feed-meta { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 5px; margin-top: 2px;}
         .feed-meta strong { color: var(--text-title); font-weight: 800; }
 
-        /* IFRAME */
-        #app-frame { display: none; width: 100%; height: calc(100vh - 100px); border: none; border-radius: 12px; background: var(--bg-body); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        /* MUDANÇA AQUI: Altura do iframe ajustada para refletir a nova margem */
+        #app-frame { display: none; width: 100%; height: calc(100vh - 90px); border: none; border-radius: 12px; background: var(--bg-body); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body data-theme="light">
 
-    <!-- SCRIPT DO MENU -->
     <script src="menu.js"></script>
 
     <div id="main-content">
@@ -97,7 +89,6 @@
             <div class="progress-bar" id="progress-bar"></div>
         </div>
 
-        <!-- Feed de Atualizações -->
         <div class="feed-box" id="home-view">
             <div class="feed-header">
                 <h2><div class="live-indicator" title="Monitorando ao vivo"></div> Últimas Atualizações</h2>
@@ -113,74 +104,33 @@
 
     <script>
         const messages = [ "O talento vence jogos, mas o trabalho em equipe e a inteligência vencem campeonatos.", "Um inventário preciso é o coração da nossa logística.", "No Mercado Livre, não entregamos apenas pacotes, entregamos propósitos.", "Nossa força está na união. Juntos, fazemos do nosso inventário um modelo de eficiência." ];
-        let msgIndex = 0;
-        const quoteEl = document.getElementById('animated-quote');
-        const progressBar = document.getElementById('progress-bar');
-        const INTERVAL_MS = 10000;
+        let msgIndex = 0; const quoteEl = document.getElementById('animated-quote'); const progressBar = document.getElementById('progress-bar'); const INTERVAL_MS = 10000;
 
         function startMessageCycle() {
-            if(!quoteEl) return;
-            quoteEl.innerText = messages[msgIndex];
-            animateProgressBar();
-            setInterval(() => {
-                quoteEl.style.opacity = 0;
-                setTimeout(() => {
-                    msgIndex = (msgIndex + 1) % messages.length;
-                    quoteEl.innerText = messages[msgIndex];
-                    quoteEl.style.opacity = 1;
-                    animateProgressBar();
-                }, 500);
-            }, INTERVAL_MS);
+            if(!quoteEl) return; quoteEl.innerText = messages[msgIndex]; animateProgressBar();
+            setInterval(() => { quoteEl.style.opacity = 0; setTimeout(() => { msgIndex = (msgIndex + 1) % messages.length; quoteEl.innerText = messages[msgIndex]; quoteEl.style.opacity = 1; animateProgressBar(); }, 500); }, INTERVAL_MS);
         }
 
         function animateProgressBar() {
-            progressBar.style.transition = 'none';
-            progressBar.style.width = '0%';
-            void progressBar.offsetWidth; 
-            progressBar.style.transition = `width ${INTERVAL_MS}ms linear`;
-            progressBar.style.width = '100%';
+            progressBar.style.transition = 'none'; progressBar.style.width = '0%'; void progressBar.offsetWidth; 
+            progressBar.style.transition = `width ${INTERVAL_MS}ms linear`; progressBar.style.width = '100%';
         }
         
-        // --- SISTEMA DE LOGS INTELIGENTE ---
         async function carregarFeedAtualizacoes(isAuto = false) {
-            const listEl = document.getElementById('feed-list');
-            const refreshBtn = document.getElementById('btn-refresh');
-            
-            // Só muda o botão de atualizar se foi clique manual
+            const listEl = document.getElementById('feed-list'); const refreshBtn = document.getElementById('btn-refresh');
             if (!isAuto) refreshBtn.innerHTML = '⏳ Sincronizando...';
 
             try {
-                const fb_url = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
-                const res = await fetch(`${fb_url}logs.json`);
-                const data = await res.json();
+                const fb_url = "https://reportes-bdb0a-default-rtdb.firebaseio.com/"; const res = await fetch(`${fb_url}logs.json`); const data = await res.json();
+                if(!data) { listEl.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">Nenhuma atividade registrada ainda.</div>'; if (!isAuto) refreshBtn.innerHTML = '🔄 Atualizar'; return; }
+                let logs = Object.keys(data).map(key => data[key]); logs.sort((a, b) => b.timestamp - a.timestamp); logs = logs.slice(0, 15); listEl.innerHTML = '';
                 
-                if(!data) {
-                    listEl.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">Nenhuma atividade registrada ainda.</div>';
-                    if (!isAuto) refreshBtn.innerHTML = '🔄 Atualizar';
-                    return;
-                }
-
-                let logs = Object.keys(data).map(key => data[key]);
-                logs.sort((a, b) => b.timestamp - a.timestamp);
-                
-                // Exibe as últimas 15 atualizações
-                logs = logs.slice(0, 15);
-                
-                listEl.innerHTML = '';
                 logs.forEach(log => {
                     const dataFormatada = new Date(log.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                    
-                    // Lógica de Cores e Ícones Profissionais
-                    let icon = '📝';
-                    let bgStyle = 'rgba(52, 131, 250, 0.1)';
-                    let colorStyle = 'var(--accent-blue)';
-                    
+                    let icon = '📝'; let bgStyle = 'rgba(52, 131, 250, 0.1)'; let colorStyle = 'var(--accent-blue)';
                     const actionTxt = log.acao.toLowerCase();
-                    if (actionTxt.includes('adicionou')) {
-                        icon = '✨'; bgStyle = 'rgba(0, 166, 80, 0.1)'; colorStyle = 'var(--accent-green)';
-                    } else if (actionTxt.includes('removeu') || actionTxt.includes('excluiu')) {
-                        icon = '🗑️'; bgStyle = 'rgba(255, 82, 82, 0.1)'; colorStyle = 'var(--accent-red)';
-                    }
+                    if (actionTxt.includes('adicionou')) { icon = '✨'; bgStyle = 'rgba(0, 166, 80, 0.1)'; colorStyle = 'var(--accent-green)'; } 
+                    else if (actionTxt.includes('removeu') || actionTxt.includes('excluiu')) { icon = '🗑️'; bgStyle = 'rgba(255, 82, 82, 0.1)'; colorStyle = 'var(--accent-red)'; }
 
                     listEl.innerHTML += `
                         <li class="feed-item">
@@ -193,23 +143,11 @@
                         </li>
                     `;
                 });
-            } catch (e) {
-                if (!isAuto) listEl.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: #FF5252;">Erro ao carregar o feed de dados.</div>';
-            } finally {
-                if (!isAuto) refreshBtn.innerHTML = '🔄 Atualizar';
-            }
+            } catch (e) { if (!isAuto) listEl.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: #FF5252;">Erro ao carregar o feed de dados.</div>'; } 
+            finally { if (!isAuto) refreshBtn.innerHTML = '🔄 Atualizar'; }
         }
 
-        setTimeout(() => {
-            startMessageCycle();
-            carregarFeedAtualizacoes(false); // Carrega a primeira vez manual (mostrando status)
-            
-            // Loop para atualizar silenciosamente a cada 30 segundos
-            setInterval(() => {
-                carregarFeedAtualizacoes(true);
-            }, 30000);
-
-        }, 500);
+        setTimeout(() => { startMessageCycle(); carregarFeedAtualizacoes(false); setInterval(() => { carregarFeedAtualizacoes(true); }, 30000); }, 500);
     </script>
 </body>
 </html>
