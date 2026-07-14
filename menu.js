@@ -1,10 +1,11 @@
-const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
 const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
 
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
-// Função GLOBAL para os Iframes perguntarem se podem editar
+// ==========================================
+// FUNÇÃO GLOBAL DE PERMISSÕES
+// ==========================================
 window.verificarPermissaoUpload = function(urlPagina) {
     if (!currentUser) return false;
     let permitted = false;
@@ -32,6 +33,9 @@ window.verificarPermissaoUpload = function(urlPagina) {
     return permitted;
 };
 
+// ==========================================
+// INICIALIZAÇÃO DO MENU E ESTRUTURA HTML
+// ==========================================
 async function carregarMenuGlobal() {
     const baseHTML = `
         <div class="top-bar-wrapper">
@@ -145,7 +149,6 @@ function renderizarMenuEsquerdo() {
     });
 }
 
-// RENDERIZANDO NÍVEIS 2 E 3
 function abrirSubmenu(catIdx, element) {
     document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('active'));
     if(element) element.classList.add('active');
@@ -157,8 +160,6 @@ function abrirSubmenu(catIdx, element) {
     (menuData.categorias[catIdx].items || []).forEach((item, itemIdx) => {
         if(temPermissao(item.viewRoles, item.allowedUsers)) {
             const isFav = userFavs.includes(item.title);
-            
-            // Verifica se tem sub-submenus (3º nível)
             let subItemsHtml = '';
             if (item.subItems && item.subItems.length > 0) {
                 subItemsHtml = `<div style="margin-top: 8px; padding-left: 15px; border-left: 2px solid var(--border-card); display: flex; flex-direction: column; gap: 5px;">`;
@@ -222,71 +223,195 @@ function switchTab(tab) {
     }
 }
 
-// ==== AUTH E THEME ====
+// ==========================================
+// AUTH: MIGRADO 100% PARA O FIREBASE (USERS.JSON)
+// ==========================================
 function abrirAuthModal() { document.getElementById('authModal').classList.add('active'); if(currentUser) { mudarAuthModo('profile'); carregarPerfil(); } else { mudarAuthModo('login'); } }
 function fecharAuthModal() { document.getElementById('authModal').classList.remove('active'); }
 function mudarAuthModo(modo) { document.getElementById('loginBox').style.display = modo === 'login' ? 'block' : 'none'; document.getElementById('registerBox').style.display = modo === 'register' ? 'block' : 'none'; document.getElementById('profileBox').style.display = modo === 'profile' ? 'block' : 'none'; }
 function togglePass(id) { const el = document.getElementById(id); el.type = el.type === 'password' ? 'text' : 'password'; }
 
 function carregarPerfil() {
-    document.getElementById('profileInfo').innerHTML = `<strong>Usuário:</strong> ${currentUser.usuario} <br><strong>E-mail:</strong> ${currentUser.email} <br><strong>Cargo:</strong> <span style="text-transform: uppercase; color: var(--accent-blue); font-weight:bold;">${currentUser.cargo}</span>`;
+    let cargoDisplay = currentUser.cargo.toLowerCase() === 'view2' ? 'View Plus' : currentUser.cargo;
+    document.getElementById('profileInfo').innerHTML = `<strong>Usuário:</strong> ${currentUser.usuario} <br><strong>E-mail:</strong> ${currentUser.email} <br><strong>Cargo:</strong> <span style="text-transform: uppercase; color: var(--accent-blue); font-weight:bold;">${cargoDisplay}</span>`;
 }
 
-async function trocarSenha() {
-    const currentPass = document.getElementById('profPassCurrent').value; const newPass1 = document.getElementById('profPassNew1').value; const newPass2 = document.getElementById('profPassNew2').value;
-    if(!currentPass || !newPass1 || !newPass2) return alert("Preencha todas as senhas."); if(newPass1.length < 8 || newPass1.length > 16) return alert("A nova senha deve ter entre 8 e 16 caracteres."); if(newPass1 !== newPass2) return alert("As novas senhas não coincidem!");
-    const btn = document.getElementById('btnUpdatePass'); btn.innerText = "⏳ Atualizando..."; btn.disabled = true;
-    try {
-        const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "changePassword", usuario: currentUser.usuario, senhaAtual: currentPass, novaSenha: newPass1 }) });
-        const data = await res.json(); alert(data.message);
-        if(data.success) { currentUser.senha = newPass1; localStorage.setItem('loggedUser', JSON.stringify(currentUser)); fecharAuthModal(); }
-    } catch(e) { alert("Erro de rede."); } finally { btn.innerText = "Atualizar Senha"; btn.disabled = false; }
+// Geração de hash simples para armazenar senhas (MUITO BÁSICO, APENAS PARA FINS DEMONSTRATIVOS LOCAIS)
+async function hashPassword(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder("utf-8").encode(str));
+    return Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
 }
 
-function fazerLogout() {
-    if(confirm("Tem certeza que deseja sair?")) {
-        currentUser = null; localStorage.removeItem('loggedUser'); fecharAuthModal(); verificarAcesso(); renderizarMenuEsquerdo(); switchTab('todos'); document.getElementById('btnAdminGlobal').style.display = 'none'; window.location.href = 'index.html';
-    }
+// Busca a Key correta no Firebase a partir do nome de usuário
+async function fetchUserKey(username) {
+    const res = await fetch(`${FIREBASE_URL}users.json`);
+    const data = await res.json();
+    if(!data) return null;
+    let foundKey = null;
+    Object.keys(data).forEach(k => { if(data[k].usuario.toLowerCase() === username.toLowerCase()) foundKey = k; });
+    return { key: foundKey, user: foundKey ? data[foundKey] : null };
 }
 
 async function fazerRegistro() {
-    const user = document.getElementById('regUser').value.trim(); const email = document.getElementById('regEmail').value.trim(); const p1 = document.getElementById('regPass1').value; const p2 = document.getElementById('regPass2').value;
-    if(!user || !email) return alert("Preencha Usuário e E-mail."); if(p1.length < 8 || p1.length > 16) return alert("A senha deve ter entre 8 e 16 caracteres."); if(p1 !== p2) return alert("As senhas não coincidem!");
-    const btn = document.querySelector('#registerBox .btn-auth'); btn.innerText = "⏳ Registrando..."; btn.disabled = true;
+    const user = document.getElementById('regUser').value.trim(); 
+    const email = document.getElementById('regEmail').value.trim(); 
+    const p1 = document.getElementById('regPass1').value; 
+    const p2 = document.getElementById('regPass2').value;
+    
+    if(!user || !email) return alert("Preencha Usuário e E-mail."); 
+    if(p1.length < 8 || p1.length > 16) return alert("A senha deve ter entre 8 e 16 caracteres."); 
+    if(p1 !== p2) return alert("As senhas não coincidem!");
+    
+    const btn = document.querySelector('#registerBox .btn-auth'); 
+    btn.innerText = "⏳ Registrando..."; btn.disabled = true;
+
     try {
-        const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "register", usuario: user, email: email, senha: p1 }) });
-        const data = await res.json(); alert(data.message); if(data.success) mudarAuthModo('login');
-    } catch(e) { alert("Erro de rede."); } finally { btn.innerText = "Registrar"; btn.disabled = false; }
+        const check = await fetchUserKey(user);
+        if(check.key) {
+            alert("Nome de usuário já existe no sistema!");
+        } else {
+            const hashedPass = await hashPassword(p1);
+            const newUser = {
+                usuario: user,
+                email: email,
+                senha: hashedPass, // Senha encriptada
+                cargo: "view", // Por padrão cai como view comum
+                solicitacao: "pendente",
+                favorito: ""
+            };
+            
+            await fetch(`${FIREBASE_URL}users.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) });
+            alert("Conta criada com sucesso! Aguarde aprovação de um Administrador para acessar.");
+            mudarAuthModo('login');
+        }
+    } catch(e) { alert("Erro de comunicação com o servidor."); } 
+    finally { btn.innerText = "Registrar"; btn.disabled = false; }
 }
 
 async function fazerLogin() {
-    const user = document.getElementById('logUser').value.trim(); const pass = document.getElementById('logPass').value;
+    const user = document.getElementById('logUser').value.trim(); 
+    const pass = document.getElementById('logPass').value;
+    
     if(!user || !pass) return alert("Preencha todos os campos.");
-    const btn = document.querySelector('#loginBox .btn-auth'); btn.innerText = "⏳ Validando..."; btn.disabled = true;
+    const btn = document.querySelector('#loginBox .btn-auth'); 
+    btn.innerText = "⏳ Validando..."; btn.disabled = true;
+
     try {
-        const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "login", usuario: user, senha: pass }) });
-        const data = await res.json();
-        if(!data.success) { alert(data.message); } else {
-            if(data.user.solicitacao === "pendente") alert("Seu acesso ainda está pendente de aprovação!"); else if(data.user.solicitacao === "bloqueado") alert("Seu acesso foi bloqueado.");
-            else { currentUser = data.user; localStorage.setItem('loggedUser', JSON.stringify(currentUser)); fecharAuthModal(); verificarAcesso(); renderizarMenuEsquerdo(); switchTab('todos'); }
+        const account = await fetchUserKey(user);
+        if(!account.key) {
+            alert("Usuário não encontrado.");
+        } else {
+            const dbUser = account.user;
+            const inputHash = await hashPassword(pass);
+            
+            if (dbUser.senha !== inputHash && dbUser.senha !== pass) { // Valida contra hash ou senha antiga em texto puro
+                alert("Senha Incorreta.");
+            } else if (dbUser.solicitacao === "pendente") {
+                alert("Seu acesso ainda está pendente de aprovação!");
+            } else if (dbUser.solicitacao === "bloqueado") {
+                alert("Seu acesso foi bloqueado.");
+            } else {
+                // SUCESSO!
+                currentUser = dbUser;
+                currentUser.key = account.key; // Salva a chave para updates futuros
+                localStorage.setItem('loggedUser', JSON.stringify(currentUser));
+                fecharAuthModal();
+                verificarAcesso();
+                renderizarMenuEsquerdo();
+                switchTab('todos');
+                location.reload(); // Recarrega para forçar atualização no index.html
+            }
         }
-    } catch(e) { alert("Erro de rede."); } finally { btn.innerText = "Entrar"; btn.disabled = false; }
+    } catch(e) { alert("Erro de conexão ao validar dados."); } 
+    finally { btn.innerText = "Entrar"; btn.disabled = false; }
+}
+
+async function trocarSenha() {
+    const currentPass = document.getElementById('profPassCurrent').value; 
+    const newPass1 = document.getElementById('profPassNew1').value; 
+    const newPass2 = document.getElementById('profPassNew2').value;
+    
+    if(!currentPass || !newPass1 || !newPass2) return alert("Preencha todas as senhas."); 
+    if(newPass1.length < 8 || newPass1.length > 16) return alert("A nova senha deve ter entre 8 e 16 caracteres."); 
+    if(newPass1 !== newPass2) return alert("As novas senhas não coincidem!");
+    
+    const btn = document.getElementById('btnUpdatePass'); 
+    btn.innerText = "⏳ Atualizando..."; btn.disabled = true;
+
+    try {
+        const currentHash = await hashPassword(currentPass);
+        
+        if(currentUser.senha !== currentHash && currentUser.senha !== currentPass) {
+            alert("Sua Senha Atual está incorreta.");
+        } else {
+            const newHash = await hashPassword(newPass1);
+            
+            await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { 
+                method: 'PATCH', 
+                headers: { "Content-Type": "application/json" }, 
+                body: JSON.stringify({ senha: newHash }) 
+            });
+            
+            currentUser.senha = newHash;
+            localStorage.setItem('loggedUser', JSON.stringify(currentUser));
+            alert("Senha alterada com sucesso!");
+            fecharAuthModal();
+        }
+    } catch(e) { alert("Erro de rede ao trocar senha."); } 
+    finally { btn.innerText = "Atualizar Senha"; btn.disabled = false; }
 }
 
 async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
     if(!currentUser) return alert("Faça login para favoritar!");
+    
     let favs = currentUser.favorito ? currentUser.favorito.split(',').filter(f => f) : [];
-    if(favs.includes(itemTitle)) { favs = favs.filter(f => f !== itemTitle); iconElement.classList.remove('active'); } else { favs.push(itemTitle); iconElement.classList.add('active'); }
-    currentUser.favorito = favs.join(','); localStorage.setItem('loggedUser', JSON.stringify(currentUser)); if(reloadFavs) switchTab('favs');
-    try { await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "updateFav", usuario: currentUser.usuario, favoritos: currentUser.favorito }) }); } catch(e) {}
+    if(favs.includes(itemTitle)) { 
+        favs = favs.filter(f => f !== itemTitle); 
+        iconElement.classList.remove('active'); 
+    } else { 
+        favs.push(itemTitle); 
+        iconElement.classList.add('active'); 
+    }
+    
+    currentUser.favorito = favs.join(','); 
+    localStorage.setItem('loggedUser', JSON.stringify(currentUser)); 
+    if(reloadFavs) switchTab('favs');
+    
+    // Salva direto no Firebase
+    if(currentUser.key) {
+        try { 
+            await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { 
+                method: 'PATCH', 
+                headers: { "Content-Type": "application/json" }, 
+                body: JSON.stringify({ favorito: currentUser.favorito }) 
+            }); 
+        } catch(e) {}
+    }
 }
 
-function verificarAcesso() { if(currentUser && currentUser.cargo === 'admin') document.getElementById('btnAdminGlobal').style.display = 'flex'; }
+function fazerLogout() {
+    if(confirm("Tem certeza que deseja sair?")) {
+        currentUser = null; 
+        localStorage.removeItem('loggedUser'); 
+        fecharAuthModal(); 
+        verificarAcesso(); 
+        renderizarMenuEsquerdo(); 
+        switchTab('todos'); 
+        document.getElementById('btnAdminGlobal').style.display = 'none'; 
+        window.location.href = 'index.html';
+    }
+}
+
+function verificarAcesso() { 
+    if(currentUser && currentUser.cargo === 'admin') document.getElementById('btnAdminGlobal').style.display = 'flex'; 
+}
+
 function toggleTheme() { 
-    const body = document.body; let newMode = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; 
-    body.setAttribute('data-theme', newMode); localStorage.setItem('themePreference', newMode); 
+    const body = document.body; 
+    let newMode = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; 
+    body.setAttribute('data-theme', newMode); 
+    localStorage.setItem('themePreference', newMode); 
     
-    // Força o iframe a receber o aviso de mudança de tema
     const frame = document.getElementById('app-frame');
     if (frame && frame.contentWindow) {
         frame.contentWindow.postMessage({ type: 'THEME_CHANGED', theme: newMode }, '*');
