@@ -26,25 +26,11 @@
         /* =========================================
            GRID DE 3 COLUNAS (DENTRO DO HOME-VIEW)
            ========================================= */
-        #home-view {
-            width: 100%;
-            max-width: 1500px;
-            display: grid;
-            grid-template-columns: 320px 1fr 300px;
-            gap: 20px;
-            height: calc(100vh - 250px);
-            margin-bottom: 20px;
-        }
+        #home-view { width: 100%; max-width: 1500px; display: grid; grid-template-columns: 320px 1fr 300px; gap: 20px; height: calc(100vh - 250px); margin-bottom: 20px; }
 
-        .panel-box {
-            background: var(--bg-card); border: 1px solid var(--border-card);
-            border-radius: 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden;
-        }
+        .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden; }
         
-        .panel-header {
-            background: rgba(52, 131, 250, 0.05); padding: 15px 20px;
-            border-bottom: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center;
-        }
+        .panel-header { background: rgba(52, 131, 250, 0.05); padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; }
         .panel-header h2 { font-size: 1rem; color: var(--text-title); display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 900;}
         
         .panel-content { flex: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column;}
@@ -185,9 +171,10 @@
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
         
-        let CURRENT_LOGGED_USER = JSON.parse(localStorage.getItem('loggedUser')) || null;
-        let currentUserStr = CURRENT_LOGGED_USER ? CURRENT_LOGGED_USER.usuario : 'Você';
-        let currentRoleStr = CURRENT_LOGGED_USER ? CURRENT_LOGGED_USER.cargo : 'Acesso Local';
+        let CURRENT_LOGGED_USER = null;
+        try { CURRENT_LOGGED_USER = JSON.parse(localStorage.getItem('loggedUser')); } catch(e) {}
+        let currentUserStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.usuario) ? CURRENT_LOGGED_USER.usuario : 'Você';
+        let currentRoleStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.cargo) ? CURRENT_LOGGED_USER.cargo : 'Acesso Local';
 
         // ==========================================
         // CITAÇÕES ANIMADAS
@@ -207,27 +194,34 @@
         async function carregarFeedAtualizacoes() {
             const listEl = document.getElementById('feed-list');
             try {
-                const res = await fetch(`${FIREBASE_URL}logs.json`); const data = await res.json();
+                // Previne cache pesado
+                const res = await fetch(`${FIREBASE_URL}logs.json?_=${Date.now()}`); 
+                const data = await res.json();
+                
                 if(!data) { listEl.innerHTML = '<div style="text-align:center; padding: 40px 20px; color: var(--text-muted);">Nenhuma atividade recente.</div>'; return; }
                 
-                let logs = Object.keys(data).map(key => data[key]); logs.sort((a, b) => b.timestamp - a.timestamp); logs = logs.slice(0, 15); 
+                let logs = [];
+                if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
+                
+                logs.sort((a, b) => b.timestamp - a.timestamp); logs = logs.slice(0, 15); 
                 listEl.innerHTML = '';
                 
                 logs.forEach(log => {
                     const dataFormatada = new Date(log.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
                     let icon = '📝'; let bgStyle = 'rgba(52, 131, 250, 0.1)'; let colorStyle = 'var(--accent-blue)';
-                    const actionTxt = log.acao.toLowerCase();
+                    const actionTxt = String(log.acao || '').toLowerCase();
+                    
                     if (actionTxt.includes('adicionou') || actionTxt.includes('criou') || actionTxt.includes('publicou')) { icon = '✨'; bgStyle = 'rgba(0, 166, 80, 0.1)'; colorStyle = 'var(--accent-green)'; } 
-                    else if (actionTxt.includes('removeu') || actionTxt.includes('excluiu')) { icon = '🗑️'; bgStyle = 'rgba(255, 82, 82, 0.1)'; colorStyle = 'var(--accent-red)'; }
+                    else if (actionTxt.includes('removeu') || actionTxt.includes('excluiu') || actionTxt.includes('apagou')) { icon = '🗑️'; bgStyle = 'rgba(255, 82, 82, 0.1)'; colorStyle = 'var(--accent-red)'; }
                     else if (actionTxt.includes('sincronizou')) { icon = '🔄'; bgStyle = 'rgba(255, 176, 0, 0.1)'; colorStyle = 'var(--accent-warn)'; }
 
                     listEl.innerHTML += `
                         <li class="feed-item">
                             <div class="feed-icon" style="background: ${bgStyle}; color: ${colorStyle};">${icon}</div>
                             <div class="feed-details">
-                                <span class="feed-module">${log.modulo}</span>
+                                <span class="feed-module">${log.modulo || 'Sistema'}</span>
                                 <span class="feed-action">${log.acao}</span>
-                                <span class="feed-meta">Por <strong>${log.usuario}</strong> • ${dataFormatada}</span>
+                                <span class="feed-meta">Por <strong>${log.usuario || 'Desconhecido'}</strong> • ${dataFormatada}</span>
                             </div>
                         </li>
                     `;
@@ -241,7 +235,7 @@
         async function carregarNoticias() {
             const container = document.getElementById('news-feed-container');
             try {
-                const res = await fetch(`${FIREBASE_URL}portal_news.json`);
+                const res = await fetch(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
                 let data = await res.json();
                 
                 if(!data) {
@@ -249,37 +243,39 @@
                     return;
                 }
 
-                let newsList = Object.keys(data).map(k => ({...data[k], key: k})).sort((a,b) => b.data - a.data);
+                let newsList = [];
+                if (Array.isArray(data)) { newsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
+                else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
+                
+                newsList.sort((a,b) => b.data - a.data);
                 container.innerHTML = '';
 
                 newsList.forEach(news => {
                     const dataFormatada = new Date(news.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                    const inicial = news.autor.charAt(0).toUpperCase();
+                    const inicial = (news.autor || 'A').charAt(0).toUpperCase();
                     
                     let userHasLiked = false;
-                    let currentUserStr = CURRENT_LOGGED_USER ? CURRENT_LOGGED_USER.usuario : 'Anônimo';
                     if(news.likedBy && Array.isArray(news.likedBy) && news.likedBy.includes(currentUserStr)) {
                         userHasLiked = true;
                     }
 
                     const btnClass = userHasLiked ? 'btn-like liked' : 'btn-like';
                     
-                    // ATENÇÃO: O corpo (news.corpo) é inserido sem o escapeHtml() pois o Editor Admin agora gera tags HTML ricas (Imagens, Links, Negrito).
                     container.innerHTML += `
                         <div class="post-card">
                             <div class="post-header">
                                 <div class="post-author-box">
                                     <div class="author-avatar">${inicial}</div>
                                     <div class="author-info">
-                                        <span class="author-name">${news.autor}</span>
+                                        <span class="author-name">${news.autor || 'Admin'}</span>
                                         <span class="post-date">${dataFormatada}</span>
                                     </div>
                                 </div>
-                                <span class="post-tag">${news.tag || 'Geral'}</span>
+                                <span class="post-tag">${news.tag || 'Aviso'}</span>
                             </div>
                             
-                            <div class="post-title">${news.titulo}</div>
-                            <div class="post-body">${news.corpo}</div>
+                            <div class="post-title">${news.titulo || ''}</div>
+                            <div class="post-body">${news.corpo || ''}</div>
                             
                             <div class="post-footer">
                                 <div class="ml-signature">
@@ -299,9 +295,7 @@
             }
         }
 
-        async function darLikeNews(newsKey) {
-            let currentUserStr = CURRENT_LOGGED_USER ? CURRENT_LOGGED_USER.usuario : 'Anônimo';
-            
+        async function darLikeNews(newsKey) {            
             const btn = document.getElementById(`btn-like-${newsKey}`);
             const countSpan = document.getElementById(`like-count-${newsKey}`);
             const animSpan = document.getElementById(`like-anim-${newsKey}`);
@@ -340,10 +334,10 @@
         }
 
         // ==========================================
-        // COLUNA 3: PRESENÇA AO VIVO
+        // COLUNA 3: USUÁRIOS E PRESENÇA AO VIVO
         // ==========================================
         function registrarPresenca() {
-            if(currentUserStr !== 'Você') {
+            if(currentUserStr !== 'Você' && currentUserStr !== 'Sistema') {
                 fetch(`${FIREBASE_URL}presence/${currentUserStr}.json`, {
                     method: 'PUT',
                     body: JSON.stringify({ cargo: currentRoleStr, lastSeen: Date.now() })
@@ -355,14 +349,15 @@
             const container = document.getElementById('users-feed-container');
             
             try {
-                const resP = await fetch(`${FIREBASE_URL}presence.json`);
+                // 1. Pega os status ao vivo do Firebase (quem bateu ponto nos últimos 2 minutos)
+                const resP = await fetch(`${FIREBASE_URL}presence.json?_=${Date.now()}`);
                 const presenceData = await resP.json() || {};
                 const now = Date.now();
                 const onlineUsers = Object.keys(presenceData).filter(u => now - presenceData[u].lastSeen < 120000).map(u => ({ nome: u, cargo: presenceData[u].cargo }));
 
+                // 2. Pega os usuários registrados da Planilha (via Cache para não pesar, se não houver puxa do GS)
                 let allUsers = JSON.parse(sessionStorage.getItem('cachedUsersList')) || null;
                 if (!allUsers) {
-                    // ADICIONADOS HEADERS E REDIRECT: FOLLOW PARA EVITAR CORS NO APPS SCRIPT
                     const resU = await fetch(APP_SCRIPT_URL, { 
                         method: 'POST', 
                         headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -382,15 +377,19 @@
                 let html = '';
 
                 html += `<div class="user-group-title">🟢 Agora no Portal</div><ul class="user-list">`;
-                html += `
-                    <li class="user-item">
-                        <div class="user-avatar" style="background: rgba(0, 166, 80, 0.1); color: var(--accent-green); border-color: var(--accent-green);">${currentUserStr.charAt(0).toUpperCase()}</div>
-                        <div class="user-info">
-                            <span class="user-name">${currentUserStr} (Você) <div class="status-dot dot-online"></div></span>
-                            <span class="user-role">${currentRoleStr}</span>
-                        </div>
-                    </li>
-                `;
+                
+                // Força você mesmo aparecer online se não for "Você" anônimo
+                if(currentUserStr !== 'Você') {
+                    html += `
+                        <li class="user-item">
+                            <div class="user-avatar" style="background: rgba(0, 166, 80, 0.1); color: var(--accent-green); border-color: var(--accent-green);">${currentUserStr.charAt(0).toUpperCase()}</div>
+                            <div class="user-info">
+                                <span class="user-name">${currentUserStr} (Você) <div class="status-dot dot-online"></div></span>
+                                <span class="user-role">${currentRoleStr}</span>
+                            </div>
+                        </li>
+                    `;
+                }
 
                 onlineUsers.forEach(ou => {
                     if(ou.nome !== currentUserStr) {
@@ -447,7 +446,9 @@
             }
         }
 
+        // ==========================================
         // INICIALIZAÇÃO
+        // ==========================================
         setTimeout(() => { 
             startMessageCycle(); 
             registrarPresenca();
