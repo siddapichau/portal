@@ -116,7 +116,7 @@
 </head>
 <body data-theme="light">
 
-    <!-- O menu.js que cuida do Login e do Menu Lateral foi importado -->
+    <!-- Carrega o menu que possui as configs e a barra superior -->
     <script src="menu.js"></script>
 
     <div id="main-content">
@@ -128,7 +128,6 @@
         </div>
 
         <div id="home-view">
-            
             <div class="panel-box col-logs">
                 <div class="panel-header"><h2><div class="live-indicator" title="Monitorando ao vivo"></div> Radar de Atividades</h2></div>
                 <div class="panel-content"><ul class="feed-list" id="feed-list"><div class="muted-msg">Conectando à Central...</div></ul></div>
@@ -143,14 +142,14 @@
                 <div class="panel-header"><h2>👥 Equipe no Portal</h2></div>
                 <div class="panel-content" id="users-feed-container"><div class="muted-msg">Mapeando presenças...</div></div>
             </div>
-
         </div>
 
         <iframe id="app-frame" src=""></iframe>
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        // Renomeada para URL_BD_INDEX para evitar conflito com a constante do menu.js!
+        const URL_BD_INDEX = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         
         let CURRENT_LOGGED_USER = null;
         try { CURRENT_LOGGED_USER = JSON.parse(localStorage.getItem('loggedUser')); } catch(e) {}
@@ -180,6 +179,18 @@
             progressBar.style.transition = 'none'; progressBar.style.width = '0%'; void progressBar.offsetWidth; 
             progressBar.style.transition = `width ${INTERVAL_MS}ms linear`; progressBar.style.width = '100%'; 
         }
+        
+        // ==========================================
+        // FUNÇÃO FETCH BLINDADA (PREVINE TRAVAMENTOS)
+        // ==========================================
+        async function fetchWithTimeout(resource, options = {}) {
+            const { timeout = 8000 } = options; 
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), timeout);
+            const response = await fetch(resource, { ...options, signal: controller.signal });
+            clearTimeout(id); 
+            return response;
+        }
 
         // ==========================================
         // COLUNA 1: LOGS DE ATIVIDADE
@@ -187,7 +198,7 @@
         async function carregarFeedAtualizacoes() {
             const listEl = document.getElementById('feed-list');
             try {
-                const res = await fetch(`${FIREBASE_URL}logs.json?_=${Date.now()}`); 
+                const res = await fetchWithTimeout(`${URL_BD_INDEX}logs.json?_=${Date.now()}`, { timeout: 5000 }); 
                 const data = await res.json();
                 
                 if(!data) { listEl.innerHTML = '<div class="muted-msg">Nenhuma atividade recente.</div>'; return; }
@@ -229,7 +240,7 @@
         async function carregarNoticias() {
             const container = document.getElementById('news-feed-container');
             try {
-                const res = await fetch(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
+                const res = await fetchWithTimeout(`${URL_BD_INDEX}portal_news.json?_=${Date.now()}`, { timeout: 5000 });
                 let data = await res.json();
                 
                 if(!data) {
@@ -289,13 +300,13 @@
             }
         }
 
-        async function darLikeNews(newsKey) {            
+        window.darLikeNews = async function(newsKey) {            
             const btn = document.getElementById(`btn-like-${newsKey}`);
             const countSpan = document.getElementById(`like-count-${newsKey}`);
             const animSpan = document.getElementById(`like-anim-${newsKey}`);
             
             try {
-                const res = await fetch(`${FIREBASE_URL}portal_news/${newsKey}.json`);
+                const res = await fetch(`${URL_BD_INDEX}portal_news/${newsKey}.json`);
                 const news = await res.json();
                 if(!news) return;
 
@@ -318,17 +329,17 @@
 
                 countSpan.innerText = currentLikes;
 
-                await fetch(`${FIREBASE_URL}portal_news/${newsKey}.json`, {
+                await fetch(`${URL_BD_INDEX}portal_news/${newsKey}.json`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ likes: currentLikes, likedBy: likedBy })
                 });
 
             } catch(e) { console.error("Erro ao computar like."); }
-        }
+        };
 
         // ==========================================
-        // COLUNA 3: USUÁRIOS E PRESENÇA AO VIVO (100% FIREBASE)
+        // COLUNA 3: USUÁRIOS E PRESENÇA AO VIVO 
         // ==========================================
         function formatRoleName(role) {
             if(!role) return 'Desconhecido';
@@ -342,7 +353,7 @@
 
         function registrarPresenca() {
             if(currentUserStr !== 'Você' && currentUserStr !== 'Sistema') {
-                fetch(`${FIREBASE_URL}presence/${currentUserStr}.json`, {
+                fetch(`${URL_BD_INDEX}presence/${currentUserStr}.json`, {
                     method: 'PUT',
                     body: JSON.stringify({ cargo: currentRoleStr, lastSeen: Date.now() })
                 }).catch(e => console.log(e));
@@ -353,26 +364,24 @@
             const container = document.getElementById('users-feed-container');
             
             try {
-                // 1. Pega os status ao vivo do Firebase
                 let presenceData = {};
                 try {
-                    const resP = await fetch(`${FIREBASE_URL}presence.json?_=${Date.now()}`);
+                    const resP = await fetchWithTimeout(`${URL_BD_INDEX}presence.json?_=${Date.now()}`, { timeout: 4000 });
                     presenceData = await resP.json() || {};
                 } catch(errP) {}
                 
                 const now = Date.now();
                 const onlineUsers = Object.keys(presenceData).filter(u => now - presenceData[u].lastSeen < 120000).map(u => ({ nome: u, cargo: formatRoleName(presenceData[u].cargo) }));
 
-                // 2. PEGA USUARIOS DO FIREBASE DIRETAMENTE
                 let allUsers = [];
                 try {
-                    const resU = await fetch(`${FIREBASE_URL}users.json?_=${Date.now()}`);
+                    const resU = await fetchWithTimeout(`${URL_BD_INDEX}users.json?_=${Date.now()}`, { timeout: 5000 });
                     const dataU = await resU.json();
                     if(dataU) {
                         allUsers = Object.keys(dataU).map(k => dataU[k]);
                     }
                 } catch (errU) {
-                    console.error("Falha ao puxar usuários do Firebase", errU);
+                    console.error("Falha ao puxar usuários", errU);
                 }
                 
                 let pendentes = allUsers.filter(u => u.solicitacao === 'pendente').slice(0, 2);
@@ -453,13 +462,13 @@
         }
 
         // ==========================================
-        // INICIALIZAÇÃO E LOAD
+        // INICIALIZAÇÃO GERAL E SINCRONIZAÇÃO
         // ==========================================
-        window.onload = function() {
+        setTimeout(() => { 
             startMessageCycle(); 
             registrarPresenca();
             
-            // As 3 colunas puxam independentemente com `fetch` simples e nativo.
+            // Cada função roda de forma paralela e independente! Se uma falhar, a outra continua.
             carregarFeedAtualizacoes(); 
             carregarNoticias();
             carregarPresencaUsuarios();
@@ -470,7 +479,8 @@
                 carregarNoticias();
                 carregarPresencaUsuarios();
             }, 30000); 
-        };
+
+        }, 500);
 
     </script>
 </body>
