@@ -1,9 +1,36 @@
-// ====== SUA URL DO GOOGLE APPS SCRIPT ======
 const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
 const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
 
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+
+// Função GLOBAL para os Iframes perguntarem se podem editar
+window.verificarPermissaoUpload = function(urlPagina) {
+    if (!currentUser) return false;
+    let permitted = false;
+    const userRole = currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
+    const userName = currentUser.usuario ? currentUser.usuario.toLowerCase() : '';
+
+    menuData.categorias.forEach(cat => {
+        (cat.items || []).forEach(item => {
+            // Verifica no 2º nível
+            if (item.url && item.url.includes(urlPagina)) {
+                let roles = (item.uploadRoles || 'editor,admin').toLowerCase().split(',').map(r=>r.trim());
+                let users = (item.allowedUsers || '').toLowerCase().split(',').map(u=>u.trim());
+                if (roles.includes(userRole) || users.includes(userName)) permitted = true;
+            }
+            // Verifica no 3º nível (Sub-submenus)
+            (item.subItems || []).forEach(sub => {
+                if (sub.url && sub.url.includes(urlPagina)) {
+                    let roles = (sub.uploadRoles || 'editor,admin').toLowerCase().split(',').map(r=>r.trim());
+                    let users = (sub.allowedUsers || '').toLowerCase().split(',').map(u=>u.trim());
+                    if (roles.includes(userRole) || users.includes(userName)) permitted = true;
+                }
+            });
+        });
+    });
+    return permitted;
+};
 
 async function carregarMenuGlobal() {
     const baseHTML = `
@@ -29,7 +56,6 @@ async function carregarMenuGlobal() {
 
         <!-- MODAL AUTH -->
         <div class="auth-modal" id="authModal">
-            <!-- CAIXA DE LOGIN -->
             <div class="auth-box" id="loginBox">
                 <h2>Acesso ao Portal</h2>
                 <input type="text" id="logUser" placeholder="Usuário">
@@ -37,8 +63,6 @@ async function carregarMenuGlobal() {
                 <button class="btn-auth" onclick="fazerLogin()">Entrar</button>
                 <div class="auth-toggle" onclick="mudarAuthModo('register')">Não tem conta? Solicite Acesso</div>
             </div>
-
-            <!-- CAIXA DE REGISTRO -->
             <div class="auth-box" id="registerBox" style="display:none;">
                 <h2>Registrar</h2>
                 <input type="text" id="regUser" placeholder="Usuário"><input type="email" id="regEmail" placeholder="E-mail">
@@ -47,34 +71,16 @@ async function carregarMenuGlobal() {
                 <button class="btn-auth" style="background:var(--accent-green);" onclick="fazerRegistro()">Registrar</button>
                 <div class="auth-toggle" onclick="mudarAuthModo('login')">Já possui conta? Entrar</div>
             </div>
-
-            <!-- CAIXA DE PERFIL -->
             <div class="auth-box" id="profileBox" style="display:none; max-width: 450px;">
                 <h2 style="margin-bottom: 5px; color: var(--text-title);">Meu Perfil</h2>
                 <div id="profileInfo" style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.9rem; text-align: left; background: var(--bg-body); padding: 10px; border-radius: 6px; border: 1px solid var(--border-card);"></div>
-                
-                <div style="text-align: left; margin-bottom: 20px; background: var(--bg-body); padding: 10px; border-radius: 6px; border: 1px solid var(--border-card); max-height: 120px; overflow-y: auto;">
-                    <strong style="color: var(--text-title); font-size: 0.9rem;">Páginas liberadas para você:</strong>
-                    <ul id="profilePages" style="list-style: none; padding: 0; margin-top: 5px; font-size: 0.85rem; color: var(--text-main);"></ul>
-                </div>
-
                 <div style="text-align: left; margin-bottom: 15px;">
                     <strong style="color: var(--text-title); font-size: 0.9rem;">Trocar Senha</strong>
-                    <div class="input-group" style="margin-top: 5px;">
-                        <input type="password" id="profPassCurrent" placeholder="Senha Atual">
-                        <span class="eye-icon" onclick="togglePass('profPassCurrent')">👁️</span>
-                    </div>
-                    <div class="input-group">
-                        <input type="password" id="profPassNew1" placeholder="Nova Senha (8-16 caract.)">
-                        <span class="eye-icon" onclick="togglePass('profPassNew1')">👁️</span>
-                    </div>
-                    <div class="input-group" style="margin-bottom: 5px;">
-                        <input type="password" id="profPassNew2" placeholder="Confirmar Nova Senha">
-                        <span class="eye-icon" onclick="togglePass('profPassNew2')">👁️</span>
-                    </div>
+                    <div class="input-group" style="margin-top: 5px;"><input type="password" id="profPassCurrent" placeholder="Senha Atual"><span class="eye-icon" onclick="togglePass('profPassCurrent')">👁️</span></div>
+                    <div class="input-group"><input type="password" id="profPassNew1" placeholder="Nova Senha (8-16 caract.)"><span class="eye-icon" onclick="togglePass('profPassNew1')">👁️</span></div>
+                    <div class="input-group" style="margin-bottom: 5px;"><input type="password" id="profPassNew2" placeholder="Confirmar Nova Senha"><span class="eye-icon" onclick="togglePass('profPassNew2')">👁️</span></div>
                     <button class="btn-auth" id="btnUpdatePass" style="background:#f59e0b; color: #fff;" onclick="trocarSenha()">Atualizar Senha</button>
                 </div>
-                
                 <button class="btn-auth" style="background: #FF5252;" onclick="fazerLogout()">Sair da Conta</button>
             </div>
         </div>
@@ -88,17 +94,19 @@ async function carregarMenuGlobal() {
         renderizarMenuEsquerdo();
     } catch (e) { console.error("Erro Menu", e); }
 
-    document.getElementById('authModal').addEventListener('click', function(e) {
-        if(e.target === this) fecharAuthModal();
-    });
+    document.getElementById('authModal').addEventListener('click', function(e) { if(e.target === this) fecharAuthModal(); });
 }
 
-function temPermissao(rolesStr) {
-    if(!rolesStr) return true; 
-    let roles = rolesStr.split(',').map(r => r.trim().toLowerCase());
-    let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'view';
-    if (!currentUser && roles.includes('view')) return true;
-    return roles.includes(userRole);
+function temPermissao(rolesStr, usersStr) {
+    if(!rolesStr && !usersStr) return true; 
+    let roles = (rolesStr || '').split(',').map(r => r.trim().toLowerCase());
+    let users = (usersStr || '').split(',').map(u => u.trim().toLowerCase());
+    
+    let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
+    let userName = currentUser && currentUser.usuario ? currentUser.usuario.toLowerCase() : '';
+    
+    if (userRole === 'guest' && (roles.includes('view') || roles.includes('guest'))) return true;
+    return roles.includes(userRole) || users.includes(userName);
 }
 
 function toggleMenu() {
@@ -106,53 +114,30 @@ function toggleMenu() {
     document.querySelector('.sidebar-overlay').classList.toggle('active');
 }
 
-// ==== ATUALIZADO: ROTEAMENTO DINÂMICO PARA A URL ====
 function abrirPagina(url, titulo) {
     if(!url || url === '#') return;
     const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
-    
     if (isIndex) {
-        const homeView = document.getElementById('home-view');
-        const quoteBox = document.getElementById('quote-box');
-        const pageTitle = document.getElementById('page-title');
-        
-        if (homeView) homeView.style.display = 'none';
-        if (quoteBox) quoteBox.style.display = 'none';
-        if (pageTitle) pageTitle.style.display = 'none';
-        
+        const homeView = document.getElementById('home-view'); const quoteBox = document.getElementById('quote-box'); const pageTitle = document.getElementById('page-title');
+        if (homeView) homeView.style.display = 'none'; if (quoteBox) quoteBox.style.display = 'none'; if (pageTitle) pageTitle.style.display = 'none';
         const frame = document.getElementById('app-frame');
-        if (frame) {
-            frame.style.display = 'block';
-            frame.src = url;
-            
-            // Atualiza a URL do navegador sem recarregar a página
-            window.history.pushState({ path: url }, '', `?page=${url}`);
-        }
-        
-        document.querySelector('.sidebar-wrapper').classList.remove('open');
-        document.querySelector('.sidebar-overlay').classList.remove('active');
-    } else {
-        window.location.href = `index.html?page=${url}`;
-    }
+        if (frame) { frame.style.display = 'block'; frame.src = url; window.history.pushState({ path: url }, '', `?page=${url}`); }
+        document.querySelector('.sidebar-wrapper').classList.remove('open'); document.querySelector('.sidebar-overlay').classList.remove('active');
+    } else { window.location.href = `index.html?page=${url}`; }
 }
 
-// Intercepta os botões "Voltar" e "Avançar" do navegador
 window.addEventListener('popstate', (event) => {
     const urlParams = new URLSearchParams(window.location.search);
     const pageToLoad = urlParams.get('page');
-    if (pageToLoad) {
-        const frame = document.getElementById('app-frame');
-        if (frame) frame.src = pageToLoad;
-    } else {
-        window.location.reload(); // Se voltar pro inicio puro, recarrega
-    }
+    if (pageToLoad) { const frame = document.getElementById('app-frame'); if (frame) frame.src = pageToLoad; } 
+    else { window.location.reload(); }
 });
 
 function renderizarMenuEsquerdo() {
     const container = document.getElementById('cat-list-container');
     container.innerHTML = '';
     menuData.categorias.forEach((cat, idx) => {
-        if(temPermissao(cat.viewRoles)) {
+        if(temPermissao(cat.viewRoles, '')) {
             container.innerHTML += `<div class="cat-item" onmouseenter="abrirSubmenu(${idx}, this)" onclick="abrirSubmenu(${idx}, this)">
                 ${cat.icon || '📂'} ${cat.category} <span>></span>
             </div>`;
@@ -160,6 +145,7 @@ function renderizarMenuEsquerdo() {
     });
 }
 
+// RENDERIZANDO NÍVEIS 2 E 3
 function abrirSubmenu(catIdx, element) {
     document.querySelectorAll('.cat-item').forEach(el => el.classList.remove('active'));
     if(element) element.classList.add('active');
@@ -167,16 +153,41 @@ function abrirSubmenu(catIdx, element) {
     panel.classList.add('active');
     let userFavs = currentUser && currentUser.favorito ? currentUser.favorito.split(',') : [];
     let html = '';
-    (menuData.categorias[catIdx].items || []).forEach(item => {
-        if(temPermissao(item.viewRoles)) {
+    
+    (menuData.categorias[catIdx].items || []).forEach((item, itemIdx) => {
+        if(temPermissao(item.viewRoles, item.allowedUsers)) {
             const isFav = userFavs.includes(item.title);
+            
+            // Verifica se tem sub-submenus (3º nível)
+            let subItemsHtml = '';
+            if (item.subItems && item.subItems.length > 0) {
+                subItemsHtml = `<div style="margin-top: 8px; padding-left: 15px; border-left: 2px solid var(--border-card); display: flex; flex-direction: column; gap: 5px;">`;
+                item.subItems.forEach(sub => {
+                    if(temPermissao(sub.viewRoles, sub.allowedUsers)) {
+                        const isSubFav = userFavs.includes(sub.title);
+                        subItemsHtml += `
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div onclick="abrirPagina('${sub.url}', '${sub.title}')" style="cursor:pointer; font-size:0.8rem; color:var(--accent-blue); display:flex; gap:6px; align-items:center;">
+                                    <span>${sub.icon || '↳'}</span> ${sub.title}
+                                </div>
+                                <span class="fav-star ${isSubFav ? 'active' : ''}" style="font-size:0.9rem;" onclick="toggleFavorito('${sub.title}', this)">★</span>
+                            </div>
+                        `;
+                    }
+                });
+                subItemsHtml += `</div>`;
+            }
+
             html += `
-                <div class="subitem-link">
-                    <div onclick="abrirPagina('${item.url}', '${item.title}')" style="cursor:pointer; flex:1; display:flex; gap:10px; align-items:center;">
-                        <span>${item.icon || '📄'}</span> 
-                        <div><div style="color:var(--text-title);">${item.title}</div><div style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">${item.desc || ''}</div></div>
+                <div class="subitem-link" style="flex-direction: column; align-items: stretch; gap: 5px;">
+                    <div style="display:flex; justify-content: space-between; width: 100%;">
+                        <div onclick="abrirPagina('${item.url}', '${item.title}')" style="cursor:pointer; flex:1; display:flex; gap:10px; align-items:center;">
+                            <span>${item.icon || '📄'}</span> 
+                            <div><div style="color:var(--text-title);">${item.title}</div><div style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">${item.desc || ''}</div></div>
+                        </div>
+                        <span class="fav-star ${isFav ? 'active' : ''}" onclick="toggleFavorito('${item.title}', this)">★</span>
                     </div>
-                    <span class="fav-star ${isFav ? 'active' : ''}" onclick="toggleFavorito('${item.title}', this)">★</span>
+                    ${subItemsHtml}
                 </div>
             `;
         }
@@ -185,14 +196,10 @@ function abrirSubmenu(catIdx, element) {
 }
 
 function switchTab(tab) {
-    document.getElementById('tab-todos').classList.remove('active');
-    document.getElementById('tab-favs').classList.remove('active');
-    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('tab-todos').classList.remove('active'); document.getElementById('tab-favs').classList.remove('active'); document.getElementById('tab-' + tab).classList.add('active');
     const panel = document.getElementById('subitem-panel');
-    if(tab === 'todos') {
-        renderizarMenuEsquerdo();
-        panel.innerHTML = '<div style="padding: 20px; color: var(--text-muted); text-align:center;">Passe o mouse em uma categoria</div>';
-    } else {
+    if(tab === 'todos') { renderizarMenuEsquerdo(); panel.innerHTML = '<div style="padding: 20px; color: var(--text-muted); text-align:center;">Passe o mouse em uma categoria</div>'; } 
+    else {
         document.getElementById('cat-list-container').innerHTML = '<div style="padding:20px; color:#aaa; font-size:0.85rem;">Exibindo seus favoritos...</div>';
         panel.classList.add('active');
         if(!currentUser) return panel.innerHTML = '<div style="padding:20px; text-align:center;">Faça login para ver favoritos.</div>';
@@ -200,121 +207,56 @@ function switchTab(tab) {
         let userFavs = currentUser.favorito ? currentUser.favorito.split(',') : [];
         let favHtml = '';
         menuData.categorias.forEach(cat => {
-            if(temPermissao(cat.viewRoles)) {
-                (cat.items || []).forEach(item => {
-                    if(temPermissao(item.viewRoles) && userFavs.includes(item.title)) {
-                        favHtml += `
-                        <div class="subitem-link">
-                            <div onclick="abrirPagina('${item.url}', '${item.title}')" style="cursor:pointer; flex:1; display:flex; gap:10px; align-items:center;">
-                                <span>${item.icon || '📄'}</span> 
-                                <div><div style="color:var(--text-title);">${item.title}</div><div style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">${cat.category}</div></div>
-                            </div>
-                            <span class="fav-star active" onclick="toggleFavorito('${item.title}', this, true)">★</span>
-                        </div>`;
+            (cat.items || []).forEach(item => {
+                if(temPermissao(item.viewRoles, item.allowedUsers) && userFavs.includes(item.title)) {
+                    favHtml += `<div class="subitem-link"><div onclick="abrirPagina('${item.url}', '${item.title}')" style="cursor:pointer; flex:1; display:flex; gap:10px; align-items:center;"><span>${item.icon || '📄'}</span><div><div style="color:var(--text-title);">${item.title}</div><div style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">${cat.category}</div></div></div><span class="fav-star active" onclick="toggleFavorito('${item.title}', this, true)">★</span></div>`;
+                }
+                (item.subItems || []).forEach(sub => {
+                    if(temPermissao(sub.viewRoles, sub.allowedUsers) && userFavs.includes(sub.title)) {
+                        favHtml += `<div class="subitem-link"><div onclick="abrirPagina('${sub.url}', '${sub.title}')" style="cursor:pointer; flex:1; display:flex; gap:10px; align-items:center;"><span>${sub.icon || '📄'}</span><div><div style="color:var(--text-title);">${sub.title}</div><div style="font-size:0.75rem; color:var(--text-muted); font-weight:400;">${item.title}</div></div></div><span class="fav-star active" onclick="toggleFavorito('${sub.title}', this, true)">★</span></div>`;
                     }
                 });
-            }
+            });
         });
         panel.innerHTML = favHtml || '<div style="padding:20px; text-align:center;">Nenhum favorito ainda.</div>';
     }
 }
 
-// ==== SISTEMA DE MODAL INTELIGENTE ====
-function abrirAuthModal() { 
-    document.getElementById('authModal').classList.add('active'); 
-    if(currentUser) {
-        mudarAuthModo('profile');
-        carregarPerfil();
-    } else {
-        mudarAuthModo('login');
-    }
-}
-
+// ==== AUTH E THEME ====
+function abrirAuthModal() { document.getElementById('authModal').classList.add('active'); if(currentUser) { mudarAuthModo('profile'); carregarPerfil(); } else { mudarAuthModo('login'); } }
 function fecharAuthModal() { document.getElementById('authModal').classList.remove('active'); }
-
-function mudarAuthModo(modo) { 
-    document.getElementById('loginBox').style.display = modo === 'login' ? 'block' : 'none'; 
-    document.getElementById('registerBox').style.display = modo === 'register' ? 'block' : 'none'; 
-    document.getElementById('profileBox').style.display = modo === 'profile' ? 'block' : 'none';
-}
-
+function mudarAuthModo(modo) { document.getElementById('loginBox').style.display = modo === 'login' ? 'block' : 'none'; document.getElementById('registerBox').style.display = modo === 'register' ? 'block' : 'none'; document.getElementById('profileBox').style.display = modo === 'profile' ? 'block' : 'none'; }
 function togglePass(id) { const el = document.getElementById(id); el.type = el.type === 'password' ? 'text' : 'password'; }
 
 function carregarPerfil() {
-    document.getElementById('profileInfo').innerHTML = `
-        <strong>Usuário:</strong> ${currentUser.usuario} <br> 
-        <strong>E-mail:</strong> ${currentUser.email} <br> 
-        <strong>Nível de Acesso:</strong> <span style="text-transform: uppercase; color: var(--accent-blue); font-weight:bold;">${currentUser.cargo}</span>
-    `;
-    
-    let ul = document.getElementById('profilePages');
-    ul.innerHTML = '';
-    menuData.categorias.forEach(cat => {
-        if(temPermissao(cat.viewRoles)) {
-            (cat.items || []).forEach(item => {
-                if(temPermissao(item.viewRoles)) {
-                    ul.innerHTML += `<li style="padding:3px 0;">✔️ ${item.title} <span style="color:#aaa; font-size:0.75rem;">(${cat.category})</span></li>`;
-                }
-            });
-        }
-    });
-    if(ul.innerHTML === '') ul.innerHTML = '<li>Nenhuma página liberada.</li>';
+    document.getElementById('profileInfo').innerHTML = `<strong>Usuário:</strong> ${currentUser.usuario} <br><strong>E-mail:</strong> ${currentUser.email} <br><strong>Cargo:</strong> <span style="text-transform: uppercase; color: var(--accent-blue); font-weight:bold;">${currentUser.cargo}</span>`;
 }
 
 async function trocarSenha() {
-    const currentPass = document.getElementById('profPassCurrent').value;
-    const newPass1 = document.getElementById('profPassNew1').value;
-    const newPass2 = document.getElementById('profPassNew2').value;
-
-    if(!currentPass || !newPass1 || !newPass2) return alert("Preencha todos os campos de senha.");
-    if(newPass1.length < 8 || newPass1.length > 16) return alert("A nova senha deve ter entre 8 e 16 caracteres.");
-    if(newPass1 !== newPass2) return alert("As novas senhas não coincidem!");
-
-    const btn = document.getElementById('btnUpdatePass');
-    btn.innerText = "⏳ Atualizando..."; btn.disabled = true;
-
+    const currentPass = document.getElementById('profPassCurrent').value; const newPass1 = document.getElementById('profPassNew1').value; const newPass2 = document.getElementById('profPassNew2').value;
+    if(!currentPass || !newPass1 || !newPass2) return alert("Preencha todas as senhas."); if(newPass1.length < 8 || newPass1.length > 16) return alert("A nova senha deve ter entre 8 e 16 caracteres."); if(newPass1 !== newPass2) return alert("As novas senhas não coincidem!");
+    const btn = document.getElementById('btnUpdatePass'); btn.innerText = "⏳ Atualizando..."; btn.disabled = true;
     try {
-        const res = await fetch(APP_SCRIPT_URL, {
-            method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow",
-            body: JSON.stringify({ action: "changePassword", usuario: currentUser.usuario, senhaAtual: currentPass, novaSenha: newPass1 })
-        });
-        const data = await res.json();
-        alert(data.message);
-        if(data.success) {
-            currentUser.senha = newPass1;
-            localStorage.setItem('loggedUser', JSON.stringify(currentUser));
-            document.getElementById('profPassCurrent').value = '';
-            document.getElementById('profPassNew1').value = '';
-            document.getElementById('profPassNew2').value = '';
-        }
-    } catch(e) { alert("Erro ao comunicar com o servidor."); } finally { btn.innerText = "Atualizar Senha"; btn.disabled = false; }
+        const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "changePassword", usuario: currentUser.usuario, senhaAtual: currentPass, novaSenha: newPass1 }) });
+        const data = await res.json(); alert(data.message);
+        if(data.success) { currentUser.senha = newPass1; localStorage.setItem('loggedUser', JSON.stringify(currentUser)); fecharAuthModal(); }
+    } catch(e) { alert("Erro de rede."); } finally { btn.innerText = "Atualizar Senha"; btn.disabled = false; }
 }
 
 function fazerLogout() {
-    if(confirm("Tem certeza que deseja sair da sua conta?")) {
-        currentUser = null;
-        localStorage.removeItem('loggedUser');
-        fecharAuthModal();
-        verificarAcesso();
-        renderizarMenuEsquerdo();
-        switchTab('todos');
-        document.getElementById('btnAdminGlobal').style.display = 'none';
-        
-        // Se estiver dentro de uma página que exija login, recarrega o index
-        window.location.href = 'index.html';
+    if(confirm("Tem certeza que deseja sair?")) {
+        currentUser = null; localStorage.removeItem('loggedUser'); fecharAuthModal(); verificarAcesso(); renderizarMenuEsquerdo(); switchTab('todos'); document.getElementById('btnAdminGlobal').style.display = 'none'; window.location.href = 'index.html';
     }
 }
 
 async function fazerRegistro() {
     const user = document.getElementById('regUser').value.trim(); const email = document.getElementById('regEmail').value.trim(); const p1 = document.getElementById('regPass1').value; const p2 = document.getElementById('regPass2').value;
-    if(!user || !email) return alert("Preencha Usuário e E-mail.");
-    if(p1.length < 8 || p1.length > 16) return alert("A senha deve ter entre 8 e 16 caracteres.");
-    if(p1 !== p2) return alert("As senhas não coincidem!");
+    if(!user || !email) return alert("Preencha Usuário e E-mail."); if(p1.length < 8 || p1.length > 16) return alert("A senha deve ter entre 8 e 16 caracteres."); if(p1 !== p2) return alert("As senhas não coincidem!");
     const btn = document.querySelector('#registerBox .btn-auth'); btn.innerText = "⏳ Registrando..."; btn.disabled = true;
     try {
         const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "register", usuario: user, email: email, senha: p1 }) });
         const data = await res.json(); alert(data.message); if(data.success) mudarAuthModo('login');
-    } catch(e) { alert("Erro ao conectar."); } finally { btn.innerText = "Registrar"; btn.disabled = false; }
+    } catch(e) { alert("Erro de rede."); } finally { btn.innerText = "Registrar"; btn.disabled = false; }
 }
 
 async function fazerLogin() {
@@ -325,44 +267,39 @@ async function fazerLogin() {
         const res = await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "login", usuario: user, senha: pass }) });
         const data = await res.json();
         if(!data.success) { alert(data.message); } else {
-            if(data.user.solicitacao === "pendente") alert("Seu acesso ainda está pendente de aprovação!");
-            else if(data.user.solicitacao === "bloqueado") alert("Seu acesso foi bloqueado pelo administrador.");
-            else {
-                currentUser = data.user; localStorage.setItem('loggedUser', JSON.stringify(currentUser)); 
-                fecharAuthModal(); verificarAcesso(); renderizarMenuEsquerdo(); switchTab('todos');
-            }
+            if(data.user.solicitacao === "pendente") alert("Seu acesso ainda está pendente de aprovação!"); else if(data.user.solicitacao === "bloqueado") alert("Seu acesso foi bloqueado.");
+            else { currentUser = data.user; localStorage.setItem('loggedUser', JSON.stringify(currentUser)); fecharAuthModal(); verificarAcesso(); renderizarMenuEsquerdo(); switchTab('todos'); }
         }
-    } catch(e) { alert("Erro ao conectar."); } finally { btn.innerText = "Entrar"; btn.disabled = false; }
+    } catch(e) { alert("Erro de rede."); } finally { btn.innerText = "Entrar"; btn.disabled = false; }
 }
 
 async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
     if(!currentUser) return alert("Faça login para favoritar!");
     let favs = currentUser.favorito ? currentUser.favorito.split(',').filter(f => f) : [];
-    if(favs.includes(itemTitle)) { favs = favs.filter(f => f !== itemTitle); iconElement.classList.remove('active'); } 
-    else { favs.push(itemTitle); iconElement.classList.add('active'); }
-    currentUser.favorito = favs.join(','); localStorage.setItem('loggedUser', JSON.stringify(currentUser));
-    if(reloadFavs) switchTab('favs');
+    if(favs.includes(itemTitle)) { favs = favs.filter(f => f !== itemTitle); iconElement.classList.remove('active'); } else { favs.push(itemTitle); iconElement.classList.add('active'); }
+    currentUser.favorito = favs.join(','); localStorage.setItem('loggedUser', JSON.stringify(currentUser)); if(reloadFavs) switchTab('favs');
     try { await fetch(APP_SCRIPT_URL, { method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, redirect: "follow", body: JSON.stringify({ action: "updateFav", usuario: currentUser.usuario, favoritos: currentUser.favorito }) }); } catch(e) {}
 }
 
 function verificarAcesso() { if(currentUser && currentUser.cargo === 'admin') document.getElementById('btnAdminGlobal').style.display = 'flex'; }
-function toggleTheme() { const body = document.body; let newMode = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; body.setAttribute('data-theme', newMode); localStorage.setItem('themePreference', newMode); }
+function toggleTheme() { 
+    const body = document.body; let newMode = body.getAttribute('data-theme') === 'light' ? 'dark' : 'light'; 
+    body.setAttribute('data-theme', newMode); localStorage.setItem('themePreference', newMode); 
+    
+    // Força o iframe a receber o aviso de mudança de tema
+    const frame = document.getElementById('app-frame');
+    if (frame && frame.contentWindow) {
+        frame.contentWindow.postMessage({ type: 'THEME_CHANGED', theme: newMode }, '*');
+    }
+}
 
-// GATILHO INICIAL PARA LER A URL E ABRIR O IFRAME
 document.addEventListener("DOMContentLoaded", () => { 
     if (localStorage.getItem('themePreference') === 'dark') document.body.setAttribute('data-theme', 'dark'); 
-    
     carregarMenuGlobal().then(() => {
         const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
         if (isIndex) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const pageToLoad = urlParams.get('page');
-            if (pageToLoad) {
-                // Pequeno delay para garantir que o DOM do index renderizou a área do Iframe
-                setTimeout(() => {
-                    abrirPagina(pageToLoad, 'Portal');
-                }, 100);
-            }
+            const urlParams = new URLSearchParams(window.location.search); const pageToLoad = urlParams.get('page');
+            if (pageToLoad) { setTimeout(() => { abrirPagina(pageToLoad, 'Portal'); }, 100); }
         }
     });
 });
