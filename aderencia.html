@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aderência de Inventário - Mercado Livre</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'aderencia.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- CSS GLOBAL -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Variáveis específicas para as tabelas de aderência */
+        :root {
+            --bg-table: rgba(30, 41, 59, 0.6); --bg-th: rgba(15, 23, 42, 0.8);
+            --text-ver: #00E5FF; --text-pend: #FF5252; --text-perc: #FFF159;
+            --row-fechamento-bg: rgba(30, 41, 59, 0.9);
+        }
+
+        [data-theme="light"] {
+            --bg-table: #FFFFFF; --bg-th: #F0F0F0;
+            --text-ver: #008B99; --text-pend: #D32F2F; --text-perc: #B48B00;
+            --row-fechamento-bg: #EBEBEB;
+        }
+
+        html, body { width: 100%; min-height: 100%; background: transparent !important; }
+        body { padding: 15px; display: flex; flex-direction: column; gap: 15px; }
+
+        .top-bar { display: flex; justify-content: flex-end; padding-bottom: 5px; gap: 15px; align-items: center; }
+        .status-badge { font-size: 0.85rem; font-weight: 800; color: var(--text-title); background: rgba(0,0,0,0.15); padding: 6px 12px; border-radius: 4px; }
+        
+        .select-date {
+            background-color: var(--bg-card); border: 2px solid var(--border-card); color: var(--text-main);
+            padding: 8px 12px; border-radius: 6px; font-family: 'Inter', sans-serif; font-weight: 800;
+            font-size: 0.95rem; cursor: pointer; outline: none; transition: all 0.3s ease;
+        }
+        .select-date:hover { border-color: #FFF159; }
+
+        .btn-upload { background-color: #FFF159; border: none; color: #2D3277; padding: 8px 16px; border-radius: 6px; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 5px var(--shadow-card); }
+        .btn-upload:hover { background-color: #F3E34C; transform: translateY(-2px); }
+        
+        .btn { border: none; border-radius: 8px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: all .3s ease; }
+        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
+        .upload-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; flex: 1; align-items: start; }
+        @media (max-width: 1024px) { .dashboard-grid { grid-template-columns: 1fr; } }
+        
+        .table-card { background-color: var(--bg-card); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-card); display: flex; flex-direction: column; transition: 0.3s; border: 1px solid var(--border-card); }
+        .yellow-header { background-color: #FFF159; color: #2D3277; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-size: 1.15rem; font-weight: 900; }
+        .logo-ml { height: 26px; object-fit: contain; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; color: var(--text-main); background-color: var(--bg-table); transition: 0.3s; }
+        th, td { padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border-card); }
+        th { background-color: var(--bg-th); font-weight: 800; text-transform: uppercase; color: var(--text-title); }
+        th.col-ver, td.col-ver { color: var(--text-ver); font-weight: bold; }
+        th.col-pend, td.col-pend { color: var(--text-pend); font-weight: bold; }
+        th.col-perc, td.col-perc { color: var(--text-perc); font-weight: bold; }
+        th:first-child, td:first-child { text-align: left; font-weight: bold; color: var(--text-title); }
+        
+        .row-fechamento td { background-color: var(--row-fechamento-bg); font-weight: 900; font-size: 1rem; color: var(--text-title); border-top: 2px solid var(--border-card); }
+        .right-column { display: flex; flex-direction: column; gap: 20px; }
+        
+        /* TOAST E MODAL */
+        #toast-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast-content { display: flex; flex-direction: column; }
+        .toast-title { font-size: 0.9rem; opacity: 0.9; margin-bottom: 4px; font-weight: 600; }
+        .toast-message { font-size: 1.25rem; font-weight: 900; letter-spacing: 0.5px; }
+        .toast-xpt { background: linear-gradient(135deg, #FFF159 0%, #E6D22E 100%); border: 1px solid #D6C72A; color: #2D3277; }
+        .toast-xpt .toast-icon { background: rgba(45, 50, 119, 0.1); }
+        .toast-normal { background: linear-gradient(135deg, #00A650 0%, #1D5A33 100%); border: 1px solid #00C863; color: #FFFFFF; }
+        .toast-icon { font-size: 2rem; background: rgba(255,255,255,0.2); padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .toast-close { position: absolute; top: 12px; right: 12px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s; display: flex; }
+        .toast-close:hover { opacity: 1; }
+        .modern-toast { min-width: 450px; padding: 24px 32px; padding-right: 50px; border-radius: 16px; font-family: 'Inter', sans-serif; box-shadow: 0 15px 35px rgba(0,0,0,0.3); display: flex; align-items: center; gap: 20px; transform: translateY(30px) scale(0.9); opacity: 0; transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55); position: relative; cursor: pointer; pointer-events: auto; }
+        .modern-toast.show { transform: translateY(0) scale(1); opacity: 1; }
+        .toast-footer-msg { margin-top: 12px; font-size: 0.85rem; font-weight: 600; opacity: 0.85; font-style: italic; line-height: 1.4; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 8px; }
+
+        .custom-modal { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); z-index: 9999; align-items: center; justify-content: center; backdrop-filter: blur(6px); padding: 16px; }
+        .custom-modal.active { display: flex; }
+        .modal-card { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; width: 100%; max-width: 800px; max-height: 85vh; overflow-y: auto; color: var(--text-main); box-shadow: var(--shadow-card); }
+        .modal-header { padding: 15px 20px; background: var(--bg-body); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); position: sticky; top: 0; z-index: 10; }
+        .modal-title { font-size: 1.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase;}
+        .modal-close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.8rem; cursor: pointer; display: inline-flex; line-height: 1; font-weight: bold;}
+        .modal-body { padding: 20px; display: flex; flex-direction: column; gap: 12px; font-size: 1rem; }
+    </style>
+</head>
+<body data-theme="light">
+    <div id="toast-container"></div>
+
+    <div class="top-bar">
+        <span class="status-badge" id="data-status">Conectando ao banco...</span>
+
+        <select id="filter-data" class="select-date" onchange="aplicarFiltroData()">
+            <option value="">Aguardando Dados...</option>
+        </select>
+
+        <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Selecione o CSV exportado da aba 'Tabela'">
+            <button class="btn-upload">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                Selecionar CSV Local
+            </button>
+            <input type="file" id="csvFileInput" accept=".csv" />
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="table-card">
+            <div class="yellow-header">
+                <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="logo-ml" alt="Mercado Livre">
+                <span id="title-t1">Aderência de Inventário Geral 0,00%</span>
+                <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="logo-ml" alt="Mercado Livre">
+            </div>
+            <table>
+                <thead><tr><th>Areas</th><th class="col-ver">Verificados</th><th class="col-pend">Pendentes</th><th>Total</th><th class="col-perc">%</th></tr></thead>
+                <tbody id="tbody-geral"><tr><td colspan="5" style="text-align: center; padding: 30px;">Aguardando dados...</td></tr></tbody>
+            </table>
+        </div>
+
+        <div class="right-column">
+            <div class="table-card">
+                <div class="yellow-header">
+                    <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="logo-ml" alt="Mercado Livre">
+                    <span id="title-t2">Aderência Sem Ativos Poc / DC 0,00%</span>
+                    <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="logo-ml" alt="Mercado Livre">
+                </div>
+                <table>
+                    <thead><tr><th>Areas</th><th class="col-ver">Verificados</th><th class="col-pend">Pendentes</th><th>Total</th><th class="col-perc">%</th></tr></thead>
+                    <tbody id="tbody-sem-ativos"><tr><td colspan="5" style="text-align: center; padding: 30px;">Aguardando dados...</td></tr></tbody>
+                </table>
+            </div>
+
+            <div class="table-card">
+                <div class="yellow-header" style="justify-content: center; font-size: 1rem;"><span id="title-t3">TOTAL POR AREA ATIVOS POC E DC</span></div>
+                <table>
+                    <thead><tr><th>Areas</th><th>COM ATIVO POC</th><th>DC</th><th>TOTAL</th></tr></thead>
+                    <tbody id="tbody-ativos"><tr><td colspan="5" style="text-align: center; padding: 30px;">Aguardando dados...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE SELEÇÃO DE DATA CSV -->
+    <div class="custom-modal" id="csv-date-select-modal" onclick="fecharModalCsvDataExterno(event)">
+        <div class="modal-card" style="max-width: 400px; text-align: center;" onclick="event.stopPropagation();">
+            <div class="modal-header">
+                <div class="modal-title">Data da Aderência</div>
+                <button class="modal-close-btn" onclick="fecharModalCsvData()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-weight: 600; font-size: 0.95rem; margin-bottom: 10px; text-align: left; color: var(--text-main);">Para qual data você está subindo esta Aderência?</p>
+                <select id="modal-csv-date-select" class="select-date" style="width: 100%; border-color: var(--accent-warn); height: 45px; font-size: 1rem;"></select>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px; text-align: left;">* A aderência será vinculada e salvará no banco sob o dia escolhido.</p>
+                <button class="btn-upload" style="margin-top: 15px; width: 100%; height: 45px; font-size: 1rem; justify-content: center;" onclick="confirmarImportacaoCsv()">Salvar Aderência</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const NODE_HISTORICO = "aderencia_historico";
+
+        let DB_LOCAL = {}; 
+        let globalDataBRFormatada = "";
+        let temporaryCsvFile = null;
+
+        // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } });
+
+        // ============ PERMISSÕES GLOBAIS E LOGS ============
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
+        
+        const paginaNome = window.location.pathname.split('/').pop() || 'aderencia.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        
+        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
+            } catch(e) {}
+        }
+
+        window.onload = async function() {
+            const statusBadge = document.getElementById('data-status');
+            try {
+                const response = await fetch(`${FIREBASE_URL}${NODE_HISTORICO}.json`);
+                const dbData = await response.json();
+                
+                if(dbData) {
+                    DB_LOCAL = dbData;
+                    statusBadge.innerText = "Online (Histórico Ativo)";
+                    statusBadge.style.color = "#00A650";
+                    montarDropdownDatas();
+                } else {
+                    definirEstadoVazio("Banco Vazio. Faça Upload.");
+                    document.getElementById('filter-data').innerHTML = `<option value="">Nenhuma Data Disponível</option>`;
+                }
+            } catch(e) { definirEstadoVazio("Offline (Aguardando CSV)"); }
+        };
+
+        function montarDropdownDatas() {
+            const datas = Object.keys(DB_LOCAL).sort().reverse();
+            const select = document.getElementById('filter-data');
+            
+            if (datas.length === 0) { select.innerHTML = `<option value="">Nenhuma Data Disponível</option>`; return; }
+
+            let html = '';
+            datas.forEach(d => {
+                const p = d.split('-');
+                html += `<option value="${d}">${p[2]}/${p[1]}/${p[0]}</option>`;
+            });
+            
+            select.innerHTML = html;
+            select.selectedIndex = 0; 
+            aplicarFiltroData();
+        }
+
+        function aplicarFiltroData() {
+            const dataSelect = document.getElementById('filter-data').value;
+            if (!dataSelect || !DB_LOCAL[dataSelect]) return;
+
+            const dataObj = DB_LOCAL[dataSelect];
+            const p = dataSelect.split('-');
+            globalDataBRFormatada = `${p[2]}/${p[1]}/${p[0]}`;
+
+            processarMatrizCSV(dataObj.matriz);
+        }
+
+        const frasesEquipe = ["Um inventário preciso é a base de uma logística de excelência.", "Trabalho em equipe move caixas, mas também move montanhas.", "Cada bip conta! Nossa dedicação constrói a melhor experiência do Mercado Livre."];
+        function showModernToast(hasXPT) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const isXPT = hasXPT;
+            const themeClass = isXPT ? 'toast-xpt' : 'toast-normal';
+            const iconSvg = isXPT ? `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>` : `<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+            const closeIcon = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+            const titleText = "Você atualizou com sucesso!";
+            const messageText = isXPT ? "Tabela com XPT" : "Tabela Normal<br><span style='font-size:1.1rem; font-weight:700; opacity:0.9;'>Sem XPT!</span>";
+            const fraseAleatoria = frasesEquipe[Math.floor(Math.random() * frasesEquipe.length)];
+            const footerMsg = `${fraseAleatoria}<br><span style="display:inline-block; margin-top:5px; font-weight:800;">Opa, sincronizamos com o pendentes! 🚀</span>`;
+
+            toast.className = `modern-toast ${themeClass}`;
+            toast.innerHTML = `<div class="toast-close">${closeIcon}</div><div class="toast-icon">${iconSvg}</div><div class="toast-content" style="flex: 1;"><span class="toast-title">${titleText}</span><span class="toast-message">${messageText}</span><div class="toast-footer-msg">${footerMsg}</div></div>`;
+            const closeToast = () => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); };
+            toast.addEventListener('click', closeToast);
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 10);
+        }
+
+        function definirEstadoVazio(mensagem) {
+            const statusBadge = document.getElementById('data-status');
+            statusBadge.innerText = mensagem; statusBadge.style.color = "#FF7733";
+            const msgTbody = "<tr><td colspan='5' style='text-align: center; padding: 20px;'>Nenhum dado ativo.</td></tr>";
+            document.getElementById('tbody-geral').innerHTML = msgTbody;
+            document.getElementById('tbody-sem-ativos').innerHTML = msgTbody;
+            document.getElementById('tbody-ativos').innerHTML = "<tr><td colspan='5' style='text-align: center; padding: 20px;'>Nenhum dado ativo.</td></tr>";
+        }
+
+        document.getElementById('csvFileInput').addEventListener('change', function(event) {
+            if(!canEdit) return;
+            const file = event.target.files[0]; 
+            if (!file) return;
+
+            temporaryCsvFile = file;
+
+            const selectModal = document.getElementById('modal-csv-date-select');
+            selectModal.innerHTML = '';
+            
+            for(let i = 0; i <= 4; i++) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0');
+                const dbDateKey = `${y}-${m}-${day}`; const dataBR = `${day}/${m}/${y}`;
+                
+                let label = dataBR; if(i === 0) label += " (Hoje)"; else if(i === 1) label += " (Ontem)";
+                selectModal.innerHTML += `<option value="${dbDateKey}">${label}</option>`;
+            }
+
+            document.getElementById('csv-date-select-modal').classList.add('active');
+        });
+
+        function fecharModalCsvData() { 
+            document.getElementById('csv-date-select-modal').classList.remove('active'); 
+            document.getElementById('csvFileInput').value = ''; 
+            temporaryCsvFile = null;
+        }
+        function fecharModalCsvDataExterno(e) { if(e.target.id === 'csv-date-select-modal') fecharModalCsvData(); }
+
+        function confirmarImportacaoCsv() {
+            if(!canEdit || !temporaryCsvFile) return;
+
+            const dbDateKey = document.getElementById('modal-csv-date-select').value;
+            const p = dbDateKey.split('-');
+            globalDataBRFormatada = `${p[2]}/${p[1]}/${p[0]}`;
+
+            document.getElementById('csv-date-select-modal').classList.remove('active');
+
+            const statusBadge = document.getElementById('data-status');
+            statusBadge.innerText = "Gravando na nuvem...";
+            statusBadge.style.color = "#3483FA";
+
+            Papa.parse(temporaryCsvFile, {
+                header: false, skipEmptyLines: false,
+                complete: async function(results) {
+                    let globalHasXPT = processarMatrizCSV(results.data);
+
+                    const payloadData = {
+                        dataArquivo: globalDataBRFormatada,
+                        matriz: results.data,
+                        ultimaAtualizacao: `${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+                    };
+
+                    DB_LOCAL[dbDateKey] = payloadData;
+
+                    try {
+                        const response = await fetch(`${FIREBASE_URL}${NODE_HISTORICO}/${dbDateKey}.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
+                        await fetch(`${FIREBASE_URL}aderencia.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
+                        
+                        await registrarLogFirebase("Aderência Tabela", `Substituiu os dados consolidados do dia: <b>${globalDataBRFormatada}</b>`);
+
+                        if(response.ok) {
+                            statusBadge.innerText = "Online (Histórico Ativo)";
+                            statusBadge.style.color = "#00A650";
+                            showModernToast(globalHasXPT);
+                            montarDropdownDatas(); 
+                            document.getElementById('filter-data').value = dbDateKey;
+                            aplicarFiltroData(); 
+                        }
+                    } catch(err) {
+                        statusBadge.innerText = "Arquivo Carregado (Apenas Local)";
+                        statusBadge.style.color = "#FF7733";
+                    }
+
+                    document.getElementById('csvFileInput').value = ''; 
+                    temporaryCsvFile = null;
+                }
+            });
+        }
+
+        function formatVal(val) { return val !== undefined && val !== null && val.toString().trim() !== '' ? val.toString().trim() : '0'; }
+
+        function processarMatrizCSV(data) {
+            let resultHasXPT = false; let t1_col = 0; let t2_col = 6; let t3_col = -1; let t3_row = -1; let hasXPT = false;
+
+            for(let r = 0; r < 5; r++) {
+                if(!data[r]) continue;
+                let contVerificados = 0;
+                for(let c = 0; c < data[r].length; c++) {
+                    let cell = formatVal(data[r][c]).toLowerCase();
+                    if(cell === 'verificados') {
+                        if(contVerificados === 0) { t1_col = c - 1; contVerificados++; }
+                        else if(contVerificados === 1) { t2_col = c - 1; contVerificados++; }
+                    }
+                }
+            }
+
+            for(let r = 0; r < data.length; r++) {
+                if(!data[r]) continue;
+                for(let c = 0; c < data[r].length; c++) {
+                    let cell = formatVal(data[r][c]).toLowerCase();
+                    if(cell === 'com ativo poc' || cell === 'atico poc' || cell === 'ativo poc') { 
+                        t3_col = c - 1; t3_row = r + 1; 
+                        for(let h = 0; h < data[r].length; h++) { if(formatVal(data[r][h]).toLowerCase() === 'xpt') { hasXPT = true; resultHasXPT = true; break; } }
+                        break; 
+                    }
+                }
+                if(t3_row !== -1) break;
+            }
+
+            let htmlT1 = '';
+            let inicioT1 = encontrarLinha(data, 'problem solving', t1_col);
+            if(inicioT1 !== -1) {
+                for(let i = inicioT1; i < data.length; i++) {
+                    let area = formatVal(data[i][t1_col]);
+                    if(area === '0' || area === '') continue;
+                    let v = formatVal(data[i][t1_col+1]); let p = formatVal(data[i][t1_col+2]); let t = formatVal(data[i][t1_col+3]); let perc = formatVal(data[i][t1_col+4]);
+
+                    if(area.toLowerCase().includes('fechamento') || area.toLowerCase() === 'total') {
+                        htmlT1 += `<tr class="row-fechamento"><td>${area}</td><td class="col-ver">${v}</td><td class="col-pend">${p}</td><td>${t}</td><td class="col-perc">${perc}</td></tr>`;
+                        document.getElementById('title-t1').innerText = `Aderência de Inventário Geral ${globalDataBRFormatada} - ${perc}`;
+                        break;
+                    } else { htmlT1 += `<tr><td>${area}</td><td class="col-ver">${v}</td><td class="col-pend">${p}</td><td>${t}</td><td class="col-perc">${perc}</td></tr>`; }
+                }
+                document.getElementById('tbody-geral').innerHTML = htmlT1;
+            }
+
+            let htmlT2 = '';
+            let inicioT2 = encontrarLinha(data, 'problem solving', t2_col);
+            const titleT2Base = hasXPT ? `Sem Ativos Poc / DC / XPT ${globalDataBRFormatada}` : `Sem Ativos Poc / DC ${globalDataBRFormatada}`;
+            if(inicioT2 !== -1) {
+                for(let i = inicioT2; i < data.length; i++) {
+                    let area = formatVal(data[i][t2_col]);
+                    if(area === '0' || area === '') continue;
+                    let v = formatVal(data[i][t2_col+1]); let p = formatVal(data[i][t2_col+2]); let t = formatVal(data[i][t2_col+3]); let perc = formatVal(data[i][t2_col+4]);
+
+                    if(area.toLowerCase().includes('fechamento') || area.toLowerCase() === 'total') {
+                        htmlT2 += `<tr class="row-fechamento"><td>${area}</td><td class="col-ver">${v}</td><td class="col-pend">${p}</td><td>${t}</td><td class="col-perc">${perc}</td></tr>`;
+                        document.getElementById('title-t2').innerText = `Aderência de Inventário ${titleT2Base} - ${perc}`;
+                        break;
+                    } else { htmlT2 += `<tr><td>${area}</td><td class="col-ver">${v}</td><td class="col-pend">${p}</td><td>${t}</td><td class="col-perc">${perc}</td></tr>`; }
+                }
+                document.getElementById('tbody-sem-ativos').innerHTML = htmlT2;
+            }
+
+            if(t3_row !== -1 && t3_col !== -1) {
+                document.getElementById('title-t3').innerText = hasXPT 
+                    ? `TOTAL POR AREA ATIVOS POC, DC E XPT ${globalDataBRFormatada}`
+                    : `TOTAL POR AREA ATIVOS POC E DC ${globalDataBRFormatada}`;
+                
+                const theadT3 = document.querySelector('#tbody-ativos').previousElementSibling;
+                if(hasXPT) { theadT3.innerHTML = `<tr><th>Areas</th><th>COM ATIVO POC</th><th>DC</th><th>XPT</th><th>TOTAL</th></tr>`; } 
+                else { theadT3.innerHTML = `<tr><th>Areas</th><th>COM ATIVO POC</th><th>DC</th><th>TOTAL</th></tr>`; }
+
+                let htmlT3 = '';
+                for(let i = t3_row; i < data.length; i++) {
+                    let area = formatVal(data[i][t3_col]);
+                    if(area === '0' || area === '') continue;
+                    let poc = formatVal(data[i][t3_col+1]); let dc = formatVal(data[i][t3_col+2]); 
+
+                    if(hasXPT) {
+                        let xpt = formatVal(data[i][t3_col+3]); let tot = formatVal(data[i][t3_col+4]);
+                        if(area.toLowerCase().includes('total')) { htmlT3 += `<tr class="row-fechamento"><td>${area}</td><td>${poc}</td><td>${dc}</td><td>${xpt}</td><td class="col-perc">${tot}</td></tr>`; break; } 
+                        else { htmlT3 += `<tr><td>${area}</td><td>${poc}</td><td>${dc}</td><td>${xpt}</td><td class="col-perc">${tot}</td></tr>`; }
+                    } else {
+                        let tot = formatVal(data[i][t3_col+3]);
+                        if(area.toLowerCase().includes('total')) { htmlT3 += `<tr class="row-fechamento"><td>${area}</td><td>${poc}</td><td>${dc}</td><td class="col-perc">${tot}</td></tr>`; break; } 
+                        else { htmlT3 += `<tr><td>${area}</td><td>${poc}</td><td>${dc}</td><td class="col-perc">${tot}</td></tr>`; }
+                    }
+                }
+                document.getElementById('tbody-ativos').innerHTML = htmlT3;
+            }
+            return resultHasXPT;
+        }
+
+        function encontrarLinha(data, keyword, colIndex) {
+            for(let i = 0; i < data.length; i++) { if(data[i] && formatVal(data[i][colIndex]).toLowerCase() === keyword) return i; }
+            return -1;
+        }
+    </script>
+</body>
+</html>
