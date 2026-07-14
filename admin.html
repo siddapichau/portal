@@ -205,11 +205,10 @@
             btn.disabled = true;
 
             try {
-                // 1. Puxa do Google Sheets
+                // 1. Puxa do Google Sheets (a Planilha Antiga)
                 const resS = await fetch(APP_SCRIPT_URL, { 
                     method: 'POST', 
                     headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-                    redirect: "follow", 
                     body: JSON.stringify({ action: "getUsers" }) 
                 });
                 const dataS = await resS.json();
@@ -218,14 +217,14 @@
                     let oldUsers = dataS.users;
                     let count = 0;
 
-                    // Puxa do Firebase para não duplicar
+                    // 2. Puxa do Firebase para não duplicar quem já está
                     const resF = await fetch(`${FIREBASE_URL}users.json`);
                     const dataF = await resF.json() || {};
                     const fbUsernames = Object.keys(dataF).map(k => dataF[k].usuario.toLowerCase());
 
                     for (let u of oldUsers) {
                         if (!fbUsernames.includes(u.usuario.toLowerCase())) {
-                            // Criptografia base64 simples só para manter o padrão sem travar a importação
+                            // Criptografia base64 simples só para manter o padrão
                             const passString = u.senha || '12345678';
                             let passFormatada = "";
                             try {
@@ -247,7 +246,7 @@
                             count++;
                         }
                     }
-                    alert(`Migração concluída! ${count} usuários novos transferidos da planilha para o banco de dados.`);
+                    alert(`Migração concluída! ${count} usuários novos transferidos da planilha para o banco de dados Firebase.`);
                     fetchUsersFromFirebase();
                 } else {
                     alert("A planilha retornou vazia ou ocorreu um erro no script antigo.");
