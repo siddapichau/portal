@@ -23,6 +23,9 @@
         .quote-text { font-size: 1rem; color: var(--text-main); font-style: italic; font-weight: 600; transition: opacity 0.5s ease; }
         .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-blue); width: 0%; }
 
+        /* =========================================
+           GRID DE 3 COLUNAS (DENTRO DO HOME-VIEW)
+           ========================================= */
         #home-view { width: 100%; max-width: 1500px; display: grid; grid-template-columns: 320px 1fr 300px; gap: 20px; height: calc(100vh - 250px); margin-bottom: 20px; }
 
         .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden; }
@@ -75,15 +78,16 @@
         .ml-signature { font-size: 0.75rem; color: var(--text-muted); font-weight: 800; display: flex; align-items: center; gap: 6px; font-style: italic;}
         .ml-signature img { height: 14px; opacity: 0.7;}
         
-        .btn-like { background: transparent; border: 1px solid var(--border-card); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.85rem; transition: 0.3s; position: relative; overflow: hidden;}
+        .btn-like { background: transparent; border: 1px solid var(--border-card); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.85rem; transition: 0.3s; position: relative;}
         .btn-like:hover { background: rgba(52, 131, 250, 0.1); border-color: var(--accent-blue); color: var(--accent-blue); }
         .btn-like.liked { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
         
-        .like-anim-text { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font-weight: 900; color: var(--accent-blue); font-size: 0.8rem; opacity: 0; pointer-events: none; white-space: nowrap; text-shadow: 0 2px 4px rgba(0,0,0,0.5);}
-        @keyframes flyUp { 0% { bottom: 0%; opacity: 1; transform: translate(-50%, 0) scale(1); } 100% { bottom: 150%; opacity: 0; transform: translate(-50%, -20px) scale(1.2); } }
-        .like-anim-text.animate { animation: flyUp 1s ease-out forwards; }
+        /* A MÁGICA DA ANIMAÇÃO NO FOGUETE ACONTECE AQUI */
+        .like-anim-text { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font-weight: 900; color: var(--accent-blue); font-size: 0.85rem; opacity: 0; pointer-events: none; white-space: nowrap; text-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10;}
+        @keyframes flyUp { 0% { bottom: 50%; opacity: 0; transform: translate(-50%, 0) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -10px) scale(1.2); } 100% { bottom: 200%; opacity: 0; transform: translate(-50%, -40px) scale(1); } }
+        .like-anim-text.animate { animation: flyUp 0.8s ease-out forwards; }
 
-        /* --- COLUNA 3: USUÁRIOS E STATUS --- */
+        /* --- COLUNA 3: USUÁRIOS, TAGS E STATUS --- */
         .user-group-title { background: rgba(0,0,0,0.2); padding: 8px 15px; font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-card); border-top: 1px solid var(--border-card);}
         [data-theme="light"] .user-group-title { background: rgba(0,0,0,0.03); }
         .user-group-title:first-child { border-top: none; }
@@ -102,21 +106,26 @@
         .dot-offline { background-color: var(--text-muted); }
         .dot-new { background-color: var(--accent-warn); }
 
+        /* BOTOES DE TAGS NA LATERAL DIREITA */
+        .tag-btn { background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap;}
+        .tag-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+        .tag-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+
         #app-frame { display: none; width: 100%; height: calc(100vh - 90px); border: none; border-radius: 12px; background: var(--bg-body); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
         @media (max-width: 1100px) {
             #home-view { grid-template-columns: 1fr 300px; height: auto; }
-            .col-news { grid-column: 1 / -1; order: -1; max-height: 500px;}
+            .col-news { grid-column: 1 / -1; order: -1; max-height: 600px;}
         }
         @media (max-width: 768px) {
             #home-view { grid-template-columns: 1fr; }
-            .col-news, .panel-box { max-height: 400px; }
+            .col-news, .panel-box { max-height: 500px; }
         }
     </style>
 </head>
 <body data-theme="light">
 
-    <!-- Carrega o menu que possui as configs e a barra superior -->
+    <!-- Carrega o menu principal do sistema -->
     <script src="menu.js"></script>
 
     <div id="main-content">
@@ -128,19 +137,35 @@
         </div>
 
         <div id="home-view">
+            <!-- COLUNA 1: LOGS -->
             <div class="panel-box col-logs">
                 <div class="panel-header"><h2><div class="live-indicator" title="Monitorando ao vivo"></div> Radar de Atividades</h2></div>
                 <div class="panel-content"><ul class="feed-list" id="feed-list"><div class="muted-msg">Conectando à Central...</div></ul></div>
             </div>
 
+            <!-- COLUNA 2: NOTÍCIAS -->
             <div class="panel-box col-news">
                 <div class="news-header-banner">📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS</div>
                 <div class="panel-content" id="news-feed-container"><div class="muted-msg">Carregando mural...</div></div>
             </div>
 
+            <!-- COLUNA 3: USUÁRIOS E TAGS -->
             <div class="panel-box col-users">
                 <div class="panel-header"><h2>👥 Equipe no Portal</h2></div>
-                <div class="panel-content" id="users-feed-container"><div class="muted-msg">Mapeando presenças...</div></div>
+                <div class="panel-content" id="users-feed-container" style="flex: 1 1 auto;">
+                    <div class="muted-msg">Mapeando presenças...</div>
+                </div>
+                
+                <div class="panel-header" style="border-top: 1px solid var(--border-card);"><h2>🏷️ Explorar Temas</h2></div>
+                <div class="panel-content" style="flex: 0 0 auto; padding: 15px; overflow-y: visible;">
+                    <div id="tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;"></div>
+                    <div style="background: rgba(52, 131, 250, 0.1); border: 1px solid rgba(52, 131, 250, 0.2); border-radius: 8px; padding: 15px; text-align: center;">
+                        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 900; text-transform: uppercase; margin-bottom: 5px;">Reconhecimento da Equipe</div>
+                        <div style="font-size: 1.5rem; font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            🚀 <span id="total-likes-counter">0</span> Curtidas
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -148,13 +173,15 @@
     </div>
 
     <script>
-        // Renomeada para URL_BD_INDEX para evitar conflito com a constante do menu.js!
         const URL_BD_INDEX = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         
         let CURRENT_LOGGED_USER = null;
         try { CURRENT_LOGGED_USER = JSON.parse(localStorage.getItem('loggedUser')); } catch(e) {}
         let currentUserStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.usuario) ? CURRENT_LOGGED_USER.usuario : 'Você';
         let currentRoleStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.cargo) ? CURRENT_LOGGED_USER.cargo : 'Acesso Local';
+
+        let globalNewsList = [];
+        let currentNewsFilter = 'Todas';
 
         // ==========================================
         // CITAÇÕES ANIMADAS
@@ -179,18 +206,6 @@
             progressBar.style.transition = 'none'; progressBar.style.width = '0%'; void progressBar.offsetWidth; 
             progressBar.style.transition = `width ${INTERVAL_MS}ms linear`; progressBar.style.width = '100%'; 
         }
-        
-        // ==========================================
-        // FUNÇÃO FETCH BLINDADA (PREVINE TRAVAMENTOS)
-        // ==========================================
-        async function fetchWithTimeout(resource, options = {}) {
-            const { timeout = 8000 } = options; 
-            const controller = new AbortController();
-            const id = setTimeout(() => controller.abort(), timeout);
-            const response = await fetch(resource, { ...options, signal: controller.signal });
-            clearTimeout(id); 
-            return response;
-        }
 
         // ==========================================
         // COLUNA 1: LOGS DE ATIVIDADE
@@ -198,7 +213,8 @@
         async function carregarFeedAtualizacoes() {
             const listEl = document.getElementById('feed-list');
             try {
-                const res = await fetchWithTimeout(`${URL_BD_INDEX}logs.json?_=${Date.now()}`, { timeout: 5000 }); 
+                // Sem Timeout abort controller para não gerar bloqueios misteriosos
+                const res = await fetch(`${URL_BD_INDEX}logs.json?_=${Date.now()}`); 
                 const data = await res.json();
                 
                 if(!data) { listEl.innerHTML = '<div class="muted-msg">Nenhuma atividade recente.</div>'; return; }
@@ -235,69 +251,116 @@
         }
 
         // ==========================================
-        // COLUNA 2: MURAL DE NOTÍCIAS
+        // COLUNA 2: MURAL DE NOTÍCIAS + FILTRO TAGS
         // ==========================================
         async function carregarNoticias() {
             const container = document.getElementById('news-feed-container');
             try {
-                const res = await fetchWithTimeout(`${URL_BD_INDEX}portal_news.json?_=${Date.now()}`, { timeout: 5000 });
+                const res = await fetch(`${URL_BD_INDEX}portal_news.json?_=${Date.now()}`);
                 let data = await res.json();
                 
                 if(!data) {
                     container.innerHTML = '<div class="muted-msg">Ainda não há publicações no mural.</div>';
+                    document.getElementById('total-likes-counter').innerText = '0';
                     return;
                 }
 
-                let newsList = [];
-                if (Array.isArray(data)) { newsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
-                else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
+                if (Array.isArray(data)) { globalNewsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
+                else { globalNewsList = Object.keys(data).map(k => ({...data[k], key: k})); }
                 
-                newsList.sort((a,b) => b.data - a.data);
-                container.innerHTML = '';
-
-                newsList.forEach(news => {
-                    const dataFormatada = new Date(news.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                    const inicial = (news.autor || 'A').charAt(0).toUpperCase();
-                    
-                    let userHasLiked = false;
-                    if(news.likedBy && Array.isArray(news.likedBy) && news.likedBy.includes(currentUserStr)) {
-                        userHasLiked = true;
-                    }
-
-                    const btnClass = userHasLiked ? 'btn-like liked' : 'btn-like';
-                    
-                    container.innerHTML += `
-                        <div class="post-card">
-                            <div class="post-header">
-                                <div class="post-author-box">
-                                    <div class="author-avatar">${inicial}</div>
-                                    <div class="author-info">
-                                        <span class="author-name">${news.autor || 'Admin'}</span>
-                                        <span class="post-date">${dataFormatada}</span>
-                                    </div>
-                                </div>
-                                <span class="post-tag">${news.tag || 'Aviso'}</span>
-                            </div>
-                            
-                            <div class="post-title">${news.titulo || ''}</div>
-                            <div class="post-body">${news.corpo || ''}</div>
-                            
-                            <div class="post-footer">
-                                <div class="ml-signature">
-                                    <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="ML"> Equipe Inventário
-                                </div>
-                                <button class="${btnClass}" id="btn-like-${news.key}" onclick="darLikeNews('${news.key}')">
-                                    🚀 <span id="like-count-${news.key}">${news.likes || 0}</span>
-                                    <span class="like-anim-text" id="like-anim-${news.key}">Para Cima!</span>
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                });
+                globalNewsList.sort((a,b) => b.data - a.data);
                 
+                renderTags(globalNewsList);
+                renderNoticias();
+
             } catch (e) {
                 if(container.innerHTML.includes('Carregando')) container.innerHTML = '<div class="error-msg">Falha ao obter mural de notícias.</div>';
             }
+        }
+
+        function renderTags(newsList) {
+            const container = document.getElementById('tags-container');
+            if(!container) return;
+            
+            let tags = new Set();
+            let totalLikes = 0;
+            
+            newsList.forEach(n => { 
+                if(n.tag) tags.add(n.tag); 
+                totalLikes += (parseInt(n.likes) || 0);
+            });
+            
+            let tagsArray = Array.from(tags).sort();
+            
+            let html = `<button class="tag-btn ${currentNewsFilter === 'Todas' ? 'active' : ''}" onclick="filtrarNoticias('Todas')">Todas</button>`;
+            tagsArray.forEach(t => {
+                html += `<button class="tag-btn ${currentNewsFilter === t ? 'active' : ''}" onclick="filtrarNoticias('${t}')">${t}</button>`;
+            });
+            container.innerHTML = html;
+            
+            const totalEl = document.getElementById('total-likes-counter');
+            if(totalEl) totalEl.innerText = totalLikes;
+        }
+
+        window.filtrarNoticias = function(tag) {
+            currentNewsFilter = tag;
+            renderTags(globalNewsList); 
+            renderNoticias();
+        }
+
+        function renderNoticias() {
+            const container = document.getElementById('news-feed-container');
+            container.innerHTML = '';
+            
+            let filtradas = globalNewsList;
+            if(currentNewsFilter !== 'Todas') {
+                filtradas = globalNewsList.filter(n => n.tag === currentNewsFilter);
+            }
+            
+            if(filtradas.length === 0) {
+                container.innerHTML = `<div class="muted-msg">Nenhuma notícia encontrada com o tema "${currentNewsFilter}".</div>`;
+                return;
+            }
+
+            filtradas.forEach(news => {
+                const dataFormatada = new Date(news.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                const inicial = (news.autor || 'A').charAt(0).toUpperCase();
+                
+                let userHasLiked = false;
+                if(news.likedBy && Array.isArray(news.likedBy) && news.likedBy.includes(currentUserStr)) {
+                    userHasLiked = true;
+                }
+
+                const btnClass = userHasLiked ? 'btn-like liked' : 'btn-like';
+                
+                container.innerHTML += `
+                    <div class="post-card">
+                        <div class="post-header">
+                            <div class="post-author-box">
+                                <div class="author-avatar">${inicial}</div>
+                                <div class="author-info">
+                                    <span class="author-name">${news.autor || 'Admin'}</span>
+                                    <span class="post-date">${dataFormatada}</span>
+                                </div>
+                            </div>
+                            <span class="post-tag">${news.tag || 'Aviso'}</span>
+                        </div>
+                        
+                        <div class="post-title">${news.titulo || ''}</div>
+                        <div class="post-body">${news.corpo || ''}</div>
+                        
+                        <div class="post-footer">
+                            <div class="ml-signature">
+                                <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="ML"> Equipe Inventário
+                            </div>
+                            <button class="${btnClass}" id="btn-like-${news.key}" onclick="darLikeNews('${news.key}')">
+                                🚀 <span id="like-count-${news.key}">${news.likes || 0}</span>
+                                <span class="like-anim-text" id="like-anim-${news.key}">Para Cima!</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
         }
 
         window.darLikeNews = async function(newsKey) {            
@@ -334,12 +397,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ likes: currentLikes, likedBy: likedBy })
                 });
+                
+                carregarNoticias(); // Atualiza contador total e array global
 
             } catch(e) { console.error("Erro ao computar like."); }
         };
 
         // ==========================================
-        // COLUNA 3: USUÁRIOS E PRESENÇA AO VIVO 
+        // COLUNA 3: USUÁRIOS E PRESENÇA AO VIVO
         // ==========================================
         function formatRoleName(role) {
             if(!role) return 'Desconhecido';
@@ -366,7 +431,7 @@
             try {
                 let presenceData = {};
                 try {
-                    const resP = await fetchWithTimeout(`${URL_BD_INDEX}presence.json?_=${Date.now()}`, { timeout: 4000 });
+                    const resP = await fetch(`${URL_BD_INDEX}presence.json?_=${Date.now()}`);
                     presenceData = await resP.json() || {};
                 } catch(errP) {}
                 
@@ -375,7 +440,7 @@
 
                 let allUsers = [];
                 try {
-                    const resU = await fetchWithTimeout(`${URL_BD_INDEX}users.json?_=${Date.now()}`, { timeout: 5000 });
+                    const resU = await fetch(`${URL_BD_INDEX}users.json?_=${Date.now()}`);
                     const dataU = await resU.json();
                     if(dataU) {
                         allUsers = Object.keys(dataU).map(k => dataU[k]);
@@ -462,13 +527,13 @@
         }
 
         // ==========================================
-        // INICIALIZAÇÃO GERAL E SINCRONIZAÇÃO
+        // INICIALIZAÇÃO PARALELA (UM ERRO NÃO TRAVA O OUTRO)
         // ==========================================
-        setTimeout(() => { 
+        window.onload = function() {
             startMessageCycle(); 
             registrarPresenca();
             
-            // Cada função roda de forma paralela e independente! Se uma falhar, a outra continua.
+            // Rodando tudo ao mesmo tempo, de forma assíncrona
             carregarFeedAtualizacoes(); 
             carregarNoticias();
             carregarPresencaUsuarios();
@@ -479,8 +544,7 @@
                 carregarNoticias();
                 carregarPresencaUsuarios();
             }, 30000); 
-
-        }, 500);
+        };
 
     </script>
 </body>
