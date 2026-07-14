@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salvados Recuperados - Dashboard Mercado Livre</title>
+    <title>Salvados Recuperados - Dashboard</title>
     
     <!-- SISTEMA ANTI-ACESSO DIRETO -->
     <script>
@@ -15,8 +15,6 @@
 
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    
-    <!-- CSS GLOBAL -->
     <link rel="stylesheet" href="style.css">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -25,7 +23,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        body { padding: 10px; display: flex; flex-direction: column; gap: 12px; min-height: 100vh; background: transparent; }
+        body { padding: 10px; display: flex; flex-direction: column; gap: 12px; min-height: 100vh; background: transparent !important; }
+        
+        /* Tema claro força tudo para branco dentro do Iframe */
+        [data-theme="light"] { background: #ffffff !important; }
 
         .glass-panel { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; box-shadow: var(--shadow-card); transition: 0.3s; }
 
@@ -45,14 +46,12 @@
 
         #export-container { display: flex; flex-direction: column; gap: 12px; width: 100%; }
 
-        /* BARRA DE FILTROS */
         .filter-bar { display: flex; gap: 15px; padding: 12px 16px; align-items: center; flex: 0 0 auto; flex-wrap: wrap; justify-content: center; }
         .filter-group { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 800; text-transform: uppercase; color: var(--text-muted); }
         .filter-group select, .filter-group input { background-color: var(--bg-input); color: var(--text-main); border: 1px solid var(--border-card); padding: 6px 10px; border-radius: 6px; font-family: 'Inter', sans-serif; outline: none; cursor: pointer; min-width: 120px; font-size: 0.85rem; font-weight: 600; }
         .filter-group select:focus, .filter-group input:focus { border-color: var(--accent-blue); }
         .btn-clear { background-color: transparent; color: var(--accent-red); border: 1px solid var(--accent-red); padding: 6px 12px; border-radius: 6px; font-weight: 800; cursor: pointer; transition: 0.2s; margin-left: auto; font-size: 0.8rem; display: flex; align-items: center; gap: 4px; }
 
-        /* KPIS E GRÁFICOS */
         .middle-section { display: grid; grid-template-columns: 280px 1fr 1.5fr; gap: 12px; min-height: 320px; }
         .kpi-column { display: flex; flex-direction: column; gap: 12px; }
         .kpi-card { flex: 1; padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-left: 6px solid var(--accent-blue); text-align: center; }
@@ -64,7 +63,6 @@
         .chart-title { flex: 0 0 auto; font-size: 0.85rem; color: var(--text-muted); text-align: center; margin-bottom: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
         .chart-wrapper { position: relative; flex: 1; width: 100%; display: flex; justify-content: center; align-items: center; }
 
-        /* TABELA */
         .table-wrapper { max-height: 45vh; min-height: 250px; overflow: auto; border-radius: 10px; transform: translateZ(0); }
         table { width: 100%; border-collapse: collapse; min-width: 1000px; text-align: left; }
         th, td { padding: 10px 15px; border-bottom: 1px solid var(--border-card); font-size: .85rem; color: var(--text-main); vertical-align: middle; }
@@ -75,10 +73,9 @@
         .center { text-align: center; }
         .col-id { font-weight: 900; color: var(--text-title); display: flex; align-items: center; gap: 8px;}
         .col-val { font-weight: 900; color: var(--accent-green); }
-        
         .action-icon { color: var(--accent-blue); transition: transform 0.2s; display: inline-flex; text-decoration: none; padding: 4px; border-radius: 4px; background: rgba(52, 131, 250, 0.1); border: 1px solid rgba(52, 131, 250, 0.2); }
         .action-icon:hover { transform: scale(1.15); background: rgba(52, 131, 250, 0.2); }
-        .action-icon.sauron { color: var(--accent-warn); background: rgba(255, 176, 0, 0.1); border-color: rgba(255, 176, 0, 0.2); }
+        .action-icon.sauron { color: var(--accent-warn); background: rgba(245, 176, 0, 0.1); border-color: rgba(245, 176, 0, 0.2); }
 
         .bottom-section { display: flex; gap: 12px; min-height: 320px; }
 
@@ -86,10 +83,7 @@
         .exporting .table-wrapper { overflow: hidden !important; max-height: 360px !important; } 
 
         @media (max-width: 1100px) { .middle-section { grid-template-columns: 1fr; } .kpi-column { flex-direction: row; } }
-        
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-body); }
-        ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: var(--bg-body); } ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
 </head>
 <body data-theme="light">
@@ -98,17 +92,11 @@
         <div class="header-left">
             <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
         </div>
-        
-        <div class="header-center" id="main-dynamic-title">
-            SALVADOS DO SEM IDENTIFICAÇÃO | CARREGANDO...
-        </div>
-
+        <div class="header-center" id="main-dynamic-title">SALVADOS RECUPERADOS | CARREGANDO...</div>
         <div class="header-actions">
             <span class="status-badge" id="data-status">Conectando...</span>
-            
-            <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Dashboard em Imagem UHD 4K">Exportar 4K</button>
-
-            <div class="upload-wrapper" id="btnUploadArea" title="Substituir Base de Dados">
+            <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Imagem UHD 4K">Exportar 4K</button>
+            <div class="upload-wrapper" id="btnUploadArea" title="Substituir Base de Dados" style="display:none;">
                 <button class="btn btn-blue">📤 Subir CSV</button>
                 <input type="file" id="csvFileInput" accept=".csv" />
             </div>
@@ -121,96 +109,40 @@
                 <label style="color: var(--accent-blue);">Data Recuperado:</label>
                 <select id="filter-data" style="border-color: var(--accent-blue);"><option value="Todos">Todos</option></select>
             </div>
-            <div class="filter-group">
-                <label>Observação / Substatus:</label>
-                <select id="filter-obs"><option value="Todos">Todos</option></select>
-            </div>
-            <div class="filter-group" id="hide-on-export-search">
-                <label>Pesquisar Pacote:</label>
-                <input type="text" id="search-input" placeholder="ID ou Descrição..." oninput="aplicarFiltros()">
-            </div>
+            <div class="filter-group"><label>Observação:</label><select id="filter-obs"><option value="Todos">Todos</option></select></div>
+            <div class="filter-group" id="hide-on-export-search"><label>Pesquisar:</label><input type="text" id="search-input" placeholder="ID ou Descrição..." oninput="aplicarFiltros()"></div>
             <button class="btn-clear" id="hide-on-export-clear" onclick="limparFiltros()">✖ Limpar</button>
         </div>
 
         <div class="middle-section">
             <div class="kpi-column">
-                <div class="kpi-card glass-panel green">
-                    <div class="kpi-title">Valor Total Recuperado</div>
-                    <div class="kpi-value" id="kpi-valor">R$ 0,00</div>
-                </div>
-                <div class="kpi-card glass-panel">
-                    <div class="kpi-title">Total de Volumes</div>
-                    <div class="kpi-value" id="kpi-volumes">0</div>
-                </div>
+                <div class="kpi-card glass-panel green"><div class="kpi-title">Valor Total Recuperado</div><div class="kpi-value" id="kpi-valor">R$ 0,00</div></div>
+                <div class="kpi-card glass-panel"><div class="kpi-title">Total de Volumes</div><div class="kpi-value" id="kpi-volumes">0</div></div>
             </div>
-
-            <div class="chart-card glass-panel">
-                <div class="chart-title">Observações (Substatus)</div>
-                <div id="chart-obs-container" class="chart-wrapper"><canvas id="chart-obs"></canvas></div>
-            </div>
-
-            <div class="chart-card glass-panel">
-                <div class="chart-title">Evolução Diária (Geral)</div>
-                <div id="chart-diario-container" class="chart-wrapper"><canvas id="chart-diario"></canvas></div>
-            </div>
+            <div class="chart-card glass-panel"><div class="chart-title">Observações (Substatus)</div><div id="chart-obs-container" class="chart-wrapper"><canvas id="chart-obs"></canvas></div></div>
+            <div class="chart-card glass-panel"><div class="chart-title">Evolução Diária (Geral)</div><div id="chart-diario-container" class="chart-wrapper"><canvas id="chart-diario"></canvas></div></div>
         </div>
 
         <div class="table-wrapper glass-panel" id="table-scroll-container" onscroll="carregarMaisPacotes()">
             <table>
                 <thead>
-                    <tr>
-                        <th style="width:18%;">ID / Rastreio</th>
-                        <th style="width:12%;">Data Recuperado</th>
-                        <th style="width:35%;">Descrição do Item</th>
-                        <th style="width:20%;">Observações / Substatus</th>
-                        <th style="width:15%;">Valor</th>
-                    </tr>
+                    <tr><th style="width:18%;">ID / Rastreio</th><th style="width:12%;">Data Recuperado</th><th style="width:35%;">Descrição do Item</th><th style="width:20%;">Observações / Substatus</th><th style="width:15%;">Valor</th></tr>
                 </thead>
-                <tbody id="tbody-pacotes">
-                    <tr><td colspan="5" class="center" style="padding: 40px;">Aguardando dados...</td></tr>
-                </tbody>
+                <tbody id="tbody-pacotes"><tr><td colspan="5" class="center" style="padding: 40px;">Aguardando dados...</td></tr></tbody>
             </table>
         </div>
 
         <div class="bottom-section">
-            <div class="chart-card glass-panel" style="flex: 1;">
-                <div class="chart-title">Evolução Semanal (Geral)</div>
-                <div id="chart-semana-container" class="chart-wrapper"><canvas id="chart-semana"></canvas></div>
-            </div>
+            <div class="chart-card glass-panel" style="flex: 1;"><div class="chart-title">Evolução Semanal (Geral)</div><div id="chart-semana-container" class="chart-wrapper"><canvas id="chart-semana"></canvas></div></div>
         </div>
     </div> 
 
     <script>
+        Chart.register(ChartDataLabels);
+
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const FIREBASE_NODE = "salvados_recuperados";
         
-        // ============ SINCRONIZAÇÃO DE TEMA E PERMISSÕES ============
-        function syncTheme() {
-            const theme = localStorage.getItem('themePreference') || 'light';
-            document.body.setAttribute('data-theme', theme);
-            if(DADOS_FILTRADOS && DADOS_FILTRADOS.length > 0) renderizarDashboard(DADOS_FILTRADOS);
-        }
-        syncTheme();
-        window.addEventListener('storage', (e) => { if (e.key === 'themePreference') syncTheme(); });
-
-        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
-        let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
-        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
-        let canEdit = ['editor', 'admin'].includes(userRole);
-        
-        if(!canEdit) {
-            document.getElementById('btnUploadArea').style.display = 'none';
-        }
-
-        async function registrarLogFirebase(modulo, acao) {
-            try {
-                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
-                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
-            } catch(e) {}
-        }
-
-        Chart.register(ChartDataLabels);
-
         let BANCO_GLOBAL = [];       
         let DADOS_FILTRADOS = [];    
         let chartInstances = {};
@@ -218,21 +150,39 @@
         let CUR_PAGE = 0;
         const mlColors = ['#3483FA', '#00A650', '#FF7733', '#4A90E2', '#FFF159', '#FF5252', '#B48B00', '#06b6d4', '#8b5cf6'];
 
+        // ============ SINCRONIZAÇÃO TEMA E PERMISSÕES (VERIFICA NO PAI) ============
+        function syncTheme() {
+            const theme = localStorage.getItem('themePreference') || 'light';
+            document.body.setAttribute('data-theme', theme);
+            if(DADOS_FILTRADOS.length > 0) renderizarDashboard(DADOS_FILTRADOS);
+        }
+        syncTheme();
+        
+        // Recebe o aviso de mudança de tema do index.html (Iframe inter-comunicação)
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'THEME_CHANGED') {
+                document.body.setAttribute('data-theme', event.data.theme);
+                if(DADOS_FILTRADOS.length > 0) renderizarDashboard(DADOS_FILTRADOS);
+            }
+        });
+
+        const paginaNome = window.location.pathname.split('/').pop() || 'salvados_recuperados.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        
+        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
+
         function setStatus(texto, cor = "#00A650") { const el = document.getElementById('data-status'); if (el) { el.innerText = texto; el.style.color = cor; } }
 
         function baixarDashboardComoImagem() {
-            const statusBadge = document.getElementById('data-status');
-            const txtOriginal = statusBadge.innerText; const corOriginal = statusBadge.style.color;
-            statusBadge.innerText = 'Processando em Ultra HD 4K...'; statusBadge.style.color = '#3483FA';
-            document.body.classList.add('exporting');
+            const statusBadge = document.getElementById('data-status'); const txtOriginal = statusBadge.innerText; const corOriginal = statusBadge.style.color;
+            statusBadge.innerText = 'Processando UHD 4K...'; statusBadge.style.color = '#3483FA'; document.body.classList.add('exporting');
             setTimeout(() => {
-                const isLight = document.body.getAttribute('data-theme') === 'light';
-                const bgCor = isLight ? '#ffffff' : '#0b121f';
+                const isLight = document.body.getAttribute('data-theme') === 'light'; const bgCor = isLight ? '#ffffff' : '#0b121f';
                 html2canvas(document.body, { scale: 3, useCORS: true, allowTaint: true, backgroundColor: bgCor, logging: false, windowHeight: document.documentElement.offsetHeight, windowWidth: document.documentElement.offsetWidth }).then(canvas => {
                     document.body.classList.remove('exporting'); statusBadge.innerText = txtOriginal; statusBadge.style.color = corOriginal;
-                    const hoje = new Date(); const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${hoje.getFullYear()}`;
-                    const link = document.createElement('a'); link.download = `Painel_Salvados_Recuperados_${dataFormatada}_4K.png`; link.href = canvas.toDataURL('image/png'); link.click();
-                }).catch(err => { document.body.classList.remove('exporting'); statusBadge.innerText = 'Erro captura'; statusBadge.style.color = '#FF5252'; });
+                    const hoje = new Date(); const dFormat = `${String(hoje.getDate()).padStart(2, '0')}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${hoje.getFullYear()}`;
+                    const link = document.createElement('a'); link.download = `Painel_Salvados_Recuperados_${dFormat}_4K.png`; link.href = canvas.toDataURL('image/png'); link.click();
+                }).catch(err => { document.body.classList.remove('exporting'); statusBadge.innerText = 'Erro'; statusBadge.style.color = '#FF5252'; });
             }, 100);
         }
 
@@ -255,8 +205,15 @@
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
                 if (!response.ok) throw new Error("Erro de rede");
                 const dbData = await response.json();
-                if (dbData && Array.isArray(dbData)) { BANCO_GLOBAL = dbData; setStatus(`Base Carregada: ${BANCO_GLOBAL.length} registros`, '#00A650'); } 
-                else { BANCO_GLOBAL = []; setStatus('Banco vazio.', '#FFB000'); }
+                
+                if (dbData) {
+                    // Adaptando para estrutura objeto {lista: [...]} ou Array direto
+                    if(Array.isArray(dbData)) BANCO_GLOBAL = dbData;
+                    else if(dbData.lista) BANCO_GLOBAL = Array.isArray(dbData.lista) ? dbData.lista : Object.values(dbData.lista);
+                    else BANCO_GLOBAL = Object.values(dbData);
+                    
+                    setStatus(`Base Carregada: ${BANCO_GLOBAL.length} registros`, '#00A650');
+                } else { BANCO_GLOBAL = []; setStatus('Banco vazio.', '#FFB000'); }
                 preencherDropdowns(); aplicarFiltros();
             } catch (err) { setStatus('Erro ao carregar', '#FF5252'); }
         }
@@ -264,8 +221,8 @@
         async function sobrescreverFirebase(dados) {
             setStatus(`Salvando ${dados.length} pacotes...`, '#3483FA');
             try {
-                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
-                await registrarLogFirebase("Salvados Recuperados", `Atualizou a base de dados via CSV (${dados.length} pacotes).`);
+                // Salva dentro do nó 'lista' para manter o padrão das outras páginas
+                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({lista: dados, atualizadoEm: new Date().toLocaleString()}) });
                 BANCO_GLOBAL = dados; preencherDropdowns(); aplicarFiltros();
                 alert(`Sucesso! Banco atualizado com ${dados.length} pacotes.`); setStatus(`Base Atualizada: ${BANCO_GLOBAL.length} registros`, '#00A650');
             } catch (err) { alert("Erro ao salvar."); setStatus('Erro', '#FF5252'); }
@@ -283,7 +240,7 @@
                         return { ID: extrairID(row), Descricao: getVal(row, ['descrição', 'descricao', 'produto', 'item']), Status: getVal(row, ['status']), Observacao: getVal(row, ['observações + status', 'observação', 'observacoes']), Valor: valText, ValorNum: parseCurrency(valText), Data: getVal(row, ['data recuperado', 'data', 'data de criacao']) };
                     }).filter(i => i.ID && i.ID.toLowerCase() !== 'nan');
                     dadosLimpos = dadosLimpos.filter(i => i.Status.toUpperCase().includes('RECUPERADO'));
-                    if(dadosLimpos.length === 0) { alert("Arquivo sem pacotes 'RECUPERADO' ou formato inválido."); return; }
+                    if(dadosLimpos.length === 0) { alert("Arquivo sem pacotes 'RECUPERADO'."); return; }
                     sobrescreverFirebase(dadosLimpos); event.target.value = ''; 
                 }
             });
@@ -317,8 +274,7 @@
                 let dt = row.Data ? row.Data.trim() : ''; let matchData = true;
                 if (fData === 'VAZIO') matchData = dt === ''; else if (fData !== 'Todos') matchData = dt === fData;
                 let matchObs = (fObs === 'Todos' || row.Observacao === fObs);
-                let matchBusca = true;
-                if (busca !== '') { let txt = [row.ID, removerAcentos(row.Descricao)].join(' ').toLowerCase(); matchBusca = txt.includes(busca); }
+                let matchBusca = true; if (busca !== '') { let txt = [row.ID, removerAcentos(row.Descricao)].join(' ').toLowerCase(); matchBusca = txt.includes(busca); }
                 return matchData && matchObs && matchBusca;
             });
             DADOS_FILTRADOS.sort((a,b) => (b.ValorNum || 0) - (a.ValorNum || 0));
@@ -345,7 +301,7 @@
             let fData = document.getElementById('filter-data').value; let dataTexto = fData === 'Todos' ? '' : (fData === 'VAZIO' ? '(SEM DATA)' : `${fData}`);
             let formatedValor = valorTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             
-            document.getElementById('main-dynamic-title').innerText = `SALVADOS DO SEM IDENTIFICAÇÃO ${dataTexto} VALOR TOTAL: ${formatedValor} DE ${totalPacotes} VOLUMES`.replace('  ', ' ');
+            document.getElementById('main-dynamic-title').innerText = `SALVADOS RECUPERADOS ${dataTexto} | VALOR TOTAL: ${formatedValor}`.replace('  ', ' ');
             document.getElementById('kpi-valor').innerText = formatedValor; document.getElementById('kpi-volumes').innerText = totalPacotes;
 
             Object.keys(chartInstances).forEach(key => { if(chartInstances[key]) chartInstances[key].destroy(); });
