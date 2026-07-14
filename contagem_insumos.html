@@ -5,62 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contagem de Insumos - Mercado Livre</title>
     
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'contagem_insumos.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <!-- CSS GLOBAL -->
     <link rel="stylesheet" href="style.css">
 
     <style>
-        /* =========================================
-           SISTEMA DE TEMAS E GRADIENTES PADRÃO (GLASS)
-           ========================================= */
+        /* Variáveis locais específicas desta página não cobertas pelo CSS Global */
         :root {
-            --bg-gradient: radial-gradient(circle at top right, #1e3c72 0%, #0f172a 40%, #050505 100%);
-            --bg-card: rgba(30, 41, 59, 0.6); 
             --bg-header: rgba(15, 23, 42, 0.6);
             --bg-input: rgba(15, 23, 42, 0.8);
-            --bg-hover: rgba(30, 41, 59, 0.85);
-            --text-main: #EBEBEB;
-            --text-muted: #94a3b8;
-            --text-title: #FFFFFF;
-            --accent-yellow: #FFF159;
-            --accent-blue: #3483FA;
-            --accent-green: #00A650;
-            --accent-red: #FF5252;
-            --accent-warn: #FFB000;
-            --border-card: rgba(255, 255, 255, 0.1);
             --border-light: rgba(255, 255, 255, 0.2);
-            --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --accent-warn: #FFB000;
         }
-
         [data-theme="light"] {
-            --bg-gradient: #ffffff; /* Fundo sólido branco no tema claro */
-            --bg-card: rgba(255, 255, 255, 0.7);
             --bg-header: rgba(255, 255, 255, 0.9);
             --bg-input: rgba(255, 255, 255, 0.9);
-            --bg-hover: rgba(255, 255, 255, 0.95);
-            --text-main: #334155;
-            --text-muted: #64748b;
-            --text-title: #1e293b;
-            --border-card: rgba(255, 255, 255, 0.5);
             --border-light: rgba(0, 0, 0, 0.1);
-            --shadow-card: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-            /* As cores dos botões não mudam no tema claro */
+            --accent-warn: #B48B00;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { width: 100%; min-height: 100%; }
+        html, body { width: 100%; min-height: 100%; background: transparent; /* Pega o fundo do iframe */ }
+        body { padding: 8px; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-gradient); background-attachment: fixed;
-            color: var(--text-main); padding: 8px; transition: background .5s ease, color .3s ease;
-        }
-
-        /* HEADER E BOTÕES (Menu V2) */
+        /* HEADER E BOTÕES */
         .top-header {
-            background-color: #FFF159 !important; backdrop-filter: none; -webkit-backdrop-filter: none;
-            color: #2D3277; border-radius: 10px; padding: 10px 16px;
+            background-color: #FFF159 !important; color: #2D3277; border-radius: 10px; padding: 10px 16px;
             display: flex; align-items: center; justify-content: space-between; gap: 12px;
             margin-bottom: 10px; border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
@@ -75,15 +55,11 @@
 
         .header-right { display: flex; align-items: center; gap: 8px; justify-content: flex-end; flex-wrap: wrap;}
 
-        .header-right .status-badge, .header-right .theme-toggle {
+        .header-right .status-badge {
             background: #FFFFFF !important; color: #333333 !important; border: 1px solid rgba(0,0,0,0.1) !important;
             font-family: 'Inter', sans-serif; font-weight: 800; font-size: 0.8rem;
-            padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.3s ease;
+            padding: 6px 12px; border-radius: 6px; white-space: nowrap;
         }
-
-        .status-badge { white-space: nowrap; cursor: default !important; }
-        .theme-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; text-decoration: none; }
-        .theme-toggle:hover { background: #f1f1f1 !important; transform: translateY(-2px); }
 
         .btn-action, .btn {
             border-radius: 6px; padding: 6px 14px; font-size: .8rem; font-weight: 800;
@@ -105,8 +81,8 @@
 
         /* FILTROS E KPIS */
         .filters-card {
-            background-color: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-card); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; 
+            background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card);
+            border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; 
             display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; box-shadow: var(--shadow-card);
         }
 
@@ -114,15 +90,14 @@
         .field input, .field select {
             width: 100%; background: var(--bg-input); color: var(--text-main);
             border: 1px solid var(--border-light); border-radius: 6px;
-            padding: 10px 11px; outline: none; font-family: 'Inter', sans-serif; font-size: .9rem; transition: 0.2s;
+            padding: 10px 11px; outline: none; font-size: .9rem; transition: 0.2s;
         }
         .field input:focus, .field select:focus { border-color: var(--accent-blue); }
 
         .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
         .summary-card {
-            background-color: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-card); border-radius: 10px; padding: 12px;
-            box-shadow: var(--shadow-card); border-left: 4px solid var(--accent-blue);
+            background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card);
+            border-radius: 10px; padding: 12px; box-shadow: var(--shadow-card); border-left: 4px solid var(--accent-blue);
         }
         .summary-title { color: var(--text-muted); font-size: .72rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; }
         .summary-value { color: var(--text-title); font-size: 1.35rem; font-weight: 900; }
@@ -131,9 +106,8 @@
         .items-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 10px; }
 
         .item-card {
-            background-color: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-card); border-radius: 10px; padding: 12px;
-            box-shadow: var(--shadow-card); display: grid; grid-template-columns: 92px 1fr; gap: 12px; min-height: 150px;
+            background-color: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card);
+            border-radius: 10px; padding: 12px; box-shadow: var(--shadow-card); display: grid; grid-template-columns: 92px 1fr; gap: 12px; min-height: 150px;
         }
 
         .photo-box {
@@ -154,67 +128,34 @@
 
         .info.bg-ok { background: rgba(0, 166, 80, 0.15); border-color: rgba(0, 166, 80, 0.3); }
         .info.bg-ok .info-value { color: var(--accent-green); font-size: 0.9rem;}
-        
         .info.bg-warn { background: rgba(255, 176, 0, 0.15); border-color: rgba(255, 176, 0, 0.3); }
         .info.bg-warn .info-value { color: var(--accent-warn); font-size: 0.9rem;}
-        
         .info.bg-bad { background: rgba(255, 82, 82, 0.15); border-color: rgba(255, 82, 82, 0.3); }
         .info.bg-bad .info-value { color: var(--accent-red); font-size: 0.9rem;}
 
         .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto;}
         .card-actions .btn { width: 100%; }
 
-        .empty {
-            grid-column: 1 / -1; background-color: var(--bg-card); border: 1px solid var(--border-card); 
-            color: var(--text-muted); padding: 28px; border-radius: 8px; text-align: center; font-weight: 900;
-        }
+        .empty { grid-column: 1 / -1; background-color: var(--bg-card); border: 1px solid var(--border-card); color: var(--text-muted); padding: 28px; border-radius: 8px; text-align: center; font-weight: 900; }
 
         /* MODAIS */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
-            backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center; padding: 14px;
-        }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); backdrop-filter: blur(6px); z-index: 1000; align-items: center; justify-content: center; padding: 14px; }
         .modal-overlay.active { display: flex; }
 
-        .modal {
-            width: 100%; max-width: 560px; max-height: calc(100vh - 28px);
-            background-color: var(--bg-card); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--border-card); border-radius: 14px; box-shadow: var(--shadow-card);
-            overflow: hidden; display: flex; flex-direction: column;
-        }
-
-        .modal-header {
-            background-color: #FFF159 !important; color: #2D3277; padding: 12px 14px;
-            display: flex; justify-content: space-between; align-items: center; gap: 10px; flex: 0 0 auto;
-        }
+        .modal { width: 100%; max-width: 560px; max-height: calc(100vh - 28px); background-color: var(--bg-card); border: 1px solid var(--border-card); border-radius: 14px; box-shadow: var(--shadow-card); overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { background-color: #FFF159 !important; color: #2D3277; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex: 0 0 auto; }
         .modal-title { font-size: .95rem; font-weight: 900; line-height: 1.3; }
         .modal-close { border: none; background: transparent; color: #2D3277; font-size: 1.4rem; font-weight: 900; cursor: pointer; }
-
-        .modal-body { padding: 14px; overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1 1 auto; }
-
+        .modal-body { padding: 14px; overflow-y: auto; flex: 1 1 auto; }
+        
         .preview-row { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; margin-bottom: 14px; }
         .preview-img { width: 96px; height: 96px; border-radius: 10px; border: 1px solid var(--border-light); background: var(--bg-header); object-fit: cover; }
         .preview-text { color: var(--text-muted); font-size: .82rem; font-weight: 700; line-height: 1.45; }
 
         .modal-fields { display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
         .field-full { grid-column: 1 / -1; }
-        
-        .readonly-box {
-            background: var(--bg-header); border: 1px solid var(--border-card);
-            border-radius: 7px; padding: 10px 11px; color: var(--text-muted); font-weight: 800; font-size: .88rem;
-        }
-
-        .modal-footer {
-            padding: 12px 14px; display: flex; gap: 10px; justify-content: flex-end;
-            border-top: 1px solid var(--border-card); background: transparent; flex: 0 0 auto;
-            position: sticky; bottom: 0; z-index: 2;
-        }
-        .modal-footer .btn { min-height: 44px; flex: 1; }
-
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-header); }
-        ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        .readonly-box { background: var(--bg-header); border: 1px solid var(--border-card); border-radius: 7px; padding: 10px 11px; color: var(--text-muted); font-weight: 800; font-size: .88rem; }
+        .modal-footer { padding: 12px 14px; display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--border-card); flex: 0 0 auto; }
 
         @media (max-width: 900px) {
             .top-header { flex-direction: column; align-items: center; }
@@ -223,20 +164,10 @@
             .summary { grid-template-columns: 1fr; }
             .items-list { grid-template-columns: 1fr; }
         }
-
-        @media (max-width: 760px) {
-            .modal-overlay { align-items: flex-end; padding: 0; }
-            .modal { max-width: none; width: 100%; height: min(92vh, 760px); max-height: 92vh; border-radius: 18px 18px 0 0; }
-            .modal-body { padding: 12px; }
-            .preview-row { grid-template-columns: 1fr; gap: 10px; }
-            .preview-img { width: 100%; height: 160px; }
-            .modal-fields { grid-template-columns: 1fr;}
-            .modal-footer { flex-direction: column; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
-        }
     </style>
 </head>
 
-<body>
+<body data-theme="light">
     <div class="top-header">
         <div class="header-left">
             <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre">
@@ -244,12 +175,7 @@
         <div class="header-center">CONTAGEM DE INSUMOS</div>
         <div class="header-right">
             <span class="status-badge" id="data-status">Conectando...</span>
-            <button class="theme-toggle" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
-                </svg><span>Exportar 4K</span>
-            </button>
-            <button class="theme-toggle" onclick="toggleTheme()" id="themeText">Mudar Tema</button>
+            <button class="btn btn-dark" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">Exportar 4K</button>
             <a href="insumos.html" class="btn btn-blue">Visão Crítica</a>
             <button class="btn btn-dark" onclick="carregarDoFirebase()">Sync</button>
             <button class="btn btn-green" id="btn-novo-item" onclick="abrirModalAdicionar()">+ Novo Item</button>
@@ -272,6 +198,7 @@
         <div class="empty">Carregando itens...</div>
     </div>
 
+    <!-- MODAIS DE EDIÇÃO -->
     <div class="modal-overlay" id="edit-modal">
         <div class="modal">
             <div class="modal-header">
@@ -280,8 +207,8 @@
             </div>
             <div class="modal-body">
                 <div class="preview-row">
-                    <img id="modal-preview" class="preview-img" src="" alt="Foto do item" onerror="this.onerror=null; this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzc3Nzc3NyI+U2VtIEZvdG88L3RleHQ+PC9zdmc+'">
-                    <div class="preview-text">Altere apenas a foto e a quantidade atual.<br>A data da contagem será atualizada automaticamente.</div>
+                    <img id="modal-preview" class="preview-img" src="" alt="Foto do item">
+                    <div class="preview-text">Altere apenas a foto e a quantidade atual.<br>A data da contagem será atualizada.</div>
                 </div>
                 <div class="modal-fields">
                     <div class="field field-full"><label>Material</label><div class="readonly-box" id="modal-material">-</div></div>
@@ -330,7 +257,6 @@
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const FIREBASE_NODE = "insumos";
         const placeholderImg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzc3Nzc3NyI+U2VtIEZvdG88L3RleHQ+PC9zdmc+";
-
         const $ = (s) => document.querySelector(s);
 
         let ALL_ITEMS = [];
@@ -339,33 +265,29 @@
         let editingKey = null;
         let isAdding = false;
 
+        // ============ SINCRONIZAÇÃO DE TEMA (VEM DO PAI) ============
+        function syncTheme() {
+            const theme = localStorage.getItem('themePreference') || 'light';
+            document.body.setAttribute('data-theme', theme);
+        }
+        syncTheme();
+        window.addEventListener('storage', (e) => { if (e.key === 'themePreference') syncTheme(); });
+
         // ============ PERMISSÕES GLOBAIS ============
         const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
         let userRole = currentUser && currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
         let canEdit = ['editor', 'admin'].includes(userRole);
 
-        if(!canEdit) {
-            $('#btn-novo-item').style.display = 'none';
-        }
+        if(!canEdit) { $('#btn-novo-item').style.display = 'none'; }
 
-        // ============ UTILIDADES ============
-        function setStatus(texto, cor = "#FF7733") {
-            const el = $('#data-status'); el.innerText = texto; el.style.color = cor;
-        }
-
-        function escapeHtml(value) {
-            return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;');
-        }
+        // ============ FUNÇÕES ESSENCIAIS ============
+        function setStatus(texto, cor = "#FF7733") { const el = $('#data-status'); el.innerText = texto; el.style.color = cor; }
+        function escapeHtml(value) { return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;'); }
         function escapeAttr(value) { return escapeHtml(value); }
-
-        function dataHoraAgora() {
-            const agora = new Date();
-            return agora.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
+        function dataHoraAgora() { const agora = new Date(); return agora.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
 
         function semaforoBgClass(atual, seguranca) {
-            let a = parseFloat(atual) || 0;
-            let s = parseFloat(seguranca) || 0;
+            let a = parseFloat(atual) || 0; let s = parseFloat(seguranca) || 0;
             if (s <= 0) return a > 0 ? 'bg-ok' : 'bg-bad';
             if (a > s) return 'bg-ok'; 
             if (a >= (s * 0.3) && a > 0) return 'bg-warn'; 
@@ -374,65 +296,37 @@
 
         function getValue(item, keys, fallback = '') {
             if (!item) return fallback; 
-            for (const key of keys) {
-                if (item[key] !== undefined && item[key] !== null && String(item[key]).trim() !== '') return item[key];
-            }
-            const lowerMap = {};
-            Object.keys(item || {}).forEach(k => lowerMap[k.trim().toLowerCase()] = k);
-            for (const key of keys) {
-                const found = lowerMap[String(key).trim().toLowerCase()];
-                if (found && item[found] !== undefined && item[found] !== null && String(item[found]).trim() !== '') return item[found];
-            }
+            for (const key of keys) { if (item[key] !== undefined && item[key] !== null && String(item[key]).trim() !== '') return item[key]; }
+            const lowerMap = {}; Object.keys(item || {}).forEach(k => lowerMap[k.trim().toLowerCase()] = k);
+            for (const key of keys) { const found = lowerMap[String(key).trim().toLowerCase()]; if (found && item[found] !== undefined && item[found] !== null && String(item[found]).trim() !== '') return item[found]; }
             return fallback;
         }
 
         function normalizeItem(row, index) {
             return {
-                id_material: String(getValue(row, ['id_material', 'ID Material', 'id'], index + 1)).trim(),
-                Foto: String(getValue(row, ['Foto', 'foto'], '')).trim(),
-                nome_material: String(getValue(row, ['nome_material', 'Nome do Material', 'nome'], '')).trim(),
-                categoria_material: String(getValue(row, ['categoria_material', 'Categoria'], 'Sem categoria')).trim() || 'Sem categoria',
-                unidade: String(getValue(row, ['unidade', 'Unidade'], '')).trim(),
-                tamanho: String(getValue(row, ['tamanho', 'Tamanho'], '')).trim(),
-                estoque_segurança: getValue(row, ['estoque_segurança', 'Estoque Segurança', 'segurança'], 0),
-                Estoque_atual: getValue(row, ['Estoque_atual', 'estoque_atual'], 0),
-                "Ultima contagem": String(getValue(row, ['Ultima contagem', 'ultima_contagem'], '')).trim(),
-                Pedidos: String(getValue(row, ['Pedidos', 'pedidos'], '')).trim(),
-                "Saldo _registrado": String(getValue(row, ['Saldo _registrado', 'saldo_registrado'], '')).trim(),
-                "Total entradas": String(getValue(row, ['Total entradas', 'total_entradas'], '')).trim(),
+                id_material: String(getValue(row, ['id_material', 'ID Material', 'id'], index + 1)).trim(), Foto: String(getValue(row, ['Foto', 'foto'], '')).trim(),
+                nome_material: String(getValue(row, ['nome_material', 'Nome do Material', 'nome'], '')).trim(), categoria_material: String(getValue(row, ['categoria_material', 'Categoria'], 'Sem categoria')).trim() || 'Sem categoria',
+                unidade: String(getValue(row, ['unidade', 'Unidade'], '')).trim(), tamanho: String(getValue(row, ['tamanho', 'Tamanho'], '')).trim(),
+                estoque_segurança: getValue(row, ['estoque_segurança', 'Estoque Segurança', 'segurança'], 0), Estoque_atual: getValue(row, ['Estoque_atual', 'estoque_atual'], 0),
+                "Ultima contagem": String(getValue(row, ['Ultima contagem', 'ultima_contagem'], '')).trim(), Pedidos: String(getValue(row, ['Pedidos', 'pedidos'], '')).trim(),
+                "Saldo _registrado": String(getValue(row, ['Saldo _registrado', 'saldo_registrado'], '')).trim(), "Total entradas": String(getValue(row, ['Total entradas', 'total_entradas'], '')).trim(),
                 "Total saídas": String(getValue(row, ['Total saídas', 'total_saidas'], '')).trim()
             };
         }
 
-        // ============ CARREGAR DADOS ============
         async function carregarDoFirebase() {
             setStatus('Conectando...', '#3483FA');
-
             try {
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
                 const dbData = await response.json();
-
                 ALL_ITEMS = []; ITEM_KEYS = [];
-                
                 if (dbData && dbData.lista) {
-                    if (Array.isArray(dbData.lista)) {
-                        dbData.lista.forEach((row, index) => {
-                            if (row !== null && row !== undefined) { ITEM_KEYS.push(index); ALL_ITEMS.push(normalizeItem(row, index)); }
-                        });
-                    } else {
-                        Object.keys(dbData.lista).forEach((key, index) => {
-                            const row = dbData.lista[key];
-                            if (row !== null && row !== undefined) { ITEM_KEYS.push(key); ALL_ITEMS.push(normalizeItem(row, index)); }
-                        });
-                    }
+                    if (Array.isArray(dbData.lista)) { dbData.lista.forEach((row, index) => { if (row !== null && row !== undefined) { ITEM_KEYS.push(index); ALL_ITEMS.push(normalizeItem(row, index)); } }); } 
+                    else { Object.keys(dbData.lista).forEach((key, index) => { const row = dbData.lista[key]; if (row !== null && row !== undefined) { ITEM_KEYS.push(key); ALL_ITEMS.push(normalizeItem(row, index)); } }); }
                 }
-
                 ALL_ITEMS = ALL_ITEMS.filter(x => String(x.nome_material).trim() !== '');
-                fillCategorias(); renderLista();
-                setStatus(dbData?.atualizadoEm ? dbData.atualizadoEm : 'Dados carregados', '#00A650');
-            } catch(error) {
-                setStatus('Erro ao conectar no Firebase.', '#FF5252');
-            }
+                fillCategorias(); renderLista(); setStatus(dbData?.atualizadoEm ? dbData.atualizadoEm : 'Dados carregados', '#00A650');
+            } catch(error) { setStatus('Erro ao conectar no Firebase.', '#FF5252'); }
         }
 
         function fillCategorias() {
@@ -448,33 +342,20 @@
             const filtered = ALL_ITEMS.map((item, index) => ({ item, index })).filter(({ item }) => {
                 const matchCategoria = categoria === 'Todos' || String(item.categoria_material).trim() === categoria;
                 const textoBusca = [item.id_material, item.nome_material, item.categoria_material].join(' ').toLowerCase();
-                const matchBusca = !busca || textoBusca.includes(busca);
-                return matchCategoria && matchBusca;
+                return matchCategoria && (!busca || textoBusca.includes(busca));
             });
 
-            $('#kpi-total').innerText = ALL_ITEMS.length;
-            $('#kpi-filtrados').innerText = filtered.length;
+            $('#kpi-total').innerText = ALL_ITEMS.length; $('#kpi-filtrados').innerText = filtered.length;
 
-            if (filtered.length === 0) {
-                $('#items-list').innerHTML = `<div class="empty">Nenhum item encontrado.</div>`; return;
-            }
+            if (filtered.length === 0) { $('#items-list').innerHTML = `<div class="empty">Nenhum item encontrado.</div>`; return; }
 
             let html = '';
             for (const { item, index } of filtered) {
                 const foto = item.Foto || '';
                 const fotoHtml = foto ? `<img src="${escapeAttr(foto)}" alt="${escapeAttr(item.nome_material)}" onerror="this.onerror=null; this.src='${placeholderImg}'">` : `<img src="${placeholderImg}">`;
-                
                 const bgStockClass = semaforoBgClass(item.Estoque_atual, item.estoque_segurança);
-
                 let actionsHtml = '';
-                if (canEdit) {
-                    actionsHtml = `
-                        <div class="card-actions">
-                            <button class="btn btn-blue" onclick="abrirModal(${index})">Ajuste Rápido</button>
-                            <button class="btn btn-dark" onclick="abrirModalCompleto(${index})">Editar Tudo</button>
-                        </div>
-                    `;
-                }
+                if (canEdit) { actionsHtml = `<div class="card-actions"><button class="btn btn-blue" onclick="abrirModal(${index})">Ajuste Rápido</button><button class="btn btn-dark" onclick="abrirModalCompleto(${index})">Editar Tudo</button></div>`; }
 
                 html += `
                     <div class="item-card">
@@ -499,35 +380,23 @@
 
         // ============ AÇÕES DOS MODAIS ============
         function fecharModal(id) { document.getElementById(id).classList.remove('active'); }
-
         function abrirModal(index) {
             if (!canEdit) return alert('Sem permissão para editar.');
-            editingIndex = index; editingKey = ITEM_KEYS[index];
-            const item = ALL_ITEMS[index];
-
-            $('#modal-material').innerText = item.nome_material || '-';
-            $('#modal-foto').value = item.Foto || '';
-            $('#modal-estoque').value = item.Estoque_atual || 0;
-            $('#modal-preview').src = item.Foto || placeholderImg;
-
-            $('#edit-modal').classList.add('active');
-            setTimeout(() => { $('#modal-estoque').focus(); }, 250);
+            editingIndex = index; editingKey = ITEM_KEYS[index]; const item = ALL_ITEMS[index];
+            $('#modal-material').innerText = item.nome_material || '-'; $('#modal-foto').value = item.Foto || ''; $('#modal-estoque').value = item.Estoque_atual || 0; $('#modal-preview').src = item.Foto || placeholderImg;
+            $('#edit-modal').classList.add('active'); setTimeout(() => { $('#modal-estoque').focus(); }, 250);
         }
 
         async function salvarEdicaoRapida() {
             if (!canEdit || editingIndex === null) return;
             const itemAtualizado = { ...ALL_ITEMS[editingIndex], Foto: $('#modal-foto').value.trim(), Estoque_atual: $('#modal-estoque').value, "Ultima contagem": dataHoraAgora() };
-            await commitarEdicaoFirebase(itemAtualizado);
-            fecharModal('edit-modal');
+            await commitarEdicaoFirebase(itemAtualizado); fecharModal('edit-modal');
         }
 
         function preencherFullModal(i) {
-            $('#full-id').value = i.id_material || ''; $('#full-nome').value = i.nome_material || '';
-            $('#full-categoria').value = i.categoria_material || ''; $('#full-unidade').value = i.unidade || '';
-            $('#full-tamanho').value = i.tamanho || ''; $('#full-estoque-seguranca').value = i.estoque_segurança || 0;
-            $('#full-estoque-atual').value = i.Estoque_atual || 0; $('#full-foto').value = i.Foto || '';
-            $('#full-pedidos').value = i.Pedidos || ''; $('#full-saldo').value = i["Saldo _registrado"] || '';
-            $('#full-entradas').value = i["Total entradas"] || ''; $('#full-saidas').value = i["Total saídas"] || '';
+            $('#full-id').value = i.id_material || ''; $('#full-nome').value = i.nome_material || ''; $('#full-categoria').value = i.categoria_material || ''; $('#full-unidade').value = i.unidade || '';
+            $('#full-tamanho').value = i.tamanho || ''; $('#full-estoque-seguranca').value = i.estoque_segurança || 0; $('#full-estoque-atual').value = i.Estoque_atual || 0; $('#full-foto').value = i.Foto || '';
+            $('#full-pedidos').value = i.Pedidos || ''; $('#full-saldo').value = i["Saldo _registrado"] || ''; $('#full-entradas').value = i["Total entradas"] || ''; $('#full-saidas').value = i["Total saídas"] || '';
         }
 
         function obterObjetoFull() {
@@ -535,46 +404,33 @@
                 id_material: $('#full-id').value.trim(), nome_material: $('#full-nome').value.trim(), categoria_material: $('#full-categoria').value.trim() || 'Sem categoria',
                 unidade: $('#full-unidade').value.trim(), tamanho: $('#full-tamanho').value.trim(), estoque_segurança: parseFloat($('#full-estoque-seguranca').value) || 0,
                 Estoque_atual: parseFloat($('#full-estoque-atual').value) || 0, Foto: $('#full-foto').value.trim(), Pedidos: $('#full-pedidos').value.trim(),
-                "Saldo _registrado": $('#full-saldo').value.trim(), "Total entradas": $('#full-entradas').value.trim(), "Total saídas": $('#full-saidas').value.trim(),
-                "Ultima contagem": dataHoraAgora()
+                "Saldo _registrado": $('#full-saldo').value.trim(), "Total entradas": $('#full-entradas').value.trim(), "Total saídas": $('#full-saidas').value.trim(), "Ultima contagem": dataHoraAgora()
             };
         }
 
         function abrirModalCompleto(index) {
-            if (!canEdit) return alert('Sem permissão para editar.');
-            isAdding = false; editingIndex = index; editingKey = ITEM_KEYS[index];
-            $('#full-modal-title').innerText = "Editar Todas as Informações";
-            preencherFullModal(ALL_ITEMS[index]);
-            $('#btn-full-excluir').style.display = 'block';
-            $('#full-edit-modal').classList.add('active');
+            if (!canEdit) return;
+            isAdding = false; editingIndex = index; editingKey = ITEM_KEYS[index]; $('#full-modal-title').innerText = "Editar Todas as Informações";
+            preencherFullModal(ALL_ITEMS[index]); $('#btn-full-excluir').style.display = 'block'; $('#full-edit-modal').classList.add('active');
         }
 
         function abrirModalAdicionar() {
-            if (!canEdit) return alert('Sem permissão para adicionar.');
-            isAdding = true; editingIndex = null; editingKey = null;
-            $('#full-modal-title').innerText = "Adicionar Novo Item";
-            preencherFullModal({});
-            $('#btn-full-excluir').style.display = 'none';
-            $('#full-edit-modal').classList.add('active');
+            if (!canEdit) return;
+            isAdding = true; editingIndex = null; editingKey = null; $('#full-modal-title').innerText = "Adicionar Novo Item";
+            preencherFullModal({}); $('#btn-full-excluir').style.display = 'none'; $('#full-edit-modal').classList.add('active');
         }
 
         async function salvarEdicaoCompleta() {
-            if (!canEdit) return;
-            const obj = obterObjetoFull();
+            if (!canEdit) return; const obj = obterObjetoFull();
             if (!obj.nome_material) { alert("O nome do material é obrigatório!"); return; }
-
             if (isAdding) {
                 setStatus('Adicionando...', '#3483FA');
                 try {
                     await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/lista.json`, { method: 'POST', body: JSON.stringify(obj) });
                     await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PATCH', body: JSON.stringify({ atualizadoEm: obj["Ultima contagem"] }) });
-                    fecharModal('full-edit-modal');
-                    await carregarDoFirebase();
+                    fecharModal('full-edit-modal'); await carregarDoFirebase();
                 } catch(e) { alert('Erro ao adicionar no Firebase.'); }
-            } else {
-                await commitarEdicaoFirebase(obj);
-                fecharModal('full-edit-modal');
-            }
+            } else { await commitarEdicaoFirebase(obj); fecharModal('full-edit-modal'); }
         }
 
         async function commitarEdicaoFirebase(item) {
@@ -582,22 +438,18 @@
             try {
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/lista/${editingKey}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) });
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ atualizadoEm: item["Ultima contagem"] }) });
-                
-                ALL_ITEMS[editingIndex] = item; renderLista(); 
-                setStatus(item["Ultima contagem"], '#00A650');
+                ALL_ITEMS[editingIndex] = item; renderLista(); setStatus(item["Ultima contagem"], '#00A650');
             } catch(error) { setStatus('Erro ao salvar.', '#FF5252'); }
         }
 
         async function excluirItem() {
             if (editingIndex === null || editingKey === null || !canEdit) return;
             if (!confirm(`Deseja realmente excluir o item "${ALL_ITEMS[editingIndex].nome_material}"?`)) return;
-
             setStatus('Excluindo...', '#FF5252');
             try {
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/lista/${editingKey}.json`, { method: 'DELETE' });
                 ALL_ITEMS.splice(editingIndex, 1); ITEM_KEYS.splice(editingIndex, 1);
-                fecharModal('edit-modal'); fecharModal('full-edit-modal'); renderLista();
-                setStatus(dataHoraAgora(), '#00A650');
+                fecharModal('edit-modal'); fecharModal('full-edit-modal'); renderLista(); setStatus(dataHoraAgora(), '#00A650');
             } catch (error) { setStatus('Erro ao excluir.', '#FF5252'); }
         }
 
@@ -606,23 +458,12 @@
         $('#filter-categoria').addEventListener('change', renderLista); $('#search-input').addEventListener('input', renderLista);
         $('#modal-foto').addEventListener('input', function() { $('#modal-preview').src = this.value || placeholderImg; });
 
-        function initTheme() {
-            try { if (localStorage.getItem('themePreference') === 'light') { document.body.setAttribute('data-theme', 'light'); } } catch(e){}
-        }
-        function toggleTheme() {
-            const isLight = document.body.getAttribute('data-theme') === 'light';
-            if (isLight) { document.body.removeAttribute('data-theme'); } else { document.body.setAttribute('data-theme', 'light'); }
-            try { localStorage.setItem('themePreference', isLight ? 'dark' : 'light'); } catch(e){}
-        }
-
-        // EXPORTAÇÃO 4K
         function baixarDashboardComoImagem() {
             if (!ALL_ITEMS || ALL_ITEMS.length === 0) return alert("Nenhum dado para exportar.");
             const s = $('#data-status'); const orig = s.innerText; const cor = s.style.color;
             s.innerText = 'Processando UHD 4K...'; s.style.color = '#3483FA';
-            
             const style = document.createElement('style'); style.id = 'temp-capture';
-            style.innerHTML = `#btnExportar, #themeToggle, .btn-action, .filters-card, .card-actions { display: none !important; } ::-webkit-scrollbar { display: none !important; } body { overflow: visible !important; height: auto !important; } .items-list { overflow: visible !important; }`;
+            style.innerHTML = `.btn-action, .filters-card, .card-actions { display: none !important; } ::-webkit-scrollbar { display: none !important; } body { overflow: visible !important; height: auto !important; } .items-list { overflow: visible !important; }`;
             document.head.appendChild(style);
 
             setTimeout(() => {
@@ -633,8 +474,6 @@
             }, 300);
         }
 
-        // Init
-        initTheme(); 
         carregarDoFirebase();
     </script>
 </body>
