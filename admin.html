@@ -231,6 +231,52 @@
         
         let adMenuData = { categorias: [] }; 
         let allUsers = [];
+        
+        // Sets globais para as tags e categorias auto-completáveis
+        window.newsTagsSet = new Set();
+        window.bqCatSet = new Set();
+        window.bqTagsSet = new Set();
+
+        // -----------------------------------------------------
+        // FUNÇÕES DE FORMATAÇÃO E AUTOCOMPLETE DE TAGS (NOVAS)
+        // -----------------------------------------------------
+        function formatarTagsCategorias(str) {
+            if(!str) return '';
+            return str.split(',').map(item => {
+                let s = item.trim();
+                if(!s) return '';
+                // Capitaliza a primeira letra e deixa o resto minúsculo (Title Case)
+                return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+            }).filter(Boolean).join(', ');
+        }
+
+        function setupMultiSelectDatalist(inputId, datalistId, baseSet) {
+            const input = document.getElementById(inputId);
+            const datalist = document.getElementById(datalistId);
+            
+            input.oninput = function() {
+                let val = this.value;
+                let parts = val.split(',');
+                datalist.innerHTML = ''; 
+                
+                if (parts.length > 1) {
+                    // Pega tudo antes da última vírgula para manter como prefixo
+                    let prefix = parts.slice(0, -1).join(', ') + ', ';
+                    Array.from(baseSet).sort().forEach(item => {
+                        // Evita sugerir tags que o usuário já colocou nesta linha
+                        let isAlreadyAdded = parts.slice(0, -1).map(p => p.trim().toLowerCase()).includes(item.toLowerCase());
+                        if(!isAlreadyAdded) {
+                            datalist.innerHTML += `<option value="${prefix}${item}">`;
+                        }
+                    });
+                } else {
+                    // Comportamento normal para a primeira palavra
+                    Array.from(baseSet).sort().forEach(item => {
+                        datalist.innerHTML += `<option value="${item}">`;
+                    });
+                }
+            };
+        }
 
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
         syncTheme();
@@ -537,7 +583,7 @@
                 else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
                 newsList.sort((a,b) => b.data - a.data);
                 
-                let tagsSet = new Set(); // Para autocompletar tags
+                window.newsTagsSet.clear(); // Limpa set global para autocompletar tags
                 let html = '';
                 
                 newsList.forEach(n => {
@@ -547,7 +593,7 @@
                         n.tag.split(',').forEach(t => {
                             if(t.trim()) {
                                 tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
-                                tagsSet.add(t.trim()); // Coleta a tag
+                                window.newsTagsSet.add(t.trim()); // Coleta a tag
                             }
                         });
                     }
@@ -567,12 +613,10 @@
                 });
                 container.innerHTML = html;
 
-                // Preenche o datalist para autocompletar tags de notícias
-                let dlNewsTags = document.getElementById('news-tags-list');
-                dlNewsTags.innerHTML = '';
-                Array.from(tagsSet).sort().forEach(tag => {
-                    dlNewsTags.innerHTML += `<option value="${tag}">`;
-                });
+                // Configura o datalist multi-select nativo para Notícias
+                setupMultiSelectDatalist('news-tag', 'news-tags-list', window.newsTagsSet);
+                // Inicializa o datalist assim que a página carrega os dados
+                document.getElementById('news-tag').dispatchEvent(new Event('input'));
 
             } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar o histórico de notícias.</div>'; }
         }
@@ -614,7 +658,8 @@
             if (isHtmlMode['news-body']) { alert("Por favor, saia do Modo Código (Clique em </> Code novamente) antes de publicar!"); return; }
 
             let titulo = document.getElementById('news-title').value.trim();
-            let tag = document.getElementById('news-tag').value.trim() || 'Aviso';
+            // Salva as tags formatadas (Primeira letra maiúscula)
+            let tag = formatarTagsCategorias(document.getElementById('news-tag').value) || 'Aviso';
             let corpo = document.getElementById('news-body').innerHTML.trim();
             
             if(!titulo || !corpo || corpo === '<br>') return alert("Preencha o título e o conteúdo da notícia antes de publicar/salvar.");
@@ -786,18 +831,17 @@
                 let bqList = Object.keys(data).map(k => ({...data[k], key: k}));
                 bqList.sort((a,b) => b.data - a.data);
                 
-                let bqCatSet = new Set();
-                let bqTagsSet = new Set();
+                window.bqCatSet.clear();
+                window.bqTagsSet.clear();
                 let html = '';
                 
                 bqList.forEach(bq => {
-                    // SEPARA AS CATEGORIAS POR VÍRGULA NO ADMIN E COLETA PRO AUTOCOMPLETE
                     let tagsHtml = '';
                     if(bq.categoria) {
                         bq.categoria.split(',').forEach(c => {
                             if(c.trim()) {
                                 tagsHtml += `<span style="background: #2d2d2d; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">📁 ${c.trim()}</span>`;
-                                bqCatSet.add(c.trim());
+                                window.bqCatSet.add(c.trim());
                             }
                         });
                     } else {
@@ -808,7 +852,7 @@
                         bq.tags.split(',').forEach(t => {
                             if(t.trim()) {
                                 tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
-                                bqTagsSet.add(t.trim());
+                                window.bqTagsSet.add(t.trim());
                             }
                         });
                     }
@@ -829,14 +873,12 @@
                 });
                 container.innerHTML = html;
 
-                // Preencher datalists de BigQuery (AUTOCOMPLETAR)
-                let dlBqCat = document.getElementById('bq-cat-list');
-                dlBqCat.innerHTML = '';
-                Array.from(bqCatSet).sort().forEach(c => dlBqCat.innerHTML += `<option value="${c}">`);
+                // Inicializar listeners multi-select para BigQuery
+                setupMultiSelectDatalist('bq-category', 'bq-cat-list', window.bqCatSet);
+                setupMultiSelectDatalist('bq-tags', 'bq-tags-list', window.bqTagsSet);
                 
-                let dlBqTags = document.getElementById('bq-tags-list');
-                dlBqTags.innerHTML = '';
-                Array.from(bqTagsSet).sort().forEach(t => dlBqTags.innerHTML += `<option value="${t}">`);
+                document.getElementById('bq-category').dispatchEvent(new Event('input'));
+                document.getElementById('bq-tags').dispatchEvent(new Event('input'));
 
             } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar a biblioteca.</div>'; }
         }
@@ -884,8 +926,10 @@
             if (isHtmlMode['bq-body']) { alert("Saia do Modo Código (</> Code) do campo Documentação antes de salvar."); return; }
 
             let titulo = document.getElementById('bq-title').value.trim();
-            let categoria = document.getElementById('bq-category').value.trim() || 'Geral';
-            let tags = document.getElementById('bq-tags').value.trim();
+            // Salva categorias e tags formatadas (Primeira letra maiúscula)
+            let categoria = formatarTagsCategorias(document.getElementById('bq-category').value) || 'Geral';
+            let tags = formatarTagsCategorias(document.getElementById('bq-tags').value);
+            
             let descricao = document.getElementById('bq-desc').value.trim();
             let codigo_sql = document.getElementById('bq-sql-code').value.trim();
             let corpo_post = document.getElementById('bq-body').innerHTML.trim();
