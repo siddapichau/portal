@@ -151,7 +151,6 @@
 
             <!-- COLUNA 2: NOTÍCIAS -->
             <div class="panel-box col-news">
-                <!-- TÍTULO PRINCIPAL -->
                 <h1 style="text-align: center; font-size: 1.6rem; font-weight: 900; color: var(--text-title); margin: 15px 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Portal de Controles Internos</h1>
                 <div class="news-header-banner">📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS</div>
                 
@@ -346,6 +345,7 @@
             }
         }
 
+        // LÓGICA DE TAGS ATUALIZADA (SEPARA POR VÍRGULA)
         function renderTags(newsList) {
             const container = document.getElementById('tags-container');
             if(!container) return;
@@ -354,7 +354,11 @@
             let totalLikes = 0;
             
             newsList.forEach(n => { 
-                if(n.tag) tags.add(n.tag); 
+                if(n.tag) {
+                    n.tag.split(',').forEach(t => {
+                        if(t.trim()) tags.add(t.trim());
+                    });
+                }
                 totalLikes += (parseInt(n.likes) || 0);
             });
             
@@ -382,7 +386,7 @@
             
             let filtradas = globalNewsList;
             if(currentNewsFilter !== 'Todas') {
-                filtradas = globalNewsList.filter(n => n.tag === currentNewsFilter);
+                filtradas = globalNewsList.filter(n => n.tag && n.tag.split(',').map(t=>t.trim()).includes(currentNewsFilter));
             }
             
             if(filtradas.length === 0) {
@@ -401,6 +405,16 @@
 
                 const btnClass = userHasLiked ? 'btn-like liked' : 'btn-like';
                 
+                // RENDERIZAÇÃO DE MULTIPLAS TAGS
+                let tagsHtml = '';
+                if(news.tag) {
+                    news.tag.split(',').forEach(t => {
+                        if(t.trim()) tagsHtml += `<span class="post-tag">${t.trim()}</span>`;
+                    });
+                } else {
+                    tagsHtml = `<span class="post-tag">Aviso</span>`;
+                }
+                
                 container.innerHTML += `
                     <div class="post-card">
                         <div class="post-header">
@@ -411,7 +425,7 @@
                                     <span class="post-date">${dataFormatada}</span>
                                 </div>
                             </div>
-                            <span class="post-tag">${news.tag || 'Aviso'}</span>
+                            <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">${tagsHtml}</div>
                         </div>
                         
                         <div class="post-title">${news.titulo || ''}</div>
