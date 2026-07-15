@@ -3,7 +3,7 @@ const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
-// ======= AVATARES EXPANDIDOS (Com os 10 novos ML Logistic Bots) =======
+// ======= AVATARES EXPANDIDOS =======
 const AVATAR_OPTIONS = [
     // Bottts originais
     "https://api.dicebear.com/7.x/bottts/svg?seed=LogiBot&backgroundColor=e2e8f0",
@@ -107,7 +107,12 @@ async function carregarMenuGlobal() {
             <div class="nav-right">
                 <button class="btn-minimal" onclick="abrirStatusModal()" title="Status dos Reportes">📊</button>
                 <button class="btn-minimal" onclick="toggleTheme()" title="Alternar Tema"><svg id="themeIconSvg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
+                
+                <!-- Botão de Auth normal (Visitantes) -->
                 <button class="btn-minimal" id="btnTopAuth" onclick="abrirAuthModal()" title="Login e Registro"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
+                
+                <!-- Botão Avatar Perfil (Usuários Logados) -->
+                <button class="btn-minimal" id="btnTopProfile" style="display:none; padding:0; overflow:hidden; border: 2px solid var(--accent-blue); border-radius: 50% !important;" onclick="abrirConfigModal()" title="Meu Perfil"></button>
             </div>
         </div>
         <div class="sidebar-overlay" onclick="toggleMenu()"></div>
@@ -205,11 +210,23 @@ async function carregarMenuGlobal() {
 
 function verificarUIAutenticacao() {
     if(currentUser) {
+        // Desativa o ícone de Login e ativa o Avatar
         document.getElementById('btnTopAuth').style.display = 'none';
+        const profileBtn = document.getElementById('btnTopProfile');
+        profileBtn.style.display = 'flex';
+        
+        // Define a foto ou inicial no botão
+        if (currentUser.avatar) {
+            profileBtn.innerHTML = `<img src="${currentUser.avatar}" style="width:100%;height:100%;object-fit:cover;">`;
+        } else {
+            profileBtn.innerHTML = `<span style="font-weight:900; font-size:1.1rem; color:var(--text-main);">${currentUser.usuario.charAt(0).toUpperCase()}</span>`;
+        }
+
         document.getElementById('sidebarFooterConfig').style.display = 'flex';
         if(currentUser.cargo === 'admin') document.getElementById('btnSidebarAdmin').style.display = 'flex'; 
     } else {
         document.getElementById('btnTopAuth').style.display = 'flex';
+        document.getElementById('btnTopProfile').style.display = 'none';
         document.getElementById('sidebarFooterConfig').style.display = 'none';
         document.getElementById('btnSidebarAdmin').style.display = 'none';
     }
@@ -520,7 +537,10 @@ async function escolherAvatar(url) {
     
     currentUser.avatar = url;
     localStorage.setItem('loggedUser', JSON.stringify(currentUser));
+    
+    // Atualiza imediatamente na tela (Modal e Barra do Topo)
     renderizarPainelConfig();
+    verificarUIAutenticacao();
 
     try {
         await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { 
