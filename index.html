@@ -151,7 +151,7 @@
 
             <!-- COLUNA 2: NOTÍCIAS -->
             <div class="panel-box col-news">
-                <!-- TÍTULO PRINCIPAL MOVIDO PARA CÁ -->
+                <!-- TÍTULO PRINCIPAL -->
                 <h1 style="text-align: center; font-size: 1.6rem; font-weight: 900; color: var(--text-title); margin: 15px 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Portal de Controles Internos</h1>
                 <div class="news-header-banner">📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS</div>
                 
@@ -193,7 +193,71 @@
         let currentNewsFilter = 'Todas';
         let userAvatarMap = {};
 
-        // Recuperador universal de Avatares (Fallback para a Letra)
+        // --- Variáveis para controle de Notificações ---
+        let lastNewsTimestamp = localStorage.getItem('lastNewsTime') ? parseInt(localStorage.getItem('lastNewsTime')) : Date.now();
+        let lastStatusTimestamp = localStorage.getItem('lastStatusTime') ? parseInt(localStorage.getItem('lastStatusTime')) : Date.now();
+
+        // Pede a permissão de notificação para o usuário
+        function pedirPermissaoNotificacao() {
+            if ("Notification" in window) {
+                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+                    Notification.requestPermission();
+                }
+            }
+        }
+
+        // Função que escuta ativamente o Firebase a cada 30 segundos
+        async function checkNotifications() {
+            if (!("Notification" in window) || Notification.permission !== "granted") return;
+            
+            try {
+                // Checa Notícias
+                const resNews = await fetch(`${URL_BD_INDEX}portal_news.json?_=${Date.now()}`);
+                const newsData = await resNews.json();
+                if(newsData) {
+                    let latestTime = lastNewsTimestamp;
+                    let newestNews = null;
+                    Object.values(newsData).forEach(n => {
+                        if(n.data > latestTime) {
+                            latestTime = n.data;
+                            newestNews = n;
+                        }
+                    });
+                    if(newestNews) {
+                        new Notification("📢 Nova Publicação no Portal!", {
+                            body: newestNews.titulo,
+                            icon: "https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png"
+                        });
+                        lastNewsTimestamp = latestTime;
+                        localStorage.setItem('lastNewsTime', lastNewsTimestamp);
+                    }
+                }
+
+                // Checa Status
+                const resStatus = await fetch(`${URL_BD_INDEX}portal_status.json?_=${Date.now()}`);
+                const statusData = await resStatus.json();
+                if(statusData) {
+                    let latestStatusTime = lastStatusTimestamp;
+                    let newestStatus = null;
+                    Object.values(statusData).forEach(s => {
+                        if(s.lastUpdate > latestStatusTime) {
+                            latestStatusTime = s.lastUpdate;
+                            newestStatus = s;
+                        }
+                    });
+                    if (newestStatus) {
+                        new Notification(`📊 Status Atualizado: ${newestStatus.nome}`, {
+                            body: `Novo Estado: ${newestStatus.estado.toUpperCase()} - ${newestStatus.descricao}`,
+                            icon: "https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png"
+                        });
+                        lastStatusTimestamp = latestStatusTime;
+                        localStorage.setItem('lastStatusTime', lastStatusTimestamp);
+                    }
+                }
+            } catch(e) { console.log("Aviso: Notificação não enviada.", e); }
+        }
+
+        // Recuperador universal de Avatares
         function getAvatarHTML(username) {
             let u = username ? username.toLowerCase() : '';
             let url = userAvatarMap[u];
@@ -531,6 +595,7 @@
         }
 
         window.onload = async function() {
+            pedirPermissaoNotificacao();
             registrarPresenca();
             
             await prepararMapaDeAvatares();
@@ -541,6 +606,7 @@
 
             setInterval(() => { 
                 registrarPresenca();
+                checkNotifications();
                 prepararMapaDeAvatares().then(() => {
                     carregarFeedAtualizacoes(); 
                     carregarNoticias();
