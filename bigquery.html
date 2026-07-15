@@ -21,11 +21,12 @@
         .bq-title { font-size: 1.2rem; font-weight: 900; color: var(--text-title); margin-bottom: 5px; }
         .bq-desc { font-size: 0.9rem; color: var(--text-main); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-        /* Estilos dos Menus de Filtro */
-        .filter-panel { max-width: 800px; margin: 0 auto 25px auto; width: 100%; background: var(--bg-card); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-card); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
-        .filter-section { margin-bottom: 15px; }
-        .filter-section:last-child { margin-bottom: 0; }
-        .filter-title { font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;}
+        /* Estilos dos Menus de Filtro - Layout em Colunas */
+        .filter-panel { max-width: 800px; margin: 0 auto 25px auto; width: 100%; background: var(--bg-card); padding: 20px; border-radius: 12px; border: 1px solid var(--border-card); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .filter-section { display: flex; flex-direction: column; align-items: flex-start; }
+        .filter-section:first-child { border-right: 1px solid var(--border-card); padding-right: 20px; }
+        .filter-title { font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; letter-spacing: 0.5px;}
         .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
         
         .btn-filter-cat { background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap;}
@@ -42,6 +43,11 @@
         .bq-modal-content a { color: var(--accent-blue); font-weight: bold; }
         
         .modal-large { max-width: 800px; max-height: 90vh; overflow-y: auto; padding: 35px; }
+
+        @media (max-width: 650px) {
+            .filter-grid { grid-template-columns: 1fr; gap: 15px; }
+            .filter-section:first-child { border-right: none; padding-right: 0; border-bottom: 1px solid var(--border-card); padding-bottom: 15px; }
+        }
     </style>
 </head>
 <body data-theme="light">
@@ -54,16 +60,17 @@
             <input type="text" id="search-bq" class="search-input" placeholder="Pesquisar por nome da query, tag, categoria ou algo da descrição..." onkeyup="filtrarBQ()">
         </div>
 
-        <!-- PAINEL DE FILTROS -->
+        <!-- PAINEL DE FILTROS EM COLUNAS -->
         <div class="filter-panel" id="filter-panel-box" style="display:none;">
-            <div class="filter-section">
-                <div class="filter-title">📁 Filtrar por Categoria</div>
-                <div class="filter-group" id="filter-cat-container"></div>
-            </div>
-            <hr style="border: none; border-top: 1px solid var(--border-card); margin: 15px 0;">
-            <div class="filter-section">
-                <div class="filter-title">🏷️ Filtrar por Tag</div>
-                <div class="filter-group" id="filter-tag-container"></div>
+            <div class="filter-grid">
+                <div class="filter-section">
+                    <div class="filter-title">📁 Filtrar por Categoria</div>
+                    <div class="filter-group" id="filter-cat-container"></div>
+                </div>
+                <div class="filter-section">
+                    <div class="filter-title">🏷️ Filtrar por Tag</div>
+                    <div class="filter-group" id="filter-tag-container"></div>
+                </div>
             </div>
         </div>
 
@@ -105,9 +112,8 @@
     <script>
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         let globalBqList = [];
-        let currentDisplayedBqList = []; // Lista que está ativamente renderizada na tela
+        let currentDisplayedBqList = []; 
         
-        // Variáveis de Controle dos Filtros
         let activeCatFilter = 'Todas';
         let activeTagFilter = 'Todas';
         let searchTerm = '';
@@ -157,7 +163,7 @@
                 globalBqList.sort((a,b) => b.data - a.data);
                 
                 gerarBotoesDeFiltro(globalBqList);
-                aplicarFiltrosCruzados(); // Aplica filtros e renderiza
+                aplicarFiltrosCruzados();
                 
                 document.getElementById('filter-panel-box').style.display = 'block';
 
@@ -165,8 +171,6 @@
                 container.innerHTML = '<div style="text-align:center; padding:40px; color:#FF5252; font-weight:bold;">Erro ao conectar com o banco de dados.</div>';
             }
         }
-
-        // --- LÓGICA DE FILTROS CRUZADOS ---
 
         function gerarBotoesDeFiltro(lista) {
             let categoriasSet = new Set();
@@ -185,7 +189,6 @@
                 }
             });
 
-            // Container de Categorias
             const catContainer = document.getElementById('filter-cat-container');
             let catHtml = `<button class="btn-filter-cat active" id="btn-cat-Todas" onclick="setCatFilter('Todas')">Todas</button>`;
             Array.from(categoriasSet).sort().forEach(cat => {
@@ -194,7 +197,6 @@
             });
             catContainer.innerHTML = catHtml;
 
-            // Container de Tags
             const tagContainer = document.getElementById('filter-tag-container');
             let tagHtml = `<button class="btn-filter-tag active" id="btn-tag-Todas" onclick="setTagFilter('Todas')">Todas</button>`;
             Array.from(tagsSet).sort().forEach(tag => {
@@ -206,25 +208,19 @@
 
         window.setCatFilter = function(categoria) {
             activeCatFilter = categoria;
-            
-            // Atualiza visual dos botões
             document.querySelectorAll('.btn-filter-cat').forEach(btn => btn.classList.remove('active'));
             let safeCatId = categoria.replace(/\\s+/g, '-');
             let activeBtn = document.getElementById(`btn-cat-${safeCatId}`);
             if(activeBtn) activeBtn.classList.add('active');
-
             aplicarFiltrosCruzados();
         }
 
         window.setTagFilter = function(tag) {
             activeTagFilter = tag;
-
-            // Atualiza visual dos botões
             document.querySelectorAll('.btn-filter-tag').forEach(btn => btn.classList.remove('active'));
             let safeTagId = tag.replace(/\\s+/g, '-');
             let activeBtn = document.getElementById(`btn-tag-${safeTagId}`);
             if(activeBtn) activeBtn.classList.add('active');
-
             aplicarFiltrosCruzados();
         }
 
@@ -236,7 +232,6 @@
         function aplicarFiltrosCruzados() {
             let filtradas = globalBqList;
 
-            // Filtro de Categoria
             if (activeCatFilter !== 'Todas') {
                 filtradas = filtradas.filter(bq => {
                     if (!bq.categoria) return false;
@@ -245,7 +240,6 @@
                 });
             }
 
-            // Filtro de Tag
             if (activeTagFilter !== 'Todas') {
                 filtradas = filtradas.filter(bq => {
                     if (!bq.tags) return false;
@@ -254,7 +248,6 @@
                 });
             }
 
-            // Filtro de Texto Livre
             if (searchTerm !== '') {
                 filtradas = filtradas.filter(bq => {
                     const t = bq.titulo ? bq.titulo.toLowerCase() : '';
@@ -265,12 +258,9 @@
                 });
             }
 
-            // Salva a lista filtrada globalmente para abrir o pop-up sem erros
             currentDisplayedBqList = filtradas;
             renderizarBQ(filtradas);
         }
-
-        // --- RENDERIZAÇÃO NA TELA ---
 
         function renderizarBQ(lista) {
             const container = document.getElementById('bq-list-container');
@@ -310,7 +300,6 @@
         let codigoAtualParaCopiar = "";
 
         window.abrirModalBQ = function(idx) {
-            // Usa a variável que tem exatamente o que está renderizado na tela!
             const bq = currentDisplayedBqList[idx];
             if (!bq) return;
 
