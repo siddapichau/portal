@@ -791,8 +791,18 @@
                 let html = '';
                 
                 bqList.forEach(bq => {
+                    // SEPARA AS CATEGORIAS POR VÍRGULA NO ADMIN E COLETA PRO AUTOCOMPLETE
                     let tagsHtml = '';
-                    if(bq.categoria) bqCatSet.add(bq.categoria.trim());
+                    if(bq.categoria) {
+                        bq.categoria.split(',').forEach(c => {
+                            if(c.trim()) {
+                                tagsHtml += `<span style="background: #2d2d2d; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">📁 ${c.trim()}</span>`;
+                                bqCatSet.add(c.trim());
+                            }
+                        });
+                    } else {
+                        tagsHtml += `<span style="background: #2d2d2d; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">📁 Geral</span>`;
+                    }
                     
                     if(bq.tags) {
                         bq.tags.split(',').forEach(t => {
@@ -805,10 +815,7 @@
                     html += `
                         <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px; border-left: 4px solid #1e1e1e;">
                             <div>
-                                <div style="display:flex; gap: 8px; margin-bottom: 5px; align-items: center;">
-                                    <span style="background: #2d2d2d; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800;">📁 ${bq.categoria || 'Geral'}</span>
-                                    <div style="display:flex; flex-wrap:wrap;">${tagsHtml}</div>
-                                </div>
+                                <div style="display:flex; flex-wrap:wrap; margin-bottom: 5px; align-items: center;">${tagsHtml}</div>
                                 <strong style="color:var(--text-title); font-size:1.1rem; display:block;">${bq.titulo}</strong>
                                 <div style="font-size:0.85rem; color:var(--text-main); margin-top:2px;">${bq.descricao || ''}</div>
                                 <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Adicionado por <b>${bq.autor}</b></div>
@@ -822,7 +829,7 @@
                 });
                 container.innerHTML = html;
 
-                // Preencher datalists de BigQuery
+                // Preencher datalists de BigQuery (AUTOCOMPLETAR)
                 let dlBqCat = document.getElementById('bq-cat-list');
                 dlBqCat.innerHTML = '';
                 Array.from(bqCatSet).sort().forEach(c => dlBqCat.innerHTML += `<option value="${c}">`);
