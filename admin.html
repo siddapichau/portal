@@ -54,6 +54,12 @@
 </head>
 <body data-theme="light">
 
+    <!-- Datatists globais para autocompletar tags e categorias -->
+    <datalist id="lista-usuarios"></datalist>
+    <datalist id="news-tags-list"></datalist>
+    <datalist id="bq-cat-list"></datalist>
+    <datalist id="bq-tags-list"></datalist>
+
     <div id="main-content">
         <div class="admin-container" id="adminPanel" style="display:none;">
             <h2 style="margin-bottom: 20px; color: var(--text-title);">⚙️ Painel de Administração</h2>
@@ -102,7 +108,7 @@
                     
                     <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                         <input type="text" id="news-title" placeholder="Título da Notícia..." style="flex: 2; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
-                        <input type="text" id="news-tag" placeholder="Tags (Use vírgula: Atualização, Aviso)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                        <input type="text" id="news-tag" list="news-tags-list" placeholder="Tags (Use vírgula: Atualização, Aviso)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
                     </div>
                     
                     <div class="editor-toolbar">
@@ -175,8 +181,8 @@
                     
                     <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                         <input type="text" id="bq-title" placeholder="Nome da Query (Ex: Base de Avarias Diárias)" style="flex: 2; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
-                        <input type="text" id="bq-category" placeholder="Categoria (Ex: Inventário)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
-                        <input type="text" id="bq-tags" placeholder="Tags (Ex: sql, auditoria, base)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                        <input type="text" id="bq-category" list="bq-cat-list" placeholder="Categoria (Ex: Inventário)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                        <input type="text" id="bq-tags" list="bq-tags-list" placeholder="Tags (Ex: sql, auditoria, base)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
                     </div>
                     
                     <textarea id="bq-desc" placeholder="Breve descrição sobre o que essa query faz (Para facilitar na barra de busca)..." style="width: 100%; min-height: 60px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 0.95rem; margin-bottom: 15px; outline: none;"></textarea>
@@ -217,8 +223,6 @@
         
         <div id="acessoNegado" style="display:none; text-align:center; padding: 50px;"><h2 style="color: #FF5252;">Acesso Negado 🛑</h2><p>Faça login com cargo de 'admin'.</p></div>
     </div>
-
-    <datalist id="lista-usuarios"></datalist>
 
     <script>
         const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
@@ -533,13 +537,18 @@
                 else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
                 newsList.sort((a,b) => b.data - a.data);
                 
+                let tagsSet = new Set(); // Para autocompletar tags
                 let html = '';
+                
                 newsList.forEach(n => {
                     let d = new Date(n.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
                     let tagsHtml = '';
                     if(n.tag) {
                         n.tag.split(',').forEach(t => {
-                            if(t.trim()) tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
+                            if(t.trim()) {
+                                tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
+                                tagsSet.add(t.trim()); // Coleta a tag
+                            }
                         });
                     }
                     html += `
@@ -557,6 +566,14 @@
                     `;
                 });
                 container.innerHTML = html;
+
+                // Preenche o datalist para autocompletar tags de notícias
+                let dlNewsTags = document.getElementById('news-tags-list');
+                dlNewsTags.innerHTML = '';
+                Array.from(tagsSet).sort().forEach(tag => {
+                    dlNewsTags.innerHTML += `<option value="${tag}">`;
+                });
+
             } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar o histórico de notícias.</div>'; }
         }
 
@@ -748,7 +765,7 @@
         }
 
         // ==========================================
-        // BIBLIOTECA BIGQUERY (NOVO)
+        // BIBLIOTECA BIGQUERY
         // ==========================================
         let editingBqKey = null; 
         let currentBqData = {};  
@@ -769,12 +786,20 @@
                 let bqList = Object.keys(data).map(k => ({...data[k], key: k}));
                 bqList.sort((a,b) => b.data - a.data);
                 
+                let bqCatSet = new Set();
+                let bqTagsSet = new Set();
                 let html = '';
+                
                 bqList.forEach(bq => {
                     let tagsHtml = '';
+                    if(bq.categoria) bqCatSet.add(bq.categoria.trim());
+                    
                     if(bq.tags) {
                         bq.tags.split(',').forEach(t => {
-                            if(t.trim()) tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
+                            if(t.trim()) {
+                                tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
+                                bqTagsSet.add(t.trim());
+                            }
                         });
                     }
                     html += `
@@ -796,6 +821,16 @@
                     `;
                 });
                 container.innerHTML = html;
+
+                // Preencher datalists de BigQuery
+                let dlBqCat = document.getElementById('bq-cat-list');
+                dlBqCat.innerHTML = '';
+                Array.from(bqCatSet).sort().forEach(c => dlBqCat.innerHTML += `<option value="${c}">`);
+                
+                let dlBqTags = document.getElementById('bq-tags-list');
+                dlBqTags.innerHTML = '';
+                Array.from(bqTagsSet).sort().forEach(t => dlBqTags.innerHTML += `<option value="${t}">`);
+
             } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar a biblioteca.</div>'; }
         }
 
