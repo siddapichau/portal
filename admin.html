@@ -62,6 +62,7 @@
                 <div class="admin-tab active" onclick="switchAdminTab('menus')">Gestão de Menus</div>
                 <div class="admin-tab" onclick="switchAdminTab('users')">Gestão de Usuários</div>
                 <div class="admin-tab" onclick="switchAdminTab('news')">Mural de Notícias</div>
+                <div class="admin-tab" onclick="switchAdminTab('status')">Gestão de Status</div>
             </div>
 
             <!-- ABA DE MENUS -->
@@ -132,6 +133,40 @@
                 <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-title); font-weight: 900; text-transform: uppercase;">Publicações Anteriores</h3>
                 <div id="news-list-admin" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
+
+            <!-- ABA DE STATUS DOS REPORTES -->
+            <div id="tab-status" style="display:none;">
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Crie relatórios com o indicativo (ON/OFF) para a central de status do menu.</p>
+                
+                <div class="header-actions">
+                    <button class="btn btn-blue" onclick="criarExemplosDeStatus()">📝 Criar Exemplos Automáticos</button>
+                    <button class="btn btn-green" onclick="abrirEditorDeStatus()">+ Adicionar Novo Reporte</button>
+                </div>
+
+                <div class="cat-card" id="status-editor-container" style="display:none; padding: 25px; border-left: 4px solid var(--accent-blue);">
+                    <h3 id="status-editor-title" style="color: var(--text-title); margin-bottom: 15px;">Novo Reporte (Status)</h3>
+                    <input type="hidden" id="status-key">
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <select id="status-icon" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem;"></select>
+                        <input type="text" id="status-nome" placeholder="Nome do Reporte (Ex: Controle de Avarias)" style="flex: 2; padding: 10px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                        <select id="status-estado" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem;">
+                            <option value="on">✅ ON (Operacional)</option>
+                            <option value="off">🛑 OFF (Com falhas/Manutenção)</option>
+                        </select>
+                    </div>
+                    
+                    <textarea id="status-desc" placeholder="Breve descrição da última atualização (Ex: Script rodou com sucesso às 14h, ou Planilha travada...)" style="width: 100%; min-height: 80px; padding: 10px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 0.95rem; margin-bottom: 10px; outline: none;"></textarea>
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-green" id="btn-salvar-status" onclick="salvarStatus()">💾 Salvar Status</button>
+                        <button class="btn btn-dark" onclick="cancelarEdicaoStatus()">✖ Cancelar</button>
+                    </div>
+                </div>
+
+                <div id="status-list-admin" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;"></div>
+            </div>
+
         </div>
         
         <div id="acessoNegado" style="display:none; text-align:center; padding: 50px;"><h2 style="color: #FF5252;">Acesso Negado 🛑</h2><p>Faça login com cargo de 'admin'.</p></div>
@@ -174,6 +209,10 @@
         window.onload = async () => {
             if(!currentUser || currentUser.cargo !== 'admin') { document.getElementById('acessoNegado').style.display = 'block'; return; }
             document.getElementById('adminPanel').style.display = 'block';
+            
+            const iconSelect = document.getElementById('status-icon');
+            iconSelect.innerHTML = ICONES_LOGISTICA.map(ico => `<option value="${ico}">${ico}</option>`).join('');
+
             try { const res = await fetch(`${FIREBASE_URL}menu_global.json`); const data = await res.json(); adMenuData = data && data.categorias ? data : { categorias: [] }; renderizarAdmin(); } catch (e) { console.error(e); }
             fetchUsersFromFirebase();
         };
@@ -183,8 +222,10 @@
             document.getElementById('tab-menus').style.display = tab === 'menus' ? 'block' : 'none';
             document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
             document.getElementById('tab-news').style.display = tab === 'news' ? 'block' : 'none';
+            document.getElementById('tab-status').style.display = tab === 'status' ? 'block' : 'none';
             event.target.classList.add('active');
             if(tab === 'news') carregarNoticiasAdmin();
+            if(tab === 'status') carregarStatusAdmin();
         }
 
         // ==========================================
@@ -353,7 +394,7 @@
         async function salvarNoFirebase() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
 
         // ==========================================
-        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT + EDIÇÃO)
+        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT)
         // ==========================================
         let isHtmlMode = false;
         let editingNewsKey = null; 
@@ -556,6 +597,141 @@
                 carregarNoticiasAdmin();
             } catch(e) { alert("Erro de comunicação com o servidor ao excluir."); }
         }
+
+        // ==========================================
+        // GESTÃO DOS STATUS DOS REPORTES (NOVO)
+        // ==========================================
+        let currentStatusData = {};
+
+        function abrirEditorDeStatus() {
+            document.getElementById('status-editor-container').style.display = 'block';
+            document.getElementById('status-key').value = '';
+            document.getElementById('status-nome').value = '';
+            document.getElementById('status-desc').value = '';
+            document.getElementById('status-estado').value = 'on';
+            document.getElementById('status-editor-title').innerText = "Novo Reporte (Status)";
+            document.getElementById('btn-salvar-status').innerText = "💾 Salvar Status";
+        }
+
+        function cancelarEdicaoStatus() {
+            document.getElementById('status-editor-container').style.display = 'none';
+        }
+
+        async function criarExemplosDeStatus() {
+            if(!confirm("Isso criará 3 status de exemplo na base. Deseja continuar?")) return;
+            
+            const exemplos = [
+                { nome: "Controle de Equipamentos (ITs)", estado: "on", descricao: "Inventário diário gerado sem interrupções.", icon: "💻", lastUpdate: Date.now() },
+                { nome: "Pendências de CFTV", estado: "off", descricao: "Câmeras inoperantes no setor B. Chamado aberto.", icon: "📹", lastUpdate: Date.now() - 3600000 },
+                { nome: "Parado no Percurso", estado: "on", descricao: "Rotina executada às 14:00h com sucesso.", icon: "🛑", lastUpdate: Date.now() }
+            ];
+
+            try {
+                for(let ex of exemplos) {
+                    await fetch(`${FIREBASE_URL}portal_status.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ex) });
+                }
+                alert("Exemplos criados com sucesso!");
+                carregarStatusAdmin();
+            } catch (e) { alert("Erro ao criar exemplos."); }
+        }
+
+        async function carregarStatusAdmin() {
+            let container = document.getElementById('status-list-admin');
+            container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando status...</div>';
+            
+            try {
+                let res = await fetch(`${FIREBASE_URL}portal_status.json?_=${Date.now()}`);
+                let data = await res.json();
+                
+                if(!data) { 
+                    container.innerHTML = '<div class="cat-card">Nenhum reporte cadastrado ainda.</div>'; 
+                    currentStatusData = {};
+                    return; 
+                }
+                
+                currentStatusData = data;
+                let statusList = Object.keys(data).map(k => ({...data[k], key: k}));
+                
+                let html = '';
+                statusList.forEach(s => {
+                    let d = s.lastUpdate ? new Date(s.lastUpdate).toLocaleString('pt-BR') : '--/--/----';
+                    let cor = s.estado === 'on' ? 'var(--accent-green)' : 'var(--accent-red)';
+                    let txt = s.estado === 'on' ? 'ON' : 'OFF';
+                    
+                    html += `
+                        <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px; border-left: 4px solid ${cor}; padding: 15px;">
+                            <div style="display: flex; gap: 15px; align-items: center;">
+                                <div style="font-size: 1.5rem;">${s.icon || '📄'}</div>
+                                <div>
+                                    <strong style="color:var(--text-title); font-size:1.1rem; display:block;">${s.nome} <span style="background: ${cor}; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">${txt}</span></strong>
+                                    <div style="font-size:0.85rem; color:var(--text-main); margin-top:2px;">${s.descricao || ''}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Última att: ${d}</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap: 8px;">
+                                <button class="btn btn-warn" onclick="editarStatus('${s.key}')">✏️ Editar</button>
+                                <button class="btn btn-red" onclick="excluirStatus('${s.key}')">🗑️ Excluir</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar os status.</div>'; }
+        }
+
+        function editarStatus(key) {
+            let s = currentStatusData[key];
+            if(!s) return alert("Erro ao puxar dados.");
+
+            document.getElementById('status-key').value = key;
+            document.getElementById('status-nome').value = s.nome || '';
+            document.getElementById('status-icon').value = s.icon || '📄';
+            document.getElementById('status-estado').value = s.estado || 'on';
+            document.getElementById('status-desc').value = s.descricao || '';
+            
+            document.getElementById('status-editor-title').innerText = "Editando Reporte Existente";
+            document.getElementById('btn-salvar-status').innerText = "💾 Salvar Alterações";
+            
+            document.getElementById('status-editor-container').style.display = 'block';
+            document.getElementById('status-editor-container').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function salvarStatus() {
+            let key = document.getElementById('status-key').value;
+            let nome = document.getElementById('status-nome').value.trim();
+            let icon = document.getElementById('status-icon').value;
+            let estado = document.getElementById('status-estado').value;
+            let desc = document.getElementById('status-desc').value.trim();
+            
+            if(!nome) return alert("Por favor, dê um nome ao reporte.");
+            
+            const btn = document.getElementById('btn-salvar-status');
+            btn.innerText = "⏳ Salvando..."; btn.disabled = true;
+
+            let dataObj = { nome: nome, icon: icon, estado: estado, descricao: desc, lastUpdate: Date.now() };
+
+            try {
+                if(key) {
+                    await fetch(`${FIREBASE_URL}portal_status/${key}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataObj) });
+                } else {
+                    await fetch(`${FIREBASE_URL}portal_status.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataObj) });
+                }
+                alert("Status salvo com sucesso!");
+                cancelarEdicaoStatus();
+                carregarStatusAdmin();
+            } catch(e) { alert("Erro ao salvar status."); } finally {
+                btn.innerText = "💾 Salvar Status"; btn.disabled = false;
+            }
+        }
+
+        async function excluirStatus(key) {
+            if(!confirm("Certeza que deseja remover este reporte da lista de status?")) return;
+            try {
+                await fetch(`${FIREBASE_URL}portal_status/${key}.json`, { method: 'DELETE' });
+                carregarStatusAdmin();
+            } catch(e) { alert("Erro ao excluir status."); }
+        }
+
     </script>
 </body>
 </html>
