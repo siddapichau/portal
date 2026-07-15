@@ -3,9 +3,9 @@ const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
-// ======= AVATARES EXPANDIDOS (mais opções de robôs) =======
+// ======= AVATARES EXPANDIDOS =======
 const AVATAR_OPTIONS = [
-    // Bottts (robôs) - 12 variações
+    // Bottts
     "https://api.dicebear.com/7.x/bottts/svg?seed=LogiBot&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Crate&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Delivery&backgroundColor=e2e8f0",
@@ -14,23 +14,23 @@ const AVATAR_OPTIONS = [
     "https://api.dicebear.com/7.x/bottts/svg?seed=Meli&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Robo1&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Robo2&backgroundColor=e2e8f0",
-    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo3&backgroundColor=e2e8f0",
-    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo4&backgroundColor=e2e8f0",
-    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo5&backgroundColor=e2e8f0",
-    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo6&backgroundColor=e2e8f0",
-    // Adventurer (humanos) - 12 variações
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Alpha&backgroundColor=e2e8f0",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Beta&backgroundColor=e2e8f0",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Gamma&backgroundColor=e2e8f0",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Delta&backgroundColor=e2e8f0",
+    // Adventurer
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Oliver&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Sophie&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Leo&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Mia&backgroundColor=fef08a",
-    "https://api.dicebear.com/7.x/adventurer/svg?seed=Noah&backgroundColor=fef08a",
-    "https://api.dicebear.com/7.x/adventurer/svg?seed=Emma&backgroundColor=fef08a",
-    "https://api.dicebear.com/7.x/adventurer/svg?seed=Liam&backgroundColor=fef08a",
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Jack&backgroundColor=fef08a",
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Lily&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Olivia&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=James&backgroundColor=fef08a",
-    "https://api.dicebear.com/7.x/adventurer/svg?seed=Amelia&backgroundColor=fef08a"
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Amelia&backgroundColor=fef08a",
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Lucas&backgroundColor=fef08a"
 ];
 
 window.verificarPermissaoUpload = function(urlPagina) {
@@ -62,112 +62,30 @@ async function carregarMenuGlobal() {
     const baseHTML = `
         <style>
             /* CSS ADICIONAL PARA O MENU E MODAIS */
-            .sidebar-footer { padding: 15px; border-top: 1px solid var(--border-card); margin-top: auto; }
-            .btn-config { width: 100%; padding: 12px; background: rgba(0,0,0,0.2); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 800; transition: 0.2s; font-size: 0.9rem;}
-            [data-theme="light"] .btn-config { background: rgba(0,0,0,0.05); }
-            .btn-config:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+            .sidebar-footer { padding: 15px; border-top: 1px solid var(--border-card); margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+            .btn-config { width: 100%; padding: 10px; background: var(--accent-blue); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+            .btn-config:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(52, 131, 250, 0.4); }
             
-            /* Estilos para o modal de configurações (layout melhorado) */
-            .config-section {
-                margin-bottom: 20px;
-            }
-            .config-section-title {
-                font-weight: 800;
-                color: var(--text-muted);
-                font-size: 0.8rem;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-                margin-bottom: 10px;
-                display: block;
-                border-bottom: 1px solid var(--border-card);
-                padding-bottom: 6px;
-            }
-            .config-avatar-grid {
-                display: grid;
-                grid-template-columns: repeat(4, 1fr);
-                gap: 12px;
-                margin: 10px 0 15px 0;
-                justify-items: center;
-            }
-            .avatar-option {
-                width: 55px;
-                height: 55px;
-                border-radius: 50%;
-                cursor: pointer;
-                border: 3px solid transparent;
-                transition: 0.2s;
-                background: var(--bg-body);
-                object-fit: cover;
-            }
+            .btn-sidebar-admin { width: 100%; padding: 10px; background: var(--accent-warn); border: none; color: #333; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+            .btn-sidebar-admin:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+            .btn-sidebar-logout { width: 100%; padding: 10px; background: transparent; border: 1px solid var(--accent-red); color: var(--accent-red); border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+            .btn-sidebar-logout:hover { background: var(--accent-red); color: #fff; transform: translateY(-1px); }
+            
+            /* Modal Configurações */
+            .config-section { margin-bottom: 20px; }
+            .config-section-title { font-weight: 800; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; display: block; border-bottom: 1px solid var(--border-card); padding-bottom: 6px; }
+            .config-avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 10px 0 15px 0; justify-items: center; }
+            .avatar-option { width: 55px; height: 55px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; background: var(--bg-body); object-fit: cover; }
             .avatar-option:hover { transform: scale(1.1); }
             .avatar-option.selected { border-color: var(--accent-blue); box-shadow: 0 0 12px var(--accent-blue); }
 
-            .current-avatar-box {
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                padding: 20px;
-                background: var(--bg-body);
-                border-radius: 12px;
-                border: 1px solid var(--border-card);
-                margin-bottom: 15px;
-            }
-            .current-avatar-box .avatar-preview {
-                width: 70px;
-                height: 70px;
-                border-radius: 50%;
-                border: 3px solid var(--accent-blue);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 2.2rem;
-                font-weight: 900;
-                background: var(--bg-card);
-                color: var(--text-title);
-                overflow: hidden;
-                margin-bottom: 8px;
-            }
-            .current-avatar-box .avatar-preview img {
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-            }
-            .current-avatar-box .user-info {
-                font-size: 0.95rem;
-                font-weight: 700;
-                color: var(--text-title);
-                text-align: center;
-            }
-            .current-avatar-box .user-info small {
-                display: block;
-                font-weight: 400;
-                color: var(--text-muted);
-                font-size: 0.8rem;
-            }
-            .config-divider {
-                border: none;
-                border-top: 2px solid var(--border-card);
-                margin: 20px 0;
-            }
-            .btn-logout {
-                width: 100%;
-                padding: 14px;
-                background: transparent;
-                border: 2px solid var(--accent-red);
-                color: var(--accent-red);
-                border-radius: 8px;
-                font-weight: 900;
-                font-size: 1rem;
-                cursor: pointer;
-                transition: 0.2s;
-                margin-top: 10px;
-            }
-            .btn-logout:hover {
-                background: var(--accent-red);
-                color: #fff;
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3);
-            }
+            .current-avatar-box { display: flex; flex-direction: column; align-items: center; padding: 20px; background: var(--bg-body); border-radius: 12px; border: 1px solid var(--border-card); margin-bottom: 15px; }
+            .current-avatar-box .avatar-preview { width: 70px; height: 70px; border-radius: 50%; border: 3px solid var(--accent-blue); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 900; background: var(--bg-card); color: var(--text-title); overflow: hidden; margin-bottom: 8px; }
+            .current-avatar-box .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
+            .current-avatar-box .user-info { font-size: 0.95rem; font-weight: 700; color: var(--text-title); text-align: center; }
+            .current-avatar-box .user-info small { display: block; font-weight: 400; color: var(--text-muted); font-size: 0.8rem; }
+            .config-divider { border: none; border-top: 2px solid var(--border-card); margin: 20px 0; }
         </style>
 
         <div class="top-bar-wrapper">
@@ -176,7 +94,7 @@ async function carregarMenuGlobal() {
                 <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo" onclick="window.location.href='index.html'">
             </div>
             <div class="nav-right">
-                <button class="btn-minimal" id="btnAdminGlobal" style="display:none;" onclick="abrirPagina('admin.html', 'Admin')" title="Admin">⚙️</button>
+                <button class="btn-minimal" onclick="abrirStatusModal()" title="Status dos Reportes">📊</button>
                 <button class="btn-minimal" onclick="toggleTheme()" title="Alternar Tema"><svg id="themeIconSvg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
                 <button class="btn-minimal" id="btnTopAuth" onclick="abrirAuthModal()" title="Login e Registro"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
             </div>
@@ -188,15 +106,30 @@ async function carregarMenuGlobal() {
                 <div class="sidebar-tabs" style="flex: 0 0 auto;"><button id="tab-todos" class="tab-btn active" onclick="switchTab('todos')">Todos</button><button id="tab-favs" class="tab-btn" onclick="switchTab('favs')">★ Favoritos</button></div>
                 <div id="cat-list-container" style="flex:1; overflow-y:auto; padding-bottom:10px;"></div>
                 
-                <!-- RODAPÉ DA BARRA LATERAL (CONFIGURAÇÕES) -->
+                <!-- RODAPÉ DA BARRA LATERAL -->
                 <div class="sidebar-footer" id="sidebarFooterConfig" style="display: none;">
-                    <button class="btn-config" onclick="abrirConfigModal()">⚙️ Configurações</button>
+                    <button class="btn-sidebar-admin" id="btnSidebarAdmin" onclick="abrirPagina('admin.html', 'Admin')" style="display:none;">⚙️ Painel Admin</button>
+                    <button class="btn-config" onclick="abrirConfigModal()">👤 Configurações</button>
+                    <button class="btn-sidebar-logout" onclick="fazerLogout()">🚪 Deslogar</button>
                 </div>
             </div>
             <div class="sidebar-right" id="subitem-panel"><div style="padding: 20px; color: var(--text-muted); text-align:center;">Passe o mouse em uma categoria</div></div>
         </div>
 
-        <!-- MODAL AUTH (Login e Registro) -->
+        <!-- MODAL STATUS DOS REPORTES -->
+        <div class="auth-modal" id="statusModal">
+            <div class="auth-box" style="max-width: 500px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: var(--text-title);">📊 Status dos Reportes</h2>
+                    <button onclick="fecharStatusModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.8rem; cursor:pointer;">&times;</button>
+                </div>
+                <div id="status-list-container" style="display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+                    <div style="text-align:center; padding:20px; color:var(--text-muted);">Carregando status...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL AUTH -->
         <div class="auth-modal" id="authModal">
             <div class="auth-box" id="loginBox">
                 <h2>Acesso ao Portal</h2>
@@ -215,7 +148,7 @@ async function carregarMenuGlobal() {
             </div>
         </div>
 
-        <!-- MODAL CONFIGURAÇÕES (Perfil) - LAYOUT MELHORADO -->
+        <!-- MODAL CONFIGURAÇÕES (Perfil) -->
         <div class="auth-modal" id="configModal">
             <div class="auth-box" style="max-width: 480px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -223,13 +156,11 @@ async function carregarMenuGlobal() {
                     <button onclick="fecharConfigModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.8rem; cursor:pointer;">&times;</button>
                 </div>
                 
-                <!-- Dados do usuário e avatar atual -->
                 <div class="current-avatar-box">
                     <div class="avatar-preview" id="userCurrentAvatar"></div>
                     <div class="user-info" id="profileInfo"></div>
                 </div>
 
-                <!-- Seleção de avatar -->
                 <div class="config-section">
                     <span class="config-section-title">🤖 Escolha seu avatar</span>
                     <div class="config-avatar-grid" id="avatarGridSelector"></div>
@@ -237,7 +168,6 @@ async function carregarMenuGlobal() {
 
                 <hr class="config-divider">
 
-                <!-- Troca de senha -->
                 <div class="config-section">
                     <span class="config-section-title">🔑 Alterar senha</span>
                     <div class="input-group"><input type="password" id="profPassCurrent" placeholder="Senha atual"><span class="eye-icon" onclick="togglePass('profPassCurrent')">👁️</span></div>
@@ -245,11 +175,6 @@ async function carregarMenuGlobal() {
                     <div class="input-group" style="margin-bottom: 8px;"><input type="password" id="profPassNew2" placeholder="Confirmar nova senha"><span class="eye-icon" onclick="togglePass('profPassNew2')">👁️</span></div>
                     <button class="btn-auth" id="btnUpdatePass" style="background:#f59e0b; color: #fff;" onclick="trocarSenha()">Atualizar Senha</button>
                 </div>
-
-                <hr class="config-divider">
-
-                <!-- Botão de Logout (destacado) -->
-                <button class="btn-logout" onclick="fazerLogout()">🚪 Sair da Conta</button>
             </div>
         </div>
     `;
@@ -264,19 +189,72 @@ async function carregarMenuGlobal() {
 
     document.getElementById('authModal').addEventListener('click', function(e) { if(e.target === this) fecharAuthModal(); });
     document.getElementById('configModal').addEventListener('click', function(e) { if(e.target === this) fecharConfigModal(); });
+    document.getElementById('statusModal').addEventListener('click', function(e) { if(e.target === this) fecharStatusModal(); });
 }
 
 function verificarUIAutenticacao() {
     if(currentUser) {
         document.getElementById('btnTopAuth').style.display = 'none';
-        document.getElementById('sidebarFooterConfig').style.display = 'block';
-        if(currentUser.cargo === 'admin') document.getElementById('btnAdminGlobal').style.display = 'flex'; 
+        document.getElementById('sidebarFooterConfig').style.display = 'flex';
+        if(currentUser.cargo === 'admin') document.getElementById('btnSidebarAdmin').style.display = 'flex'; 
     } else {
         document.getElementById('btnTopAuth').style.display = 'flex';
         document.getElementById('sidebarFooterConfig').style.display = 'none';
-        document.getElementById('btnAdminGlobal').style.display = 'none';
+        document.getElementById('btnSidebarAdmin').style.display = 'none';
     }
 }
+
+// LOGICA MODAL DE STATUS
+window.abrirStatusModal = async function() {
+    document.getElementById('statusModal').classList.add('active');
+    const container = document.getElementById('status-list-container');
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">Carregando status...</div>';
+    try {
+        const res = await fetch(`${FIREBASE_URL}portal_status.json?_=${Date.now()}`);
+        const data = await res.json();
+        
+        if(!data) { 
+            container.innerHTML = '<div style="text-align:center; padding:20px; color:var(--text-muted);">Nenhum reporte monitorado no momento.</div>'; 
+            return; 
+        }
+        
+        let statusList = Object.keys(data).map(k => ({...data[k], key: k}));
+        
+        // Ordena para que os "OFF" (vermelhos) fiquem no topo
+        statusList.sort((a,b) => {
+            if(a.estado === 'off' && b.estado !== 'off') return -1;
+            if(a.estado !== 'off' && b.estado === 'off') return 1;
+            return b.lastUpdate - a.lastUpdate;
+        });
+
+        let html = '';
+        statusList.forEach(item => {
+            const dateStr = item.lastUpdate ? new Date(item.lastUpdate).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '--/--/----';
+            const isOff = item.estado === 'off';
+            const statusColor = isOff ? 'var(--accent-red)' : 'var(--accent-green)';
+            const statusText = isOff ? 'OFF' : 'ON';
+            
+            html += `
+                <div style="background: var(--bg-card); border: 1px solid var(--border-card); padding: 15px; border-radius: 8px; display: flex; align-items: flex-start; gap: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                    <div style="font-size: 2rem; background: var(--bg-body); width: 50px; height: 50px; border-radius: 8px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border-card); flex-shrink: 0;">${item.icon || '📄'}</div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; gap: 10px;">
+                            <strong style="color: var(--text-title); font-size: 1rem; line-height: 1.2;">${item.nome}</strong>
+                            <span style="background: ${statusColor}; color: #fff; padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 900; box-shadow: 0 0 8px ${statusColor};">${statusText}</span>
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--text-main); margin-bottom: 8px; line-height: 1.4;">${item.descricao || 'Sem descrição.'}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">↻ Atualizado em: ${dateStr}</div>
+                    </div>
+                </div>
+            `;
+        });
+        container.innerHTML = html;
+    } catch(e) {
+        container.innerHTML = '<div style="color:#FF5252; text-align:center;">Erro ao carregar o status dos reportes.</div>';
+    }
+}
+window.fecharStatusModal = function() { document.getElementById('statusModal').classList.remove('active'); }
+
 
 function temPermissao(rolesStr, usersStr) {
     if(!rolesStr && !usersStr) return true; 
@@ -296,8 +274,8 @@ function abrirPagina(url, titulo) {
     if(!url || url === '#') return;
     const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
     if (isIndex) {
-        const homeView = document.getElementById('home-view'); const quoteBox = document.getElementById('quote-box'); const pageTitle = document.getElementById('page-title');
-        if (homeView) homeView.style.display = 'none'; if (quoteBox) quoteBox.style.display = 'none'; if (pageTitle) pageTitle.style.display = 'none';
+        const homeView = document.getElementById('home-view');
+        if (homeView) homeView.style.display = 'none';
         const frame = document.getElementById('app-frame');
         if (frame) { frame.style.display = 'block'; frame.src = url; window.history.pushState({ path: url }, '', `?page=${url}`); }
         document.querySelector('.sidebar-wrapper').classList.remove('open'); document.querySelector('.sidebar-overlay').classList.remove('active');
@@ -365,7 +343,7 @@ function switchTab(tab) {
 }
 
 // ==========================================
-// AUTH FIREBASE E VALIDAÇÕES RÍGIDAS
+// AUTH FIREBASE
 // ==========================================
 function abrirAuthModal() { document.getElementById('authModal').classList.add('active'); mudarAuthModo('login'); }
 function fecharAuthModal() { document.getElementById('authModal').classList.remove('active'); }
@@ -590,8 +568,8 @@ async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
     }
 }
 
-function fazerLogout() {
-    if(confirm("Tem certeza que deseja sair?")) {
+window.fazerLogout = function() {
+    if(confirm("Tem certeza que deseja sair do sistema?")) {
         currentUser = null; localStorage.removeItem('loggedUser'); 
         fecharConfigModal(); verificarUIAutenticacao(); renderizarMenuEsquerdo(); switchTab('todos'); window.location.href = 'index.html';
     }
