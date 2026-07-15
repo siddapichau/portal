@@ -68,11 +68,16 @@
         </div>
     </div>
 
+    <!-- LIGHTBOX PARA IMAGENS -->
+    <div id="image-lightbox" class="lightbox-overlay" onclick="fecharLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img class="lightbox-content" id="lightbox-img">
+    </div>
+
     <script>
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         let globalBqList = [];
 
-        // Sincroniza o tema com a página pai (index.html)
         function syncTheme() { 
             const theme = localStorage.getItem('themePreference') || 'light'; 
             document.body.setAttribute('data-theme', theme); 
@@ -85,11 +90,22 @@
         window.onload = async () => {
             await carregarDadosBQ();
             
-            // Fechar modal ao clicar fora
             document.getElementById('bqViewModal').addEventListener('click', function(e) { 
                 if(e.target === this) fecharModalBQ(); 
             });
         };
+
+        // Permite fechar modais usando o ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const lightbox = document.getElementById('image-lightbox');
+                if(lightbox && lightbox.classList.contains('active')) {
+                    fecharLightbox();
+                } else {
+                    fecharModalBQ();
+                }
+            }
+        });
 
         async function carregarDadosBQ() {
             const container = document.getElementById('bq-list-container');
@@ -105,9 +121,7 @@
                 if (Array.isArray(data)) { globalBqList = data.filter(Boolean); } 
                 else { globalBqList = Object.keys(data).map(k => data[k]); }
                 
-                // Ordena pelas mais recentes
                 globalBqList.sort((a,b) => b.data - a.data);
-                
                 renderizarBQ(globalBqList);
             } catch(e) {
                 container.innerHTML = '<div style="text-align:center; padding:40px; color:#FF5252; font-weight:bold;">Erro ao conectar com o banco de dados.</div>';
@@ -124,7 +138,16 @@
             }
 
             lista.forEach((bq, index) => {
-                let tagsHtml = `<span class="bq-cat-badge">📁 ${bq.categoria || 'Geral'}</span>`;
+                // AGORA LÊ CATEGORIAS SEPARADAS POR VÍRGULA
+                let tagsHtml = '';
+                if(bq.categoria) {
+                    bq.categoria.split(',').forEach(c => {
+                        if(c.trim()) tagsHtml += `<span class="bq-cat-badge">📁 ${c.trim()}</span>`;
+                    });
+                } else {
+                    tagsHtml = `<span class="bq-cat-badge">📁 Geral</span>`;
+                }
+
                 if(bq.tags) {
                     bq.tags.split(',').forEach(t => {
                         if(t.trim()) tagsHtml += `<span class="bq-tag-badge">${t.trim()}</span>`;
@@ -156,13 +179,8 @@
 
         let codigoAtualParaCopiar = "";
 
-        // O índice (idx) que passamos aqui é baseado na lista global atual que foi filtrada
         window.abrirModalBQ = function(idx) {
-            // Como a lista na tela pode estar filtrada, precisamos buscar o item exato renderizado
-            // O idx passado no clique refere-se ao array atual filtrado.
-            // Para ser exato e seguro independente do filtro, melhor passar o index original.
-            // Para não complicar a filtragem, a abordagem abaixo recria a array filtrada para achar o item:
-            
+            // Garante que o index puxa da array que está ativamente na tela
             const termo = document.getElementById('search-bq').value.toLowerCase();
             let listaAtiva = globalBqList;
             if (termo) {
@@ -177,7 +195,16 @@
             const bq = listaAtiva[idx];
             if (!bq) return;
 
-            let tagsHtml = `<span class="bq-cat-badge" style="font-size: 0.8rem;">📁 ${bq.categoria || 'Geral'}</span>`;
+            // RENDERIZAÇÃO DAS CATEGORIAS (VÍRGULA) E TAGS NO POPUP
+            let tagsHtml = '';
+            if(bq.categoria) {
+                bq.categoria.split(',').forEach(c => {
+                    if(c.trim()) tagsHtml += `<span class="bq-cat-badge" style="font-size: 0.8rem;">📁 ${c.trim()}</span>`;
+                });
+            } else {
+                tagsHtml = `<span class="bq-cat-badge" style="font-size: 0.8rem;">📁 Geral</span>`;
+            }
+
             if(bq.tags) {
                 bq.tags.split(',').forEach(t => {
                     if(t.trim()) tagsHtml += `<span class="bq-tag-badge" style="font-size: 0.8rem;">${t.trim()}</span>`;
@@ -193,17 +220,27 @@
             document.getElementById('modal-bq-post').innerHTML = bq.corpo_post || '';
             document.getElementById('modal-bq-sql').innerText = bq.codigo_sql || '';
             
-            // Guarda o código na variável global para o botão conseguir copiar
             codigoAtualParaCopiar = bq.codigo_sql || '';
 
+            // ATIVA O ZOOM PARA AS IMAGENS RENDERIZADAS NO POST
+            const postImgs = document.querySelectorAll('#modal-bq-post img');
+            postImgs.forEach(img => {
+                img.onclick = function() {
+                    document.getElementById('lightbox-img').src = this.src;
+                    document.getElementById('image-lightbox').classList.add('active');
+                }
+            });
+
             document.getElementById('bqViewModal').classList.add('active');
-            
-            // Reseta o texto do botão de cópia
             document.getElementById('btn-copy-action').innerHTML = "📋 Copiar Código";
         }
 
         window.fecharModalBQ = function() {
             document.getElementById('bqViewModal').classList.remove('active');
+        }
+
+        window.fecharLightbox = function() {
+            document.getElementById('image-lightbox').classList.remove('active');
         }
 
         window.copiarCodigoSql = function(btn) {
