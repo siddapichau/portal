@@ -63,6 +63,7 @@
                 <div class="admin-tab" onclick="switchAdminTab('users')">Gestão de Usuários</div>
                 <div class="admin-tab" onclick="switchAdminTab('news')">Mural de Notícias</div>
                 <div class="admin-tab" onclick="switchAdminTab('status')">Gestão de Status</div>
+                <div class="admin-tab" onclick="switchAdminTab('bigquery')">Biblioteca BigQuery</div>
             </div>
 
             <!-- ABA DE MENUS -->
@@ -105,22 +106,22 @@
                     </div>
                     
                     <div class="editor-toolbar">
-                        <button class="btn btn-dark" onclick="formatText('bold')" title="Negrito"><b>B</b></button>
-                        <button class="btn btn-dark" onclick="formatText('italic')" title="Itálico"><i>I</i></button>
-                        <button class="btn btn-dark" onclick="formatText('underline')" title="Sublinhado"><u>U</u></button>
+                        <button class="btn btn-dark" onclick="formatText('bold', 'news-body')" title="Negrito"><b>B</b></button>
+                        <button class="btn btn-dark" onclick="formatText('italic', 'news-body')" title="Itálico"><i>I</i></button>
+                        <button class="btn btn-dark" onclick="formatText('underline', 'news-body')" title="Sublinhado"><u>U</u></button>
                         <div class="toolbar-divider"></div>
-                        <button class="btn btn-dark" onclick="alignText('Left')" title="Alinhar à Esquerda">⬅️</button>
-                        <button class="btn btn-dark" onclick="alignText('Center')" title="Centralizar">↔️</button>
-                        <button class="btn btn-dark" onclick="alignText('Right')" title="Alinhar à Direita">➡️</button>
+                        <button class="btn btn-dark" onclick="alignText('Left', 'news-body')" title="Alinhar à Esquerda">⬅️</button>
+                        <button class="btn btn-dark" onclick="alignText('Center', 'news-body')" title="Centralizar">↔️</button>
+                        <button class="btn btn-dark" onclick="alignText('Right', 'news-body')" title="Alinhar à Direita">➡️</button>
                         <div class="toolbar-divider"></div>
-                        <button class="btn btn-dark" onclick="insertLink()" title="Inserir Link de Texto">🔗 Link</button>
+                        <button class="btn btn-dark" onclick="insertLink('news-body')" title="Inserir Link de Texto">🔗 Link</button>
                         <button class="btn btn-dark" onclick="document.getElementById('news-img-upload').click()" title="Subir Imagem do PC">🖼️ Imagem (PC)</button>
-                        <input type="file" id="news-img-upload" accept="image/*" style="display:none;" onchange="insertImageUpload(this)">
-                        <button class="btn btn-dark" onclick="insertImageLink()" title="Inserir Imagem por Link (URL)">🔗 Img (URL)</button>
-                        <button class="btn btn-dark" onclick="insertVideoLink()" title="Inserir Vídeo do YouTube">🎥 Vídeo</button>
-                        <button class="btn btn-dark" onclick="insertFileLink()" title="Inserir botão de Download (PDF, Drive)">📄 Anexar Arquivo</button>
+                        <input type="file" id="news-img-upload" accept="image/*" style="display:none;" onchange="insertImageUpload(this, 'news-body')">
+                        <button class="btn btn-dark" onclick="insertImageLink('news-body')" title="Inserir Imagem por Link (URL)">🔗 Img (URL)</button>
+                        <button class="btn btn-dark" onclick="insertVideoLink('news-body')" title="Inserir Vídeo do YouTube">🎥 Vídeo</button>
+                        <button class="btn btn-dark" onclick="insertFileLink('news-body')" title="Inserir botão de Download (PDF, Drive)">📄 Anexar Arquivo</button>
                         <div class="toolbar-divider"></div>
-                        <button class="btn btn-dark" id="btn-toggle-html" onclick="toggleHTML()" title="Ver e Editar o Código HTML Puro">💻 </> Code</button>
+                        <button class="btn btn-dark" id="btn-toggle-html" onclick="toggleHTML('news-body', 'btn-toggle-html')" title="Ver e Editar o Código HTML Puro">💻 </> Code</button>
                     </div>
                     <div id="news-body" contenteditable="true" class="rich-editor"></div>
                     
@@ -165,6 +166,51 @@
                 </div>
 
                 <div id="status-list-admin" style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;"></div>
+            </div>
+
+            <!-- ABA DE BIBLIOTECA BIGQUERY -->
+            <div id="tab-bigquery" style="display:none;">
+                <div class="cat-card" style="padding: 25px;" id="bq-editor-box">
+                    <h3 id="bq-editor-title" style="color: var(--text-title); margin-bottom: 15px; font-weight: 900; text-transform: uppercase;">Adicionar Script BigQuery</h3>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+                        <input type="text" id="bq-title" placeholder="Nome da Query (Ex: Base de Avarias Diárias)" style="flex: 2; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                        <input type="text" id="bq-category" placeholder="Categoria (Ex: Inventário)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                        <input type="text" id="bq-tags" placeholder="Tags (Ex: sql, auditoria, base)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                    </div>
+                    
+                    <textarea id="bq-desc" placeholder="Breve descrição sobre o que essa query faz (Para facilitar na barra de busca)..." style="width: 100%; min-height: 60px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 0.95rem; margin-bottom: 15px; outline: none;"></textarea>
+
+                    <h4 style="margin-bottom: 5px; color: var(--text-title);">💻 Código SQL</h4>
+                    <textarea id="bq-sql-code" placeholder="Cole o código SQL aqui. Ele será formatado automaticamente no portal com um botão de Copiar." style="width: 100%; min-height: 150px; padding: 15px; border-radius: 8px; border: 1px solid var(--border-card); background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 0.9rem; margin-bottom: 15px; outline: none; white-space: pre;"></textarea>
+
+                    <h4 style="margin-bottom: 5px; color: var(--text-title);">📄 Documentação / Como Usar (Opcional)</h4>
+                    <div class="editor-toolbar">
+                        <button class="btn btn-dark" onclick="formatText('bold', 'bq-body')" title="Negrito"><b>B</b></button>
+                        <button class="btn btn-dark" onclick="formatText('italic', 'bq-body')" title="Itálico"><i>I</i></button>
+                        <button class="btn btn-dark" onclick="formatText('underline', 'bq-body')" title="Sublinhado"><u>U</u></button>
+                        <div class="toolbar-divider"></div>
+                        <button class="btn btn-dark" onclick="alignText('Left', 'bq-body')">⬅️</button>
+                        <button class="btn btn-dark" onclick="alignText('Center', 'bq-body')">↔️</button>
+                        <button class="btn btn-dark" onclick="alignText('Right', 'bq-body')">➡️</button>
+                        <div class="toolbar-divider"></div>
+                        <button class="btn btn-dark" onclick="insertLink('bq-body')">🔗 Link</button>
+                        <button class="btn btn-dark" onclick="document.getElementById('bq-img-upload').click()">🖼️ Imagem (PC)</button>
+                        <input type="file" id="bq-img-upload" accept="image/*" style="display:none;" onchange="insertImageUpload(this, 'bq-body')">
+                        <button class="btn btn-dark" onclick="insertImageLink('bq-body')">🔗 Img (URL)</button>
+                        <div class="toolbar-divider"></div>
+                        <button class="btn btn-dark" id="btn-toggle-html-bq" onclick="toggleHTML('bq-body', 'btn-toggle-html-bq')">💻 </> Code</button>
+                    </div>
+                    <div id="bq-body" contenteditable="true" class="rich-editor"></div>
+                    
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn btn-blue" id="btn-publicar-bq" style="flex: 1; padding: 14px; font-size: 1.05rem;" onclick="publicarBQ()">💾 Salvar Query na Biblioteca</button>
+                        <button class="btn btn-dark" id="btn-cancelar-edicao-bq" style="display: none; padding: 14px;" onclick="cancelarEdicaoBQ()">✖ Cancelar Edição</button>
+                    </div>
+                </div>
+                
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-title); font-weight: 900; text-transform: uppercase;">Queries Salvas</h3>
+                <div id="bq-list-admin" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
 
         </div>
@@ -223,13 +269,15 @@
             document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
             document.getElementById('tab-news').style.display = tab === 'news' ? 'block' : 'none';
             document.getElementById('tab-status').style.display = tab === 'status' ? 'block' : 'none';
+            document.getElementById('tab-bigquery').style.display = tab === 'bigquery' ? 'block' : 'none';
             event.target.classList.add('active');
             if(tab === 'news') carregarNoticiasAdmin();
             if(tab === 'status') carregarStatusAdmin();
+            if(tab === 'bigquery') carregarBQAdmin();
         }
 
         // ==========================================
-        // GESTÃO DE USUÁRIOS (FIREBASE + MIGRATION)
+        // GESTÃO DE USUÁRIOS
         // ==========================================
         async function fetchUsersFromFirebase() {
             try {
@@ -253,16 +301,12 @@
 
             try {
                 const resS = await fetch(APP_SCRIPT_URL, { 
-                    method: 'POST', 
-                    headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-                    body: JSON.stringify({ action: "getUsers" }) 
+                    method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "getUsers" }) 
                 });
                 const dataS = await resS.json();
                 
                 if(dataS && dataS.success && dataS.users && dataS.users.length > 0) {
-                    let oldUsers = dataS.users;
-                    let count = 0;
-
+                    let oldUsers = dataS.users; let count = 0;
                     const resF = await fetch(`${FIREBASE_URL}users.json`);
                     const dataF = await resF.json() || {};
                     const fbUsernames = Object.keys(dataF).map(k => dataF[k].usuario.toLowerCase());
@@ -286,9 +330,9 @@
                             count++;
                         }
                     }
-                    alert(`Migração concluída! ${count} usuários novos transferidos da planilha para o banco de dados Firebase.`);
+                    alert(`Migração concluída! ${count} usuários novos transferidos.`);
                     fetchUsersFromFirebase();
-                } else { alert("A planilha retornou vazia ou ocorreu um erro no script antigo."); }
+                } else { alert("A planilha retornou vazia ou ocorreu erro."); }
             } catch(e) { alert("Erro ao importar usuários: " + e.message); } 
             finally { btn.innerHTML = "⬇️ Migrar Usuários da Planilha Antiga"; btn.disabled = false; }
         }
@@ -329,34 +373,22 @@
         }
 
         async function salvarUsuario(idx, key, username) {
-            const status = document.getElementById(`status-${idx}`).value; 
-            const cargo = document.getElementById(`cargo-${idx}`).value;
+            const status = document.getElementById(`status-${idx}`).value; const cargo = document.getElementById(`cargo-${idx}`).value;
             try { 
-                await fetch(`${FIREBASE_URL}users/${key}.json`, { 
-                    method: 'PATCH', 
-                    headers: { "Content-Type": "application/json" }, 
-                    body: JSON.stringify({ solicitacao: status, cargo: cargo }) 
-                }); 
-                alert("Usuário atualizado com sucesso!"); 
-                await registrarLogFirebase("Painel Admin", `Alterou permissões/cargo do usuário: <b>${username}</b>`);
+                await fetch(`${FIREBASE_URL}users/${key}.json`, { method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ solicitacao: status, cargo: cargo }) }); 
+                alert("Usuário atualizado com sucesso!"); await registrarLogFirebase("Painel Admin", `Alterou permissões/cargo do usuário: <b>${username}</b>`);
             } catch(e) { alert("Erro ao atualizar o usuário."); }
         }
 
         async function resetarSenha(idx, key, username) {
-            const inputNew = document.getElementById(`reset-pass-${idx}`);
-            const pass = inputNew.value.trim();
+            const inputNew = document.getElementById(`reset-pass-${idx}`); const pass = inputNew.value.trim();
             if(!pass) return alert("Digite uma nova senha antes de resetar.");
             if(pass.length < 8 || pass.length > 16) return alert("A senha deve ter entre 8 e 16 caracteres.");
-            
             if(!confirm(`Tem certeza que deseja forçar uma nova senha para '${username}'?`)) return;
-
             try {
                 const hPass = await hashPassword(pass);
-                await fetch(`${FIREBASE_URL}users/${key}.json`, { 
-                    method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senha: hPass }) 
-                }); 
-                alert(`Senha de ${username} atualizada para a nova!`); 
-                inputNew.value = "";
+                await fetch(`${FIREBASE_URL}users/${key}.json`, { method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senha: hPass }) }); 
+                alert(`Senha de ${username} atualizada para a nova!`); inputNew.value = "";
                 await registrarLogFirebase("Painel Admin", `Resetou (forçou) a senha do usuário: <b>${username}</b>`);
             } catch(e) { alert("Erro ao resetar senha."); }
         }
@@ -366,8 +398,7 @@
             try {
                 await fetch(`${FIREBASE_URL}users/${key}.json`, { method: 'DELETE' });
                 await registrarLogFirebase("Painel Admin", `Excluiu o usuário: <b>${username}</b>`);
-                alert("Usuário excluído com sucesso.");
-                fetchUsersFromFirebase();
+                alert("Usuário excluído com sucesso."); fetchUsersFromFirebase();
             } catch(e) { alert("Erro ao excluir usuário."); }
         }
 
@@ -394,26 +425,24 @@
         async function salvarNoFirebase() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
 
         // ==========================================
-        // GESTÃO DO MURAL DE NOTÍCIAS (RICH TEXT)
+        // EDITOR RICH TEXT COMPARTILHADO
         // ==========================================
-        let isHtmlMode = false;
-        let editingNewsKey = null; 
-        let currentNewsData = {};  
-
-        function formatText(cmd) { 
-            if(isHtmlMode) return alert("Saia do modo de código (</>) para usar a formatação visual.");
+        let isHtmlMode = { 'news-body': false, 'bq-body': false };
+        
+        function formatText(cmd, editorId) { 
+            if(isHtmlMode[editorId]) return alert("Saia do modo de código (</>) para usar a formatação visual.");
             document.execCommand(cmd, false, null); 
-            document.getElementById('news-body').focus(); 
+            document.getElementById(editorId).focus(); 
         }
 
-        function alignText(align) {
-            if(isHtmlMode) return alert("Saia do modo de código (</>) para alinhar.");
+        function alignText(align, editorId) {
+            if(isHtmlMode[editorId]) return alert("Saia do modo de código (</>) para alinhar.");
             document.execCommand('justify' + align, false, null);
-            document.getElementById('news-body').focus();
+            document.getElementById(editorId).focus();
         }
 
-        function insertLink() { 
-            if(isHtmlMode) return;
+        function insertLink(editorId) { 
+            if(isHtmlMode[editorId]) return;
             let url = prompt("Cole a URL (Link) abaixo:"); 
             if(url) {
                 if(!url.startsWith('http')) url = 'https://' + url;
@@ -421,10 +450,10 @@
             }
         }
 
-        function insertImageUpload(input) {
-            if(isHtmlMode) return;
+        function insertImageUpload(input, editorId) {
+            if(isHtmlMode[editorId]) return;
             if(input.files && input.files[0]) {
-                if(input.files[0].size > 2000000) { alert("Aviso: Imagens maiores que 2MB podem deixar o mural lento."); }
+                if(input.files[0].size > 2000000) { alert("Aviso: Imagens maiores que 2MB podem deixar lento."); }
                 let reader = new FileReader();
                 reader.onload = function(e) { document.execCommand('insertImage', false, e.target.result); };
                 reader.readAsDataURL(input.files[0]);
@@ -432,14 +461,14 @@
             input.value = '';
         }
 
-        function insertImageLink() {
-            if(isHtmlMode) return;
+        function insertImageLink(editorId) {
+            if(isHtmlMode[editorId]) return;
             let url = prompt("Cole o link (URL) direto da imagem:"); 
             if(url) document.execCommand('insertImage', false, url); 
         }
 
-        function insertVideoLink() {
-            if(isHtmlMode) return;
+        function insertVideoLink(editorId) {
+            if(isHtmlMode[editorId]) return;
             let url = prompt("Cole o link do YouTube:");
             if (url) {
                 let embedUrl = url;
@@ -455,30 +484,36 @@
             }
         }
 
-        function insertFileLink() {
-            if(isHtmlMode) return;
+        function insertFileLink(editorId) {
+            if(isHtmlMode[editorId]) return;
             let url = prompt("Cole o link direto do arquivo (Google Drive, PDF, etc):");
             if (url) {
-                let nome = prompt("Digite o nome para o botão (Ex: Baixar Relatório):") || "Baixar Arquivo";
+                let nome = prompt("Digite o nome para o botão (Ex: Baixar Arquivo):") || "Baixar Arquivo";
                 if(!url.startsWith('http')) url = 'https://' + url;
                 let html = `<br><a href="${url}" target="_blank" style="display:inline-block; padding:10px 15px; background:var(--accent-blue); color:#fff; border-radius:6px; text-decoration:none; font-weight:bold; margin: 10px 0; box-shadow: 0 2px 6px rgba(52,131,250,0.3);">📎 ${nome}</a><br>&nbsp;`;
                 document.execCommand('insertHTML', false, html);
             }
         }
 
-        function toggleHTML() {
-            const editor = document.getElementById('news-body');
-            const btn = document.getElementById('btn-toggle-html');
-            if (isHtmlMode) {
+        function toggleHTML(editorId, btnId) {
+            const editor = document.getElementById(editorId);
+            const btn = document.getElementById(btnId);
+            if (isHtmlMode[editorId]) {
                 editor.innerHTML = editor.innerText;
                 btn.classList.remove('active-btn');
-                isHtmlMode = false;
+                isHtmlMode[editorId] = false;
             } else {
                 editor.innerText = editor.innerHTML;
                 btn.classList.add('active-btn');
-                isHtmlMode = true;
+                isHtmlMode[editorId] = true;
             }
         }
+
+        // ==========================================
+        // GESTÃO DO MURAL DE NOTÍCIAS
+        // ==========================================
+        let editingNewsKey = null; 
+        let currentNewsData = {};  
 
         async function carregarNoticiasAdmin() {
             let container = document.getElementById('news-list-admin');
@@ -489,32 +524,24 @@
                 
                 if(!data) { 
                     container.innerHTML = '<div class="cat-card">Nenhuma notícia publicada ainda no mural.</div>'; 
-                    currentNewsData = {};
-                    return; 
+                    currentNewsData = {}; return; 
                 }
                 
                 currentNewsData = data;
-                
                 let newsList = [];
                 if (Array.isArray(data)) { newsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
                 else { newsList = Object.keys(data).map(k => ({...data[k], key: k})); }
-                
                 newsList.sort((a,b) => b.data - a.data);
                 
                 let html = '';
                 newsList.forEach(n => {
                     let d = new Date(n.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-                    
-                    // RENDERIZAÇÃO DAS TAGS DO POST NO ADMIN
                     let tagsHtml = '';
                     if(n.tag) {
                         n.tag.split(',').forEach(t => {
                             if(t.trim()) tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
                         });
-                    } else {
-                        tagsHtml = `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block;">Aviso</span>`;
                     }
-
                     html += `
                         <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px;">
                             <div>
@@ -540,16 +567,14 @@
             document.getElementById('news-title').value = n.titulo || '';
             document.getElementById('news-tag').value = n.tag || '';
             
-            if (isHtmlMode) toggleHTML();
+            if (isHtmlMode['news-body']) toggleHTML('news-body', 'btn-toggle-html');
             document.getElementById('news-body').innerHTML = n.corpo || '';
 
             editingNewsKey = key;
-            
             document.getElementById('news-editor-title').innerText = "Editando Publicação Existente";
             const btnPub = document.getElementById('btn-publicar');
             btnPub.innerText = "💾 Salvar Alterações";
             btnPub.classList.replace('btn-blue', 'btn-green');
-            
             document.getElementById('btn-cancelar-edicao').style.display = 'inline-flex';
             document.getElementById('news-editor-box').scrollIntoView({ behavior: 'smooth' });
         }
@@ -558,19 +583,18 @@
             editingNewsKey = null;
             document.getElementById('news-title').value = '';
             document.getElementById('news-tag').value = '';
-            if (isHtmlMode) toggleHTML();
+            if (isHtmlMode['news-body']) toggleHTML('news-body', 'btn-toggle-html');
             document.getElementById('news-body').innerHTML = '';
 
             document.getElementById('news-editor-title').innerText = "Criar Nova Publicação";
             const btnPub = document.getElementById('btn-publicar');
             btnPub.innerText = "🚀 Publicar no Mural";
             btnPub.classList.replace('btn-green', 'btn-blue');
-            
             document.getElementById('btn-cancelar-edicao').style.display = 'none';
         }
 
         async function publicarNoticia() {
-            if (isHtmlMode) { alert("Por favor, saia do Modo Código (Clique em </> Code novamente) antes de publicar!"); return; }
+            if (isHtmlMode['news-body']) { alert("Por favor, saia do Modo Código (Clique em </> Code novamente) antes de publicar!"); return; }
 
             let titulo = document.getElementById('news-title').value.trim();
             let tag = document.getElementById('news-tag').value.trim() || 'Aviso';
@@ -593,15 +617,14 @@
                     let novaNoticia = { id: idNoticia, autor: userName, data: Date.now(), tag: tag, titulo: titulo, corpo: corpo, likes: 0, likedBy: [] };
                     await fetch(`${FIREBASE_URL}portal_news/${idNoticia}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(novaNoticia) });
                     await registrarLogFirebase("Mural", `Publicou uma nova notícia: "${titulo}"`);
-                    alert("Notícia publicada com sucesso! Ela já aparecerá na página inicial.");
+                    alert("Notícia publicada com sucesso!");
                 }
-                cancelarEdicao(); 
-                carregarNoticiasAdmin(); 
-            } catch(e) { alert("Erro ao publicar a notícia. Tente novamente."); } finally { btnPub.innerText = textoOriginal; btnPub.disabled = false; }
+                cancelarEdicao(); carregarNoticiasAdmin(); 
+            } catch(e) { alert("Erro ao publicar a notícia."); } finally { btnPub.innerText = textoOriginal; btnPub.disabled = false; }
         }
 
         async function excluirNoticia(key) {
-            if(!confirm("Atenção: A notícia será apagada permanentemente da página inicial. Confirma a exclusão?")) return;
+            if(!confirm("Atenção: A notícia será apagada permanentemente. Confirma a exclusão?")) return;
             try {
                 await fetch(`${FIREBASE_URL}portal_news/${key}.json`, { method: 'DELETE' });
                 await registrarLogFirebase("Mural", "Excluiu uma publicação do mural de notícias.");
@@ -610,7 +633,7 @@
         }
 
         // ==========================================
-        // GESTÃO DOS STATUS DOS REPORTES (NOVO)
+        // GESTÃO DOS STATUS DOS REPORTES
         // ==========================================
         let currentStatusData = {};
 
@@ -630,45 +653,34 @@
 
         async function criarExemplosDeStatus() {
             if(!confirm("Isso criará 3 status de exemplo na base. Deseja continuar?")) return;
-            
             const exemplos = [
                 { nome: "Controle de Equipamentos (ITs)", estado: "on", descricao: "Inventário diário gerado sem interrupções.", icon: "💻", lastUpdate: Date.now() },
                 { nome: "Pendências de CFTV", estado: "off", descricao: "Câmeras inoperantes no setor B. Chamado aberto.", icon: "📹", lastUpdate: Date.now() - 3600000 },
                 { nome: "Parado no Percurso", estado: "on", descricao: "Rotina executada às 14:00h com sucesso.", icon: "🛑", lastUpdate: Date.now() }
             ];
-
             try {
                 for(let ex of exemplos) {
                     await fetch(`${FIREBASE_URL}portal_status.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ex) });
                 }
-                alert("Exemplos criados com sucesso!");
-                carregarStatusAdmin();
+                alert("Exemplos criados com sucesso!"); carregarStatusAdmin();
             } catch (e) { alert("Erro ao criar exemplos."); }
         }
 
         async function carregarStatusAdmin() {
             let container = document.getElementById('status-list-admin');
             container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando status...</div>';
-            
             try {
                 let res = await fetch(`${FIREBASE_URL}portal_status.json?_=${Date.now()}`);
                 let data = await res.json();
-                
-                if(!data) { 
-                    container.innerHTML = '<div class="cat-card">Nenhum reporte cadastrado ainda.</div>'; 
-                    currentStatusData = {};
-                    return; 
-                }
+                if(!data) { container.innerHTML = '<div class="cat-card">Nenhum reporte cadastrado ainda.</div>'; currentStatusData = {}; return; }
                 
                 currentStatusData = data;
                 let statusList = Object.keys(data).map(k => ({...data[k], key: k}));
-                
                 let html = '';
                 statusList.forEach(s => {
                     let d = s.lastUpdate ? new Date(s.lastUpdate).toLocaleString('pt-BR') : '--/--/----';
                     let cor = s.estado === 'on' ? 'var(--accent-green)' : 'var(--accent-red)';
                     let txt = s.estado === 'on' ? 'ON' : 'OFF';
-                    
                     html += `
                         <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px; border-left: 4px solid ${cor}; padding: 15px;">
                             <div style="display: flex; gap: 15px; align-items: center;">
@@ -693,7 +705,6 @@
         function editarStatus(key) {
             let s = currentStatusData[key];
             if(!s) return alert("Erro ao puxar dados.");
-
             document.getElementById('status-key').value = key;
             document.getElementById('status-nome').value = s.nome || '';
             document.getElementById('status-icon').value = s.icon || '📄';
@@ -702,7 +713,6 @@
             
             document.getElementById('status-editor-title').innerText = "Editando Reporte Existente";
             document.getElementById('btn-salvar-status').innerText = "💾 Salvar Alterações";
-            
             document.getElementById('status-editor-container').style.display = 'block';
             document.getElementById('status-editor-container').scrollIntoView({ behavior: 'smooth' });
         }
@@ -728,19 +738,146 @@
                     await fetch(`${FIREBASE_URL}portal_status.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataObj) });
                 }
                 alert("Status salvo com sucesso!");
-                cancelarEdicaoStatus();
-                carregarStatusAdmin();
-            } catch(e) { alert("Erro ao salvar status."); } finally {
-                btn.innerText = "💾 Salvar Status"; btn.disabled = false;
-            }
+                cancelarEdicaoStatus(); carregarStatusAdmin();
+            } catch(e) { alert("Erro ao salvar status."); } finally { btn.innerText = "💾 Salvar Status"; btn.disabled = false; }
         }
 
         async function excluirStatus(key) {
             if(!confirm("Certeza que deseja remover este reporte da lista de status?")) return;
+            try { await fetch(`${FIREBASE_URL}portal_status/${key}.json`, { method: 'DELETE' }); carregarStatusAdmin(); } catch(e) { alert("Erro ao excluir status."); }
+        }
+
+        // ==========================================
+        // BIBLIOTECA BIGQUERY (NOVO)
+        // ==========================================
+        let editingBqKey = null; 
+        let currentBqData = {};  
+
+        async function carregarBQAdmin() {
+            let container = document.getElementById('bq-list-admin');
+            container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando queries...</div>';
             try {
-                await fetch(`${FIREBASE_URL}portal_status/${key}.json`, { method: 'DELETE' });
-                carregarStatusAdmin();
-            } catch(e) { alert("Erro ao excluir status."); }
+                let res = await fetch(`${FIREBASE_URL}portal_bigquery.json?_=${Date.now()}`);
+                let data = await res.json();
+                
+                if(!data) { 
+                    container.innerHTML = '<div class="cat-card">Nenhuma query salva na biblioteca.</div>'; 
+                    currentBqData = {}; return; 
+                }
+                
+                currentBqData = data;
+                let bqList = Object.keys(data).map(k => ({...data[k], key: k}));
+                bqList.sort((a,b) => b.data - a.data);
+                
+                let html = '';
+                bqList.forEach(bq => {
+                    let tagsHtml = '';
+                    if(bq.tags) {
+                        bq.tags.split(',').forEach(t => {
+                            if(t.trim()) tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
+                        });
+                    }
+                    html += `
+                        <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px; border-left: 4px solid #1e1e1e;">
+                            <div>
+                                <div style="display:flex; gap: 8px; margin-bottom: 5px; align-items: center;">
+                                    <span style="background: #2d2d2d; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800;">📁 ${bq.categoria || 'Geral'}</span>
+                                    <div style="display:flex; flex-wrap:wrap;">${tagsHtml}</div>
+                                </div>
+                                <strong style="color:var(--text-title); font-size:1.1rem; display:block;">${bq.titulo}</strong>
+                                <div style="font-size:0.85rem; color:var(--text-main); margin-top:2px;">${bq.descricao || ''}</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Adicionado por <b>${bq.autor}</b></div>
+                            </div>
+                            <div style="display:flex; gap: 8px;">
+                                <button class="btn btn-warn" onclick="editarBQ('${bq.key}')">✏️ Editar</button>
+                                <button class="btn btn-red" onclick="excluirBQ('${bq.key}')">🗑️ Excluir</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch(e) { container.innerHTML = '<div style="padding: 20px; color: #FF5252;">Erro ao carregar a biblioteca.</div>'; }
+        }
+
+        function editarBQ(key) {
+            let bq = currentBqData[key];
+            if(!bq) return alert("Erro ao localizar a query.");
+
+            document.getElementById('bq-title').value = bq.titulo || '';
+            document.getElementById('bq-category').value = bq.categoria || '';
+            document.getElementById('bq-tags').value = bq.tags || '';
+            document.getElementById('bq-desc').value = bq.descricao || '';
+            document.getElementById('bq-sql-code').value = bq.codigo_sql || '';
+            
+            if (isHtmlMode['bq-body']) toggleHTML('bq-body', 'btn-toggle-html-bq');
+            document.getElementById('bq-body').innerHTML = bq.corpo_post || '';
+
+            editingBqKey = key;
+            document.getElementById('bq-editor-title').innerText = "Editando Script Existente";
+            const btnPub = document.getElementById('btn-publicar-bq');
+            btnPub.innerText = "💾 Salvar Alterações na Query";
+            btnPub.classList.replace('btn-blue', 'btn-green');
+            document.getElementById('btn-cancelar-edicao-bq').style.display = 'inline-flex';
+            document.getElementById('bq-editor-box').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function cancelarEdicaoBQ() {
+            editingBqKey = null;
+            document.getElementById('bq-title').value = '';
+            document.getElementById('bq-category').value = '';
+            document.getElementById('bq-tags').value = '';
+            document.getElementById('bq-desc').value = '';
+            document.getElementById('bq-sql-code').value = '';
+            if (isHtmlMode['bq-body']) toggleHTML('bq-body', 'btn-toggle-html-bq');
+            document.getElementById('bq-body').innerHTML = '';
+
+            document.getElementById('bq-editor-title').innerText = "Adicionar Script BigQuery";
+            const btnPub = document.getElementById('btn-publicar-bq');
+            btnPub.innerText = "💾 Salvar Query na Biblioteca";
+            btnPub.classList.replace('btn-green', 'btn-blue');
+            document.getElementById('btn-cancelar-edicao-bq').style.display = 'none';
+        }
+
+        async function publicarBQ() {
+            if (isHtmlMode['bq-body']) { alert("Saia do Modo Código (</> Code) do campo Documentação antes de salvar."); return; }
+
+            let titulo = document.getElementById('bq-title').value.trim();
+            let categoria = document.getElementById('bq-category').value.trim() || 'Geral';
+            let tags = document.getElementById('bq-tags').value.trim();
+            let descricao = document.getElementById('bq-desc').value.trim();
+            let codigo_sql = document.getElementById('bq-sql-code').value.trim();
+            let corpo_post = document.getElementById('bq-body').innerHTML.trim();
+            
+            if(!titulo || !codigo_sql) return alert("É obrigatório preencher o Título e colar o Código SQL.");
+            
+            const btnPub = document.getElementById('btn-publicar-bq');
+            const textoOriginal = btnPub.innerText;
+            btnPub.innerText = "⏳ Salvando..."; btnPub.disabled = true;
+
+            try {
+                if (editingBqKey) {
+                    let bqEditada = { titulo: titulo, categoria: categoria, tags: tags, descricao: descricao, codigo_sql: codigo_sql, corpo_post: corpo_post, data_edit: Date.now() };
+                    await fetch(`${FIREBASE_URL}portal_bigquery/${editingBqKey}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bqEditada) });
+                    await registrarLogFirebase("BigQuery", `Editou o script: "${titulo}"`);
+                    alert("Query atualizada com sucesso!");
+                } else {
+                    let idBq = "bq_" + Date.now();
+                    let novaBq = { id: idBq, autor: userName, data: Date.now(), titulo: titulo, categoria: categoria, tags: tags, descricao: descricao, codigo_sql: codigo_sql, corpo_post: corpo_post };
+                    await fetch(`${FIREBASE_URL}portal_bigquery/${idBq}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(novaBq) });
+                    await registrarLogFirebase("BigQuery", `Adicionou um novo script: "${titulo}"`);
+                    alert("Query salva na biblioteca com sucesso!");
+                }
+                cancelarEdicaoBQ(); carregarBQAdmin(); 
+            } catch(e) { alert("Erro ao salvar query."); } finally { btnPub.innerText = textoOriginal; btnPub.disabled = false; }
+        }
+
+        async function excluirBQ(key) {
+            if(!confirm("Atenção: Este script será removido permanentemente da Biblioteca. Confirma?")) return;
+            try {
+                await fetch(`${FIREBASE_URL}portal_bigquery/${key}.json`, { method: 'DELETE' });
+                await registrarLogFirebase("BigQuery", "Excluiu um script da biblioteca.");
+                carregarBQAdmin();
+            } catch(e) { alert("Erro ao excluir."); }
         }
 
     </script>
