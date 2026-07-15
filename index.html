@@ -23,9 +23,6 @@
         .quote-text { font-size: 1rem; color: var(--text-main); font-style: italic; font-weight: 600; transition: opacity 0.5s ease; }
         .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-blue); width: 0%; }
 
-        /* =========================================
-           GRID DE 3 COLUNAS (DENTRO DO HOME-VIEW)
-           ========================================= */
         #home-view { width: 100%; max-width: 1500px; display: grid; grid-template-columns: 320px 1fr 300px; gap: 20px; height: calc(100vh - 250px); margin-bottom: 20px; }
 
         .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden; }
@@ -50,7 +47,8 @@
         .feed-item:hover { background: rgba(52, 131, 250, 0.05); }
         .feed-item:last-child { border-bottom: none; }
         
-        .feed-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+        .feed-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; overflow: hidden; background: var(--bg-body); border: 1px solid var(--border-card);}
+        .feed-icon img { width: 100%; height: 100%; object-fit: cover; }
         .feed-details { display: flex; flex-direction: column; gap: 3px; margin-top: -2px;}
         .feed-module { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
         .feed-action { font-size: 0.85rem; color: var(--text-main); font-weight: 600; line-height: 1.3;}
@@ -63,7 +61,8 @@
         .post-card:last-child { border-bottom: none; }
         .post-header { display: flex; justify-content: space-between; align-items: flex-start; }
         .post-author-box { display: flex; align-items: center; gap: 10px; }
-        .author-avatar { width: 40px; height: 40px; background: var(--accent-blue); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; text-transform: uppercase;}
+        .author-avatar { width: 40px; height: 40px; background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; overflow: hidden;}
+        .author-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .author-info { display: flex; flex-direction: column; }
         .author-name { font-weight: 900; color: var(--text-title); font-size: 0.95rem; }
         .post-date { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
@@ -78,16 +77,15 @@
         .ml-signature { font-size: 0.75rem; color: var(--text-muted); font-weight: 800; display: flex; align-items: center; gap: 6px; font-style: italic;}
         .ml-signature img { height: 14px; opacity: 0.7;}
         
-        .btn-like { background: transparent; border: 1px solid var(--border-card); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.85rem; transition: 0.3s; position: relative;}
+        .btn-like { background: transparent; border: 1px solid var(--border-card); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.85rem; transition: 0.3s; position: relative; overflow: hidden;}
         .btn-like:hover { background: rgba(52, 131, 250, 0.1); border-color: var(--accent-blue); color: var(--accent-blue); }
         .btn-like.liked { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
         
-        /* A MÁGICA DA ANIMAÇÃO NO FOGUETE ACONTECE AQUI */
-        .like-anim-text { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font-weight: 900; color: var(--accent-blue); font-size: 0.85rem; opacity: 0; pointer-events: none; white-space: nowrap; text-shadow: 0 2px 4px rgba(0,0,0,0.1); z-index: 10;}
+        .like-anim-text { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font-weight: 900; color: var(--accent-blue); font-size: 0.8rem; opacity: 0; pointer-events: none; white-space: nowrap; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10;}
         @keyframes flyUp { 0% { bottom: 50%; opacity: 0; transform: translate(-50%, 0) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -10px) scale(1.2); } 100% { bottom: 200%; opacity: 0; transform: translate(-50%, -40px) scale(1); } }
         .like-anim-text.animate { animation: flyUp 0.8s ease-out forwards; }
 
-        /* --- COLUNA 3: USUÁRIOS, TAGS E STATUS --- */
+        /* --- COLUNA 3: USUÁRIOS E TAGS --- */
         .user-group-title { background: rgba(0,0,0,0.2); padding: 8px 15px; font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-card); border-top: 1px solid var(--border-card);}
         [data-theme="light"] .user-group-title { background: rgba(0,0,0,0.03); }
         .user-group-title:first-child { border-top: none; }
@@ -95,7 +93,8 @@
         .user-list { list-style: none; padding: 0; margin: 0; }
         .user-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-card); }
         .user-item:last-child { border-bottom: none; }
-        .user-avatar { width: 32px; height: 32px; background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; }
+        .user-avatar { width: 32px; height: 32px; background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; overflow: hidden; }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
         
         .user-info { display: flex; flex-direction: column; gap: 2px;}
         .user-name { font-weight: 800; font-size: 0.85rem; color: var(--text-title); display: flex; align-items: center; gap: 6px;}
@@ -106,21 +105,14 @@
         .dot-offline { background-color: var(--text-muted); }
         .dot-new { background-color: var(--accent-warn); }
 
-        /* BOTOES DE TAGS NA LATERAL DIREITA */
         .tag-btn { background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap;}
         .tag-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
         .tag-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
 
         #app-frame { display: none; width: 100%; height: calc(100vh - 90px); border: none; border-radius: 12px; background: var(--bg-body); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
-        @media (max-width: 1100px) {
-            #home-view { grid-template-columns: 1fr 300px; height: auto; }
-            .col-news { grid-column: 1 / -1; order: -1; max-height: 600px;}
-        }
-        @media (max-width: 768px) {
-            #home-view { grid-template-columns: 1fr; }
-            .col-news, .panel-box { max-height: 500px; }
-        }
+        @media (max-width: 1100px) { #home-view { grid-template-columns: 1fr 300px; height: auto; } .col-news { grid-column: 1 / -1; order: -1; max-height: 600px;} }
+        @media (max-width: 768px) { #home-view { grid-template-columns: 1fr; } .col-news, .panel-box { max-height: 500px; } }
     </style>
 </head>
 <body data-theme="light">
@@ -182,6 +174,7 @@
 
         let globalNewsList = [];
         let currentNewsFilter = 'Todas';
+        let userAvatarMap = {}; // Mapa para salvar quem tem qual avatar
 
         // ==========================================
         // CITAÇÕES ANIMADAS
@@ -207,13 +200,36 @@
             progressBar.style.transition = `width ${INTERVAL_MS}ms linear`; progressBar.style.width = '100%'; 
         }
 
+        // Recuperador universal de Avatares (Fallback para a Letra)
+        function getAvatarHTML(username) {
+            let u = username ? username.toLowerCase() : '';
+            let url = userAvatarMap[u];
+            if (url) return `<img src="${url}">`;
+            let inicial = u ? u.charAt(0).toUpperCase() : '👤';
+            return `${inicial}`;
+        }
+
+        // ==========================================
+        // BUSCA O MAPA DE AVATARES PRIMEIRO
+        // ==========================================
+        async function prepararMapaDeAvatares() {
+            try {
+                const res = await fetch(`${URL_BD_INDEX}users.json?_=${Date.now()}`);
+                const data = await res.json();
+                if(data) {
+                    Object.values(data).forEach(u => {
+                        if(u.usuario) userAvatarMap[u.usuario.toLowerCase()] = u.avatar || null;
+                    });
+                }
+            } catch(e) { console.log("Aviso: Mapa de avatares não carregou."); }
+        }
+
         // ==========================================
         // COLUNA 1: LOGS DE ATIVIDADE
         // ==========================================
         async function carregarFeedAtualizacoes() {
             const listEl = document.getElementById('feed-list');
             try {
-                // Sem Timeout abort controller para não gerar bloqueios misteriosos
                 const res = await fetch(`${URL_BD_INDEX}logs.json?_=${Date.now()}`); 
                 const data = await res.json();
                 
@@ -227,20 +243,24 @@
                 
                 logs.forEach(log => {
                     const dataFormatada = new Date(log.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                    let icon = '📝'; let bgStyle = 'rgba(52, 131, 250, 0.1)'; let colorStyle = 'var(--accent-blue)';
+                    let bgStyle = 'rgba(52, 131, 250, 0.1)'; let colorStyle = 'var(--accent-blue)';
                     const actionTxt = String(log.acao || '').toLowerCase();
                     
-                    if (actionTxt.includes('adicionou') || actionTxt.includes('criou') || actionTxt.includes('publicou')) { icon = '✨'; bgStyle = 'rgba(0, 166, 80, 0.1)'; colorStyle = 'var(--accent-green)'; } 
-                    else if (actionTxt.includes('removeu') || actionTxt.includes('excluiu') || actionTxt.includes('apagou')) { icon = '🗑️'; bgStyle = 'rgba(255, 82, 82, 0.1)'; colorStyle = 'var(--accent-red)'; }
-                    else if (actionTxt.includes('sincronizou')) { icon = '🔄'; bgStyle = 'rgba(255, 176, 0, 0.1)'; colorStyle = 'var(--accent-warn)'; }
+                    if (actionTxt.includes('adicionou') || actionTxt.includes('criou') || actionTxt.includes('publicou')) { bgStyle = 'rgba(0, 166, 80, 0.1)'; colorStyle = 'var(--accent-green)'; } 
+                    else if (actionTxt.includes('removeu') || actionTxt.includes('excluiu') || actionTxt.includes('apagou')) { bgStyle = 'rgba(255, 82, 82, 0.1)'; colorStyle = 'var(--accent-red)'; }
+                    else if (actionTxt.includes('sincronizou')) { bgStyle = 'rgba(255, 176, 0, 0.1)'; colorStyle = 'var(--accent-warn)'; }
 
+                    let uName = log.usuario || 'Desconhecido';
+                    
                     listEl.innerHTML += `
                         <li class="feed-item">
-                            <div class="feed-icon" style="background: ${bgStyle}; color: ${colorStyle};">${icon}</div>
+                            <div class="feed-icon" style="background: ${bgStyle}; color: ${colorStyle}; border-color: ${colorStyle};">
+                                ${getAvatarHTML(uName)}
+                            </div>
                             <div class="feed-details">
                                 <span class="feed-module">${log.modulo || 'Sistema'}</span>
                                 <span class="feed-action">${log.acao}</span>
-                                <span class="feed-meta">Por <strong>${log.usuario || 'Desconhecido'}</strong> • ${dataFormatada}</span>
+                                <span class="feed-meta">Por <strong>${uName}</strong> • ${dataFormatada}</span>
                             </div>
                         </li>
                     `;
@@ -324,7 +344,7 @@
 
             filtradas.forEach(news => {
                 const dataFormatada = new Date(news.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                const inicial = (news.autor || 'A').charAt(0).toUpperCase();
+                let authorName = news.autor || 'Admin';
                 
                 let userHasLiked = false;
                 if(news.likedBy && Array.isArray(news.likedBy) && news.likedBy.includes(currentUserStr)) {
@@ -337,9 +357,9 @@
                     <div class="post-card">
                         <div class="post-header">
                             <div class="post-author-box">
-                                <div class="author-avatar">${inicial}</div>
+                                <div class="author-avatar">${getAvatarHTML(authorName)}</div>
                                 <div class="author-info">
-                                    <span class="author-name">${news.autor || 'Admin'}</span>
+                                    <span class="author-name">${authorName}</span>
                                     <span class="post-date">${dataFormatada}</span>
                                 </div>
                             </div>
@@ -442,24 +462,21 @@
                 try {
                     const resU = await fetch(`${URL_BD_INDEX}users.json?_=${Date.now()}`);
                     const dataU = await resU.json();
-                    if(dataU) {
-                        allUsers = Object.keys(dataU).map(k => dataU[k]);
-                    }
-                } catch (errU) {
-                    console.error("Falha ao puxar usuários", errU);
-                }
+                    if(dataU) { allUsers = Object.keys(dataU).map(k => dataU[k]); }
+                } catch (errU) { console.error("Falha ao puxar usuários", errU); }
                 
                 let pendentes = allUsers.filter(u => u.solicitacao === 'pendente').slice(0, 2);
                 let ultimosLogados = allUsers.filter(u => u.solicitacao === 'aprovado' && u.usuario !== currentUserStr && !onlineUsers.some(ou => ou.nome === u.usuario)).slice(0, 5);
 
                 let html = '';
-
                 html += `<div class="user-group-title">🟢 Agora no Portal</div><ul class="user-list">`;
                 
                 if(currentUserStr !== 'Você') {
                     html += `
                         <li class="user-item">
-                            <div class="user-avatar" style="background: rgba(0, 166, 80, 0.1); color: var(--accent-green); border-color: var(--accent-green);">${currentUserStr.charAt(0).toUpperCase()}</div>
+                            <div class="user-avatar" style="border-color: var(--accent-green);">
+                                ${getAvatarHTML(currentUserStr)}
+                            </div>
                             <div class="user-info">
                                 <span class="user-name">${currentUserStr} (Você) <div class="status-dot dot-online"></div></span>
                                 <span class="user-role">${formatRoleName(currentRoleStr)}</span>
@@ -472,7 +489,9 @@
                     if(ou.nome !== currentUserStr) {
                         html += `
                             <li class="user-item">
-                                <div class="user-avatar" style="background: rgba(52, 131, 250, 0.1); color: var(--accent-blue);">${ou.nome.charAt(0).toUpperCase()}</div>
+                                <div class="user-avatar" style="border-color: var(--accent-blue);">
+                                    ${getAvatarHTML(ou.nome)}
+                                </div>
                                 <div class="user-info">
                                     <span class="user-name">${ou.nome} <div class="status-dot dot-online"></div></span>
                                     <span class="user-role">${ou.cargo}</span>
@@ -492,7 +511,9 @@
                     ultimosLogados.forEach(u => {
                         html += `
                             <li class="user-item">
-                                <div class="user-avatar">${u.usuario.charAt(0).toUpperCase()}</div>
+                                <div class="user-avatar">
+                                    ${getAvatarHTML(u.usuario)}
+                                </div>
                                 <div class="user-info">
                                     <span class="user-name">${u.usuario} <div class="status-dot dot-offline"></div></span>
                                     <span class="user-role">${formatRoleName(u.cargo)}</span>
@@ -508,7 +529,9 @@
                     pendentes.forEach(u => {
                         html += `
                             <li class="user-item">
-                                <div class="user-avatar" style="background: rgba(255, 176, 0, 0.1); border-color: var(--accent-warn); color: var(--accent-warn);">${u.usuario.charAt(0).toUpperCase()}</div>
+                                <div class="user-avatar" style="border-color: var(--accent-warn);">
+                                    ${getAvatarHTML(u.usuario)}
+                                </div>
                                 <div class="user-info">
                                     <span class="user-name">${u.usuario} <div class="status-dot dot-new"></div></span>
                                     <span class="user-role" style="color: var(--accent-warn);">Aguardando Aprovação</span>
@@ -527,22 +550,27 @@
         }
 
         // ==========================================
-        // INICIALIZAÇÃO PARALELA (UM ERRO NÃO TRAVA O OUTRO)
+        // INICIALIZAÇÃO SEQUENCIAL
         // ==========================================
-        window.onload = function() {
+        window.onload = async function() {
             startMessageCycle(); 
             registrarPresenca();
             
-            // Rodando tudo ao mesmo tempo, de forma assíncrona
+            // PRIMEIRO GARANTE QUE OS AVATARES SEJAM LIDOS
+            await prepararMapaDeAvatares();
+            
+            // DEPOIS RENDERIZA O RESTO!
             carregarFeedAtualizacoes(); 
             carregarNoticias();
             carregarPresencaUsuarios();
 
             setInterval(() => { 
                 registrarPresenca();
-                carregarFeedAtualizacoes(); 
-                carregarNoticias();
-                carregarPresencaUsuarios();
+                prepararMapaDeAvatares().then(() => {
+                    carregarFeedAtualizacoes(); 
+                    carregarNoticias();
+                    carregarPresencaUsuarios();
+                });
             }, 30000); 
         };
 
