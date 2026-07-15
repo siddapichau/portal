@@ -101,7 +101,7 @@
                     
                     <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
                         <input type="text" id="news-title" placeholder="Título da Notícia..." style="flex: 2; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
-                        <input type="text" id="news-tag" placeholder="Tag (Ex: Atualização, Aviso...)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                        <input type="text" id="news-tag" placeholder="Tags (Use vírgula: Atualização, Aviso)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
                     </div>
                     
                     <div class="editor-toolbar">
@@ -504,10 +504,21 @@
                 let html = '';
                 newsList.forEach(n => {
                     let d = new Date(n.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                    
+                    // RENDERIZAÇÃO DAS TAGS DO POST NO ADMIN
+                    let tagsHtml = '';
+                    if(n.tag) {
+                        n.tag.split(',').forEach(t => {
+                            if(t.trim()) tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
+                        });
+                    } else {
+                        tagsHtml = `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block;">Aviso</span>`;
+                    }
+
                     html += `
                         <div class="cat-card" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap: 10px;">
                             <div>
-                                <span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block;">${n.tag || 'Aviso'}</span>
+                                <div style="display:flex; flex-wrap:wrap;">${tagsHtml}</div>
                                 <strong style="color:var(--text-title); font-size:1.1rem; display:block;">${n.titulo}</strong>
                                 <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Por <b>${n.autor}</b> em ${d} • ${n.likes || 0} curtidas</div>
                             </div>
