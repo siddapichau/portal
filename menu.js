@@ -3,20 +3,34 @@ const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
-// Avatares Pré-Definidos (Robôs de Logística e Humanos Animados)
+// ======= AVATARES EXPANDIDOS (mais opções de robôs) =======
 const AVATAR_OPTIONS = [
+    // Bottts (robôs) - 12 variações
     "https://api.dicebear.com/7.x/bottts/svg?seed=LogiBot&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Crate&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Delivery&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Tracker&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Scanner&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Meli&backgroundColor=e2e8f0",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo1&backgroundColor=e2e8f0",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo2&backgroundColor=e2e8f0",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo3&backgroundColor=e2e8f0",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo4&backgroundColor=e2e8f0",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo5&backgroundColor=e2e8f0",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Robo6&backgroundColor=e2e8f0",
+    // Adventurer (humanos) - 12 variações
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Oliver&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Sophie&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Leo&backgroundColor=fef08a",
-    "https://api.dicebear.com/7.x/adventurer/svg?seed=Mia&backgroundColor=fef08a"
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Mia&backgroundColor=fef08a",
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Noah&backgroundColor=fef08a",
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Emma&backgroundColor=fef08a",
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Liam&backgroundColor=fef08a",
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Olivia&backgroundColor=fef08a",
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=James&backgroundColor=fef08a",
+    "https://api.dicebear.com/7.x/adventurer/svg?seed=Amelia&backgroundColor=fef08a"
 ];
 
 window.verificarPermissaoUpload = function(urlPagina) {
@@ -53,11 +67,107 @@ async function carregarMenuGlobal() {
             [data-theme="light"] .btn-config { background: rgba(0,0,0,0.05); }
             .btn-config:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
             
-            .avatar-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; justify-items: center;}
-            .avatar-option { width: 55px; height: 55px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: 0.2s; background: var(--bg-body); object-fit: cover;}
+            /* Estilos para o modal de configurações (layout melhorado) */
+            .config-section {
+                margin-bottom: 20px;
+            }
+            .config-section-title {
+                font-weight: 800;
+                color: var(--text-muted);
+                font-size: 0.8rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 10px;
+                display: block;
+                border-bottom: 1px solid var(--border-card);
+                padding-bottom: 6px;
+            }
+            .config-avatar-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                margin: 10px 0 15px 0;
+                justify-items: center;
+            }
+            .avatar-option {
+                width: 55px;
+                height: 55px;
+                border-radius: 50%;
+                cursor: pointer;
+                border: 3px solid transparent;
+                transition: 0.2s;
+                background: var(--bg-body);
+                object-fit: cover;
+            }
             .avatar-option:hover { transform: scale(1.1); }
             .avatar-option.selected { border-color: var(--accent-blue); box-shadow: 0 0 12px var(--accent-blue); }
-            .current-avatar-display { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--border-card); object-fit: cover; margin-bottom: 10px; background: var(--bg-body); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 900;}
+
+            .current-avatar-box {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 20px;
+                background: var(--bg-body);
+                border-radius: 12px;
+                border: 1px solid var(--border-card);
+                margin-bottom: 15px;
+            }
+            .current-avatar-box .avatar-preview {
+                width: 70px;
+                height: 70px;
+                border-radius: 50%;
+                border: 3px solid var(--accent-blue);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 2.2rem;
+                font-weight: 900;
+                background: var(--bg-card);
+                color: var(--text-title);
+                overflow: hidden;
+                margin-bottom: 8px;
+            }
+            .current-avatar-box .avatar-preview img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+            .current-avatar-box .user-info {
+                font-size: 0.95rem;
+                font-weight: 700;
+                color: var(--text-title);
+                text-align: center;
+            }
+            .current-avatar-box .user-info small {
+                display: block;
+                font-weight: 400;
+                color: var(--text-muted);
+                font-size: 0.8rem;
+            }
+            .config-divider {
+                border: none;
+                border-top: 2px solid var(--border-card);
+                margin: 20px 0;
+            }
+            .btn-logout {
+                width: 100%;
+                padding: 14px;
+                background: transparent;
+                border: 2px solid var(--accent-red);
+                color: var(--accent-red);
+                border-radius: 8px;
+                font-weight: 900;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: 0.2s;
+                margin-top: 10px;
+            }
+            .btn-logout:hover {
+                background: var(--accent-red);
+                color: #fff;
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3);
+            }
         </style>
 
         <div class="top-bar-wrapper">
@@ -86,7 +196,7 @@ async function carregarMenuGlobal() {
             <div class="sidebar-right" id="subitem-panel"><div style="padding: 20px; color: var(--text-muted); text-align:center;">Passe o mouse em uma categoria</div></div>
         </div>
 
-        <!-- MODAL AUTH (Apenas Login e Registro) -->
+        <!-- MODAL AUTH (Login e Registro) -->
         <div class="auth-modal" id="authModal">
             <div class="auth-box" id="loginBox">
                 <h2>Acesso ao Portal</h2>
@@ -105,33 +215,41 @@ async function carregarMenuGlobal() {
             </div>
         </div>
 
-        <!-- MODAL CONFIGURAÇÕES (Perfil) -->
+        <!-- MODAL CONFIGURAÇÕES (Perfil) - LAYOUT MELHORADO -->
         <div class="auth-modal" id="configModal">
-            <div class="auth-box" style="max-width: 450px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 style="margin: 0; color: var(--text-title);">Meu Perfil</h2>
-                    <button onclick="fecharConfigModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">&times;</button>
+            <div class="auth-box" style="max-width: 480px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 style="margin: 0; color: var(--text-title);">👤 Meu Perfil</h2>
+                    <button onclick="fecharConfigModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.8rem; cursor:pointer;">&times;</button>
                 </div>
                 
-                <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 15px;">
-                    <div id="userCurrentAvatar"></div>
-                    <div id="profileInfo" style="color: var(--text-title); font-size: 0.95rem; font-weight: 800; text-align: center;"></div>
+                <!-- Dados do usuário e avatar atual -->
+                <div class="current-avatar-box">
+                    <div class="avatar-preview" id="userCurrentAvatar"></div>
+                    <div class="user-info" id="profileInfo"></div>
                 </div>
 
-                <div style="text-align: left; margin-bottom: 15px;">
-                    <strong style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">1. Escolher Avatar</strong>
-                    <div class="avatar-grid" id="avatarGridSelector" style="margin-top: 8px;"></div>
+                <!-- Seleção de avatar -->
+                <div class="config-section">
+                    <span class="config-section-title">🤖 Escolha seu avatar</span>
+                    <div class="config-avatar-grid" id="avatarGridSelector"></div>
                 </div>
 
-                <div style="text-align: left; margin-bottom: 15px; border-top: 1px solid var(--border-card); padding-top: 15px;">
-                    <strong style="color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase;">2. Trocar Senha</strong>
-                    <div class="input-group" style="margin-top: 8px;"><input type="password" id="profPassCurrent" placeholder="Senha Atual"><span class="eye-icon" onclick="togglePass('profPassCurrent')">👁️</span></div>
-                    <div class="input-group"><input type="password" id="profPassNew1" placeholder="Nova Senha (8-16, sem especiais)"><span class="eye-icon" onclick="togglePass('profPassNew1')">👁️</span></div>
-                    <div class="input-group" style="margin-bottom: 8px;"><input type="password" id="profPassNew2" placeholder="Confirmar Nova Senha"><span class="eye-icon" onclick="togglePass('profPassNew2')">👁️</span></div>
+                <hr class="config-divider">
+
+                <!-- Troca de senha -->
+                <div class="config-section">
+                    <span class="config-section-title">🔑 Alterar senha</span>
+                    <div class="input-group"><input type="password" id="profPassCurrent" placeholder="Senha atual"><span class="eye-icon" onclick="togglePass('profPassCurrent')">👁️</span></div>
+                    <div class="input-group"><input type="password" id="profPassNew1" placeholder="Nova senha (8-16, sem especiais)"><span class="eye-icon" onclick="togglePass('profPassNew1')">👁️</span></div>
+                    <div class="input-group" style="margin-bottom: 8px;"><input type="password" id="profPassNew2" placeholder="Confirmar nova senha"><span class="eye-icon" onclick="togglePass('profPassNew2')">👁️</span></div>
                     <button class="btn-auth" id="btnUpdatePass" style="background:#f59e0b; color: #fff;" onclick="trocarSenha()">Atualizar Senha</button>
                 </div>
-                
-                <button class="btn-auth" style="background: transparent; border: 1px solid #FF5252; color: #FF5252; margin-top: 10px;" onclick="fazerLogout()">Sair da Conta</button>
+
+                <hr class="config-divider">
+
+                <!-- Botão de Logout (destacado) -->
+                <button class="btn-logout" onclick="fazerLogout()">🚪 Sair da Conta</button>
             </div>
         </div>
     `;
@@ -150,8 +268,8 @@ async function carregarMenuGlobal() {
 
 function verificarUIAutenticacao() {
     if(currentUser) {
-        document.getElementById('btnTopAuth').style.display = 'none'; // Some topo
-        document.getElementById('sidebarFooterConfig').style.display = 'block'; // Mostra menu baixo
+        document.getElementById('btnTopAuth').style.display = 'none';
+        document.getElementById('sidebarFooterConfig').style.display = 'block';
         if(currentUser.cargo === 'admin') document.getElementById('btnAdminGlobal').style.display = 'flex'; 
     } else {
         document.getElementById('btnTopAuth').style.display = 'flex';
@@ -254,7 +372,6 @@ function fecharAuthModal() { document.getElementById('authModal').classList.remo
 function mudarAuthModo(modo) { document.getElementById('loginBox').style.display = modo === 'login' ? 'block' : 'none'; document.getElementById('registerBox').style.display = modo === 'register' ? 'block' : 'none'; }
 function togglePass(id) { const el = document.getElementById(id); el.type = el.type === 'password' ? 'text' : 'password'; }
 
-// HASH SHA-256 PARA SENHAS
 async function hashPassword(str) {
     if (window.crypto && window.crypto.subtle) {
         try {
@@ -280,8 +397,7 @@ async function fazerRegistro() {
     
     if(!user || !email) return alert("Preencha Usuário e E-mail."); 
     
-    // VALIDAÇÕES RÍGIDAS
-    user = user.toLowerCase(); // Força usuário minúsculo no banco
+    user = user.toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if(!emailRegex.test(email)) return alert("Por favor, insira um e-mail válido (ex: seu.nome@mercadolivre.com).");
     
@@ -316,7 +432,7 @@ async function fazerRegistro() {
                 cargo: "view",
                 solicitacao: "pendente",
                 favorito: "",
-                avatar: "" // Novo campo de imagem
+                avatar: ""
             };
             
             await fetch(`${FIREBASE_URL}users.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) });
@@ -332,7 +448,7 @@ async function fazerLogin() {
     const pass = document.getElementById('logPass').value;
     
     if(!user || !pass) return alert("Preencha todos os campos.");
-    user = user.toLowerCase(); // Independente de como ele digitou, procura em minúsculo
+    user = user.toLowerCase();
     
     const btn = document.querySelector('#loginBox .btn-auth'); 
     btn.innerText = "⏳ Validando..."; btn.disabled = true;
@@ -353,7 +469,6 @@ async function fazerLogin() {
         } else {
             const inputHash = await hashPassword(pass);
             
-            // CHAVE MESTRA E EMERGÊNCIA
             if (dbUser.usuario.toLowerCase() === 'wesleyclp') {
                 if (dbUser.cargo !== 'admin' || dbUser.solicitacao !== 'aprovado') {
                     dbUser.cargo = 'admin'; dbUser.solicitacao = 'aprovado';
@@ -394,22 +509,20 @@ function fecharConfigModal() { document.getElementById('configModal').classList.
 
 function renderizarPainelConfig() {
     let cargoDisplay = currentUser.cargo.toLowerCase() === 'view2' ? 'View Plus' : currentUser.cargo;
-    document.getElementById('profileInfo').innerHTML = `${currentUser.usuario} <br><span style="font-size:0.75rem; color:var(--text-muted); font-weight: 500;">${currentUser.email} • <b style="color:var(--accent-blue); text-transform:uppercase;">${cargoDisplay}</b></span>`;
+    document.getElementById('profileInfo').innerHTML = `${currentUser.usuario} <br><small>${currentUser.email} • <b style="color:var(--accent-blue); text-transform:uppercase;">${cargoDisplay}</b></small>`;
     
-    // Renderiza Avatar Atual
     const display = document.getElementById('userCurrentAvatar');
     if (currentUser.avatar) {
-        display.innerHTML = `<img src="${currentUser.avatar}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        display.innerHTML = `<img src="${currentUser.avatar}">`;
     } else {
-        display.innerHTML = currentUser.usuario.charAt(0).toUpperCase();
+        display.textContent = currentUser.usuario.charAt(0).toUpperCase();
     }
 
-    // Renderiza Grade de Opções
     const grid = document.getElementById('avatarGridSelector');
     let gridHTML = '';
     AVATAR_OPTIONS.forEach(url => {
         const isSel = currentUser.avatar === url ? 'selected' : '';
-        gridHTML += `<img src="${url}" class="avatar-option ${isSel}" onclick="escolherAvatar('${url}')">`;
+        gridHTML += `<img src="${url}" class="avatar-option ${isSel}" onclick="escolherAvatar('${url}')" loading="lazy">`;
     });
     grid.innerHTML = gridHTML;
 }
@@ -417,12 +530,10 @@ function renderizarPainelConfig() {
 async function escolherAvatar(url) {
     if(!currentUser || !currentUser.key) return;
     
-    // Atualiza Visual Imediatamente
     currentUser.avatar = url;
     localStorage.setItem('loggedUser', JSON.stringify(currentUser));
     renderizarPainelConfig();
 
-    // Salva no banco silenciosamente
     try {
         await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { 
             method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ avatar: url }) 

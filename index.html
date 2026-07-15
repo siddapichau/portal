@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Portal de Reportes - Mercado Livre</title>
     
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
@@ -111,8 +111,40 @@
 
         #app-frame { display: none; width: 100%; height: calc(100vh - 90px); border: none; border-radius: 12px; background: var(--bg-body); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 
-        @media (max-width: 1100px) { #home-view { grid-template-columns: 1fr 300px; height: auto; } .col-news { grid-column: 1 / -1; order: -1; max-height: 600px;} }
-        @media (max-width: 768px) { #home-view { grid-template-columns: 1fr; } .col-news, .panel-box { max-height: 500px; } }
+        /* ==========================================
+           RESPONSIVIDADE PARA MOBILE
+           ========================================== */
+        @media (max-width: 1100px) { 
+            #home-view { grid-template-columns: 1fr 300px; height: auto; } 
+            .col-news { grid-column: 1 / -1; order: -1; max-height: 600px;} 
+        }
+        @media (max-width: 768px) { 
+            #home-view { 
+                grid-template-columns: 1fr; 
+                height: auto;
+                gap: 15px;
+            } 
+            .col-news, .panel-box { max-height: 500px; }
+            .panel-box { max-height: 400px; }
+            .main-title { font-size: 1.6rem; }
+            .quote-text { font-size: 0.9rem; }
+            .quote-container { padding: 12px 15px; }
+            #main-content { padding: 0 10px; margin-top: 70px; }
+            #app-frame { height: calc(100vh - 80px); }
+            .post-card { padding: 15px; }
+        }
+        @media (max-width: 480px) {
+            .main-title { font-size: 1.3rem; }
+            .feed-item { padding: 12px 15px; grid-template-columns: 30px 1fr; gap: 8px; }
+            .feed-icon { width: 30px; height: 30px; font-size: 0.9rem; }
+            .feed-action { font-size: 0.75rem; }
+            .post-title { font-size: 0.95rem; }
+            .post-body { font-size: 0.8rem; }
+            .panel-header { padding: 10px 15px; }
+            .panel-header h2 { font-size: 0.85rem; }
+            .user-item { padding: 10px 12px; }
+            .tag-btn { font-size: 0.65rem; padding: 4px 8px; }
+        }
     </style>
 </head>
 <body data-theme="light">
@@ -174,7 +206,7 @@
 
         let globalNewsList = [];
         let currentNewsFilter = 'Todas';
-        let userAvatarMap = {}; // Mapa para salvar quem tem qual avatar
+        let userAvatarMap = {};
 
         // ==========================================
         // CITAÇÕES ANIMADAS
@@ -418,7 +450,7 @@
                     body: JSON.stringify({ likes: currentLikes, likedBy: likedBy })
                 });
                 
-                carregarNoticias(); // Atualiza contador total e array global
+                carregarNoticias();
 
             } catch(e) { console.error("Erro ao computar like."); }
         };
@@ -556,10 +588,8 @@
             startMessageCycle(); 
             registrarPresenca();
             
-            // PRIMEIRO GARANTE QUE OS AVATARES SEJAM LIDOS
             await prepararMapaDeAvatares();
             
-            // DEPOIS RENDERIZA O RESTO!
             carregarFeedAtualizacoes(); 
             carregarNoticias();
             carregarPresencaUsuarios();

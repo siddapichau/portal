@@ -12,6 +12,8 @@
     --accent-yellow: #FFE600; 
     --accent-blue: #3483FA; 
     --accent-green: #00A650;
+    --accent-red: #FF5252;
+    --accent-warn: #FFB000;
     
     /* Botões Sólidos - Sempre Branco */
     --btn-minimal-bg: #ffffff; 
@@ -28,10 +30,9 @@
     --text-muted: #94a3b8;
     --text-title: #ffffff;
     
-    /* Botões Sólidos - Sempre Branco mesmo no tema escuro */
     --btn-minimal-bg: #ffffff;
     --btn-minimal-border: #cbd5e1;
-    --btn-minimal-icon: #2D3277; /* Ícone escuro para contrastar com o botão branco */
+    --btn-minimal-icon: #2D3277;
     --btn-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
@@ -97,7 +98,7 @@ body { background-color: var(--bg-body); color: var(--text-main); min-height: 10
 .fav-star.active { color: #FFB000; }
 
 /* =========================================
-   MODAL DE AUTENTICAÇÃO
+   MODAL DE AUTENTICAÇÃO (Login/Registro)
    ========================================= */
 .auth-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
 .auth-modal.active { display: flex; }
@@ -111,6 +112,95 @@ body { background-color: var(--bg-body); color: var(--text-main); min-height: 10
 .auth-toggle { font-size: 0.85rem; color: var(--accent-blue); cursor: pointer; text-align: center; font-weight: 600; }
 
 /* =========================================
+   CONFIG MODAL - Layout melhorado
+   ========================================= */
+.config-avatar-grid { 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 12px; 
+    margin: 15px 0;
+    justify-items: center;
+}
+.avatar-option { 
+    width: 55px; height: 55px; 
+    border-radius: 50%; 
+    cursor: pointer; 
+    border: 3px solid transparent; 
+    transition: 0.2s; 
+    background: var(--bg-body); 
+    object-fit: cover;
+}
+.avatar-option:hover { transform: scale(1.1); }
+.avatar-option.selected { border-color: var(--accent-blue); box-shadow: 0 0 12px var(--accent-blue); }
+
+.current-avatar-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: var(--bg-body);
+    border-radius: 12px;
+    border: 1px solid var(--border-card);
+}
+.current-avatar-box .avatar-preview {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    border: 3px solid var(--accent-blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    font-weight: 900;
+    background: var(--bg-card);
+    color: var(--text-title);
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+.current-avatar-box .avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.current-avatar-box .user-info {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-title);
+    text-align: center;
+}
+.current-avatar-box .user-info small {
+    display: block;
+    font-weight: 400;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+.config-divider {
+    border: none;
+    border-top: 2px solid var(--border-card);
+    margin: 20px 0;
+}
+.btn-logout {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    border: 2px solid var(--accent-red);
+    color: var(--accent-red);
+    border-radius: 8px;
+    font-weight: 900;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 10px;
+}
+.btn-logout:hover {
+    background: var(--accent-red);
+    color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 82, 82, 0.3);
+}
+
+/* =========================================
    RESPONSIVIDADE GERAL E MOBILE
    ========================================= */
 @media (max-width: 650px) {
@@ -121,12 +211,11 @@ body { background-color: var(--bg-body); color: var(--text-main); min-height: 10
     
     /* Ajuste do Menu Lateral Duplo para Celulares */
     .sidebar-wrapper {
-        width: 100vw; /* O menu ocupa a tela toda do celular */
-        left: -100vw; /* Esconde 100% da tela quando fechado */
+        width: 100vw;
+        left: -100vw;
     }
     .sidebar-wrapper.open { left: 0; }
 
-    /* Transforma a barra esquerda em uma "Slim Bar" */
     .sidebar-left { 
         width: 100px; 
         border-right: 1px solid #444;
@@ -141,14 +230,22 @@ body { background-color: var(--bg-body); color: var(--text-main); min-height: 10
         border-radius: 0;
         margin-right: 0;
     }
-    .cat-item span { display: none; } /* Esconde a setinha ">" */
+    .cat-item span { display: none; }
 
-    /* A barra direita ocupa o restante da tela */
     .sidebar-right { 
         width: calc(100vw - 100px); 
     }
     .subitem-link { 
         padding: 12px 10px; 
         font-size: 0.8rem;
+    }
+
+    /* Ajustes no modal de configuração para mobile */
+    .config-avatar-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .auth-box {
+        padding: 20px;
+        max-width: 100%;
     }
 }
