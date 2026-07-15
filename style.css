@@ -98,11 +98,27 @@ body { background-color: var(--bg-body); color: var(--text-main); min-height: 10
 .fav-star.active { color: #FFB000; }
 
 /* =========================================
-   MODAL DE AUTENTICAÇÃO (Login/Registro)
+   MODAL DE AUTENTICAÇÃO E CONFIG (Login/Registro)
    ========================================= */
 .auth-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(5px); }
 .auth-modal.active { display: flex; }
-.auth-box { background: var(--bg-card); width: 100%; max-width: 400px; border-radius: 12px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--border-card); }
+
+/* --- AQUI: Rolagem do modal corrigida para telas menores --- */
+.auth-box { 
+    background: var(--bg-card); 
+    width: 100%; 
+    max-width: 400px; 
+    border-radius: 12px; 
+    padding: 30px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+    border: 1px solid var(--border-card); 
+    max-height: 90vh; /* Permite que fique até 90% da altura da tela */
+    overflow-y: auto; /* Adiciona barra de rolagem interna se precisar */
+}
+.auth-box::-webkit-scrollbar { width: 6px; }
+.auth-box::-webkit-scrollbar-track { background: transparent; }
+.auth-box::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 4px; }
+
 .auth-box h2 { color: var(--text-title); margin-bottom: 20px; text-align: center; }
 .input-group { position: relative; margin-bottom: 15px; }
 .auth-box input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); font-weight: 600;}
@@ -112,7 +128,7 @@ body { background-color: var(--bg-body); color: var(--text-main); min-height: 10
 .auth-toggle { font-size: 0.85rem; color: var(--accent-blue); cursor: pointer; text-align: center; font-weight: 600; }
 
 /* =========================================
-   CONFIG MODAL - Layout melhorado
+   CONFIG MODAL - Layout
    ========================================= */
 .config-avatar-grid { 
     display: grid; 
