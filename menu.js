@@ -5,7 +5,6 @@ let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
 // ======= AVATARES EXPANDIDOS =======
 const AVATAR_OPTIONS = [
-    // Bottts originais
     "https://api.dicebear.com/7.x/bottts/svg?seed=LogiBot&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Crate&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Delivery&backgroundColor=e2e8f0",
@@ -18,7 +17,6 @@ const AVATAR_OPTIONS = [
     "https://api.dicebear.com/7.x/bottts/svg?seed=Beta&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Gamma&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Delta&backgroundColor=e2e8f0",
-    // 10 Novos - Bottts Logística (Cores ML: Amarelo FFF159, Azul 3483FA)
     "https://api.dicebear.com/7.x/bottts/svg?seed=Package&backgroundColor=FFF159",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Express&backgroundColor=3483FA",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Route&backgroundColor=FFF159",
@@ -29,7 +27,6 @@ const AVATAR_OPTIONS = [
     "https://api.dicebear.com/7.x/bottts/svg?seed=Box&backgroundColor=3483FA",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Pallet&backgroundColor=FFF159",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Cart&backgroundColor=3483FA",
-    // Adventurer originais
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Oliver&backgroundColor=fef08a",
@@ -74,11 +71,9 @@ async function carregarMenuGlobal() {
         <style>
             /* CSS ADICIONAL PARA O MENU E MODAIS */
             .sidebar-footer { padding: 15px; border-top: 1px solid var(--border-card); margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
-            .btn-config { width: 100%; padding: 10px; background: var(--accent-blue); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
-            .btn-config:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 4px 10px rgba(52, 131, 250, 0.4); }
             
-            .btn-sidebar-admin { width: 100%; padding: 10px; background: var(--accent-warn); border: none; color: #333; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
-            .btn-sidebar-admin:hover { filter: brightness(1.1); transform: translateY(-1px); }
+            .btn-sidebar-admin { width: 100%; padding: 10px; background: var(--accent-yellow); border: none; color: #2D3277; border-radius: 6px; cursor: pointer; font-weight: 900; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
+            .btn-sidebar-admin:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
             .btn-sidebar-logout { width: 100%; padding: 10px; background: transparent; border: 1px solid var(--accent-red); color: var(--accent-red); border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 0.9rem; transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;}
             .btn-sidebar-logout:hover { background: var(--accent-red); color: #fff; transform: translateY(-1px); }
@@ -122,10 +117,9 @@ async function carregarMenuGlobal() {
                 <div class="sidebar-tabs" style="flex: 0 0 auto;"><button id="tab-todos" class="tab-btn active" onclick="switchTab('todos')">Todos</button><button id="tab-favs" class="tab-btn" onclick="switchTab('favs')">★ Favoritos</button></div>
                 <div id="cat-list-container" style="flex:1; overflow-y:auto; padding-bottom:10px;"></div>
                 
-                <!-- RODAPÉ DA BARRA LATERAL -->
+                <!-- RODAPÉ DA BARRA LATERAL (Removido btn de Configuração) -->
                 <div class="sidebar-footer" id="sidebarFooterConfig" style="display: none;">
                     <button class="btn-sidebar-admin" id="btnSidebarAdmin" onclick="abrirPagina('admin.html', 'Admin')" style="display:none;">⚙️ Painel Admin</button>
-                    <button class="btn-config" onclick="abrirConfigModal()">👤 Configurações</button>
                     <button class="btn-sidebar-logout" onclick="fazerLogout()">🚪 Deslogar</button>
                 </div>
             </div>
@@ -210,12 +204,10 @@ async function carregarMenuGlobal() {
 
 function verificarUIAutenticacao() {
     if(currentUser) {
-        // Desativa o ícone de Login e ativa o Avatar
         document.getElementById('btnTopAuth').style.display = 'none';
         const profileBtn = document.getElementById('btnTopProfile');
         profileBtn.style.display = 'flex';
         
-        // Define a foto ou inicial no botão
         if (currentUser.avatar) {
             profileBtn.innerHTML = `<img src="${currentUser.avatar}" style="width:100%;height:100%;object-fit:cover;">`;
         } else {
@@ -281,7 +273,6 @@ window.abrirStatusModal = async function() {
     }
 }
 window.fecharStatusModal = function() { document.getElementById('statusModal').classList.remove('active'); }
-
 
 function temPermissao(rolesStr, usersStr) {
     if(!rolesStr && !usersStr) return true; 
@@ -537,8 +528,6 @@ async function escolherAvatar(url) {
     
     currentUser.avatar = url;
     localStorage.setItem('loggedUser', JSON.stringify(currentUser));
-    
-    // Atualiza imediatamente na tela (Modal e Barra do Topo)
     renderizarPainelConfig();
     verificarUIAutenticacao();
 
@@ -611,6 +600,23 @@ function toggleTheme() {
     const frame = document.getElementById('app-frame');
     if (frame && frame.contentWindow) { frame.contentWindow.postMessage({ type: 'THEME_CHANGED', theme: newMode }, '*'); }
 }
+
+// ==========================================
+// FUNÇÃO ESC PARA FECHAR POP-UPS E MENU
+// ==========================================
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        // Fechar modais
+        document.querySelectorAll('.auth-modal').forEach(modal => modal.classList.remove('active'));
+        // Fechar menu lateral e overlay se estiverem abertos
+        const sidebar = document.querySelector('.sidebar-wrapper');
+        const overlay = document.querySelector('.sidebar-overlay');
+        if (sidebar && sidebar.classList.contains('open')) {
+            sidebar.classList.remove('open');
+            if (overlay) overlay.classList.remove('active');
+        }
+    }
+});
 
 document.addEventListener("DOMContentLoaded", () => { 
     if (localStorage.getItem('themePreference') === 'dark') document.body.setAttribute('data-theme', 'dark'); 
