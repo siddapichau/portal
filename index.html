@@ -16,14 +16,7 @@
         
         #main-content { margin-top: 80px; width: 100%; max-width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0 15px; flex: 1; transition: 0.3s; }
 
-        .main-title { font-size: 2.2rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px; position: relative; padding-bottom: 12px; text-align: center; }
-        .main-title::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 70px; height: 4px; background-color: var(--accent-blue); border-radius: 2px; }
-
-        .quote-container { background: var(--bg-card); border-left: 4px solid var(--accent-blue); border-radius: 8px; padding: 15px 25px; box-shadow: var(--shadow-card); max-width: 800px; width: 100%; margin-bottom: 30px; position: relative; overflow: hidden; text-align: center; }
-        .quote-text { font-size: 1rem; color: var(--text-main); font-style: italic; font-weight: 600; transition: opacity 0.5s ease; }
-        .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: var(--accent-blue); width: 0%; }
-
-        #home-view { width: 100%; max-width: 1500px; display: grid; grid-template-columns: 320px 1fr 300px; gap: 20px; height: calc(100vh - 250px); margin-bottom: 20px; }
+        #home-view { width: 100%; max-width: 1500px; display: grid; grid-template-columns: 320px 1fr 300px; gap: 20px; height: calc(100vh - 120px); margin-bottom: 20px; }
 
         .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden; }
         
@@ -126,15 +119,11 @@
             } 
             .col-news, .panel-box { max-height: 500px; }
             .panel-box { max-height: 400px; }
-            .main-title { font-size: 1.6rem; }
-            .quote-text { font-size: 0.9rem; }
-            .quote-container { padding: 12px 15px; }
             #main-content { padding: 0 10px; margin-top: 70px; }
             #app-frame { height: calc(100vh - 80px); }
             .post-card { padding: 15px; }
         }
         @media (max-width: 480px) {
-            .main-title { font-size: 1.3rem; }
             .feed-item { padding: 12px 15px; grid-template-columns: 30px 1fr; gap: 8px; }
             .feed-icon { width: 30px; height: 30px; font-size: 0.9rem; }
             .feed-action { font-size: 0.75rem; }
@@ -153,13 +142,6 @@
     <script src="menu.js"></script>
 
     <div id="main-content">
-        <h1 class="main-title" id="page-title">Portal de Controles Internos</h1>
-
-        <div class="quote-container" id="quote-box">
-            <span id="animated-quote" class="quote-text">"Carregando a missão do dia..."</span>
-            <div class="progress-bar" id="progress-bar"></div>
-        </div>
-
         <div id="home-view">
             <!-- COLUNA 1: LOGS -->
             <div class="panel-box col-logs">
@@ -169,7 +151,10 @@
 
             <!-- COLUNA 2: NOTÍCIAS -->
             <div class="panel-box col-news">
+                <!-- TÍTULO PRINCIPAL MOVIDO PARA CÁ -->
+                <h1 style="text-align: center; font-size: 1.6rem; font-weight: 900; color: var(--text-title); margin: 15px 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Portal de Controles Internos</h1>
                 <div class="news-header-banner">📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS</div>
+                
                 <div class="panel-content" id="news-feed-container"><div class="muted-msg">Carregando mural...</div></div>
             </div>
 
@@ -208,30 +193,6 @@
         let currentNewsFilter = 'Todas';
         let userAvatarMap = {};
 
-        // ==========================================
-        // CITAÇÕES ANIMADAS
-        // ==========================================
-        const messages = [ "O talento vence jogos, mas o trabalho em equipe e a inteligência vencem campeonatos.", "Um inventário preciso é o coração da nossa logística.", "No Mercado Livre, não entregamos apenas pacotes, entregamos propósitos.", "Nossa força está na união. Juntos, fazemos do nosso inventário um modelo de eficiência." ];
-        let msgIndex = 0; const quoteEl = document.getElementById('animated-quote'); const progressBar = document.getElementById('progress-bar'); const INTERVAL_MS = 10000;
-
-        function startMessageCycle() {
-            if(!quoteEl || !progressBar) return;
-            quoteEl.innerText = messages[msgIndex]; animateProgressBar();
-            setInterval(() => { 
-                quoteEl.style.opacity = 0; 
-                setTimeout(() => { 
-                    msgIndex = (msgIndex + 1) % messages.length; 
-                    quoteEl.innerText = messages[msgIndex]; 
-                    quoteEl.style.opacity = 1; 
-                    animateProgressBar(); 
-                }, 500); 
-            }, INTERVAL_MS);
-        }
-        function animateProgressBar() { 
-            progressBar.style.transition = 'none'; progressBar.style.width = '0%'; void progressBar.offsetWidth; 
-            progressBar.style.transition = `width ${INTERVAL_MS}ms linear`; progressBar.style.width = '100%'; 
-        }
-
         // Recuperador universal de Avatares (Fallback para a Letra)
         function getAvatarHTML(username) {
             let u = username ? username.toLowerCase() : '';
@@ -241,9 +202,6 @@
             return `${inicial}`;
         }
 
-        // ==========================================
-        // BUSCA O MAPA DE AVATARES PRIMEIRO
-        // ==========================================
         async function prepararMapaDeAvatares() {
             try {
                 const res = await fetch(`${URL_BD_INDEX}users.json?_=${Date.now()}`);
@@ -256,9 +214,6 @@
             } catch(e) { console.log("Aviso: Mapa de avatares não carregou."); }
         }
 
-        // ==========================================
-        // COLUNA 1: LOGS DE ATIVIDADE
-        // ==========================================
         async function carregarFeedAtualizacoes() {
             const listEl = document.getElementById('feed-list');
             try {
@@ -302,9 +257,6 @@
             } 
         }
 
-        // ==========================================
-        // COLUNA 2: MURAL DE NOTÍCIAS + FILTRO TAGS
-        // ==========================================
         async function carregarNoticias() {
             const container = document.getElementById('news-feed-container');
             try {
@@ -455,9 +407,6 @@
             } catch(e) { console.error("Erro ao computar like."); }
         };
 
-        // ==========================================
-        // COLUNA 3: USUÁRIOS E PRESENÇA AO VIVO
-        // ==========================================
         function formatRoleName(role) {
             if(!role) return 'Desconhecido';
             const r = role.toLowerCase();
@@ -581,11 +530,7 @@
             }
         }
 
-        // ==========================================
-        // INICIALIZAÇÃO SEQUENCIAL
-        // ==========================================
         window.onload = async function() {
-            startMessageCycle(); 
             registrarPresenca();
             
             await prepararMapaDeAvatares();
