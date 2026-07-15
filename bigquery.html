@@ -21,6 +21,21 @@
         .bq-title { font-size: 1.2rem; font-weight: 900; color: var(--text-title); margin-bottom: 5px; }
         .bq-desc { font-size: 0.9rem; color: var(--text-main); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
+        /* Estilos dos Menus de Filtro */
+        .filter-panel { max-width: 800px; margin: 0 auto 25px auto; width: 100%; background: var(--bg-card); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border-card); box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .filter-section { margin-bottom: 15px; }
+        .filter-section:last-child { margin-bottom: 0; }
+        .filter-title { font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px;}
+        .filter-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        
+        .btn-filter-cat { background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap;}
+        .btn-filter-cat:hover { border-color: #2d2d2d; color: #2d2d2d; }
+        .btn-filter-cat.active { background: #2d2d2d; color: #fff; border-color: #2d2d2d; }
+        
+        .btn-filter-tag { background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); padding: 5px 15px; border-radius: 20px; font-size: 0.8rem; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap;}
+        .btn-filter-tag:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+        .btn-filter-tag.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+
         /* Estilo Interno do Modal de Visualização da Query */
         .bq-modal-content { font-size: 0.95rem; color: var(--text-main); line-height: 1.6; padding-bottom: 20px;}
         .bq-modal-content img { max-width: 100%; border-radius: 8px; margin: 15px 0; }
@@ -35,8 +50,21 @@
         <h1 style="text-align: center; color: var(--text-title); margin-bottom: 5px; font-weight: 900; text-transform: uppercase; font-size: 1.8rem;">Biblioteca BigQuery</h1>
         <p style="text-align: center; color: var(--text-muted); margin-bottom: 25px; font-weight: 600;">Encontre, entenda e copie queries prontas em 1 clique.</p>
 
-        <div class="search-bar-container">
+        <div class="search-bar-container" style="margin-bottom: 15px;">
             <input type="text" id="search-bq" class="search-input" placeholder="Pesquisar por nome da query, tag, categoria ou algo da descrição..." onkeyup="filtrarBQ()">
+        </div>
+
+        <!-- PAINEL DE FILTROS -->
+        <div class="filter-panel" id="filter-panel-box" style="display:none;">
+            <div class="filter-section">
+                <div class="filter-title">📁 Filtrar por Categoria</div>
+                <div class="filter-group" id="filter-cat-container"></div>
+            </div>
+            <hr style="border: none; border-top: 1px solid var(--border-card); margin: 15px 0;">
+            <div class="filter-section">
+                <div class="filter-title">🏷️ Filtrar por Tag</div>
+                <div class="filter-group" id="filter-tag-container"></div>
+            </div>
         </div>
 
         <div id="bq-list-container">
@@ -77,6 +105,12 @@
     <script>
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         let globalBqList = [];
+        let currentDisplayedBqList = []; // Lista que está ativamente renderizada na tela
+        
+        // Variáveis de Controle dos Filtros
+        let activeCatFilter = 'Todas';
+        let activeTagFilter = 'Todas';
+        let searchTerm = '';
 
         function syncTheme() { 
             const theme = localStorage.getItem('themePreference') || 'light'; 
@@ -95,7 +129,6 @@
             });
         };
 
-        // Permite fechar modais usando o ESC
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const lightbox = document.getElementById('image-lightbox');
@@ -122,23 +155,133 @@
                 else { globalBqList = Object.keys(data).map(k => data[k]); }
                 
                 globalBqList.sort((a,b) => b.data - a.data);
-                renderizarBQ(globalBqList);
+                
+                gerarBotoesDeFiltro(globalBqList);
+                aplicarFiltrosCruzados(); // Aplica filtros e renderiza
+                
+                document.getElementById('filter-panel-box').style.display = 'block';
+
             } catch(e) {
                 container.innerHTML = '<div style="text-align:center; padding:40px; color:#FF5252; font-weight:bold;">Erro ao conectar com o banco de dados.</div>';
             }
         }
+
+        // --- LÓGICA DE FILTROS CRUZADOS ---
+
+        function gerarBotoesDeFiltro(lista) {
+            let categoriasSet = new Set();
+            let tagsSet = new Set();
+
+            lista.forEach(bq => {
+                if(bq.categoria) {
+                    bq.categoria.split(',').forEach(c => {
+                        if(c.trim()) categoriasSet.add(c.trim());
+                    });
+                }
+                if(bq.tags) {
+                    bq.tags.split(',').forEach(t => {
+                        if(t.trim()) tagsSet.add(t.trim());
+                    });
+                }
+            });
+
+            // Container de Categorias
+            const catContainer = document.getElementById('filter-cat-container');
+            let catHtml = `<button class="btn-filter-cat active" id="btn-cat-Todas" onclick="setCatFilter('Todas')">Todas</button>`;
+            Array.from(categoriasSet).sort().forEach(cat => {
+                let safeCatId = cat.replace(/\\s+/g, '-');
+                catHtml += `<button class="btn-filter-cat" id="btn-cat-${safeCatId}" onclick="setCatFilter('${cat}')">${cat}</button>`;
+            });
+            catContainer.innerHTML = catHtml;
+
+            // Container de Tags
+            const tagContainer = document.getElementById('filter-tag-container');
+            let tagHtml = `<button class="btn-filter-tag active" id="btn-tag-Todas" onclick="setTagFilter('Todas')">Todas</button>`;
+            Array.from(tagsSet).sort().forEach(tag => {
+                let safeTagId = tag.replace(/\\s+/g, '-');
+                tagHtml += `<button class="btn-filter-tag" id="btn-tag-${safeTagId}" onclick="setTagFilter('${tag}')">${tag}</button>`;
+            });
+            tagContainer.innerHTML = tagHtml;
+        }
+
+        window.setCatFilter = function(categoria) {
+            activeCatFilter = categoria;
+            
+            // Atualiza visual dos botões
+            document.querySelectorAll('.btn-filter-cat').forEach(btn => btn.classList.remove('active'));
+            let safeCatId = categoria.replace(/\\s+/g, '-');
+            let activeBtn = document.getElementById(`btn-cat-${safeCatId}`);
+            if(activeBtn) activeBtn.classList.add('active');
+
+            aplicarFiltrosCruzados();
+        }
+
+        window.setTagFilter = function(tag) {
+            activeTagFilter = tag;
+
+            // Atualiza visual dos botões
+            document.querySelectorAll('.btn-filter-tag').forEach(btn => btn.classList.remove('active'));
+            let safeTagId = tag.replace(/\\s+/g, '-');
+            let activeBtn = document.getElementById(`btn-tag-${safeTagId}`);
+            if(activeBtn) activeBtn.classList.add('active');
+
+            aplicarFiltrosCruzados();
+        }
+
+        window.filtrarBQ = function() {
+            searchTerm = document.getElementById('search-bq').value.toLowerCase();
+            aplicarFiltrosCruzados();
+        }
+
+        function aplicarFiltrosCruzados() {
+            let filtradas = globalBqList;
+
+            // Filtro de Categoria
+            if (activeCatFilter !== 'Todas') {
+                filtradas = filtradas.filter(bq => {
+                    if (!bq.categoria) return false;
+                    let categoriasArray = bq.categoria.split(',').map(c => c.trim().toLowerCase());
+                    return categoriasArray.includes(activeCatFilter.toLowerCase());
+                });
+            }
+
+            // Filtro de Tag
+            if (activeTagFilter !== 'Todas') {
+                filtradas = filtradas.filter(bq => {
+                    if (!bq.tags) return false;
+                    let tagsArray = bq.tags.split(',').map(t => t.trim().toLowerCase());
+                    return tagsArray.includes(activeTagFilter.toLowerCase());
+                });
+            }
+
+            // Filtro de Texto Livre
+            if (searchTerm !== '') {
+                filtradas = filtradas.filter(bq => {
+                    const t = bq.titulo ? bq.titulo.toLowerCase() : '';
+                    const c = bq.categoria ? bq.categoria.toLowerCase() : '';
+                    const tg = bq.tags ? bq.tags.toLowerCase() : '';
+                    const d = bq.descricao ? bq.descricao.toLowerCase() : '';
+                    return t.includes(searchTerm) || c.includes(searchTerm) || tg.includes(searchTerm) || d.includes(searchTerm);
+                });
+            }
+
+            // Salva a lista filtrada globalmente para abrir o pop-up sem erros
+            currentDisplayedBqList = filtradas;
+            renderizarBQ(filtradas);
+        }
+
+        // --- RENDERIZAÇÃO NA TELA ---
 
         function renderizarBQ(lista) {
             const container = document.getElementById('bq-list-container');
             container.innerHTML = '';
 
             if (lista.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted); font-weight:bold;">Nenhum script encontrado para essa pesquisa.</div>';
+                container.innerHTML = '<div style="text-align:center; padding:40px; color:var(--text-muted); font-weight:bold;">Nenhum script encontrado para essa combinação de filtros.</div>';
                 return;
             }
 
             lista.forEach((bq, index) => {
-                // AGORA LÊ CATEGORIAS SEPARADAS POR VÍRGULA
                 let tagsHtml = '';
                 if(bq.categoria) {
                     bq.categoria.split(',').forEach(c => {
@@ -164,38 +307,13 @@
             });
         }
 
-        function filtrarBQ() {
-            const termo = document.getElementById('search-bq').value.toLowerCase();
-            const filtradas = globalBqList.filter(bq => {
-                const t = bq.titulo ? bq.titulo.toLowerCase() : '';
-                const c = bq.categoria ? bq.categoria.toLowerCase() : '';
-                const tg = bq.tags ? bq.tags.toLowerCase() : '';
-                const d = bq.descricao ? bq.descricao.toLowerCase() : '';
-                
-                return t.includes(termo) || c.includes(termo) || tg.includes(termo) || d.includes(termo);
-            });
-            renderizarBQ(filtradas);
-        }
-
         let codigoAtualParaCopiar = "";
 
         window.abrirModalBQ = function(idx) {
-            // Garante que o index puxa da array que está ativamente na tela
-            const termo = document.getElementById('search-bq').value.toLowerCase();
-            let listaAtiva = globalBqList;
-            if (termo) {
-                listaAtiva = globalBqList.filter(bq => 
-                    (bq.titulo || '').toLowerCase().includes(termo) || 
-                    (bq.categoria || '').toLowerCase().includes(termo) || 
-                    (bq.tags || '').toLowerCase().includes(termo) || 
-                    (bq.descricao || '').toLowerCase().includes(termo)
-                );
-            }
-            
-            const bq = listaAtiva[idx];
+            // Usa a variável que tem exatamente o que está renderizado na tela!
+            const bq = currentDisplayedBqList[idx];
             if (!bq) return;
 
-            // RENDERIZAÇÃO DAS CATEGORIAS (VÍRGULA) E TAGS NO POPUP
             let tagsHtml = '';
             if(bq.categoria) {
                 bq.categoria.split(',').forEach(c => {
@@ -222,7 +340,6 @@
             
             codigoAtualParaCopiar = bq.codigo_sql || '';
 
-            // ATIVA O ZOOM PARA AS IMAGENS RENDERIZADAS NO POST
             const postImgs = document.querySelectorAll('#modal-bq-post img');
             postImgs.forEach(img => {
                 img.onclick = function() {
