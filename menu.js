@@ -3,9 +3,9 @@ const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
-// ======= AVATARES EXPANDIDOS =======
+// ======= AVATARES EXPANDIDOS (Com os 10 novos ML Logistic Bots) =======
 const AVATAR_OPTIONS = [
-    // Bottts
+    // Bottts originais
     "https://api.dicebear.com/7.x/bottts/svg?seed=LogiBot&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Crate&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Delivery&backgroundColor=e2e8f0",
@@ -18,7 +18,18 @@ const AVATAR_OPTIONS = [
     "https://api.dicebear.com/7.x/bottts/svg?seed=Beta&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Gamma&backgroundColor=e2e8f0",
     "https://api.dicebear.com/7.x/bottts/svg?seed=Delta&backgroundColor=e2e8f0",
-    // Adventurer
+    // 10 Novos - Bottts Logística (Cores ML: Amarelo FFF159, Azul 3483FA)
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Package&backgroundColor=FFF159",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Express&backgroundColor=3483FA",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Route&backgroundColor=FFF159",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Cargo&backgroundColor=3483FA",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Inventory&backgroundColor=FFF159",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Warehouse&backgroundColor=3483FA",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Forklift&backgroundColor=FFF159",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Box&backgroundColor=3483FA",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Pallet&backgroundColor=FFF159",
+    "https://api.dicebear.com/7.x/bottts/svg?seed=Cart&backgroundColor=3483FA",
+    // Adventurer originais
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Felix&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Aneka&backgroundColor=fef08a",
     "https://api.dicebear.com/7.x/adventurer/svg?seed=Oliver&backgroundColor=fef08a",
@@ -123,7 +134,7 @@ async function carregarMenuGlobal() {
                     <h2 style="margin: 0; color: var(--text-title);">📊 Status dos Reportes</h2>
                     <button onclick="fecharStatusModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.8rem; cursor:pointer;">&times;</button>
                 </div>
-                <div id="status-list-container" style="display: flex; flex-direction: column; gap: 12px; max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+                <div id="status-list-container" style="display: flex; flex-direction: column; gap: 12px; padding-right: 5px;">
                     <div style="text-align:center; padding:20px; color:var(--text-muted);">Carregando status...</div>
                 </div>
             </div>
@@ -220,7 +231,6 @@ window.abrirStatusModal = async function() {
         
         let statusList = Object.keys(data).map(k => ({...data[k], key: k}));
         
-        // Ordena para que os "OFF" (vermelhos) fiquem no topo
         statusList.sort((a,b) => {
             if(a.estado === 'off' && b.estado !== 'off') return -1;
             if(a.estado !== 'off' && b.estado === 'off') return 1;
