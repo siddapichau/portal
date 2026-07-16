@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Meu Perfil - Mercado Livre</title>
+    
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body { background: transparent !important; padding: 20px; overflow-y: auto; }
+        
+        #main-content { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; }
+        
+        .profile-header-container { text-align: center; margin-bottom: 30px; }
+        .profile-header-title { color: var(--text-title); margin-bottom: 5px; font-weight: 900; text-transform: uppercase; font-size: 1.8rem; }
+        .profile-header-subtitle { color: var(--text-muted); font-weight: 600; }
+
+        /* GRID PRINCIPAL DO PERFIL */
+        .profile-grid { display: grid; grid-template-columns: 1fr 380px; gap: 25px; align-items: start; }
+
+        /* CARDS DO PERFIL */
+        .profile-card { background: var(--bg-card); border: 1px solid var(--border-card); padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: var(--shadow-card); }
+        .card-title { font-size: 1.1rem; font-weight: 900; color: var(--text-title); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-card); padding-bottom: 10px;}
+
+        /* INFORMAÇÕES BÁSICAS */
+        .input-row { display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;}
+        .input-wrapper { flex: 1; min-width: 150px; display: flex; flex-direction: column; gap: 5px;}
+        .input-wrapper label { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;}
+        .profile-input { padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 0.95rem; outline: none; transition: 0.2s;}
+        .profile-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(52, 131, 250, 0.1); }
+        .profile-input:disabled { background: var(--bg-body); cursor: not-allowed; opacity: 0.7;}
+
+        .btn-action { padding: 12px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 0.95rem; border: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;}
+        .btn-action:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .bg-blue { background-color: var(--accent-blue); }
+        .bg-dark { background-color: #2D3277; }
+
+        /* ÁREA DE FAVORITOS */
+        .sync-box { text-align: center; padding: 20px; border: 2px dashed var(--border-card); border-radius: 8px; background: var(--bg-body); }
+        .sync-icon { font-size: 3rem; margin-bottom: 10px; color: var(--accent-blue); }
+        .sync-date { font-size: 0.8rem; font-weight: bold; color: var(--accent-green); margin-top: 15px; display: block;}
+
+        /* ÁREA DO RADAR PESSOAL */
+        .feed-list { list-style: none; padding: 0; margin: 0; }
+        .feed-item { padding: 15px 0; border-bottom: 1px solid var(--border-card); display: flex; gap: 12px; align-items: start; }
+        .feed-item:last-child { border-bottom: none; }
+        .feed-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; background: rgba(52, 131, 250, 0.1); color: var(--accent-blue); flex-shrink: 0;}
+        .feed-details { display: flex; flex-direction: column; gap: 2px;}
+        .feed-module { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase;}
+        .feed-action { font-size: 0.85rem; color: var(--text-main); font-weight: 600; line-height: 1.3;}
+        .feed-meta { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;}
+
+        @media (max-width: 850px) {
+            .profile-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div id="main-content">
+        
+        <div class="profile-header-container">
+            <h1 class="profile-header-title">Painel do Usuário</h1>
+            <p class="profile-header-subtitle">Gerencie suas informações, segurança e sincronize seus favoritos.</p>
+        </div>
+
+        <div id="msg-unauth" style="display:none; text-align:center; padding: 50px;">
+            <h2 style="color: #FF5252;">Acesso Restrito 🛑</h2>
+            <p>Você precisa estar logado para acessar esta página.</p>
+        </div>
+
+        <div class="profile-grid" id="profile-dashboard" style="display:none;">
+            
+            <!-- COLUNA ESQUERDA: DADOS E FAVORITOS -->
+            <div>
+                
+                <!-- CARD DADOS PESSOAIS -->
+                <div class="profile-card">
+                    <h2 class="card-title">📝 Informações Pessoais</h2>
+                    
+                    <div class="input-row">
+                        <div class="input-wrapper">
+                            <label>Usuário de Acesso</label>
+                            <input type="text" class="profile-input" id="inpUser" disabled>
+                        </div>
+                        <div class="input-wrapper">
+                            <label>E-mail Corporativo</label>
+                            <input type="email" class="profile-input" id="inpEmail" disabled>
+                        </div>
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-wrapper">
+                            <label>Nome</label>
+                            <input type="text" class="profile-input" id="inpNome" placeholder="Seu primeiro nome">
+                        </div>
+                        <div class="input-wrapper">
+                            <label>Sobrenome</label>
+                            <input type="text" class="profile-input" id="inpSobrenome" placeholder="Seu sobrenome">
+                        </div>
+                    </div>
+
+                    <div class="input-row" style="margin-bottom: 20px;">
+                        <div class="input-wrapper">
+                            <label>Telefone / Ramal</label>
+                            <input type="text" class="profile-input" id="inpTelefone" placeholder="(XX) XXXXX-XXXX">
+                        </div>
+                    </div>
+
+                    <button class="btn-action bg-blue" id="btn-save-profile" onclick="salvarDadosPerfil()">💾 Salvar Informações</button>
+                </div>
+
+                <!-- CARD SINCRONIZAÇÃO DE FAVORITOS -->
+                <div class="profile-card">
+                    <h2 class="card-title">⭐ Cofre de Favoritos</h2>
+                    
+                    <div class="sync-box">
+                        <div class="sync-icon">☁️</div>
+                        <p style="font-size: 0.9rem; color: var(--text-main); margin-bottom: 15px; font-weight: 500;">Faça o backup do arquivo HTML de favoritos do seu navegador para a nuvem. Assim, você nunca perde seus links de trabalho.</p>
+                        
+                        <input type="file" id="fileFavoritos" accept=".html" style="display:none" onchange="processarUploadFavoritos(event)">
+                        
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button class="btn-action bg-blue" onclick="document.getElementById('fileFavoritos').click()">⬆️ Fazer Backup (.html)</button>
+                            <button class="btn-action bg-dark" onclick="baixarFavoritosDaNuveem()">⬇️ Recuperar (.html)</button>
+                        </div>
+
+                        <span class="sync-date" id="last-sync-date">Sincronizando dados...</span>
+                    </div>
+                </div>
+
+                <!-- CARD SEGURANÇA -->
+                <div class="profile-card">
+                    <h2 class="card-title">🔒 Segurança</h2>
+                    <div class="input-wrapper" style="margin-bottom: 10px;">
+                        <label>Nova Senha</label>
+                        <input type="password" class="profile-input" id="inpPassNew" placeholder="Mínimo 8 caracteres">
+                    </div>
+                    <div class="input-wrapper" style="margin-bottom: 20px;">
+                        <label>Confirmar Nova Senha</label>
+                        <input type="password" class="profile-input" id="inpPassConfirm" placeholder="Repita a senha">
+                    </div>
+                    <button class="btn-action" style="background:#f59e0b;" id="btn-save-pass" onclick="atualizarSenhaPeloPerfil()">🔑 Alterar Senha</button>
+                </div>
+
+            </div>
+
+            <!-- COLUNA DIREITA: MEU RADAR -->
+            <div>
+                <div class="profile-card" style="height: 100%;">
+                    <h2 class="card-title">📡 Meu Radar de Atividades</h2>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Histórico recente das suas ações no portal.</p>
+                    
+                    <ul class="feed-list" id="my-logs-container">
+                        <div style="text-align:center; padding: 20px; color: var(--text-muted);">Buscando seu histórico...</div>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        let loggedUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+
+        function syncTheme() { 
+            const theme = localStorage.getItem('themePreference') || 'light'; 
+            document.body.setAttribute('data-theme', theme); 
+        }
+        syncTheme();
+        window.addEventListener('message', (event) => { 
+            if (event.data.type === 'THEME_CHANGED') document.body.setAttribute('data-theme', event.data.theme); 
+        });
+
+        async function hashPassword(str) {
+            if (window.crypto && window.crypto.subtle) {
+                try {
+                    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder("utf-8").encode(str));
+                    return Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
+                } catch(e) { return btoa(str); }
+            }
+            return btoa(str);
+        }
+
+        window.onload = async () => {
+            if(!loggedUser || !loggedUser.key) {
+                document.getElementById('msg-unauth').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('profile-dashboard').style.display = 'grid';
+
+            // Preenche dados base do cache
+            document.getElementById('inpUser').value = loggedUser.usuario;
+            document.getElementById('inpEmail').value = loggedUser.email;
+            
+            // Busca dados mais recentes (Nome, Sobrenome, Telefone)
+            await puxarDadosFrescos();
+            
+            // Busca status do Cofre de Favoritos
+            await verificarStatusFavoritos();
+
+            // Busca Radar Pessoal
+            await carregarMeuRadar();
+        };
+
+        // --- GESTÃO DE DADOS PESSOAIS ---
+        async function puxarDadosFrescos() {
+            try {
+                const res = await fetch(`${FIREBASE_URL}users/${loggedUser.key}.json?_=${Date.now()}`);
+                const dbUser = await res.json();
+                if(dbUser) {
+                    document.getElementById('inpNome').value = dbUser.nome || '';
+                    document.getElementById('inpSobrenome').value = dbUser.sobrenome || '';
+                    document.getElementById('inpTelefone').value = dbUser.telefone || '';
+                }
+            } catch(e) { console.log("Erro ao puxar dados extras do usuario."); }
+        }
+
+        async function salvarDadosPerfil() {
+            let nNome = document.getElementById('inpNome').value.trim();
+            let nSobrenome = document.getElementById('inpSobrenome').value.trim();
+            let nTelefone = document.getElementById('inpTelefone').value.trim();
+
+            const btn = document.getElementById('btn-save-profile');
+            const textoOriginal = btn.innerText;
+            btn.innerText = "⏳ Salvando..."; btn.disabled = true;
+
+            try {
+                await fetch(`${FIREBASE_URL}users/${loggedUser.key}.json`, { 
+                    method: 'PATCH', 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ nome: nNome, sobrenome: nSobrenome, telefone: nTelefone }) 
+                });
+                alert("Dados pessoais atualizados com sucesso!");
+                
+                // Grava no log
+                await fetch(`${FIREBASE_URL}logs.json`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ modulo: "Perfil", acao: "Atualizou dados pessoais de contato.", usuario: loggedUser.usuario, timestamp: Date.now() }) 
+                });
+                carregarMeuRadar();
+
+            } catch(e) { alert("Erro ao salvar informações."); } 
+            finally { btn.innerText = textoOriginal; btn.disabled = false; }
+        }
+
+        // --- GESTÃO DE SENHA (DIRETO NO PERFIL) ---
+        async function atualizarSenhaPeloPerfil() {
+            const newPass1 = document.getElementById('inpPassNew').value; 
+            const newPass2 = document.getElementById('inpPassConfirm').value;
+            
+            if(!newPass1 || !newPass2) return alert("Preencha as senhas."); 
+            
+            const passRegex = /^[a-zA-Z0-9@.]+$/;
+            if(newPass1.length < 8 || newPass1.length > 16) return alert("A nova senha deve ter entre 8 e 16 caracteres."); 
+            if(!passRegex.test(newPass1)) return alert("Apenas letras, números, @ e . são permitidos.");
+            if(newPass1 !== newPass2) return alert("As novas senhas não coincidem!");
+            
+            const btn = document.getElementById('btn-save-pass'); 
+            const txtOrig = btn.innerText;
+            btn.innerText = "⏳ Atualizando..."; btn.disabled = true;
+
+            try {
+                const newHash = await hashPassword(newPass1);
+                await fetch(`${FIREBASE_URL}users/${loggedUser.key}.json`, { 
+                    method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senha: newHash }) 
+                });
+                loggedUser.senha = newHash;
+                localStorage.setItem('loggedUser', JSON.stringify(loggedUser));
+                
+                document.getElementById('inpPassNew').value = '';
+                document.getElementById('inpPassConfirm').value = '';
+                alert("Senha alterada com sucesso!");
+            } catch(e) { alert("Erro ao trocar senha."); } 
+            finally { btn.innerText = txtOrig; btn.disabled = false; }
+        }
+
+        // --- COFRE DE FAVORITOS (IMPORT/EXPORT HTML) ---
+        let currentFavHtml = null;
+
+        async function verificarStatusFavoritos() {
+            const dateLabel = document.getElementById('last-sync-date');
+            try {
+                const res = await fetch(`${FIREBASE_URL}user_bookmarks/${loggedUser.key}.json?_=${Date.now()}`);
+                const data = await res.json();
+                
+                if(data && data.html && data.lastUpdate) {
+                    currentFavHtml = data.html;
+                    const dStr = new Date(data.lastUpdate).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                    dateLabel.innerText = `Último backup salvo em: ${dStr}`;
+                    dateLabel.style.color = "var(--accent-green)";
+                } else {
+                    dateLabel.innerText = "Nenhum backup encontrado na nuvem.";
+                    dateLabel.style.color = "var(--text-muted)";
+                }
+            } catch(e) {
+                dateLabel.innerText = "Erro ao verificar cofre.";
+                dateLabel.style.color = "var(--accent-red)";
+            }
+        }
+
+        function processarUploadFavoritos(event) {
+            const file = event.target.files[0];
+            if(!file) return;
+            
+            // Valida se é um HTML
+            if(!file.name.endsWith('.html')) {
+                alert("Por favor, selecione o arquivo .html exportado pelo seu navegador.");
+                event.target.value = '';
+                return;
+            }
+
+            const dateLabel = document.getElementById('last-sync-date');
+            dateLabel.innerText = "Enviando arquivo para o cofre...";
+            dateLabel.style.color = "var(--accent-warn)";
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const htmlContent = e.target.result;
+                
+                try {
+                    await fetch(`${FIREBASE_URL}user_bookmarks/${loggedUser.key}.json`, {
+                        method: 'PUT',
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ html: htmlContent, lastUpdate: Date.now() })
+                    });
+                    
+                    alert("Cofre atualizado! Seus favoritos foram salvos na nuvem.");
+                    
+                    await fetch(`${FIREBASE_URL}logs.json`, { 
+                        method: 'POST', 
+                        headers: { 'Content-Type': 'application/json' }, 
+                        body: JSON.stringify({ modulo: "Cofre", acao: "Sincronizou arquivo de favoritos HTML para a nuvem.", usuario: loggedUser.usuario, timestamp: Date.now() }) 
+                    });
+
+                    carregarMeuRadar();
+                    verificarStatusFavoritos();
+                } catch(error) {
+                    alert("Falha de conexão ao salvar favoritos.");
+                    verificarStatusFavoritos();
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // reseta o input
+        }
+
+        async function baixarFavoritosDaNuveem() {
+            if(!currentFavHtml) {
+                alert("Você ainda não tem nenhum backup salvo no portal para baixar.");
+                return;
+            }
+
+            try {
+                // Cria um arquivo Blob virtual com o HTML que estava na nuvem
+                const blob = new Blob([currentFavHtml], { type: "text/html" });
+                const url = window.URL.createObjectURL(blob);
+                
+                // Cria um link temporário para forçar o download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Favoritos_ML_${loggedUser.usuario}.html`;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Limpeza
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                await fetch(`${FIREBASE_URL}logs.json`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ modulo: "Cofre", acao: "Baixou o backup de favoritos para o computador.", usuario: loggedUser.usuario, timestamp: Date.now() }) 
+                });
+                carregarMeuRadar();
+
+            } catch(e) {
+                alert("Erro ao preparar o download.");
+            }
+        }
+
+        // --- MEU RADAR (FILTRADO) ---
+        async function carregarMeuRadar() {
+            const listEl = document.getElementById('my-logs-container');
+            try {
+                const res = await fetch(`${FIREBASE_URL}logs.json?_=${Date.now()}`); 
+                const data = await res.json();
+                
+                if(!data) { listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-muted);">Nenhuma atividade sua encontrada.</div>'; return; }
+                
+                let logs = [];
+                if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
+                
+                // FILTRA APENAS OS LOGS DO USUARIO LOGADO
+                let myLogs = logs.filter(l => l.usuario && l.usuario.toLowerCase() === loggedUser.usuario.toLowerCase());
+                
+                if(myLogs.length === 0) {
+                    listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-muted);">Seu histórico de atividades está vazio.</div>'; 
+                    return;
+                }
+
+                myLogs.sort((a, b) => b.timestamp - a.timestamp); 
+                myLogs = myLogs.slice(0, 15); // Mostra ultimos 15
+                
+                listEl.innerHTML = '';
+                
+                myLogs.forEach(log => {
+                    const dStr = new Date(log.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+                    
+                    let ico = "📌";
+                    let bgStyle = "rgba(52, 131, 250, 0.1)";
+                    let colorStyle = "var(--accent-blue)";
+
+                    const txt = String(log.acao || '').toLowerCase();
+                    if(txt.includes('adicionou') || txt.includes('criou')) { ico = "✨"; bgStyle = "rgba(0, 166, 80, 0.1)"; colorStyle = "var(--accent-green)"; }
+                    else if(txt.includes('excluiu') || txt.includes('apagou')) { ico = "🗑️"; bgStyle = "rgba(255, 82, 82, 0.1)"; colorStyle = "var(--accent-red)"; }
+                    else if(txt.includes('favoritos') || txt.includes('cofre')) { ico = "⭐"; bgStyle = "rgba(255, 176, 0, 0.1)"; colorStyle = "var(--accent-warn)"; }
+                    else if(txt.includes('senha') || txt.includes('perfil')) { ico = "🔐"; bgStyle = "rgba(0,0,0,0.1)"; colorStyle = "var(--text-title)"; }
+
+                    listEl.innerHTML += `
+                        <li class="feed-item">
+                            <div class="feed-icon" style="background: ${bgStyle}; color: ${colorStyle};">${ico}</div>
+                            <div class="feed-details">
+                                <span class="feed-module">${log.modulo || 'Sistema'}</span>
+                                <span class="feed-action">${log.acao}</span>
+                                <span class="feed-meta">${dStr}</span>
+                            </div>
+                        </li>
+                    `;
+                });
+            } catch (e) { 
+                listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: #FF5252;">Erro ao puxar histórico.</div>'; 
+            } 
+        }
+
+    </script>
+</body>
+</html>
