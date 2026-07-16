@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Celulares</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; padding: 20px; }
+        .form-container { background: white; max-width: 400px; margin: 0 auto; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; margin-top: 0; }
+        
+        label { display: block; margin-top: 15px; font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        
+        .btn-salvar { width: 100%; padding: 15px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        .btn-salvar:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+        <h2>Registrar Aparelho</h2>
+        
+        <form id="formCadastro">
+            <label for="idCelular">ID do Celular (QR):</label>
+            <input type="text" id="idCelular" placeholder="Bipe o código aqui" required autofocus>
+
+            <label for="nomePessoa">Nome do Colaborador:</label>
+            <input type="text" id="nomePessoa" placeholder="Ex: João Silva" required>
+
+            <label for="turno">Turno da Operação:</label>
+            <select id="turno" required>
+                <option value="">Selecione o turno...</option>
+                <option value="Manhã">Manhã</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noite">Noite</option>
+            </select>
+
+            <label for="supervisor">Supervisor Responsável:</label>
+            <input type="text" id="supervisor" placeholder="Nome de quem liberou" required>
+
+            <button type="submit" class="btn-salvar">Salvar Cadastro</button>
+        </form>
+    </div>
+
+    <!-- Puxando o arquivo de configuração -->
+    <script src="js/firebase-config.js"></script>
+    <script>
+        document.getElementById('formCadastro').addEventListener('submit', async function(e) {
+            e.preventDefault(); // Evita recarregar a página
+
+            const idCelular = document.getElementById('idCelular').value.trim();
+            const nomePessoa = document.getElementById('nomePessoa').value.trim();
+            const turno = document.getElementById('turno').value;
+            const supervisor = document.getElementById('supervisor').value.trim();
+
+            const dadosCelular = {
+                nome: nomePessoa,
+                turno: turno,
+                supervisor: supervisor,
+                dataRegistro: new Date().toLocaleString('pt-BR')
+            };
+
+            try {
+                // Usando PUT para salvar os dados DENTRO da chave do ID do celular
+                // Ex: /celulares/123456/...
+                await fetch(`${FIREBASE_URL}celulares/${idCelular}.json`, {
+                    method: 'PUT',
+                    body: JSON.stringify(dadosCelular)
+                });
+
+                alert('Celular cadastrado com sucesso!');
+                this.reset(); // Limpa o formulário
+                document.getElementById('idCelular').focus();
+
+            } catch (error) {
+                alert('Erro ao cadastrar. Verifique a conexão.');
+            }
+        });
+    </script>
+</body>
+</html>
