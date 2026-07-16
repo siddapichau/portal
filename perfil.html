@@ -41,7 +41,7 @@
         .sync-icon { font-size: 3rem; margin-bottom: 10px; color: var(--accent-blue); }
         .sync-date { font-size: 0.8rem; font-weight: bold; color: var(--accent-green); margin-top: 15px; display: block;}
 
-        /* ÁREA DO RADAR PESSOAL */
+        /* ÁREA DO RADAR PESSOAL & PUBLICAÇÕES */
         .feed-list { list-style: none; padding: 0; margin: 0; }
         .feed-item { padding: 15px 0; border-bottom: 1px solid var(--border-card); display: flex; gap: 12px; align-items: start; }
         .feed-item:last-child { border-bottom: none; }
@@ -146,14 +146,25 @@
 
             </div>
 
-            <!-- COLUNA DIREITA: MEU RADAR -->
+            <!-- COLUNA DIREITA: RADAR E PUBLICAÇÕES -->
             <div>
-                <div class="profile-card" style="height: 100%;">
+                <!-- MEU RADAR -->
+                <div class="profile-card">
                     <h2 class="card-title">📡 Meu Radar de Atividades</h2>
                     <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Histórico recente das suas ações no portal.</p>
                     
                     <ul class="feed-list" id="my-logs-container">
                         <div style="text-align:center; padding: 20px; color: var(--text-muted);">Buscando seu histórico...</div>
+                    </ul>
+                </div>
+
+                <!-- MINHAS PUBLICAÇÕES -->
+                <div class="profile-card">
+                    <h2 class="card-title">📝 Minhas Publicações</h2>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 15px;">Notícias e scripts BigQuery que você compartilhou com a equipe.</p>
+                    
+                    <ul class="feed-list" id="my-posts-container">
+                        <div style="text-align:center; padding: 20px; color: var(--text-muted);">Buscando publicações...</div>
                     </ul>
                 </div>
             </div>
@@ -197,14 +208,11 @@
             document.getElementById('inpUser').value = loggedUser.usuario;
             document.getElementById('inpEmail').value = loggedUser.email;
             
-            // Busca dados mais recentes (Nome, Sobrenome, Telefone)
+            // Busca os dados simultaneamente
             await puxarDadosFrescos();
-            
-            // Busca status do Cofre de Favoritos
             await verificarStatusFavoritos();
-
-            // Busca Radar Pessoal
             await carregarMeuRadar();
+            await carregarMinhasPublicacoes();
         };
 
         // --- GESTÃO DE DADOS PESSOAIS ---
@@ -237,7 +245,6 @@
                 });
                 alert("Dados pessoais atualizados com sucesso!");
                 
-                // Grava no log
                 await fetch(`${FIREBASE_URL}logs.json`, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
@@ -308,7 +315,6 @@
             const file = event.target.files[0];
             if(!file) return;
             
-            // Valida se é um HTML
             if(!file.name.endsWith('.html')) {
                 alert("Por favor, selecione o arquivo .html exportado pelo seu navegador.");
                 event.target.value = '';
@@ -346,7 +352,7 @@
                 }
             };
             reader.readAsText(file);
-            event.target.value = ''; // reseta o input
+            event.target.value = ''; 
         }
 
         async function baixarFavoritosDaNuveem() {
@@ -356,18 +362,15 @@
             }
 
             try {
-                // Cria um arquivo Blob virtual com o HTML que estava na nuvem
                 const blob = new Blob([currentFavHtml], { type: "text/html" });
                 const url = window.URL.createObjectURL(blob);
                 
-                // Cria um link temporário para forçar o download
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `Favoritos_ML_${loggedUser.usuario}.html`;
                 document.body.appendChild(a);
                 a.click();
                 
-                // Limpeza
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(url);
                 
@@ -395,7 +398,6 @@
                 let logs = [];
                 if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
                 
-                // FILTRA APENAS OS LOGS DO USUARIO LOGADO
                 let myLogs = logs.filter(l => l.usuario && l.usuario.toLowerCase() === loggedUser.usuario.toLowerCase());
                 
                 if(myLogs.length === 0) {
@@ -404,7 +406,7 @@
                 }
 
                 myLogs.sort((a, b) => b.timestamp - a.timestamp); 
-                myLogs = myLogs.slice(0, 15); // Mostra ultimos 15
+                myLogs = myLogs.slice(0, 15); 
                 
                 listEl.innerHTML = '';
                 
@@ -435,6 +437,62 @@
             } catch (e) { 
                 listEl.innerHTML = '<div style="text-align:center; padding: 20px; color: #FF5252;">Erro ao puxar histórico.</div>'; 
             } 
+        }
+
+        // --- MINHAS PUBLICAÇÕES (NOTÍCIAS E BIGQUERY) ---
+        async function carregarMinhasPublicacoes() {
+            const container = document.getElementById('my-posts-container');
+            try {
+                // Busca Notícias
+                const resNews = await fetch(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
+                const dataNews = await resNews.json() || {};
+                let newsList = [];
+                if (Array.isArray(dataNews)) { newsList = dataNews.filter(Boolean).map(v => ({...v, tipo: 'Notícia'})); } 
+                else { newsList = Object.keys(dataNews).map(k => ({...dataNews[k], key: k, tipo: 'Notícia'})); }
+
+                // Busca BigQuery
+                const resBq = await fetch(`${FIREBASE_URL}portal_bigquery.json?_=${Date.now()}`);
+                const dataBq = await resBq.json() || {};
+                let bqList = [];
+                if (Array.isArray(dataBq)) { bqList = dataBq.filter(Boolean).map(v => ({...v, tipo: 'BigQuery'})); } 
+                else { bqList = Object.keys(dataBq).map(k => ({...dataBq[k], key: k, tipo: 'BigQuery'})); }
+
+                // Junta as duas listas e filtra pelo autor (Usuário Logado)
+                let allPosts = [...newsList, ...bqList].filter(p => p.autor && p.autor.toLowerCase() === loggedUser.usuario.toLowerCase());
+
+                if(allPosts.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-muted);">Você ainda não fez nenhuma publicação.</div>';
+                    return;
+                }
+
+                // Ordena por data (mais recente no topo)
+                allPosts.sort((a, b) => b.data - a.data);
+
+                let html = '';
+                allPosts.forEach(post => {
+                    const dStr = new Date(post.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+                    
+                    let ico = post.tipo === 'Notícia' ? '📰' : '💻';
+                    let bgStyle = post.tipo === 'Notícia' ? 'rgba(255, 176, 0, 0.1)' : 'rgba(52, 131, 250, 0.1)';
+                    let colorStyle = post.tipo === 'Notícia' ? 'var(--accent-warn)' : 'var(--accent-blue)';
+                    
+                    html += `
+                        <li class="feed-item">
+                            <div class="feed-icon" style="background: ${bgStyle}; color: ${colorStyle};">${ico}</div>
+                            <div class="feed-details">
+                                <span class="feed-module">${post.tipo}</span>
+                                <span class="feed-action" style="font-weight: 800;">${post.titulo}</span>
+                                <span class="feed-meta">Publicado em ${dStr}</span>
+                            </div>
+                        </li>
+                    `;
+                });
+                
+                container.innerHTML = html;
+
+            } catch(e) {
+                container.innerHTML = '<div style="text-align:center; padding: 20px; color: #FF5252;">Erro ao carregar suas publicações.</div>';
+            }
         }
 
     </script>
