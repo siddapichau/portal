@@ -119,10 +119,8 @@
     </div>
 
     <script>
-        // O portal principal continua no Firebase normalmente
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
-        // Mas os celulares vão salvar e ler daqui:
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPPMk7YsTy-28zsluiszAdklBeSGU-m5OOyXsXVlpr_VjZZdLMkK-7ql2edbGPtFUd/exec"; // <--- COLOQUE A URL DO PASSO ANTERIOR AQUI
+        const SCRIPT_URL = "SUA_URL_DO_APP_SCRIPT_AQUI"; // <--- COLOQUE A URL NOVA AQUI
         
         let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
         let celularesCadastrados = {};
@@ -137,7 +135,6 @@
             if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } 
         });
 
-        // Validação usando o localStorage do portal
         window.onload = async () => {
             if (!currentUser || currentUser.cargo !== 'admin') {
                 document.getElementById('msg-unauth').style.display = 'block';
@@ -147,16 +144,18 @@
             await carregarAparelhos();
         };
 
-        // Função para se comunicar exclusivamente com a Planilha
+        // Função de comunicação com a Planilha (BLINDADA CONTRA CORS)
         async function fetchPlanilha(dados) {
-            const res = await fetch(SCRIPT_URL, {
+            const res = await fetch('https://script.google.com/macros/s/AKfycbyPPMk7YsTy-28zsluiszAdklBeSGU-m5OOyXsXVlpr_VjZZdLMkK-7ql2edbGPtFUd/exec', {
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'text/plain;charset=utf-8' // Passa pelos firewalls sem preflight
+                },
                 body: JSON.stringify(dados)
             });
             return await res.json();
         }
 
-        // Função de LOGs Globais enviando para o FIREBASE (Para manter o radar do portal vivo)
         async function registrarLogFirebase(acao) {
             try {
                 const logData = { modulo: "Equipamentos", acao: acao, usuario: currentUser.usuario || 'Admin', timestamp: Date.now() };
@@ -168,6 +167,12 @@
             const tbody = document.getElementById('tabela-celulares');
             try {
                 const data = await fetchPlanilha({ action: "listarCelulares" });
+
+                if (data.error) {
+                    console.error("Erro da planilha:", data.error);
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--accent-red);">Erro do servidor: Verifique as colunas na Planilha.</td></tr>';
+                    return;
+                }
 
                 if (!data || Object.keys(data).length === 0) {
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhum aparelho registrado na planilha.</td></tr>';
@@ -204,7 +209,8 @@
                 });
 
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--accent-red);">Erro ao comunicar com a planilha.</td></tr>';
+                console.error("Erro no fetchPlanilha:", e);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--accent-red);">Erro ao comunicar com a planilha. Link correto?</td></tr>';
             }
         }
 
@@ -234,17 +240,16 @@
                     registradoPor: currentUser.usuario
                 };
 
-                // Salva na PLANILHA DO GOOGLE
                 await fetchPlanilha({
                     action: "salvarCelular",
                     celular: celularParaSalvar
                 });
 
                 if(modoEdicao) {
-                    await registrarLogFirebase(`Editou o cadastro do aparelho <b>${idCelular}</b>.`); // Log pro Firebase
+                    await registrarLogFirebase(`Editou o cadastro do aparelho <b>${idCelular}</b>.`);
                     alert('Cadastro atualizado com sucesso na Planilha!');
                 } else {
-                    await registrarLogFirebase(`Registrou a saída do aparelho <b>${idCelular}</b> para <b>${nomePessoa}</b>.`); // Log pro Firebase
+                    await registrarLogFirebase(`Registrou a saída do aparelho <b>${idCelular}</b> para <b>${nomePessoa}</b>.`);
                     alert('Aparelho cadastrado com sucesso na Planilha!');
                 }
                 
