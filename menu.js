@@ -103,10 +103,8 @@ async function carregarMenuGlobal() {
                 <button class="btn-minimal" onclick="abrirStatusModal()" title="Status dos Reportes">📊</button>
                 <button class="btn-minimal" onclick="toggleTheme()" title="Alternar Tema"><svg id="themeIconSvg" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg></button>
                 
-                <!-- Botão de Auth normal (Visitantes) -->
                 <button class="btn-minimal" id="btnTopAuth" onclick="abrirAuthModal()" title="Login e Registro"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></button>
                 
-                <!-- Botão Avatar Perfil (Usuários Logados) -->
                 <button class="btn-minimal" id="btnTopProfile" style="display:none; padding:0; overflow:hidden; border: 2px solid var(--accent-blue); border-radius: 50% !important;" onclick="abrirConfigModal()" title="Meu Perfil"></button>
             </div>
         </div>
@@ -117,7 +115,6 @@ async function carregarMenuGlobal() {
                 <div class="sidebar-tabs" style="flex: 0 0 auto;"><button id="tab-todos" class="tab-btn active" onclick="switchTab('todos')">Todos</button><button id="tab-favs" class="tab-btn" onclick="switchTab('favs')">★ Favoritos</button></div>
                 <div id="cat-list-container" style="flex:1; overflow-y:auto; padding-bottom:10px;"></div>
                 
-                <!-- RODAPÉ DA BARRA LATERAL (Removido btn de Configuração) -->
                 <div class="sidebar-footer" id="sidebarFooterConfig" style="display: none;">
                     <button class="btn-sidebar-admin" id="btnSidebarAdmin" onclick="abrirPagina('admin.html', 'Admin')" style="display:none;">⚙️ Painel Admin</button>
                     <button class="btn-sidebar-logout" onclick="fazerLogout()">🚪 Deslogar</button>
@@ -158,11 +155,11 @@ async function carregarMenuGlobal() {
             </div>
         </div>
 
-        <!-- MODAL CONFIGURAÇÕES (Perfil) -->
+        <!-- MODAL CONFIGURAÇÕES (Perfil Rápido) -->
         <div class="auth-modal" id="configModal">
             <div class="auth-box" style="max-width: 480px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0; color: var(--text-title);">👤 Meu Perfil</h2>
+                    <h2 style="margin: 0; color: var(--text-title);">👤 Perfil Rápido</h2>
                     <button onclick="fecharConfigModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.8rem; cursor:pointer;">&times;</button>
                 </div>
                 
@@ -172,19 +169,12 @@ async function carregarMenuGlobal() {
                 </div>
 
                 <div class="config-section">
-                    <span class="config-section-title">🤖 Escolha seu avatar</span>
+                    <span class="config-section-title">🤖 Mudar avatar</span>
                     <div class="config-avatar-grid" id="avatarGridSelector"></div>
                 </div>
 
-                <hr class="config-divider">
-
-                <div class="config-section">
-                    <span class="config-section-title">🔑 Alterar senha</span>
-                    <div class="input-group"><input type="password" id="profPassCurrent" placeholder="Senha atual"><span class="eye-icon" onclick="togglePass('profPassCurrent')">👁️</span></div>
-                    <div class="input-group"><input type="password" id="profPassNew1" placeholder="Nova senha (8-16, sem especiais)"><span class="eye-icon" onclick="togglePass('profPassNew1')">👁️</span></div>
-                    <div class="input-group" style="margin-bottom: 8px;"><input type="password" id="profPassNew2" placeholder="Confirmar nova senha"><span class="eye-icon" onclick="togglePass('profPassNew2')">👁️</span></div>
-                    <button class="btn-auth" id="btnUpdatePass" style="background:#f59e0b; color: #fff;" onclick="trocarSenha()">Atualizar Senha</button>
-                </div>
+                <!-- BOTÃO DE PERFIL COMPLETO -->
+                <button class="btn-auth" style="background: var(--text-main);" onclick="fecharConfigModal(); abrirPagina('perfil.html', 'Meu Perfil');">⚙️ Gerenciar Perfil Completo</button>
             </div>
         </div>
     `;
@@ -360,9 +350,6 @@ function switchTab(tab) {
     }
 }
 
-// ==========================================
-// AUTH FIREBASE
-// ==========================================
 function abrirAuthModal() { document.getElementById('authModal').classList.add('active'); mudarAuthModo('login'); }
 function fecharAuthModal() { document.getElementById('authModal').classList.remove('active'); }
 function mudarAuthModo(modo) { document.getElementById('loginBox').style.display = modo === 'login' ? 'block' : 'none'; document.getElementById('registerBox').style.display = modo === 'register' ? 'block' : 'none'; }
@@ -422,15 +409,9 @@ async function fazerRegistro() {
         } else {
             const hashedPass = await hashPassword(p1);
             const newUser = {
-                usuario: user,
-                email: email,
-                senha: hashedPass,
-                cargo: "view",
-                solicitacao: "pendente",
-                favorito: "",
-                avatar: ""
+                usuario: user, email: email, senha: hashedPass,
+                cargo: "view", solicitacao: "pendente", favorito: "", avatar: ""
             };
-            
             await fetch(`${FIREBASE_URL}users.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) });
             alert("Conta criada com sucesso! Aguarde aprovação de um Administrador para acessar.");
             mudarAuthModo('login');
@@ -451,8 +432,7 @@ async function fazerLogin() {
 
     try {
         const allDbUsers = await fetchAllUsers();
-        let foundKey = null;
-        let dbUser = null;
+        let foundKey = null; let dbUser = null;
 
         Object.keys(allDbUsers).forEach(k => { 
             if(allDbUsers[k].usuario && allDbUsers[k].usuario.toLowerCase() === user) {
@@ -482,20 +462,13 @@ async function fazerLogin() {
                 currentUser = dbUser;
                 currentUser.key = foundKey; 
                 localStorage.setItem('loggedUser', JSON.stringify(currentUser));
-                fecharAuthModal();
-                verificarUIAutenticacao();
-                renderizarMenuEsquerdo();
-                switchTab('todos');
-                location.reload(); 
+                fecharAuthModal(); verificarUIAutenticacao(); renderizarMenuEsquerdo(); switchTab('todos'); location.reload(); 
             }
         }
     } catch(e) { alert(`Erro ao validar dados no Firebase.`); } 
     finally { btn.innerText = "Entrar"; btn.disabled = false; }
 }
 
-// ==========================================
-// CONFIGURAÇÕES E AVATARES
-// ==========================================
 function abrirConfigModal() { 
     if(!currentUser) return;
     document.getElementById('configModal').classList.add('active'); 
@@ -525,51 +498,10 @@ function renderizarPainelConfig() {
 
 async function escolherAvatar(url) {
     if(!currentUser || !currentUser.key) return;
-    
     currentUser.avatar = url;
     localStorage.setItem('loggedUser', JSON.stringify(currentUser));
-    renderizarPainelConfig();
-    verificarUIAutenticacao();
-
-    try {
-        await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { 
-            method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ avatar: url }) 
-        });
-    } catch(e) {}
-}
-
-async function trocarSenha() {
-    const currentPass = document.getElementById('profPassCurrent').value; 
-    const newPass1 = document.getElementById('profPassNew1').value; 
-    const newPass2 = document.getElementById('profPassNew2').value;
-    
-    if(!currentPass || !newPass1 || !newPass2) return alert("Preencha todas as senhas."); 
-    
-    const passRegex = /^[a-zA-Z0-9@.]+$/;
-    if(newPass1.length < 8 || newPass1.length > 16) return alert("A nova senha deve ter entre 8 e 16 caracteres."); 
-    if(!passRegex.test(newPass1)) return alert("A nova senha NÃO pode conter espaços ou símbolos estranhos. Apenas letras, números, @ e . são permitidos.");
-    if(newPass1 !== newPass2) return alert("As novas senhas não coincidem!");
-    
-    const btn = document.getElementById('btnUpdatePass'); 
-    btn.innerText = "⏳ Atualizando..."; btn.disabled = true;
-
-    try {
-        const currentHash = await hashPassword(currentPass);
-        
-        if(currentUser.senha !== currentHash && currentUser.senha !== currentPass && currentUser.senha !== btoa(currentPass)) {
-            alert("Sua Senha Atual está incorreta.");
-        } else {
-            const newHash = await hashPassword(newPass1);
-            await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { 
-                method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senha: newHash }) 
-            });
-            currentUser.senha = newHash;
-            localStorage.setItem('loggedUser', JSON.stringify(currentUser));
-            alert("Senha alterada com sucesso!");
-            fecharConfigModal();
-        }
-    } catch(e) { alert("Erro de rede ao trocar senha."); } 
-    finally { btn.innerText = "Atualizar Senha"; btn.disabled = false; }
+    renderizarPainelConfig(); verificarUIAutenticacao();
+    try { await fetch(`${FIREBASE_URL}users/${currentUser.key}.json`, { method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ avatar: url }) }); } catch(e) {}
 }
 
 async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
@@ -606,9 +538,7 @@ function toggleTheme() {
 // ==========================================
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
-        // Fechar modais
         document.querySelectorAll('.auth-modal').forEach(modal => modal.classList.remove('active'));
-        // Fechar menu lateral e overlay se estiverem abertos
         const sidebar = document.querySelector('.sidebar-wrapper');
         const overlay = document.querySelector('.sidebar-overlay');
         if (sidebar && sidebar.classList.contains('open')) {
