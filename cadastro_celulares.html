@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Celulares - ML</title>
+    
+    <!-- Link para o CSS global do portal -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        /* Fundo transparente para incorporar perfeitamente no iframe do portal */
+        body { background: transparent !important; padding: 20px; }
+        
+        .form-container { 
+            background: var(--bg-card); 
+            max-width: 500px; 
+            margin: 40px auto; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: var(--shadow-card); 
+            border: 1px solid var(--border-card); 
+        }
+        
+        h2 { 
+            text-align: center; 
+            color: var(--text-title); 
+            margin-top: 0; 
+            margin-bottom: 25px; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        label { 
+            display: block; 
+            margin-top: 15px; 
+            font-weight: 800; 
+            color: var(--text-muted); 
+            font-size: 0.85rem; 
+            text-transform: uppercase; 
+        }
+        
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 8px; 
+            border: 1px solid var(--border-card); 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 1rem; 
+            background: var(--bg-body); 
+            color: var(--text-main); 
+            outline: none; 
+            transition: 0.2s; 
+            font-weight: 600;
+        }
+        
+        input:focus, select:focus { 
+            border-color: var(--accent-blue); 
+            box-shadow: 0 0 0 3px rgba(52, 131, 250, 0.1); 
+        }
+        
+        .btn-salvar { 
+            width: 100%; 
+            padding: 15px; 
+            background-color: var(--accent-blue); 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1.05rem; 
+            font-weight: 900; 
+            margin-top: 25px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+        }
+        
+        .btn-salvar:hover { 
+            background-color: #2563eb; 
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 12px rgba(52, 131, 250, 0.3); 
+        }
+
+        .btn-salvar:disabled {
+            background-color: var(--text-muted);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <!-- Mensagem de bloqueio para usuários sem acesso -->
+    <div id="msg-unauth" style="display:none; text-align:center; padding: 50px;">
+        <h2 style="color: var(--accent-red); margin-bottom: 10px;">Acesso Negado 🛑</h2>
+        <p style="color: var(--text-main); font-weight: 600;">Esta página é restrita para uso exclusivo de Administradores.</p>
+    </div>
+
+    <!-- Container principal (escondido por padrão até validar) -->
+    <div class="form-container" id="main-form" style="display:none;">
+        <h2>📱 Registrar Aparelho</h2>
+        
+        <form id="formCadastro">
+            <label for="idCelular">ID do Celular (QR Code):</label>
+            <input type="text" id="idCelular" placeholder="Bipe ou digite o código aqui" required autofocus>
+
+            <label for="nomePessoa">Nome do Colaborador:</label>
+            <input type="text" id="nomePessoa" placeholder="Ex: João Silva" required>
+
+            <label for="turno">Turno da Operação:</label>
+            <select id="turno" required>
+                <option value="">Selecione o turno...</option>
+                <option value="Manhã">Manhã</option>
+                <option value="Tarde">Tarde</option>
+                <option value="Noite">Noite</option>
+                <option value="Madrugada">Madrugada</option>
+            </select>
+
+            <label for="supervisor">Supervisor Responsável:</label>
+            <input type="text" id="supervisor" placeholder="Nome de quem liberou" required>
+
+            <button type="submit" class="btn-salvar" id="btn-submit">💾 Salvar Cadastro</button>
+        </form>
+    </div>
+
+    <script>
+        // Configuração Padrão do Portal
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+
+        // Sincronizador de Tema (Dark/Light)
+        function syncTheme() { 
+            const theme = localStorage.getItem('themePreference') || 'light'; 
+            document.body.setAttribute('data-theme', theme); 
+        }
+        syncTheme();
+        window.addEventListener('message', (event) => { 
+            if (event.data.type === 'THEME_CHANGED') { 
+                document.body.setAttribute('data-theme', event.data.theme); 
+            } 
+        });
+
+        // Validação Rígida de Acesso (Apenas ADMIN)
+        window.onload = () => {
+            if (!currentUser || currentUser.cargo !== 'admin') {
+                document.getElementById('msg-unauth').style.display = 'block';
+                return;
+            }
+            // Se for admin, libera o formulário
+            document.getElementById('main-form').style.display = 'block';
+            document.getElementById('idCelular').focus();
+        };
+
+        // Função de envio para o Radar de Atividades
+        async function registrarLogFirebase(acao) {
+            try {
+                const logData = { 
+                    modulo: "Equipamentos", 
+                    acao: acao, 
+                    usuario: currentUser.usuario || 'Admin', 
+                    timestamp: Date.now() 
+                };
+                await fetch(`${FIREBASE_URL}logs.json`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(logData) 
+                });
+            } catch(e) { console.error("Erro ao gerar log.", e); }
+        }
+
+        // Lógica de Envio do Formulário
+        document.getElementById('formCadastro').addEventListener('submit', async function(e) {
+            e.preventDefault(); 
+
+            const btnSubmit = document.getElementById('btn-submit');
+            const textoOriginal = btnSubmit.innerText;
+            
+            const idCelular = document.getElementById('idCelular').value.trim();
+            const nomePessoa = document.getElementById('nomePessoa').value.trim();
+            const turno = document.getElementById('turno').value;
+            const supervisor = document.getElementById('supervisor').value.trim();
+
+            const dadosCelular = {
+                nome: nomePessoa,
+                turno: turno,
+                supervisor: supervisor,
+                dataRegistro: Date.now(), // Formato Unix Timestamp (padrão Firebase)
+                dataRegistroFormatada: new Date().toLocaleString('pt-BR'),
+                registradoPor: currentUser.usuario
+            };
+
+            btnSubmit.innerText = "⏳ Salvando...";
+            btnSubmit.disabled = true;
+
+            try {
+                // PUT salva substituindo ou criando um nó na árvore
+                await fetch(`${FIREBASE_URL}celulares/${idCelular}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dadosCelular)
+                });
+
+                // Registra ação no feed/radar do portal
+                await registrarLogFirebase(`Registrou a saída do aparelho <b>${idCelular}</b> para o colaborador(a) <b>${nomePessoa}</b>.`);
+
+                alert('Aparelho cadastrado e vinculado com sucesso!');
+                
+                // Limpa e foca para o próximo bip
+                this.reset();
+                document.getElementById('idCelular').focus();
+
+            } catch (error) {
+                alert('Erro de conexão ao salvar os dados. Tente novamente.');
+            } finally {
+                btnSubmit.innerText = textoOriginal;
+                btnSubmit.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
