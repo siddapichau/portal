@@ -16,10 +16,8 @@
         .page-title { color: var(--text-title); margin-bottom: 5px; font-weight: 900; text-transform: uppercase; font-size: 1.8rem; letter-spacing: 1px; }
         .page-subtitle { color: var(--text-muted); font-weight: 600; }
 
-        /* GRID: Form na Esquerda, Tabela na Direita */
         .dashboard-grid { display: grid; grid-template-columns: 350px 1fr; gap: 20px; align-items: start; }
 
-        /* FORMULÁRIO */
         .form-container { background: var(--bg-card); padding: 25px; border-radius: 12px; box-shadow: var(--shadow-card); border: 1px solid var(--border-card); }
         .form-title { font-size: 1.1rem; color: var(--text-title); margin-bottom: 20px; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid var(--border-card); padding-bottom: 10px; }
         
@@ -35,7 +33,6 @@
         .btn-cancelar { width: 100%; padding: 10px; background-color: transparent; color: var(--text-muted); border: 1px solid var(--border-card); border-radius: 8px; font-size: 0.9rem; font-weight: bold; margin-top: 10px; cursor: pointer; transition: 0.2s; display: none; }
         .btn-cancelar:hover { background-color: var(--bg-body); color: var(--text-main); }
 
-        /* TABELA */
         .table-container { background: var(--bg-card); padding: 25px; border-radius: 12px; box-shadow: var(--shadow-card); border: 1px solid var(--border-card); overflow-x: auto; max-height: 700px; overflow-y: auto;}
         .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
         .table-container::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 4px; }
@@ -67,12 +64,11 @@
         <div id="dashboard-content" style="display:none;">
             <div class="page-header">
                 <h1 class="page-title">📱 Gestão de Aparelhos</h1>
-                <p class="page-subtitle">Cadastre, edite e monitore os equipamentos em uso na operação.</p>
+                <p class="page-subtitle">Cadastre e monitore os equipamentos integrados à operação (Planilha).</p>
             </div>
 
             <div class="dashboard-grid">
                 
-                <!-- COLUNA ESQUERDA: FORMULÁRIO -->
                 <div class="form-container">
                     <h2 class="form-title" id="form-header-text">➕ Registrar Aparelho</h2>
                     
@@ -101,7 +97,6 @@
                     </form>
                 </div>
 
-                <!-- COLUNA DIREITA: TABELA -->
                 <div class="table-container">
                     <table class="data-table">
                         <thead>
@@ -114,7 +109,7 @@
                             </tr>
                         </thead>
                         <tbody id="tabela-celulares">
-                            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Carregando aparelhos...</td></tr>
+                            <tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Carregando aparelhos da planilha...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -124,13 +119,15 @@
     </div>
 
     <script>
+        // O portal principal continua no Firebase normalmente
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
-        let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        // Mas os celulares vão salvar e ler daqui:
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPPMk7YsTy-28zsluiszAdklBeSGU-m5OOyXsXVlpr_VjZZdLMkK-7ql2edbGPtFUd/exec"; // <--- COLOQUE A URL DO PASSO ANTERIOR AQUI
         
+        let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
         let celularesCadastrados = {};
-        let modoEdicao = false; // Controle de estado (Create ou Update)
+        let modoEdicao = false; 
 
-        // Sincronizador de Tema
         function syncTheme() { 
             const theme = localStorage.getItem('themePreference') || 'light'; 
             document.body.setAttribute('data-theme', theme); 
@@ -140,7 +137,7 @@
             if (event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } 
         });
 
-        // Validação de Acesso
+        // Validação usando o localStorage do portal
         window.onload = async () => {
             if (!currentUser || currentUser.cargo !== 'admin') {
                 document.getElementById('msg-unauth').style.display = 'block';
@@ -150,7 +147,16 @@
             await carregarAparelhos();
         };
 
-        // Função de LOGs Globais
+        // Função para se comunicar exclusivamente com a Planilha
+        async function fetchPlanilha(dados) {
+            const res = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify(dados)
+            });
+            return await res.json();
+        }
+
+        // Função de LOGs Globais enviando para o FIREBASE (Para manter o radar do portal vivo)
         async function registrarLogFirebase(acao) {
             try {
                 const logData = { modulo: "Equipamentos", acao: acao, usuario: currentUser.usuario || 'Admin', timestamp: Date.now() };
@@ -158,17 +164,13 @@
             } catch(e) {}
         }
 
-        // =====================================
-        // CARREGAR E RENDERIZAR TABELA (READ)
-        // =====================================
         async function carregarAparelhos() {
             const tbody = document.getElementById('tabela-celulares');
             try {
-                const res = await fetch(`${FIREBASE_URL}celulares.json?_=${Date.now()}`);
-                const data = await res.json();
+                const data = await fetchPlanilha({ action: "listarCelulares" });
 
-                if (!data) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhum aparelho registrado.</td></tr>';
+                if (!data || Object.keys(data).length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">Nenhum aparelho registrado na planilha.</td></tr>';
                     celularesCadastrados = {};
                     return;
                 }
@@ -176,7 +178,6 @@
                 celularesCadastrados = data;
                 tbody.innerHTML = '';
 
-                // Converte objeto em array e ordena por data mais recente
                 let lista = Object.keys(data).map(key => ({ id_key: key, ...data[key] }));
                 lista.sort((a, b) => (b.dataRegistro || 0) - (a.dataRegistro || 0));
 
@@ -203,13 +204,10 @@
                 });
 
             } catch (e) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--accent-red);">Erro ao carregar os dados.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--accent-red);">Erro ao comunicar com a planilha.</td></tr>';
             }
         }
 
-        // =====================================
-        // SALVAR OU EDITAR (CREATE / UPDATE)
-        // =====================================
         document.getElementById('formCadastro').addEventListener('submit', async function(e) {
             e.preventDefault(); 
 
@@ -224,53 +222,49 @@
             btnSubmit.innerText = "⏳ Salvando..."; btnSubmit.disabled = true;
 
             try {
-                // Se for edição, mantém dados antigos (como status e data de registro) se existirem
                 let dadosAtuais = celularesCadastrados[idCelular] || {};
                 
-                const dadosParaSalvar = {
+                const celularParaSalvar = {
+                    id: idCelular,
                     nome: nomePessoa,
                     turno: turno,
                     supervisor: supervisor,
                     status: dadosAtuais.status || 'ativo', 
                     dataRegistro: dadosAtuais.dataRegistro || Date.now(), 
-                    registradoPor: currentUser.usuario,
-                    ultimaEdicao: Date.now()
+                    registradoPor: currentUser.usuario
                 };
 
-                await fetch(`${FIREBASE_URL}celulares/${idCelular}.json`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(dadosParaSalvar)
+                // Salva na PLANILHA DO GOOGLE
+                await fetchPlanilha({
+                    action: "salvarCelular",
+                    celular: celularParaSalvar
                 });
 
                 if(modoEdicao) {
-                    await registrarLogFirebase(`Editou o cadastro do aparelho <b>${idCelular}</b>.`);
-                    alert('Cadastro atualizado com sucesso!');
+                    await registrarLogFirebase(`Editou o cadastro do aparelho <b>${idCelular}</b>.`); // Log pro Firebase
+                    alert('Cadastro atualizado com sucesso na Planilha!');
                 } else {
-                    await registrarLogFirebase(`Registrou a saída do aparelho <b>${idCelular}</b> para <b>${nomePessoa}</b>.`);
-                    alert('Aparelho cadastrado com sucesso!');
+                    await registrarLogFirebase(`Registrou a saída do aparelho <b>${idCelular}</b> para <b>${nomePessoa}</b>.`); // Log pro Firebase
+                    alert('Aparelho cadastrado com sucesso na Planilha!');
                 }
                 
-                cancelarEdicao(); // Reseta o form
-                await carregarAparelhos(); // Atualiza a tabela
+                cancelarEdicao(); 
+                await carregarAparelhos(); 
 
             } catch (error) {
-                alert('Erro de conexão ao salvar os dados.');
+                alert('Erro de conexão ao salvar na Planilha.');
             } finally {
                 btnSubmit.innerText = textoOriginal;
                 btnSubmit.disabled = false;
             }
         });
 
-        // =====================================
-        // PREPARAR MODO EDIÇÃO
-        // =====================================
         window.iniciarEdicao = function(id) {
             const cel = celularesCadastrados[id];
             if(!cel) return;
 
             document.getElementById('idCelular').value = id;
-            document.getElementById('idCelular').disabled = true; // Impede alterar o ID (Chave primária)
+            document.getElementById('idCelular').disabled = true; 
             
             document.getElementById('nomePessoa').value = cel.nome;
             document.getElementById('turno').value = cel.turno;
@@ -302,9 +296,6 @@
             document.getElementById('idCelular').focus();
         };
 
-        // =====================================
-        // BLOQUEAR / DESBLOQUEAR
-        // =====================================
         window.alternarBloqueio = async function(id) {
             const cel = celularesCadastrados[id];
             const novoStatus = cel.status === 'bloqueado' ? 'ativo' : 'bloqueado';
@@ -313,39 +304,39 @@
             if(!confirm(`Deseja mudar o status do aparelho ${id} para ${acaoTexto}?`)) return;
 
             try {
-                await fetch(`${FIREBASE_URL}celulares/${id}.json`, { 
-                    method: 'PATCH', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ status: novoStatus }) 
-                });
-                
+                const celularAtualizado = {
+                    id: id,
+                    nome: cel.nome,
+                    turno: cel.turno,
+                    supervisor: cel.supervisor,
+                    status: novoStatus,
+                    dataRegistro: cel.dataRegistro,
+                    registradoPor: cel.registradoPor
+                };
+
+                await fetchPlanilha({ action: "salvarCelular", celular: celularAtualizado });
                 await registrarLogFirebase(`Marcou o aparelho <b>${id}</b> como ${acaoTexto.toLowerCase()}.`);
                 await carregarAparelhos();
             } catch(e) {
-                alert("Erro ao alterar status.");
+                alert("Erro ao alterar status na Planilha.");
             }
         };
 
-        // =====================================
-        // EXCLUIR (DELETE)
-        // =====================================
         window.excluirAparelho = async function(id) {
-            if(!confirm(`ATENÇÃO: Deseja apagar permanentemente o registro do aparelho ${id}? Esta ação não pode ser desfeita.`)) return;
+            if(!confirm(`ATENÇÃO: Deseja apagar permanentemente o registro do aparelho ${id} da Planilha?`)) return;
 
             try {
-                await fetch(`${FIREBASE_URL}celulares/${id}.json`, { method: 'DELETE' });
+                await fetchPlanilha({ action: "excluirCelular", id: id });
                 await registrarLogFirebase(`Excluiu o registro do aparelho <b>${id}</b> do sistema.`);
                 
                 if (modoEdicao && document.getElementById('idCelular').value === id) {
                     cancelarEdicao();
                 }
-                
                 await carregarAparelhos();
             } catch(e) {
-                alert("Erro ao excluir o aparelho.");
+                alert("Erro ao excluir o aparelho da Planilha.");
             }
         };
-
     </script>
 </body>
 </html>
