@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tratativas de E-mails - Mercado Livre</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'emails_tratativas.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        body { padding: 12px; display: flex; flex-direction: column; gap: 12px; height: 100vh; overflow: hidden; background: transparent !important; }
+
+        .glass-panel { background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; box-shadow: var(--shadow-card); transition: 0.3s; }
+
+        /* CABEÇALHO E ABAS */
+        .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: #FFF159 !important; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.15); flex: 0 0 auto; }
+        .ml-logo { height: 26px; object-fit: contain; }
+        .page-title { font-size: 1.1rem; font-weight: 900; color: #2D3277 !important; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 15px; flex: 1; text-align: center; }
+        
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .btn-novo { background: #3483FA; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 4px 10px rgba(52, 131, 250, 0.3); }
+        .btn-novo:hover { background: #226fe6; transform: translateY(-2px); }
+
+        .tabs-container { display: flex; gap: 10px; flex: 0 0 auto; }
+        .tab-btn { padding: 10px 20px; font-size: 0.9rem; font-weight: 800; color: var(--text-muted); background: var(--bg-body); border: 1px solid var(--border-card); border-radius: 8px; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); box-shadow: 0 4px 10px rgba(52, 131, 250, 0.2); }
+        .tab-btn:hover:not(.active) { color: var(--text-title); border-color: var(--text-title); }
+
+        /* LAYOUT PRINCIPAL */
+        .main-grid { display: grid; grid-template-columns: 1fr 280px; gap: 15px; flex: 1; min-height: 0; }
+
+        /* LISTA DE E-MAILS */
+        .list-container { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+        .search-bar { padding: 10px 15px; width: 100%; border: 1px solid var(--border-card); border-radius: 8px; background: var(--bg-input); color: var(--text-main); font-weight: 600; outline: none; transition: 0.3s; }
+        .search-bar:focus { border-color: var(--accent-blue); }
+
+        .emails-scroll { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 10px; }
+        
+        .email-card { padding: 15px; border-radius: 8px; border-left: 5px solid var(--border-card); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; cursor: pointer; }
+        .email-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        
+        .email-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .email-title { font-size: 0.95rem; font-weight: 800; color: var(--text-title); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        .email-meta { display: flex; gap: 15px; font-size: 0.8rem; color: var(--text-muted); font-weight: 600; align-items: center; flex-wrap: wrap; }
+        .email-meta span strong { color: var(--text-main); }
+        .email-valor { font-weight: 900; color: var(--accent-green); font-size: 0.95rem; }
+        
+        .email-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-card); padding-top: 10px; margin-top: 5px; }
+        
+        /* STATUS BADGES */
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #fff; }
+        .status-aberto { background: #FF5252; } /* Vermelho */
+        .status-esperando { background: #FFB000; color: #333; } /* Amarelo */
+        .status-respondido { background: #06b6d4; } /* Ciano */
+        .status-andamento { background: #8b5cf6; } /* Roxo */
+        .status-finalizado { background: #00A650; } /* Verde */
+
+        /* DASHBOARD LATERAL */
+        .dash-container { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .dash-card { padding: 15px; text-align: center; display: flex; flex-direction: column; justify-content: center; border-radius: 8px; }
+        .dash-card.total { background: rgba(52, 131, 250, 0.1); border: 1px solid rgba(52, 131, 250, 0.3); }
+        .dash-card.money { background: rgba(0, 166, 80, 0.1); border: 1px solid rgba(0, 166, 80, 0.3); }
+        .dash-title { font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+        .dash-value { font-size: 1.8rem; font-weight: 900; color: var(--text-title); }
+        
+        .dash-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+        .dash-list-item { display: flex; justify-content: space-between; padding: 8px 10px; background: var(--bg-body); border-radius: 6px; border: 1px solid var(--border-card); font-size: 0.85rem; font-weight: 700; align-items: center;}
+        
+        /* MODAL POPUP */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 9999; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); padding: 15px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--bg-card); width: 100%; max-width: 650px; max-height: 90vh; border-radius: 12px; display: flex; flex-direction: column; border: 1px solid var(--border-card); box-shadow: 0 15px 40px rgba(0,0,0,0.5); }
+        .modal-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-card); background: rgba(0,0,0,0.05); }
+        .modal-title { font-size: 1.1rem; font-weight: 900; color: var(--text-title); text-transform: uppercase; }
+        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; font-weight: bold; cursor: pointer; }
+        
+        .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border-radius: 6px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-weight: 600; outline: none; font-family: 'Inter', sans-serif; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent-blue); }
+        
+        .smart-paste-hint { font-size: 0.75rem; color: var(--accent-blue); font-weight: 700; display: flex; align-items: center; gap: 5px; margin-top: -3px; }
+
+        .historico-box { background: var(--bg-body); border: 1px solid var(--border-card); border-radius: 8px; padding: 10px; max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .historico-item { font-size: 0.8rem; padding-bottom: 8px; border-bottom: 1px dashed var(--border-card); }
+        .historico-item:last-child { border-bottom: none; padding-bottom: 0; }
+        
+        .modal-footer { padding: 15px 20px; border-top: 1px solid var(--border-card); display: flex; justify-content: space-between; gap: 10px; background: rgba(0,0,0,0.02); }
+        
+        .btn-modal { padding: 10px 20px; border-radius: 6px; font-weight: 800; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-save { background: var(--accent-green); color: #fff; flex: 1; }
+        .btn-save:hover { filter: brightness(1.1); }
+        .btn-delete { background: var(--bg-body); border: 1px solid var(--accent-red); color: var(--accent-red); }
+        .btn-delete:hover { background: var(--accent-red); color: #fff; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <div class="header-bar glass-panel">
+        <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
+        <div class="page-title">Tratativas de E-mails Logísticos</div>
+        <div class="header-actions">
+            <button class="btn-novo" onclick="abrirModal(null)" id="btn-add-novo">➕ Cadastrar E-mail</button>
+        </div>
+    </div>
+
+    <div class="tabs-container">
+        <button class="tab-btn active" id="tab-ativos" onclick="mudarAba('ativos')">Em Aberto / Andamento</button>
+        <button class="tab-btn" id="tab-finalizados" onclick="mudarAba('finalizados')">Histórico Finalizados</button>
+    </div>
+
+    <div class="main-grid">
+        
+        <!-- COLUNA ESQUERDA: LISTA -->
+        <div class="list-container glass-panel" style="padding: 15px;">
+            <input type="text" id="search-input" class="search-bar" placeholder="🔍 Buscar por ID, Título ou Transportadora..." oninput="renderizarLista()">
+            <div class="emails-scroll" id="emails-list">
+                <div style="text-align:center; padding: 30px; color: var(--text-muted);">Buscando e-mails...</div>
+            </div>
+        </div>
+
+        <!-- COLUNA DIREITA: DASHBOARD -->
+        <div class="dash-container glass-panel" style="padding: 15px;">
+            <div class="dash-card total">
+                <div class="dash-title">Total na Aba Atual</div>
+                <div class="dash-value" id="dash-total">0</div>
+            </div>
+            <div class="dash-card money">
+                <div class="dash-title">Valor Financeiro Envolvido</div>
+                <div class="dash-value" id="dash-valor" style="color: var(--accent-green); font-size: 1.4rem;">R$ 0,00</div>
+            </div>
+            
+            <div style="margin-top: 10px;">
+                <div class="dash-title" style="text-align: center;">Resumo por Status</div>
+                <ul class="dash-list">
+                    <li class="dash-list-item"><span style="color: #FF5252;">🔴 Aberto</span> <span id="count-aberto">0</span></li>
+                    <li class="dash-list-item"><span style="color: #FFB000;">🟡 Esperando Resposta</span> <span id="count-esperando">0</span></li>
+                    <li class="dash-list-item"><span style="color: #06b6d4;">🔵 Respondido</span> <span id="count-respondido">0</span></li>
+                    <li class="dash-list-item"><span style="color: #8b5cf6;">🟣 Andamento</span> <span id="count-andamento">0</span></li>
+                    <li class="dash-list-item" style="border-top: 2px solid var(--border-card);"><span style="color: #00A650;">🟢 Finalizados</span> <span id="count-finalizado">0</span></li>
+                </ul>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MODAL CADASTRO / EDIÇÃO -->
+    <div class="modal-overlay" id="modal-tratativa">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Novo E-mail</div>
+                <button class="modal-close" onclick="fecharModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body">
+                <input type="hidden" id="form-id">
+                
+                <div class="form-group">
+                    <label>Título / Assunto do E-mail</label>
+                    <input type="text" id="form-titulo" placeholder="Ex: ON WAY A.I 365 DHL MERCADO LIVRE..." oninput="tentarExtrairDados()">
+                    <div class="smart-paste-hint">✨ Cole o assunto inteiro acima para preencher ID e Valor automaticamente!</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>ID do Pacote / Rastreio</label>
+                        <input type="text" id="form-pacote" placeholder="Ex: 47374889226">
+                    </div>
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="text" id="form-valor" placeholder="Ex: 1028,90">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Status Atual</label>
+                    <select id="form-status">
+                        <option value="Aberto">🔴 Aberto</option>
+                        <option value="Respondido">🔵 Respondido</option>
+                        <option value="Esperando resposta">🟡 Esperando resposta</option>
+                        <option value="Andamento">🟣 Andamento</option>
+                        <option value="Finalizado">🟢 Finalizado</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Adicionar Nova Atualização / Nota</label>
+                    <textarea id="form-nota" rows="2" placeholder="Digite uma atualização para o histórico (Ex: DHL pediu 48h para acareação)..."></textarea>
+                </div>
+
+                <div class="form-group" id="bloco-historico" style="display:none;">
+                    <label>Histórico de Atualizações</label>
+                    <div class="historico-box" id="historico-lista"></div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-modal btn-delete" id="btn-deletar" style="display:none;" onclick="deletarTratativa()">🗑️ Excluir</button>
+                <button class="btn-modal btn-save" onclick="salvarTratativa()">💾 Salvar Tratativa</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_NODE = "emails_tratativas";
+        
+        let BANCO_EMAILS = {};
+        let ABA_ATUAL = 'ativos'; // 'ativos' ou 'finalizados'
+
+        // ============ TEMA E PERMISSÕES ============
+        function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
+        syncTheme();
+        window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') document.body.setAttribute('data-theme', event.data.theme); });
+
+        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
+        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Admin';
+        
+        const paginaNome = window.location.pathname.split('/').pop() || 'emails_tratativas.html';
+        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
+        
+        if(!canEdit) { document.getElementById('btn-add-novo').style.display = 'none'; }
+
+        async function registrarLogFirebase(modulo, acao) {
+            try {
+                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modulo, acao, usuario: userName, timestamp: Date.now() }) });
+            } catch(e) {}
+        }
+
+        // ============ INICIALIZAÇÃO ============
+        window.onload = async () => {
+            await carregarDoFirebase();
+        };
+
+        async function carregarDoFirebase() {
+            try {
+                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json?_=${Date.now()}`);
+                const data = await response.json();
+                BANCO_EMAILS = data || {};
+                renderizarLista();
+            } catch (err) {
+                document.getElementById('emails-list').innerHTML = '<div style="text-align:center; padding: 20px; color: #FF5252;">Erro ao conectar com o banco de dados.</div>';
+            }
+        }
+
+        // ============ RENDERIZAÇÃO ============
+        function mudarAba(aba) {
+            ABA_ATUAL = aba;
+            document.getElementById('tab-ativos').classList.remove('active');
+            document.getElementById('tab-finalizados').classList.remove('active');
+            document.getElementById(`tab-${aba}`).classList.add('active');
+            renderizarLista();
+        }
+
+        function getColorByStatus(status) {
+            const colors = {
+                'Aberto': '#FF5252',
+                'Esperando resposta': '#FFB000',
+                'Respondido': '#06b6d4',
+                'Andamento': '#8b5cf6',
+                'Finalizado': '#00A650'
+            };
+            return colors[status] || '#94a3b8';
+        }
+
+        function getClassByStatus(status) {
+            const classes = {
+                'Aberto': 'status-aberto', 'Esperando resposta': 'status-esperando',
+                'Respondido': 'status-respondido', 'Andamento': 'status-andamento', 'Finalizado': 'status-finalizado'
+            };
+            return classes[status] || 'status-aberto';
+        }
+
+        function parseCurrency(valStr) {
+            if (!valStr) return 0;
+            let s = String(valStr).replace(/R\$/gi, '').replace(/\s/g, '').trim();
+            let lastComma = s.lastIndexOf(','); let lastPeriod = s.lastIndexOf('.');
+            if (lastComma > lastPeriod) { s = s.replace(/\./g, '').replace(',', '.'); } else if (lastPeriod > lastComma) { s = s.replace(/,/g, ''); }
+            return parseFloat(s) || 0;
+        }
+
+        function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+
+        function renderizarLista() {
+            const listEl = document.getElementById('emails-list');
+            const busca = document.getElementById('search-input').value.toLowerCase().trim();
+            
+            let html = '';
+            let contadorAba = 0; let valorAba = 0;
+            let counts = { 'Aberto': 0, 'Esperando resposta': 0, 'Respondido': 0, 'Andamento': 0, 'Finalizado': 0 };
+
+            let emailsArray = Object.keys(BANCO_EMAILS).map(key => ({ key, ...BANCO_EMAILS[key] }));
+            
+            // Ordena (Mais recentes por último na atualização, mas podemos ordenar por data_atualizacao desc)
+            emailsArray.sort((a,b) => b.data_atualizacao - a.data_atualizacao);
+
+            emailsArray.forEach(item => {
+                // Conta KPIs gerais
+                if(counts[item.status] !== undefined) counts[item.status]++;
+
+                // Filtro de Aba
+                let isFinalizado = item.status === 'Finalizado';
+                if (ABA_ATUAL === 'ativos' && isFinalizado) return;
+                if (ABA_ATUAL === 'finalizados' && !isFinalizado) return;
+
+                // Filtro de Busca
+                let txtBusca = [item.titulo, item.pacote_id].join(' ').toLowerCase();
+                if (busca && !txtBusca.includes(busca)) return;
+
+                // Acumula KPIs da Aba
+                contadorAba++;
+                valorAba += parseCurrency(item.valor);
+
+                const dataCriacao = new Date(item.data_criacao).toLocaleDateString('pt-BR');
+                const ultimaAtt = new Date(item.data_atualizacao).toLocaleDateString('pt-BR');
+                const badgeClass = getClassByStatus(item.status);
+                const borderColor = getColorByStatus(item.status);
+
+                html += `
+                    <div class="email-card glass-panel" style="border-left-color: ${borderColor};" onclick="abrirModal('${item.key}')">
+                        <div class="email-header">
+                            <div class="email-title">${escapeHtml(item.titulo)}</div>
+                            <span class="badge ${badgeClass}">${item.status}</span>
+                        </div>
+                        <div class="email-meta" style="margin-top: 5px;">
+                            <span>📦 ID: <strong>${escapeHtml(item.pacote_id || 'N/A')}</strong></span>
+                        </div>
+                        <div class="email-footer">
+                            <div class="email-meta">
+                                <span>Criado: ${dataCriacao}</span> • <span>Att: ${ultimaAtt}</span>
+                            </div>
+                            <div class="email-valor">R$ ${parseCurrency(item.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            if (html === '') html = `<div style="text-align:center; padding: 40px; color: var(--text-muted); font-weight:600;">Nenhum e-mail encontrado nesta aba.</div>`;
+            listEl.innerHTML = html;
+
+            // Atualiza Dashboard
+            document.getElementById('dash-total').innerText = contadorAba;
+            document.getElementById('dash-valor').innerText = `R$ ${valorAba.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            
+            document.getElementById('count-aberto').innerText = counts['Aberto'];
+            document.getElementById('count-esperando').innerText = counts['Esperando resposta'];
+            document.getElementById('count-respondido').innerText = counts['Respondido'];
+            document.getElementById('count-andamento').innerText = counts['Andamento'];
+            document.getElementById('count-finalizado').innerText = counts['Finalizado'];
+        }
+
+        // ============ SMART PASTE ============
+        function tentarExtrairDados() {
+            const titulo = document.getElementById('form-titulo').value;
+            const inputId = document.getElementById('form-pacote');
+            const inputValor = document.getElementById('form-valor');
+
+            // Tenta pegar o ID (10 a 13 digitos)
+            if(!inputId.value) {
+                let matchId = titulo.match(/\b\d{10,13}\b/);
+                if(matchId) inputId.value = matchId[0];
+            }
+
+            // Tenta pegar o valor (R$ XXX,XX)
+            if(!inputValor.value) {
+                let matchValor = titulo.match(/R\$\s?[\d\.,]+/i);
+                if(matchValor) {
+                    let v = matchValor[0].replace(/R\$\s?/i, '').trim();
+                    inputValor.value = v;
+                }
+            }
+        }
+
+        // ============ MODAL E CRUD ============
+        let currentKey = null;
+
+        function abrirModal(key) {
+            currentKey = key;
+            document.getElementById('form-id').value = key || '';
+            document.getElementById('form-titulo').value = '';
+            document.getElementById('form-pacote').value = '';
+            document.getElementById('form-valor').value = '';
+            document.getElementById('form-status').value = 'Aberto';
+            document.getElementById('form-nota').value = '';
+            document.getElementById('historico-lista').innerHTML = '';
+            document.getElementById('bloco-historico').style.display = 'none';
+
+            if(key && BANCO_EMAILS[key]) {
+                const item = BANCO_EMAILS[key];
+                document.getElementById('modal-title').innerText = "Editar E-mail";
+                document.getElementById('form-titulo').value = item.titulo || '';
+                document.getElementById('form-pacote').value = item.pacote_id || '';
+                document.getElementById('form-valor').value = item.valor || '';
+                document.getElementById('form-status').value = item.status || 'Aberto';
+                
+                if (canEdit) document.getElementById('btn-deletar').style.display = 'block';
+
+                if (item.observacoes && Array.isArray(item.observacoes)) {
+                    document.getElementById('bloco-historico').style.display = 'block';
+                    let histHtml = '';
+                    [...item.observacoes].reverse().forEach(obs => {
+                        let dataStr = new Date(obs.data).toLocaleString('pt-BR');
+                        histHtml += `<div class="historico-item"><strong style="color:var(--accent-blue);">${obs.autor}</strong> <span style="color:var(--text-muted); font-size:0.7rem;">(${dataStr})</span><br>${escapeHtml(obs.texto)}</div>`;
+                    });
+                    document.getElementById('historico-lista').innerHTML = histHtml;
+                }
+            } else {
+                document.getElementById('modal-title').innerText = "Cadastrar Novo E-mail";
+                document.getElementById('btn-deletar').style.display = 'none';
+            }
+
+            document.getElementById('modal-tratativa').classList.add('active');
+        }
+
+        function fecharModal() {
+            document.getElementById('modal-tratativa').classList.remove('active');
+        }
+
+        async function salvarTratativa() {
+            if(!canEdit) return alert("Você não tem permissão para editar.");
+
+            const titulo = document.getElementById('form-titulo').value.trim();
+            const pacote_id = document.getElementById('form-pacote').value.trim();
+            const valor = document.getElementById('form-valor').value.trim();
+            const status = document.getElementById('form-status').value;
+            const novaNota = document.getElementById('form-nota').value.trim();
+
+            if(!titulo) return alert("O Título/Assunto do e-mail é obrigatório.");
+
+            let key = document.getElementById('form-id').value;
+            let isNew = !key;
+            if(isNew) key = "email_" + Date.now();
+
+            let item = BANCO_EMAILS[key] || {
+                data_criacao: Date.now(),
+                observacoes: []
+            };
+
+            item.titulo = titulo;
+            item.pacote_id = pacote_id;
+            item.valor = valor;
+            item.status = status;
+            item.data_atualizacao = Date.now();
+            item.responsavel = userName;
+
+            if (novaNota) {
+                if(!item.observacoes) item.observacoes = [];
+                item.observacoes.push({
+                    texto: novaNota,
+                    autor: userName,
+                    data: Date.now()
+                });
+            }
+
+            try {
+                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/${key}.json`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(item)
+                });
+
+                BANCO_EMAILS[key] = item;
+                
+                await registrarLogFirebase("Tratativas E-mail", isNew ? `Cadastrou tratativa: ${pacote_id || 'Sem ID'}` : `Atualizou tratativa: ${pacote_id || 'Sem ID'} para ${status}`);
+                
+                fecharModal();
+                renderizarLista();
+            } catch (err) {
+                alert("Erro ao salvar no banco de dados.");
+            }
+        }
+
+        async function deletarTratativa() {
+            if(!canEdit || !currentKey) return;
+            if(!confirm("Atenção: Tem certeza que deseja apagar este e-mail do sistema?")) return;
+
+            try {
+                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/${currentKey}.json`, { method: 'DELETE' });
+                let deletedItem = BANCO_EMAILS[currentKey];
+                delete BANCO_EMAILS[currentKey];
+                
+                await registrarLogFirebase("Tratativas E-mail", `Excluiu a tratativa ID: ${deletedItem.pacote_id || 'Desconhecido'}`);
+                
+                fecharModal();
+                renderizarLista();
+            } catch (err) {
+                alert("Erro ao deletar.");
+            }
+        }
+    </script>
+</body>
+</html>
