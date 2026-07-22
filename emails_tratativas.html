@@ -28,18 +28,20 @@
         .page-title { font-size: 1.1rem; font-weight: 900; color: #2D3277 !important; text-transform: uppercase; letter-spacing: 0.5px; margin: 0 15px; flex: 1; text-align: center; }
         
         .header-actions { display: flex; gap: 10px; align-items: center; }
-        .btn-novo { background: #3483FA; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 4px 10px rgba(52, 131, 250, 0.3); }
-        .btn-novo:hover { background: #226fe6; transform: translateY(-2px); }
+        .btn-acao { background: #3483FA; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s; box-shadow: 0 4px 10px rgba(52, 131, 250, 0.3); }
+        .btn-acao:hover { background: #226fe6; transform: translateY(-2px); }
+        .btn-dark { background: #334155; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); }
+        .btn-dark:hover { background: #1e293b; }
 
-        .tabs-container { display: flex; gap: 10px; flex: 0 0 auto; }
+        .tabs-container { display: flex; gap: 10px; flex: 0 0 auto; align-items: center;}
         .tab-btn { padding: 10px 20px; font-size: 0.9rem; font-weight: 800; color: var(--text-muted); background: var(--bg-body); border: 1px solid var(--border-card); border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); box-shadow: 0 4px 10px rgba(52, 131, 250, 0.2); }
         .tab-btn:hover:not(.active) { color: var(--text-title); border-color: var(--text-title); }
 
-        /* LAYOUT PRINCIPAL */
+        /* LAYOUT LISTA E DASHBOARD */
         .main-grid { display: grid; grid-template-columns: 1fr 280px; gap: 15px; flex: 1; min-height: 0; }
+        .main-grid.hidden { display: none; }
 
-        /* LISTA DE E-MAILS */
         .list-container { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
         
         .search-area { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -48,8 +50,19 @@
 
         .emails-scroll { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 10px; }
         
-        .email-card { padding: 15px; border-radius: 8px; border-left: 5px solid var(--border-card); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; cursor: pointer; }
-        .email-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        /* LAYOUT KANBAN */
+        .kanban-board { display: none; gap: 12px; flex: 1; min-height: 0; overflow-x: auto; padding-bottom: 5px; }
+        .kanban-board.active { display: flex; }
+        .kanban-col { flex: 1; min-width: 250px; background: rgba(0,0,0,0.03); border-radius: 8px; border: 1px solid var(--border-card); display: flex; flex-direction: column; overflow: hidden; }
+        [data-theme="dark"] .kanban-col { background: rgba(255,255,255,0.03); }
+        .kanban-header { padding: 10px; font-weight: 900; text-align: center; color: #fff; text-transform: uppercase; font-size: 0.8rem; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .kanban-cards { flex: 1; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px; transition: background 0.2s; }
+        .kanban-cards.drag-over { background: rgba(52, 131, 250, 0.1) !important; border: 2px dashed var(--accent-blue); border-radius: 8px;}
+
+        /* CARDS GERAIS (Lista e Kanban) */
+        .email-card { padding: 15px; border-radius: 8px; border-left: 5px solid var(--border-card); background: var(--bg-card); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; cursor: grab; box-shadow: var(--shadow-card); position: relative;}
+        .email-card:active { cursor: grabbing; }
+        .email-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.15); }
         
         .email-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
         .email-title { font-size: 0.95rem; font-weight: 900; color: var(--text-title); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -61,6 +74,15 @@
         
         .email-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-card); padding-top: 10px; margin-top: 5px; }
         
+        /* SLA E ANIMAÇÕES */
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(255, 82, 82, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); } }
+        
+        .sla-warning { border: 2px solid #FFB000 !important; border-left: 6px solid #FFB000 !important; }
+        .sla-critical { border: 2px solid #FF5252 !important; border-left: 6px solid #FF5252 !important; animation: pulse-red 2s infinite; }
+        .sla-badge { font-size: 0.7rem; font-weight: 900; padding: 3px 8px; border-radius: 12px; background: rgba(0,0,0,0.1); color: var(--text-main); display: inline-flex; align-items: center; gap: 4px;}
+        .sla-critical .sla-badge { background: #FF5252; color: #fff; }
+        .sla-warning .sla-badge { background: #FFB000; color: #333; }
+
         /* STATUS BADGES */
         .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #fff; white-space: nowrap; }
         .status-aberto { background: #FF5252; } 
@@ -119,32 +141,32 @@
         <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
         <div class="page-title">Tratativas de E-mails Logísticos</div>
         <div class="header-actions">
-            <button class="btn-novo" onclick="abrirModal(null)" id="btn-add-novo">➕ Cadastrar E-mail</button>
+            <button class="btn-acao btn-dark" onclick="toggleViewMode()" id="btn-toggle-view">📊 Visão Kanban</button>
+            <button class="btn-acao" onclick="abrirModal(null)" id="btn-add-novo">➕ Cadastrar E-mail</button>
         </div>
     </div>
 
     <div class="tabs-container">
         <button class="tab-btn active" id="tab-ativos" onclick="mudarAba('ativos')">Em Aberto / Andamento</button>
         <button class="tab-btn" id="tab-finalizados" onclick="mudarAba('finalizados')">Histórico Finalizados</button>
+        
+        <!-- Filtros Rápidos sempre visíveis -->
+        <div class="search-area" style="margin-left: auto; flex: 1; justify-content: flex-end;">
+            <select id="filter-status" class="search-bar" style="width: auto; cursor: pointer; padding: 8px 12px;" onchange="renderizarInterface()">
+                <option value="Todos">Todos os Status</option>
+                <option value="Aberto">🔴 Aberto</option>
+                <option value="Esperando resposta">🟡 Esperando resposta</option>
+                <option value="Respondido">🔵 Respondido</option>
+                <option value="Andamento">🟣 Andamento</option>
+            </select>
+            <input type="text" id="search-input" class="search-bar" style="width: 250px; padding: 8px 12px;" placeholder="🔍 Buscar ID, Título, Descrição..." oninput="renderizarInterface()">
+        </div>
     </div>
 
-    <div class="main-grid">
-        
-        <!-- COLUNA ESQUERDA: LISTA E FILTROS -->
+    <!-- MODO 1: LISTA + DASHBOARD -->
+    <div class="main-grid" id="view-lista">
+        <!-- COLUNA ESQUERDA: LISTA -->
         <div class="list-container glass-panel" style="padding: 15px;">
-            
-            <!-- BARRA DE FILTROS E PESQUISA -->
-            <div class="search-area">
-                <select id="filter-status" class="search-bar" style="flex: 0 0 auto; width: auto; cursor: pointer;" onchange="renderizarLista()">
-                    <option value="Todos">Todos os Status</option>
-                    <option value="Aberto">🔴 Aberto</option>
-                    <option value="Esperando resposta">🟡 Esperando resposta</option>
-                    <option value="Respondido">🔵 Respondido</option>
-                    <option value="Andamento">🟣 Andamento</option>
-                </select>
-                <input type="text" id="search-input" class="search-bar" style="flex: 1; min-width: 250px;" placeholder="🔍 Buscar por ID, Título ou Descrição do Produto..." oninput="renderizarLista()">
-            </div>
-
             <div class="emails-scroll" id="emails-list">
                 <div style="text-align:center; padding: 30px; color: var(--text-muted);">Buscando e-mails...</div>
             </div>
@@ -172,8 +194,32 @@
                 </ul>
             </div>
         </div>
-
     </div>
+
+    <!-- MODO 2: KANBAN BOARD -->
+    <div class="kanban-board" id="view-kanban">
+        <div class="kanban-col">
+            <div class="kanban-header status-aberto">🔴 Aberto</div>
+            <div class="kanban-cards" id="kb-aberto" ondrop="dropKanban(event, 'Aberto')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-header status-esperando">🟡 Esperando resposta</div>
+            <div class="kanban-cards" id="kb-esperando" ondrop="dropKanban(event, 'Esperando resposta')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-header status-respondido">🔵 Respondido</div>
+            <div class="kanban-cards" id="kb-respondido" ondrop="dropKanban(event, 'Respondido')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-header status-andamento">🟣 Andamento</div>
+            <div class="kanban-cards" id="kb-andamento" ondrop="dropKanban(event, 'Andamento')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+        <div class="kanban-col">
+            <div class="kanban-header status-finalizado">🟢 Finalizado</div>
+            <div class="kanban-cards" id="kb-finalizado" ondrop="dropKanban(event, 'Finalizado')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)"></div>
+        </div>
+    </div>
+
 
     <!-- MODAL CADASTRO / EDIÇÃO -->
     <div class="modal-overlay" id="modal-tratativa">
@@ -242,7 +288,8 @@
         const FIREBASE_NODE = "emails_tratativas";
         
         let BANCO_EMAILS = {};
-        let ABA_ATUAL = 'ativos'; // 'ativos' ou 'finalizados'
+        let ABA_ATUAL = 'ativos'; 
+        let VIEW_MODE = 'lista'; // 'lista' ou 'kanban'
 
         // ============ TEMA E PERMISSÕES ============
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
@@ -273,24 +320,42 @@
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json?_=${Date.now()}`);
                 const data = await response.json();
                 BANCO_EMAILS = data || {};
-                renderizarLista();
+                renderizarInterface();
             } catch (err) {
                 document.getElementById('emails-list').innerHTML = '<div style="text-align:center; padding: 20px; color: #FF5252;">Erro ao conectar com o banco de dados.</div>';
             }
         }
 
-        // ============ RENDERIZAÇÃO ============
+        // ============ RENDERIZAÇÃO E VIEW MODES ============
+        function toggleViewMode() {
+            VIEW_MODE = VIEW_MODE === 'lista' ? 'kanban' : 'lista';
+            const btn = document.getElementById('btn-toggle-view');
+            
+            if (VIEW_MODE === 'kanban') {
+                btn.innerHTML = "📄 Visão Lista";
+                document.getElementById('view-lista').classList.add('hidden');
+                document.getElementById('view-kanban').classList.add('active');
+            } else {
+                btn.innerHTML = "📊 Visão Kanban";
+                document.getElementById('view-lista').classList.remove('hidden');
+                document.getElementById('view-kanban').classList.remove('active');
+            }
+            renderizarInterface();
+        }
+
         function mudarAba(aba) {
             ABA_ATUAL = aba;
             document.getElementById('tab-ativos').classList.remove('active');
             document.getElementById('tab-finalizados').classList.remove('active');
             document.getElementById(`tab-${aba}`).classList.add('active');
             
-            // Lógica inteligente para o filtro de status
             const filterStatus = document.getElementById('filter-status');
             if (aba === 'finalizados') {
                 filterStatus.innerHTML = '<option value="Finalizado">🟢 Finalizado</option>';
                 filterStatus.disabled = true;
+                // Forçar visão lista em finalizados para evitar confusão no Kanban
+                if(VIEW_MODE === 'kanban') toggleViewMode();
+                document.getElementById('btn-toggle-view').style.display = 'none';
             } else {
                 filterStatus.innerHTML = `
                     <option value="Todos">Todos os Status</option>
@@ -300,27 +365,18 @@
                     <option value="Andamento">🟣 Andamento</option>
                 `;
                 filterStatus.disabled = false;
+                document.getElementById('btn-toggle-view').style.display = 'flex';
             }
-
-            renderizarLista();
+            renderizarInterface();
         }
 
         function getColorByStatus(status) {
-            const colors = {
-                'Aberto': '#FF5252',
-                'Esperando resposta': '#FFB000',
-                'Respondido': '#06b6d4',
-                'Andamento': '#8b5cf6',
-                'Finalizado': '#00A650'
-            };
+            const colors = { 'Aberto': '#FF5252', 'Esperando resposta': '#FFB000', 'Respondido': '#06b6d4', 'Andamento': '#8b5cf6', 'Finalizado': '#00A650' };
             return colors[status] || '#94a3b8';
         }
 
         function getClassByStatus(status) {
-            const classes = {
-                'Aberto': 'status-aberto', 'Esperando resposta': 'status-esperando',
-                'Respondido': 'status-respondido', 'Andamento': 'status-andamento', 'Finalizado': 'status-finalizado'
-            };
+            const classes = { 'Aberto': 'status-aberto', 'Esperando resposta': 'status-esperando', 'Respondido': 'status-respondido', 'Andamento': 'status-andamento', 'Finalizado': 'status-finalizado' };
             return classes[status] || 'status-aberto';
         }
 
@@ -335,82 +391,177 @@
         function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
         function removerAcentos(str) { return String(str ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 
-        function renderizarLista() {
-            const listEl = document.getElementById('emails-list');
+        function criarHTMLCard(item, aplicarSLA = true) {
+            const dataCriacao = new Date(item.data_criacao).toLocaleDateString('pt-BR');
+            const dataAtualizacaoObj = item.data_atualizacao ? new Date(item.data_atualizacao) : new Date(item.data_criacao);
+            const ultimaAtt = dataAtualizacaoObj.toLocaleDateString('pt-BR');
+            const badgeClass = getClassByStatus(item.status);
+            const borderColor = getColorByStatus(item.status);
+            
+            // CÁLCULO DE SLA
+            let slaClass = '';
+            let slaHtml = '';
+            
+            if (aplicarSLA && item.status !== 'Finalizado') {
+                const horasAtraso = (Date.now() - dataAtualizacaoObj.getTime()) / (1000 * 60 * 60);
+                if (horasAtraso > 48) {
+                    slaClass = 'sla-critical';
+                    slaHtml = `<div class="sla-badge">⏱️ ${Math.floor(horasAtraso)}h sem ação!</div>`;
+                } else if (horasAtraso > 24) {
+                    slaClass = 'sla-warning';
+                    slaHtml = `<div class="sla-badge">⏱️ ${Math.floor(horasAtraso)}h parado</div>`;
+                }
+            }
+
+            let descHtml = item.descricao ? `<div class="email-desc">${escapeHtml(item.descricao)}</div>` : '';
+
+            // Draggable só se for Kanban e se puder editar
+            const dragAttr = (VIEW_MODE === 'kanban' && canEdit) ? `draggable="true" ondragstart="dragKanban(event, '${item.key}')"` : '';
+
+            return `
+                <div class="email-card ${slaClass}" style="border-left-color: ${borderColor};" onclick="abrirModal('${item.key}')" ${dragAttr}>
+                    <div class="email-header">
+                        <div class="email-title">${escapeHtml(item.titulo)}</div>
+                        <span class="badge ${badgeClass}">${item.status}</span>
+                    </div>
+                    ${descHtml}
+                    <div class="email-meta" style="margin-top: 5px;">
+                        <span>📦 ID: <strong>${escapeHtml(item.pacote_id || 'N/A')}</strong></span>
+                        ${slaHtml}
+                    </div>
+                    <div class="email-footer">
+                        <div class="email-meta">
+                            <span>Criado: ${dataCriacao}</span> • <span>Att: ${ultimaAtt}</span>
+                        </div>
+                        <div class="email-valor">R$ ${parseCurrency(item.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderizarInterface() {
             const busca = removerAcentos(document.getElementById('search-input').value.toLowerCase().trim());
             const filtroStatus = document.getElementById('filter-status').value;
             
-            let html = '';
             let contadorAba = 0; let valorAba = 0;
             let counts = { 'Aberto': 0, 'Esperando resposta': 0, 'Respondido': 0, 'Andamento': 0, 'Finalizado': 0 };
 
             let emailsArray = Object.keys(BANCO_EMAILS).map(key => ({ key, ...BANCO_EMAILS[key] }));
-            
-            // Ordena (Mais recentes por último na atualização)
             emailsArray.sort((a,b) => b.data_atualizacao - a.data_atualizacao);
 
+            let htmlLista = '';
+            let htmlKanban = { 'Aberto': '', 'Esperando resposta': '', 'Respondido': '', 'Andamento': '', 'Finalizado': '' };
+
             emailsArray.forEach(item => {
-                // Conta KPIs gerais (ignora abas para montar o dashboard geral)
                 if(counts[item.status] !== undefined) counts[item.status]++;
 
-                // Filtro de Aba
                 let isFinalizado = item.status === 'Finalizado';
                 if (ABA_ATUAL === 'ativos' && isFinalizado) return;
                 if (ABA_ATUAL === 'finalizados' && !isFinalizado) return;
-
-                // Filtro de Status
                 if (filtroStatus !== 'Todos' && item.status !== filtroStatus) return;
 
-                // Filtro de Busca Completa (Varre Título, Descrição, ID e Histórico de Notas)
                 if (busca) {
                     let txtNotas = (item.observacoes || []).map(o => o.texto).join(' ');
                     let txtBusca = removerAcentos([item.titulo, item.descricao, item.pacote_id, txtNotas].join(' ')).toLowerCase();
                     if (!txtBusca.includes(busca)) return;
                 }
 
-                // Acumula KPIs da Aba atual filtrada
                 contadorAba++;
                 valorAba += parseCurrency(item.valor);
 
-                const dataCriacao = new Date(item.data_criacao).toLocaleDateString('pt-BR');
-                const ultimaAtt = new Date(item.data_atualizacao).toLocaleDateString('pt-BR');
-                const badgeClass = getClassByStatus(item.status);
-                const borderColor = getColorByStatus(item.status);
-
-                let descHtml = item.descricao ? `<div class="email-desc">${escapeHtml(item.descricao)}</div>` : '';
-
-                html += `
-                    <div class="email-card glass-panel" style="border-left-color: ${borderColor};" onclick="abrirModal('${item.key}')">
-                        <div class="email-header">
-                            <div class="email-title">${escapeHtml(item.titulo)}</div>
-                            <span class="badge ${badgeClass}">${item.status}</span>
-                        </div>
-                        ${descHtml}
-                        <div class="email-meta" style="margin-top: 5px;">
-                            <span>📦 ID: <strong>${escapeHtml(item.pacote_id || 'N/A')}</strong></span>
-                        </div>
-                        <div class="email-footer">
-                            <div class="email-meta">
-                                <span>Criado: ${dataCriacao}</span> • <span>Att: ${ultimaAtt}</span>
-                            </div>
-                            <div class="email-valor">R$ ${parseCurrency(item.valor).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
-                        </div>
-                    </div>
-                `;
+                const cardHTML = criarHTMLCard(item, true);
+                
+                if (VIEW_MODE === 'lista') {
+                    htmlLista += cardHTML;
+                } else {
+                    if(htmlKanban[item.status] !== undefined) htmlKanban[item.status] += cardHTML;
+                }
             });
 
-            if (html === '') html = `<div style="text-align:center; padding: 40px; color: var(--text-muted); font-weight:600;">Nenhum e-mail encontrado com os filtros atuais.</div>`;
-            listEl.innerHTML = html;
+            // INJETA NA TELA CORRETA
+            if (VIEW_MODE === 'lista') {
+                if (htmlLista === '') htmlLista = `<div style="text-align:center; padding: 40px; color: var(--text-muted); font-weight:600;">Nenhum e-mail encontrado.</div>`;
+                document.getElementById('emails-list').innerHTML = htmlLista;
+            } else {
+                document.getElementById('kb-aberto').innerHTML = htmlKanban['Aberto'];
+                document.getElementById('kb-esperando').innerHTML = htmlKanban['Esperando resposta'];
+                document.getElementById('kb-respondido').innerHTML = htmlKanban['Respondido'];
+                document.getElementById('kb-andamento').innerHTML = htmlKanban['Andamento'];
+                document.getElementById('kb-finalizado').innerHTML = htmlKanban['Finalizado'];
+            }
 
-            // Atualiza Dashboard Lateral
+            // ATUALIZA DASHBOARD (Só visível no modo lista, mas atualiza por garantia)
             document.getElementById('dash-total').innerText = contadorAba;
             document.getElementById('dash-valor').innerText = `R$ ${valorAba.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
-            
             document.getElementById('count-aberto').innerText = counts['Aberto'];
             document.getElementById('count-esperando').innerText = counts['Esperando resposta'];
             document.getElementById('count-respondido').innerText = counts['Respondido'];
             document.getElementById('count-andamento').innerText = counts['Andamento'];
             document.getElementById('count-finalizado').innerText = counts['Finalizado'];
+        }
+
+        // ============ SISTEMA DRAG AND DROP (KANBAN) ============
+        function dragKanban(ev, key) {
+            ev.dataTransfer.setData("text", key);
+            // Corrige conflito do drag disparar o onclick do modal
+            ev.stopPropagation();
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.add('drag-over');
+        }
+
+        function dragLeave(ev) {
+            ev.currentTarget.classList.remove('drag-over');
+        }
+
+        async function dropKanban(ev, novoStatus) {
+            ev.preventDefault();
+            ev.currentTarget.classList.remove('drag-over');
+            
+            if(!canEdit) return alert("Você não tem permissão para alterar status.");
+
+            let key = ev.dataTransfer.getData("text");
+            if (!key || !BANCO_EMAILS[key]) return;
+
+            let item = BANCO_EMAILS[key];
+            if (item.status === novoStatus) return; // Não mudou de coluna
+
+            let statusAntigo = item.status;
+            item.status = novoStatus;
+            item.data_atualizacao = Date.now();
+            
+            // Adiciona log automático no histórico do e-mail
+            if(!item.observacoes) item.observacoes = [];
+            item.observacoes.push({
+                texto: `🚦 Movido no Kanban de [${statusAntigo}] para [${novoStatus}]`,
+                autor: userName,
+                data: Date.now()
+            });
+
+            // Re-renderiza localmente para parecer instantâneo
+            renderizarInterface();
+
+            try {
+                await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/${key}.json`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        status: novoStatus, 
+                        data_atualizacao: item.data_atualizacao,
+                        observacoes: item.observacoes 
+                    })
+                });
+                
+                await registrarLogFirebase("Tratativas E-mail", `Moveu ID: ${item.pacote_id || 'N/A'} para ${novoStatus} no Kanban.`);
+            } catch (err) {
+                alert("Erro ao sincronizar movimento com o banco.");
+                // Reverte local
+                item.status = statusAntigo;
+                item.observacoes.pop();
+                renderizarInterface();
+            }
         }
 
         // ============ SMART PASTE ============
@@ -419,13 +570,10 @@
             const inputId = document.getElementById('form-pacote');
             const inputValor = document.getElementById('form-valor');
 
-            // Tenta pegar o ID (10 a 13 digitos)
             if(!inputId.value) {
                 let matchId = titulo.match(/\b\d{10,13}\b/);
                 if(matchId) inputId.value = matchId[0];
             }
-
-            // Tenta pegar o valor (R$ XXX,XX)
             if(!inputValor.value) {
                 let matchValor = titulo.match(/R\$\s?[\d\.,]+/i);
                 if(matchValor) {
@@ -439,6 +587,11 @@
         let currentKey = null;
 
         function abrirModal(key) {
+            // Prevenir abrir modal durante drag
+            if (document.activeElement && document.activeElement.tagName === 'BODY' && event && event.type === 'click') {
+                // Dragging in HTML5 sometimes fires a click at the end. The event target logic handles it generally, but just in case.
+            }
+
             currentKey = key;
             document.getElementById('form-id').value = key || '';
             document.getElementById('form-titulo').value = '';
@@ -503,6 +656,7 @@
                 observacoes: []
             };
 
+            let statusAntigo = item.status;
             item.titulo = titulo;
             item.descricao = descricao;
             item.pacote_id = pacote_id;
@@ -511,8 +665,18 @@
             item.data_atualizacao = Date.now();
             item.responsavel = userName;
 
+            if(!item.observacoes) item.observacoes = [];
+
+            // Se mudou o status pelo select, também registra no histórico
+            if(!isNew && statusAntigo !== status) {
+                item.observacoes.push({
+                    texto: `🚦 Status alterado de [${statusAntigo}] para [${status}]`,
+                    autor: userName,
+                    data: Date.now()
+                });
+            }
+
             if (novaNota) {
-                if(!item.observacoes) item.observacoes = [];
                 item.observacoes.push({
                     texto: novaNota,
                     autor: userName,
@@ -528,11 +692,10 @@
                 });
 
                 BANCO_EMAILS[key] = item;
-                
                 await registrarLogFirebase("Tratativas E-mail", isNew ? `Cadastrou tratativa: ${pacote_id || 'Sem ID'}` : `Atualizou tratativa: ${pacote_id || 'Sem ID'} para ${status}`);
                 
                 fecharModal();
-                renderizarLista();
+                renderizarInterface();
             } catch (err) {
                 alert("Erro ao salvar no banco de dados.");
             }
@@ -550,7 +713,7 @@
                 await registrarLogFirebase("Tratativas E-mail", `Excluiu a tratativa ID: ${deletedItem.pacote_id || 'Desconhecido'}`);
                 
                 fecharModal();
-                renderizarLista();
+                renderizarInterface();
             } catch (err) {
                 alert("Erro ao deletar.");
             }
