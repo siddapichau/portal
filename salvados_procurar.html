@@ -172,6 +172,30 @@
         let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; 
         let PAGE_SIZE = 50; let CUR_PAGE_EXATOS = 0; let CUR_PAGE_APROX = 0;
         const STOPWORDS = ['de', 'para', 'com', 'o', 'a', 'os', 'as', 'em', 'um', 'uma', 'uns', 'umas', 'no', 'na', 'nos', 'nas', 'do', 'da', 'dos', 'das', 'por', 'sem'];
+        
+        const DICIONARIO_SINONIMOS = { 
+            'tenis': ['sapato', 'calcado', 'sneaker', 'chuteira', 'bota'], 
+            'sapato': ['tenis', 'calcado', 'sneaker', 'chuteira', 'bota'], 
+            'celular': ['smartphone', 'telefone', 'iphone', 'aparelho', 'mobile'], 
+            'smartphone': ['celular', 'telefone', 'iphone', 'aparelho', 'mobile'], 
+            'tv': ['televisao', 'televisor', 'smartv', 'monitor', 'tela'], 
+            'televisao': ['tv', 'televisor', 'smartv', 'monitor', 'tela'], 
+            'pc': ['computador', 'notebook', 'desktop', 'laptop', 'macbook'], 
+            'computador': ['pc', 'notebook', 'desktop', 'laptop', 'macbook'], 
+            'notebook': ['pc', 'computador', 'desktop', 'laptop', 'macbook'], 
+            'geladeira': ['refrigerador', 'freezer', 'frigobar'], 
+            'refrigerador': ['geladeira', 'freezer', 'frigobar'], 
+            'fone': ['headset', 'headphone', 'earphone', 'airpods', 'ouvido'], 
+            'headset': ['fone', 'headphone', 'earphone', 'airpods', 'ouvido'], 
+            'relogio': ['smartwatch', 'pulseira', 'watch'], 
+            'smartwatch': ['relogio', 'pulseira', 'watch'], 
+            'bicicleta': ['bike', 'bici', 'ciclismo'], 
+            'bike': ['bicicleta', 'bici', 'ciclismo'], 
+            'pneu': ['pneus', 'borracha', 'roda', 'aro'], 
+            'video': ['game', 'videogame', 'console', 'playstation', 'xbox', 'nintendo'], 
+            'console': ['game', 'videogame', 'video', 'playstation', 'xbox', 'nintendo'], 
+            'jogo': ['game', 'cartucho', 'cd', 'dvd', 'midia'] 
+        };
 
         // ============ SINCRONIZAÇÃO TEMA E PERMISSÕES (VERIFICA NO PAI) ============
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
@@ -276,6 +300,13 @@
 
             let qNormalizado = removerAcentos(query).toLowerCase().trim();
             let queryTokens = qNormalizado.split(/\s+/).filter(w => !STOPWORDS.includes(w) && w.length > 1);
+            
+            let expandedTokensGroups = queryTokens.map(qt => {
+                let group = [qt];
+                if (DICIONARIO_SINONIMOS[qt]) group.push(...DICIONARIO_SINONIMOS[qt]);
+                return group;
+            });
+
             let exatosBrutos = []; let aproximadosBrutos = [];
 
             for (let i = 0; i < BANCO_GLOBAL.length; i++) {
@@ -286,7 +317,11 @@
                 
                 if (queryTokens.length > 0) {
                     let descTokens = desc.split(/\s+/); let matchedTokens = 0;
-                    queryTokens.forEach(qt => { if (descTokens.some(dt => dt.includes(qt))) matchedTokens++; });
+                    
+                    expandedTokensGroups.forEach(group => { 
+                        if (descTokens.some(dt => group.some(syn => dt.includes(syn)))) matchedTokens++; 
+                    });
+                    
                     if (matchedTokens > 0) {
                         let score = 0;
                         if (matchedTokens === queryTokens.length) score = 2000 + matchedTokens;
