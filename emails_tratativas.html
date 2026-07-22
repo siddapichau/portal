@@ -41,7 +41,9 @@
 
         /* LISTA DE E-MAILS */
         .list-container { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
-        .search-bar { padding: 10px 15px; width: 100%; border: 1px solid var(--border-card); border-radius: 8px; background: var(--bg-input); color: var(--text-main); font-weight: 600; outline: none; transition: 0.3s; }
+        
+        .search-area { display: flex; gap: 10px; flex-wrap: wrap; }
+        .search-bar { padding: 10px 15px; border: 1px solid var(--border-card); border-radius: 8px; background: var(--bg-input); color: var(--text-main); font-weight: 600; outline: none; transition: 0.3s; font-family: 'Inter', sans-serif;}
         .search-bar:focus { border-color: var(--accent-blue); }
 
         .emails-scroll { flex: 1; overflow-y: auto; padding-right: 5px; display: flex; flex-direction: column; gap: 10px; }
@@ -50,7 +52,8 @@
         .email-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
         
         .email-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-        .email-title { font-size: 0.95rem; font-weight: 800; color: var(--text-title); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .email-title { font-size: 0.95rem; font-weight: 900; color: var(--text-title); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .email-desc { font-size: 0.8rem; font-weight: 600; color: var(--text-main); display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; margin-top: -3px; }
         
         .email-meta { display: flex; gap: 15px; font-size: 0.8rem; color: var(--text-muted); font-weight: 600; align-items: center; flex-wrap: wrap; }
         .email-meta span strong { color: var(--text-main); }
@@ -59,12 +62,12 @@
         .email-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-card); padding-top: 10px; margin-top: 5px; }
         
         /* STATUS BADGES */
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #fff; }
-        .status-aberto { background: #FF5252; } /* Vermelho */
-        .status-esperando { background: #FFB000; color: #333; } /* Amarelo */
-        .status-respondido { background: #06b6d4; } /* Ciano */
-        .status-andamento { background: #8b5cf6; } /* Roxo */
-        .status-finalizado { background: #00A650; } /* Verde */
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; color: #fff; white-space: nowrap; }
+        .status-aberto { background: #FF5252; } 
+        .status-esperando { background: #FFB000; color: #333; } 
+        .status-respondido { background: #06b6d4; } 
+        .status-andamento { background: #8b5cf6; } 
+        .status-finalizado { background: #00A650; } 
 
         /* DASHBOARD LATERAL */
         .dash-container { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
@@ -127,9 +130,21 @@
 
     <div class="main-grid">
         
-        <!-- COLUNA ESQUERDA: LISTA -->
+        <!-- COLUNA ESQUERDA: LISTA E FILTROS -->
         <div class="list-container glass-panel" style="padding: 15px;">
-            <input type="text" id="search-input" class="search-bar" placeholder="🔍 Buscar por ID, Título ou Transportadora..." oninput="renderizarLista()">
+            
+            <!-- BARRA DE FILTROS E PESQUISA -->
+            <div class="search-area">
+                <select id="filter-status" class="search-bar" style="flex: 0 0 auto; width: auto; cursor: pointer;" onchange="renderizarLista()">
+                    <option value="Todos">Todos os Status</option>
+                    <option value="Aberto">🔴 Aberto</option>
+                    <option value="Esperando resposta">🟡 Esperando resposta</option>
+                    <option value="Respondido">🔵 Respondido</option>
+                    <option value="Andamento">🟣 Andamento</option>
+                </select>
+                <input type="text" id="search-input" class="search-bar" style="flex: 1; min-width: 250px;" placeholder="🔍 Buscar por ID, Título ou Descrição do Produto..." oninput="renderizarLista()">
+            </div>
+
             <div class="emails-scroll" id="emails-list">
                 <div style="text-align:center; padding: 30px; color: var(--text-muted);">Buscando e-mails...</div>
             </div>
@@ -175,6 +190,11 @@
                     <label>Título / Assunto do E-mail</label>
                     <input type="text" id="form-titulo" placeholder="Ex: ON WAY A.I 365 DHL MERCADO LIVRE..." oninput="tentarExtrairDados()">
                     <div class="smart-paste-hint">✨ Cole o assunto inteiro acima para preencher ID e Valor automaticamente!</div>
+                </div>
+
+                <div class="form-group">
+                    <label>Descrição / Detalhes do Produto (Opcional)</label>
+                    <input type="text" id="form-descricao" placeholder="Ex: Fogão Cooktop Gás Fischer Infinity 26298 Preto 127/220v...">
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
@@ -265,6 +285,23 @@
             document.getElementById('tab-ativos').classList.remove('active');
             document.getElementById('tab-finalizados').classList.remove('active');
             document.getElementById(`tab-${aba}`).classList.add('active');
+            
+            // Lógica inteligente para o filtro de status
+            const filterStatus = document.getElementById('filter-status');
+            if (aba === 'finalizados') {
+                filterStatus.innerHTML = '<option value="Finalizado">🟢 Finalizado</option>';
+                filterStatus.disabled = true;
+            } else {
+                filterStatus.innerHTML = `
+                    <option value="Todos">Todos os Status</option>
+                    <option value="Aberto">🔴 Aberto</option>
+                    <option value="Esperando resposta">🟡 Esperando resposta</option>
+                    <option value="Respondido">🔵 Respondido</option>
+                    <option value="Andamento">🟣 Andamento</option>
+                `;
+                filterStatus.disabled = false;
+            }
+
             renderizarLista();
         }
 
@@ -296,10 +333,12 @@
         }
 
         function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+        function removerAcentos(str) { return String(str ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
 
         function renderizarLista() {
             const listEl = document.getElementById('emails-list');
-            const busca = document.getElementById('search-input').value.toLowerCase().trim();
+            const busca = removerAcentos(document.getElementById('search-input').value.toLowerCase().trim());
+            const filtroStatus = document.getElementById('filter-status').value;
             
             let html = '';
             let contadorAba = 0; let valorAba = 0;
@@ -307,11 +346,11 @@
 
             let emailsArray = Object.keys(BANCO_EMAILS).map(key => ({ key, ...BANCO_EMAILS[key] }));
             
-            // Ordena (Mais recentes por último na atualização, mas podemos ordenar por data_atualizacao desc)
+            // Ordena (Mais recentes por último na atualização)
             emailsArray.sort((a,b) => b.data_atualizacao - a.data_atualizacao);
 
             emailsArray.forEach(item => {
-                // Conta KPIs gerais
+                // Conta KPIs gerais (ignora abas para montar o dashboard geral)
                 if(counts[item.status] !== undefined) counts[item.status]++;
 
                 // Filtro de Aba
@@ -319,11 +358,17 @@
                 if (ABA_ATUAL === 'ativos' && isFinalizado) return;
                 if (ABA_ATUAL === 'finalizados' && !isFinalizado) return;
 
-                // Filtro de Busca
-                let txtBusca = [item.titulo, item.pacote_id].join(' ').toLowerCase();
-                if (busca && !txtBusca.includes(busca)) return;
+                // Filtro de Status
+                if (filtroStatus !== 'Todos' && item.status !== filtroStatus) return;
 
-                // Acumula KPIs da Aba
+                // Filtro de Busca Completa (Varre Título, Descrição, ID e Histórico de Notas)
+                if (busca) {
+                    let txtNotas = (item.observacoes || []).map(o => o.texto).join(' ');
+                    let txtBusca = removerAcentos([item.titulo, item.descricao, item.pacote_id, txtNotas].join(' ')).toLowerCase();
+                    if (!txtBusca.includes(busca)) return;
+                }
+
+                // Acumula KPIs da Aba atual filtrada
                 contadorAba++;
                 valorAba += parseCurrency(item.valor);
 
@@ -332,12 +377,15 @@
                 const badgeClass = getClassByStatus(item.status);
                 const borderColor = getColorByStatus(item.status);
 
+                let descHtml = item.descricao ? `<div class="email-desc">${escapeHtml(item.descricao)}</div>` : '';
+
                 html += `
                     <div class="email-card glass-panel" style="border-left-color: ${borderColor};" onclick="abrirModal('${item.key}')">
                         <div class="email-header">
                             <div class="email-title">${escapeHtml(item.titulo)}</div>
                             <span class="badge ${badgeClass}">${item.status}</span>
                         </div>
+                        ${descHtml}
                         <div class="email-meta" style="margin-top: 5px;">
                             <span>📦 ID: <strong>${escapeHtml(item.pacote_id || 'N/A')}</strong></span>
                         </div>
@@ -351,10 +399,10 @@
                 `;
             });
 
-            if (html === '') html = `<div style="text-align:center; padding: 40px; color: var(--text-muted); font-weight:600;">Nenhum e-mail encontrado nesta aba.</div>`;
+            if (html === '') html = `<div style="text-align:center; padding: 40px; color: var(--text-muted); font-weight:600;">Nenhum e-mail encontrado com os filtros atuais.</div>`;
             listEl.innerHTML = html;
 
-            // Atualiza Dashboard
+            // Atualiza Dashboard Lateral
             document.getElementById('dash-total').innerText = contadorAba;
             document.getElementById('dash-valor').innerText = `R$ ${valorAba.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
             
@@ -394,6 +442,7 @@
             currentKey = key;
             document.getElementById('form-id').value = key || '';
             document.getElementById('form-titulo').value = '';
+            document.getElementById('form-descricao').value = '';
             document.getElementById('form-pacote').value = '';
             document.getElementById('form-valor').value = '';
             document.getElementById('form-status').value = 'Aberto';
@@ -405,6 +454,7 @@
                 const item = BANCO_EMAILS[key];
                 document.getElementById('modal-title').innerText = "Editar E-mail";
                 document.getElementById('form-titulo').value = item.titulo || '';
+                document.getElementById('form-descricao').value = item.descricao || '';
                 document.getElementById('form-pacote').value = item.pacote_id || '';
                 document.getElementById('form-valor').value = item.valor || '';
                 document.getElementById('form-status').value = item.status || 'Aberto';
@@ -436,6 +486,7 @@
             if(!canEdit) return alert("Você não tem permissão para editar.");
 
             const titulo = document.getElementById('form-titulo').value.trim();
+            const descricao = document.getElementById('form-descricao').value.trim();
             const pacote_id = document.getElementById('form-pacote').value.trim();
             const valor = document.getElementById('form-valor').value.trim();
             const status = document.getElementById('form-status').value;
@@ -453,6 +504,7 @@
             };
 
             item.titulo = titulo;
+            item.descricao = descricao;
             item.pacote_id = pacote_id;
             item.valor = valor;
             item.status = status;
