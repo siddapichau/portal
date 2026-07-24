@@ -40,8 +40,11 @@
         .btn-header { background: #FFFFFF !important; color: #333333 !important; border: 1px solid #CCCCCC !important; border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all .2s ease; }
         .btn-header:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important; }
         
-        .btn-ia { border-color: var(--accent-blue) !important; color: var(--accent-blue) !important; font-size: 0.9rem;}
-        .btn-ia:hover { background: var(--accent-blue) !important; color: #fff !important; }
+        .btn-ia-1 { border-color: var(--accent-blue) !important; color: var(--accent-blue) !important; font-size: 0.9rem;}
+        .btn-ia-1:hover { background: var(--accent-blue) !important; color: #fff !important; }
+
+        .btn-ia-2 { border-color: #f97316 !important; color: #f97316 !important; font-size: 0.9rem;}
+        .btn-ia-2:hover { background: #f97316 !important; color: #fff !important; }
 
         .btn { background: var(--bg-body); color: var(--text-title); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: 0.2s; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -104,7 +107,7 @@
         .ia-input-group label { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
         .ia-input { background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); padding: 10px; border-radius: 8px; font-size: 0.9rem; outline: none;}
         .ia-input:focus { border-color: var(--accent-blue); }
-        .ia-box-resultado { background: rgba(52, 131, 250, 0.05); border: 1px dashed var(--accent-blue); border-radius: 8px; padding: 15px; font-size: 0.9rem; color: var(--text-main); min-height: 100px; max-height: 350px; overflow-y: auto;}
+        .ia-box-resultado { background: rgba(0,0,0, 0.02); border: 1px dashed #ccc; border-radius: 8px; padding: 15px; font-size: 0.9rem; color: var(--text-main); min-height: 100px; max-height: 350px; overflow-y: auto;}
         
         .ia-match-card { background: var(--bg-card); border: 1px solid var(--border-card); padding: 10px; border-radius: 6px; margin-top: 10px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .ia-match-header { display: flex; justify-content: space-between; align-items: center; }
@@ -125,11 +128,13 @@
             <div style="width: 100%;"><input type="text" class="search-input" id="search-input" placeholder="🔍 Buscar ID, Rastreio ou Descrição..." oninput="executarSmartSearch()"></div>
         </div>
         <div class="nav-right" style="display: flex; gap: 8px;">
-            <button class="btn-header btn-ia" onclick="abrirModalIA()">✨ Assistente IA v2</button>
-            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none;">📂 Gerenciar Arquivos</button>
+            <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')">✨ Assistente V1</button>
+            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')">🚀 Assistente V2</button>
+            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none;">📂 Arquivos</button>
         </div>
     </div>
 
+    <!-- Tickers de Status da Base -->
     <div class="status-ticker-row" id="status-ticker">
         <div class="status-pill"><span class="pill-dot" style="background:#e11d48"></span>Devolução 2.0: <span id="lbl-devolucao">Carregando...</span></div>
         <div class="status-pill"><span class="pill-dot" style="background:#2563eb"></span>ID Data: <span id="lbl-iddata">Carregando...</span></div>
@@ -140,6 +145,7 @@
         <div class="status-pill"><span class="pill-dot" style="background:#d97706"></span>Parado Percurso: <span id="lbl-parado">Carregando...</span></div>
     </div>
 
+    <!-- Resultados -->
     <div class="resultados-container" id="resultados-container">
         <div class="table-wrapper glass-panel" id="container-vazio">
             <table>
@@ -184,10 +190,13 @@
         </div>
     </div>
 
-    <!-- MODAL ASSISTENTE IA -->
+    <!-- MODAL ASSISTENTE IA (UNIFICADO) -->
     <div class="modal-overlay" id="modal-ia">
         <div class="modal-content">
-            <div class="modal-header"><div class="modal-title" style="color: var(--accent-blue);">✨ Assistente Inteligente</div><button class="close-modal" onclick="fecharModalIA()">×</button></div>
+            <div class="modal-header">
+                <div class="modal-title" id="modal-ia-title" style="color: var(--accent-blue);">✨ Assistente Inteligente</div>
+                <button class="close-modal" onclick="fecharModalIA()">×</button>
+            </div>
             <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados das bases com imagens da bancada ou anúncios do Mercado Livre.</div>
             
             <div class="ia-input-group">
@@ -196,7 +205,7 @@
             </div>
             
             <div class="ia-input-group">
-                <label>Foto da Bancada (Opcional, mas recomendado)</label>
+                <label>Foto da Bancada (Obrigatório na V2)</label>
                 <div class="upload-wrapper" style="border: 1px dashed var(--border-card); border-radius: 8px;">
                     <button class="btn" style="background: transparent; border: none; padding: 15px; color: var(--text-muted);" id="btn-ia-file-label">📷 Anexar Foto do Item</button>
                     <input type="file" accept="image/*" id="ia-foto" onchange="previewIAFile(this)" />
@@ -218,43 +227,24 @@
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const DB_NODES = { 'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata', 'q10': 'salvados_q10', 'q15': 'salvados_q15', 'qonhub': 'salvados_qonhub', 'cftv': 'salvados_cftv', 'parado': 'salvados_parado' };
 
-        // ⚠️ CHAVE DE API GEMINI VISION ATUALIZADA
+        // ==============================
+        // ⚠️ CHAVES DE API 
+        // ==============================
         const GEMINI_API_KEY = "AQ.Ab8RN6KKQxvBtTlRluYCFxJ50YyN0cGQGEgOt4oUTcgHwmE3gA";
-
+        const GROQ_API_KEY = "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"; // Crie a chave em console.groq.com
+        
+        let CURRENT_IA = 'v1'; // Define qual IA vai ser chamada
+        
         let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; 
-        let ITENS_ENCONTRADOS = new Set(); // Guarda os IDs já marcados como Achado
+        let ITENS_ENCONTRADOS = new Set(); 
         
         let PAGE_SIZE = 50; let CUR_PAGE_EXATOS = 0; let CUR_PAGE_APROX = 0;
         const STOPWORDS = ['de', 'para', 'com', 'o', 'a', 'os', 'as', 'em', 'um', 'uma', 'uns', 'umas', 'no', 'na', 'nos', 'nas', 'do', 'da', 'dos', 'das', 'por', 'sem'];
         
-        const DICIONARIO_SINONIMOS = { 
-            'tenis': ['sapato', 'calcado', 'sneaker', 'chuteira', 'bota'], 
-            'sapato': ['tenis', 'calcado', 'sneaker', 'chuteira', 'bota'], 
-            'celular': ['smartphone', 'telefone', 'iphone', 'aparelho', 'mobile'], 
-            'smartphone': ['celular', 'telefone', 'iphone', 'aparelho', 'mobile'], 
-            'tv': ['televisao', 'televisor', 'smartv', 'monitor', 'tela'], 
-            'televisao': ['tv', 'televisor', 'smartv', 'monitor', 'tela'], 
-            'pc': ['computador', 'notebook', 'desktop', 'laptop', 'macbook'], 
-            'computador': ['pc', 'notebook', 'desktop', 'laptop', 'macbook'], 
-            'notebook': ['pc', 'computador', 'desktop', 'laptop', 'macbook'], 
-            'geladeira': ['refrigerador', 'freezer', 'frigobar'], 
-            'refrigerador': ['geladeira', 'freezer', 'frigobar'], 
-            'fone': ['headset', 'headphone', 'earphone', 'airpods', 'ouvido'], 
-            'headset': ['fone', 'headphone', 'earphone', 'airpods', 'ouvido'], 
-            'relogio': ['smartwatch', 'pulseira', 'watch'], 
-            'smartwatch': ['relogio', 'pulseira', 'watch'], 
-            'bicicleta': ['bike', 'bici', 'ciclismo'], 
-            'bike': ['bicicleta', 'bici', 'ciclismo'], 
-            'pneu': ['pneus', 'borracha', 'roda', 'aro'], 
-            'video': ['game', 'videogame', 'console', 'playstation', 'xbox', 'nintendo'], 
-            'console': ['game', 'videogame', 'video', 'playstation', 'xbox', 'nintendo'], 
-            'jogo': ['game', 'cartucho', 'cd', 'dvd', 'midia'] 
-        };
+        const DICIONARIO_SINONIMOS = { 'tenis': ['sapato', 'calcado', 'sneaker', 'chuteira', 'bota'], 'celular': ['smartphone', 'telefone', 'iphone', 'aparelho', 'mobile'], 'tv': ['televisao', 'televisor', 'smartv', 'monitor', 'tela'], 'pc': ['computador', 'notebook', 'desktop', 'laptop', 'macbook'], 'geladeira': ['refrigerador', 'freezer', 'frigobar'], 'fone': ['headset', 'headphone', 'earphone', 'airpods', 'ouvido'], 'relogio': ['smartwatch', 'pulseira', 'watch'], 'bicicleta': ['bike', 'bici', 'ciclismo'], 'pneu': ['pneus', 'borracha', 'roda', 'aro'], 'video': ['game', 'videogame', 'console', 'playstation', 'xbox', 'nintendo'] };
 
-        // ============ SINCRONIZAÇÃO TEMA E PERMISSÕES ============
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
-        syncTheme();
-        window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') document.body.setAttribute('data-theme', event.data.theme); });
+        syncTheme(); window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') document.body.setAttribute('data-theme', event.data.theme); });
 
         const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
         let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
@@ -264,65 +254,57 @@
         if(canEdit) { document.getElementById('btn-gerenciar').style.display = 'inline-flex'; }
 
         async function registrarLogFirebase(modulo, acao) {
-            try {
-                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
-                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
-            } catch(e) {}
+            try { await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modulo, acao, usuario: userName, timestamp: Date.now() }) }); } catch(e) {}
         }
 
         function abrirModalGerenciador() { document.getElementById('modal-gerenciador').classList.add('active'); }
         function fecharModalGerenciador() { document.getElementById('modal-gerenciador').classList.remove('active'); }
         
-        function abrirModalIA() { document.getElementById('modal-ia').classList.add('active'); }
+        // Controlador visual do modal IA
+        function abrirModalIA(versao) { 
+            CURRENT_IA = versao;
+            const title = document.getElementById('modal-ia-title');
+            const btnRun = document.getElementById('btn-run-ia');
+            document.getElementById('ia-resultado').innerHTML = "Aguardando entrada de dados... A IA extrairá características e varrerá o banco procurando pelo maior 'Match'.";
+            
+            if(versao === 'v1') {
+                title.innerHTML = "✨ Assistente Inteligente V1 (Gemini)";
+                title.style.color = "var(--accent-blue)";
+                btnRun.style.background = "var(--accent-blue)";
+            } else {
+                title.innerHTML = "🚀 Assistente Inteligente V2 (Groq)";
+                title.style.color = "#f97316";
+                btnRun.style.background = "#f97316";
+            }
+            document.getElementById('modal-ia').classList.add('active'); 
+        }
         function fecharModalIA() { document.getElementById('modal-ia').classList.remove('active'); }
 
-        // ==========================================
-        // SISTEMA DE "ENCONTRADOS" (✅)
-        // ==========================================
         async function carregarListaEncontrados() {
-            try {
-                const res = await fetch(`${FIREBASE_URL}salvados_encontrados.json`);
-                const data = await res.json();
-                if(data) { Object.keys(data).forEach(k => ITENS_ENCONTRADOS.add(k)); }
-            } catch(e) {}
+            try { const res = await fetch(`${FIREBASE_URL}salvados_encontrados.json`); const data = await res.json(); if(data) { Object.keys(data).forEach(k => ITENS_ENCONTRADOS.add(k)); } } catch(e) {}
         }
 
         window.marcarComoEncontrado = async function(id) {
-            if(!confirm(`Tem certeza que deseja marcar o pacote ${id} como ENCONTRADO? Ele será ocultado das pesquisas.`)) return;
+            if(!confirm(`Tem certeza que deseja marcar o pacote ${id} como ENCONTRADO?`)) return;
             let idLimpo = String(id).toLowerCase().trim().replace(/[.#$\[\]]/g, "_");
             try {
                 await fetch(`${FIREBASE_URL}salvados_encontrados/${idLimpo}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: Date.now(), user: userName }) });
-                ITENS_ENCONTRADOS.add(idLimpo);
-                await registrarLogFirebase("Buscador Global", `Marcou o item <b>${id}</b> como ENCONTRADO.`);
-                executarSmartSearch(); // Recarrega tela
-                
-                if(document.getElementById('modal-ia').classList.contains('active')) {
-                    document.getElementById('ia-resultado').innerHTML = `<div style="color: var(--accent-green); font-weight: 900; text-align:center; padding: 20px;">✅ Pacote Registrado com Sucesso!</div>`;
-                }
-            } catch (e) { alert("Erro de comunicação ao salvar a baixa."); }
+                ITENS_ENCONTRADOS.add(idLimpo); await registrarLogFirebase("Buscador Global", `Marcou item <b>${id}</b> como ENCONTRADO.`); executarSmartSearch(); 
+                if(document.getElementById('modal-ia').classList.contains('active')) { document.getElementById('ia-resultado').innerHTML = `<div style="color: var(--accent-green); font-weight: 900; text-align:center; padding: 20px;">✅ Pacote Registrado com Sucesso!</div>`; }
+            } catch (e) { alert("Erro de comunicação."); }
         };
 
         // ==========================================
-        // CÉREBRO IA: INTEGRAÇÃO GEMINI VISION
+        // CÉREBRO DAS INTELIGÊNCIAS ARTIFICIAIS
         // ==========================================
         function previewIAFile(input) {
             const btnLabel = document.getElementById('btn-ia-file-label');
-            if(input.files && input.files[0]) {
-                btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`;
-                btnLabel.style.color = "var(--accent-green)";
-            } else {
-                btnLabel.innerHTML = `📷 Anexar Foto do Item`;
-                btnLabel.style.color = "var(--text-muted)";
-            }
+            if(input.files && input.files[0]) { btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`; btnLabel.style.color = "var(--accent-green)"; } 
+            else { btnLabel.innerHTML = `📷 Anexar Foto do Item`; btnLabel.style.color = "var(--text-muted)"; }
         }
 
         function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = error => reject(error);
-            });
+            return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); });
         }
 
         async function executarBuscaIA() {
@@ -332,131 +314,152 @@
             const btnRun = document.getElementById('btn-run-ia');
             
             if(!link && !file) {
-                resBox.innerHTML = "<span style='color:#FF5252; font-weight: bold;'>⚠️ Por favor, insira um Link do Mercado Livre ou anexe uma foto da bancada.</span>";
+                resBox.innerHTML = "<span style='color:#FF5252; font-weight: bold;'>⚠️ Por favor, insira um Link ou anexe uma foto.</span>";
                 return;
             }
 
             btnRun.disabled = true; btnRun.innerText = "⏳ Analisando...";
-            resBox.innerHTML = "⏳ <i>Conectando à Inteligência Artificial... Extraindo características visuais e de texto...</i>";
+            resBox.innerHTML = "⏳ <i>Conectando à IA... Processando Visão Computacional...</i>";
+
+            const promptText = `
+                Você é um analista de logística.
+                ${link ? `Analise este link do Mercado Livre (se aplicável): ${link}` : ''}
+                Extraia informações da imagem e retorne APENAS um objeto JSON válido, sem texto extra, com esta estrutura exata:
+                {
+                    "termo_base": "Nome genérico do produto (ex: celular, tenis, camisa)",
+                    "cor": "Cor predominante (ex: azul, preto)",
+                    "marca": "Marca visível (ex: samsung, nike)",
+                    "preco_min": 10.00,
+                    "preco_max": 9999.00
+                }
+            `;
 
             try {
-                const promptText = `
-                    Você é um analista de logística de alta performance. Sua missão é identificar características de produtos para ajudar a cruzar dados de pacotes perdidos no armazém.
-                    ${link ? `Analise este link do Mercado Livre (Extraia palavras chaves dele se possível): ${link}` : ''}
-                    Se houver uma imagem, priorize o que você VÊ na imagem.
-                    
-                    Extraia as seguintes informações e retorne ESTRITAMENTE UM OBJETO JSON, sem crases, sem formatação markdown, apenas o JSON bruto:
-                    {
-                        "termo_base": "Nome genérico do produto (ex: celular, tenis, camisa, pneu, tv)",
-                        "cor": "Cor predominante (ex: azul, preto, vermelho)",
-                        "marca": "Marca se estiver visível (ex: samsung, nike, lg)",
-                        "preco_min": 10.00,
-                        "preco_max": 9999.00
-                    }
-                    Preencha o preco_min e preco_max com uma margem de estimativa realista para o produto no mercado atual brasileiro (em BRL).
-                `;
+                let aiResult;
+                if(CURRENT_IA === 'v1') { aiResult = await chamarAPI_Gemini(promptText, file); } 
+                else { aiResult = await chamarAPI_Groq(promptText, file); }
 
-                const payloadContents = [{ parts: [{ text: promptText }] }];
-
-                if(file) {
-                    const base64Data = await fileToBase64(file);
-                    payloadContents[0].parts.push({
-                        inline_data: { mime_type: file.type, data: base64Data }
-                    });
-                }
-
-                // CORREÇÃO: Adicionado o "-latest" no nome do modelo da API
-                const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: payloadContents })
-                });
-
-                if(!apiReq.ok) {
-                    const errorDetails = await apiReq.json();
-                    const realErrorMessage = errorDetails.error?.message || apiReq.statusText;
-                    throw new Error(`Google API retornou: ${realErrorMessage}`);
-                }
-
-                const apiData = await apiReq.json();
-                let aiResponseText = apiData.candidates[0].content.parts[0].text;
-                
-                let cleanJsonString = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
-                let aiResult = JSON.parse(cleanJsonString);
-
-                let matches = [];
-                BANCO_GLOBAL.forEach(item => {
-                    let idClean = String(item.ID).toLowerCase().trim().replace(/[.#$\[\]]/g, "_");
-                    if(ITENS_ENCONTRADOS.has(idClean)) return; 
-
-                    let desc = (item.Descricao || '').toLowerCase();
-                    let valorNum = item.ValorNum || 0;
-                    let score = 0;
-
-                    let termo = (aiResult.termo_base || '').toLowerCase();
-                    if(termo && desc.includes(termo)) score += 50;
-
-                    let cor = (aiResult.cor || '').toLowerCase();
-                    if(cor && desc.includes(cor)) score += 20;
-
-                    let marca = (aiResult.marca || '').toLowerCase();
-                    if(marca && desc.includes(marca)) score += 20;
-
-                    if(valorNum > 0 && valorNum >= (aiResult.preco_min * 0.8) && valorNum <= (aiResult.preco_max * 1.2)) {
-                        score += 30;
-                    }
-
-                    if(score >= 30) {
-                        matches.push({ ...item, aiScore: score });
-                    }
-                });
-
-                matches.sort((a,b) => b.aiScore - a.aiScore);
-                let topMatches = matches.slice(0, 5); 
-
-                let htmlResult = `
-                    <div style="color: var(--accent-green); font-weight: 900; margin-bottom: 5px;">✅ Inteligência Artificial Finalizou:</div>
-                    <div style="font-size: 0.8rem; background: var(--bg-body); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 15px;">
-                        <b>Produto:</b> <span style="text-transform: capitalize;">${aiResult.termo_base}</span> | <b>Cor:</b> ${aiResult.cor} | <b>Marca:</b> ${aiResult.marca} <br>
-                        <b>Est. Valor:</b> R$ ${aiResult.preco_min} até R$ ${aiResult.preco_max}
-                    </div>
-                    <div style="font-weight: 900; font-size: 0.85rem; color: var(--text-title); text-transform: uppercase;">Top Possibilidades na Base:</div>
-                `;
-
-                if(topMatches.length === 0) {
-                    htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém.</div>`;
-                } else {
-                    topMatches.forEach(m => {
-                        let percent = Math.min(100, Math.round((m.aiScore / 120) * 100)); 
-                        let [origemNome, origemClass] = getClassOrigem(m.OrigemDb);
-                        
-                        htmlResult += `
-                            <div class="ia-match-card">
-                                <div class="ia-match-header">
-                                    <div class="ia-match-title">${escapeHtml(m.ID)} <span class="badge ${origemClass}">${origemNome}</span></div>
-                                    <div class="ia-match-prob">🔥 ${percent}% Match</div>
-                                </div>
-                                <div style="font-size: 0.75rem; color: var(--text-main); font-weight: 600;">${escapeHtml(m.Descricao)}</div>
-                                <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                                    <div style="font-size: 0.75rem; color: var(--accent-green); font-weight: 900;">R$ ${m.ValorNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
-                                    <button class="btn" style="padding: 4px 10px; font-size: 0.7rem; background: var(--accent-green); color: #fff; border:none;" onclick="marcarComoEncontrado('${m.ID}')">✅ Este é o Pacote</button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                }
-                
-                resBox.innerHTML = htmlResult;
-
+                processarResultadoIA(aiResult, resBox);
             } catch(e) {
-                resBox.innerHTML = `<span style='color:#FF5252; font-weight: bold;'>❌ Erro no Processamento IA: <br>${e.message}</span>`;
+                resBox.innerHTML = `<span style='color:#FF5252; font-weight: bold;'>❌ Erro na IA (${CURRENT_IA.toUpperCase()}): <br>${e.message}</span>`;
             } finally {
                 btnRun.disabled = false; btnRun.innerText = "🔎 Analisar e Buscar Padrões";
             }
         }
 
+        // --- INTEGRAÇÃO V1: GOOGLE GEMINI ---
+        async function chamarAPI_Gemini(promptText, file) {
+            const payloadContents = [{ parts: [{ text: promptText }] }];
+            if(file) {
+                const baseDataFull = await fileToBase64(file);
+                payloadContents[0].parts.push({ inline_data: { mime_type: file.type, data: baseDataFull.split(',')[1] } });
+            }
+            
+            // Usando modelo corrigido (2.5-flash)
+            const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: payloadContents })
+            });
+
+            if(!apiReq.ok) {
+                const err = await apiReq.json();
+                throw new Error(err.error?.message || apiReq.statusText);
+            }
+            const apiData = await apiReq.json();
+            let aiResponseText = apiData.candidates[0].content.parts[0].text;
+            let cleanJsonString = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanJsonString);
+        }
+
+        // --- INTEGRAÇÃO V2: GROQ (LLAMA 3.2 VISION) ---
+        async function chamarAPI_Groq(promptText, file) {
+            if(!GROQ_API_KEY || GROQ_API_KEY.includes("COLOQUE_AQUI")) throw new Error("Chave da Groq não configurada no código-fonte.");
+            if(!file) throw new Error("O modelo Vision da Groq exige obrigatoriamente que uma foto seja enviada.");
+
+            const baseDataFull = await fileToBase64(file);
+            
+            const payload = {
+                model: "llama-3.2-11b-vision-preview",
+                messages: [{
+                    role: "user",
+                    content: [
+                        { type: "text", text: promptText },
+                        { type: "image_url", image_url: { url: baseDataFull } }
+                    ]
+                }],
+                response_format: { type: "json_object" }
+            };
+
+            const apiReq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if(!apiReq.ok) {
+                const err = await apiReq.json();
+                throw new Error(err.error?.message || apiReq.statusText);
+            }
+            const apiData = await apiReq.json();
+            return JSON.parse(apiData.choices[0].message.content);
+        }
+
+        // --- SISTEMA DE SCORING E RENDERIZAÇÃO UNIFICADO ---
+        function processarResultadoIA(aiResult, resBox) {
+            let matches = [];
+            BANCO_GLOBAL.forEach(item => {
+                let idClean = String(item.ID).toLowerCase().trim().replace(/[.#$\[\]]/g, "_");
+                if(ITENS_ENCONTRADOS.has(idClean)) return; 
+
+                let desc = (item.Descricao || '').toLowerCase(); let valorNum = item.ValorNum || 0; let score = 0;
+                let termo = (aiResult.termo_base || '').toLowerCase(); if(termo && desc.includes(termo)) score += 50;
+                let cor = (aiResult.cor || '').toLowerCase(); if(cor && desc.includes(cor)) score += 20;
+                let marca = (aiResult.marca || '').toLowerCase(); if(marca && desc.includes(marca)) score += 20;
+                if(valorNum > 0 && valorNum >= (aiResult.preco_min * 0.8) && valorNum <= (aiResult.preco_max * 1.2)) score += 30;
+
+                if(score >= 30) matches.push({ ...item, aiScore: score });
+            });
+
+            matches.sort((a,b) => b.aiScore - a.aiScore);
+            let topMatches = matches.slice(0, 5); 
+
+            let iconeTitle = CURRENT_IA === 'v1' ? '✅ IA V1 (Gemini)' : '🚀 IA V2 (Groq)';
+            let corTitle = CURRENT_IA === 'v1' ? 'var(--accent-blue)' : '#f97316';
+
+            let htmlResult = `
+                <div style="color: ${corTitle}; font-weight: 900; margin-bottom: 5px;">${iconeTitle} Finalizou:</div>
+                <div style="font-size: 0.8rem; background: var(--bg-body); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 15px;">
+                    <b>Produto:</b> <span style="text-transform: capitalize;">${aiResult.termo_base}</span> | <b>Cor:</b> ${aiResult.cor} | <b>Marca:</b> ${aiResult.marca} <br>
+                    <b>Est. Valor:</b> R$ ${aiResult.preco_min} até R$ ${aiResult.preco_max}
+                </div>
+                <div style="font-weight: 900; font-size: 0.85rem; color: var(--text-title); text-transform: uppercase;">Top Possibilidades na Base:</div>
+            `;
+
+            if(topMatches.length === 0) {
+                htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém.</div>`;
+            } else {
+                topMatches.forEach(m => {
+                    let percent = Math.min(100, Math.round((m.aiScore / 120) * 100)); 
+                    let [origemNome, origemClass] = getClassOrigem(m.OrigemDb);
+                    htmlResult += `
+                        <div class="ia-match-card">
+                            <div class="ia-match-header">
+                                <div class="ia-match-title">${escapeHtml(m.ID)} <span class="badge ${origemClass}">${origemNome}</span></div>
+                                <div class="ia-match-prob">🔥 ${percent}% Match</div>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-main); font-weight: 600;">${escapeHtml(m.Descricao)}</div>
+                            <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                                <div style="font-size: 0.75rem; color: var(--accent-green); font-weight: 900;">R$ ${m.ValorNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
+                                <button class="btn" style="padding: 4px 10px; font-size: 0.7rem; background: var(--accent-green); color: #fff; border:none;" onclick="marcarComoEncontrado('${m.ID}')">✅ Este é o Pacote</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            resBox.innerHTML = htmlResult;
+        }
+
         // ==========================================
-        // PROCESSAMENTO DE DADOS 
+        // PROCESSAMENTO DE DADOS EXATOS/APROXIMADOS
         // ==========================================
         function removerAcentos(str) { return String(str ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
         function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
@@ -506,9 +509,7 @@
                             Descricao: getVal(row, ['descricao', 'descrição', 'descricao_do_produto', 'descricao do produto', 'produto', 'item', 'title', 'titulo', 'nome']), 
                             Status: getVal(row, ['shp_lg_status', 'status_logistics', 'status', 'staus', 'status do pacote', 'staus do pacote', 'estado', 'situacao', 'situação']), 
                             Substatus: getVal(row, ['shp_lg_sub_status', 'substatus_logistics', 'substatus', 'sub status', 'sub-status', 'ultimo status', 'ultimo_status', 'resolucao', 'resolução', 'motivo', 'detalhe', 'final analise']), 
-                            Valor: valText, 
-                            ValorNum: parseCurrency(valText),
-                            Aging: getVal(row, ['aging', 'dias estocados', 'parados', 'dias parados', 'dias', 'age'])
+                            Valor: valText, ValorNum: parseCurrency(valText), Aging: getVal(row, ['aging', 'dias estocados', 'parados', 'dias parados', 'dias', 'age'])
                         };
                     }).filter(i => i.ID && i.ID.toLowerCase() !== 'nan' && i.ID.toLowerCase() !== 'undefined');
                     
@@ -549,40 +550,23 @@
 
             let qNormalizado = removerAcentos(query).toLowerCase().trim();
             let queryTokens = qNormalizado.split(/\s+/).filter(w => !STOPWORDS.includes(w) && w.length > 1);
-            
-            let expandedTokensGroups = queryTokens.map(qt => {
-                let group = [qt];
-                if (DICIONARIO_SINONIMOS[qt]) group.push(...DICIONARIO_SINONIMOS[qt]);
-                return group;
-            });
+            let expandedTokensGroups = queryTokens.map(qt => { let group = [qt]; if (DICIONARIO_SINONIMOS[qt]) group.push(...DICIONARIO_SINONIMOS[qt]); return group; });
 
             let exatosBrutos = []; let aproximadosBrutos = [];
 
             for (let i = 0; i < BANCO_GLOBAL.length; i++) {
                 let item = BANCO_GLOBAL[i]; if (!item) continue;
-                
-                let id = String(item.ID || '').toLowerCase().trim();
-                let cleanIdFirebase = id.replace(/[.#$\[\]]/g, "_");
-                
+                let id = String(item.ID || '').toLowerCase().trim(); let cleanIdFirebase = id.replace(/[.#$\[\]]/g, "_");
                 if(ITENS_ENCONTRADOS.has(cleanIdFirebase)) continue;
-
                 let desc = removerAcentos(String(item.Descricao || '')).toLowerCase().trim();
                 
                 if (id === qNormalizado || id.includes(qNormalizado) || desc.includes(qNormalizado)) { exatosBrutos.push(item); continue; }
                 
                 if (queryTokens.length > 0) {
                     let descTokens = desc.split(/\s+/); let matchedTokens = 0;
-                    
-                    expandedTokensGroups.forEach(group => { 
-                        if (descTokens.some(dt => group.some(syn => dt.includes(syn)))) matchedTokens++; 
-                    });
-                    
+                    expandedTokensGroups.forEach(group => { if (descTokens.some(dt => group.some(syn => dt.includes(syn)))) matchedTokens++; });
                     if (matchedTokens > 0) {
-                        let score = 0;
-                        if (matchedTokens === queryTokens.length) score = 2000 + matchedTokens;
-                        else if (matchedTokens >= 2) score = 500 + matchedTokens;
-                        else if (queryTokens.length === 1 && matchedTokens === 1) score = 500;
-                        else score = 50;
+                        let score = matchedTokens === queryTokens.length ? 2000 + matchedTokens : (matchedTokens >= 2 ? 500 + matchedTokens : (queryTokens.length === 1 && matchedTokens === 1 ? 500 : 50));
                         aproximadosBrutos.push({ ...item, scoreTemp: score });
                     }
                 }
@@ -609,26 +593,17 @@
 
         function renderizarLinha(i, ehExato) {
             let id = i.ID || '-';
-            let linkRastreio = id !== '-' ? `https://envios.adminml.com/logistics/package-management/package/${escapeHtml(id)}` : '#';
-            let linkSauron = id !== '-' ? `https://shipping-bo.adminml.com/sauron/shipments/shipment/${escapeHtml(id)}` : '#';
-            
             let linkHtml = id !== '-' ? `
                 <div style="display:flex; gap: 4px; align-items:center;">
                     <button class="action-icon check" onclick="marcarComoEncontrado('${escapeHtml(id)}')" title="Marcar item como Encontrado">✅</button>
-                    <a href="${linkRastreio}" target="_blank" class="action-icon">🔍</a>
-                    <a href="${linkSauron}" target="_blank" class="action-icon sauron">📋</a>
+                    <a href="https://envios.adminml.com/logistics/package-management/package/${escapeHtml(id)}" target="_blank" class="action-icon">🔍</a>
+                    <a href="https://shipping-bo.adminml.com/sauron/shipments/shipment/${escapeHtml(id)}" target="_blank" class="action-icon sauron">📋</a>
                 </div>
             ` : '';
             
             let badgesHtml = ''; 
-            if (i.OrigensDb && i.OrigensDb.length > 0) { 
-                badgesHtml = i.OrigensDb.map(origem => { 
-                    let [nome, classe] = getClassOrigem(origem); 
-                    return `<span class="badge ${classe}">${nome}</span>`; 
-                }).join(''); 
-            }
+            if (i.OrigensDb && i.OrigensDb.length > 0) { badgesHtml = i.OrigensDb.map(origem => { let [nome, classe] = getClassOrigem(origem); return `<span class="badge ${classe}">${nome}</span>`; }).join(''); }
             if (i.Aging) { badgesHtml += `<span class="badge badge-aging">⏳ ${escapeHtml(i.Aging)} Dias</span>`; }
-
             let matchClass = ehExato ? 'match-exact' : 'match-partial';
 
             return `<tr class="${matchClass}"><td class="col-id">${linkHtml}<span>${escapeHtml(id)}</span></td><td><div style="display: flex; flex-wrap: wrap; gap: 4px;">${badgesHtml}</div></td><td style="font-weight:600;">${escapeHtml(i.Descricao || '-')}</td><td>${escapeHtml(i.Status || '-')}</td><td style="color:var(--text-muted);">${escapeHtml(i.Substatus || '-')}</td><td class="col-val">R$ ${i.ValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
@@ -636,14 +611,10 @@
 
         function renderizarPedaçoExatos() { let start = CUR_PAGE_EXATOS * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_EXATOS.slice(start, end); let html = pedaco.map(i => renderizarLinha(i, true)).join(''); document.getElementById('tbody-exatos').insertAdjacentHTML('beforeend', html); }
         function carregarMaisExatos() { let container = document.getElementById('scroll-exatos'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 60) { if ((CUR_PAGE_EXATOS + 1) * PAGE_SIZE < DADOS_EXATOS.length) { CUR_PAGE_EXATOS++; renderizarPedaçoExatos(); } } }
-
         function renderizarPedaçoAproximados() { let start = CUR_PAGE_APROX * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_APROXIMADOS.slice(start, end); let html = pedaco.map(i => renderizarLinha(i, false)).join(''); document.getElementById('tbody-aproximados').insertAdjacentHTML('beforeend', html); }
         function carregarMaisAproximados() { let container = document.getElementById('scroll-aproximados'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 60) { if ((CUR_PAGE_APROX + 1) * PAGE_SIZE < DADOS_APROXIMADOS.length) { CUR_PAGE_APROX++; renderizarPedaçoAproximados(); } } }
 
-        window.onload = async () => {
-            await carregarListaEncontrados();
-            carregarTodosBancos();
-        };
+        window.onload = async () => { await carregarListaEncontrados(); carregarTodosBancos(); };
     </script>
 </body>
 </html>
