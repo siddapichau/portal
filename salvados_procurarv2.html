@@ -347,7 +347,7 @@
             }
         }
 
-        // --- INTEGRAÇÃO V1: GOOGLE GEMINI ---
+        // --- INTEGRAÇÃO V1: GOOGLE GEMINI (Com Sistema de Auto-Fallback) ---
         async function chamarAPI_Gemini(promptText, file) {
             const payloadContents = [{ parts: [{ text: promptText }] }];
             if(file) {
@@ -355,52 +355,68 @@
                 payloadContents[0].parts.push({ inline_data: { mime_type: file.type, data: baseDataFull.split(',')[1] } });
             }
             
-            // Usando modelo corrigido (2.5-flash)
-            const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${GEMINI_API_KEY}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: payloadContents })
-            });
+            // Lista de modelos oficiais atualizados para teste em cascata (Fallback)
+            const modelos = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'];
+            let erroFinal = '';
 
-            if(!apiReq.ok) {
-                const err = await apiReq.json();
-                throw new Error(err.error?.message || apiReq.statusText);
+            for (let modelo of modelos) {
+                const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: payloadContents })
+                });
+
+                if(apiReq.ok) {
+                    const apiData = await apiReq.json();
+                    let aiResponseText = apiData.candidates[0].content.parts[0].text;
+                    let cleanJsonString = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    return JSON.parse(cleanJsonString);
+                } else {
+                    const err = await apiReq.json();
+                    erroFinal = err.error?.message || apiReq.statusText;
+                }
             }
-            const apiData = await apiReq.json();
-            let aiResponseText = apiData.candidates[0].content.parts[0].text;
-            let cleanJsonString = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
-            return JSON.parse(cleanJsonString);
+            throw new Error(`Nenhum modelo do Google respondeu. Último erro: ${erroFinal}`);
         }
 
-        // --- INTEGRAÇÃO V2: GROQ (LLAMA 3.2 VISION) ---
+        // --- INTEGRAÇÃO V2: GROQ (Com Sistema de Auto-Fallback) ---
         async function chamarAPI_Groq(promptText, file) {
             if(!GROQ_API_KEY || GROQ_API_KEY.includes("COLOQUE_AQUI")) throw new Error("Chave da Groq não configurada no código-fonte.");
             if(!file) throw new Error("O modelo Vision da Groq exige obrigatoriamente que uma foto seja enviada.");
 
             const baseDataFull = await fileToBase64(file);
             
-            const payload = {
-                model: "llama-3.2-90b-vision-preview",
-                messages: [{
-                    role: "user",
-                    content: [
-                        { type: "text", text: promptText },
-                        { type: "image_url", image_url: { url: baseDataFull } }
-                    ]
-                }],
-                response_format: { type: "json_object" }
-            };
+            // Modelos de produção oficiais da Meta/Groq para teste em cascata (Fallback)
+            const modelos = ['llama-3.2-11b-vision-instruct', 'llama-3.2-90b-vision-instruct'];
+            let erroFinal = '';
 
-            const apiReq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
+            for (let modelo of modelos) {
+                const payload = {
+                    model: modelo,
+                    messages: [{
+                        role: "user",
+                        content: [
+                            { type: "text", text: promptText },
+                            { type: "image_url", image_url: { url: baseDataFull } }
+                        ]
+                    }]
+                };
 
-            if(!apiReq.ok) {
-                const err = await apiReq.json();
-                throw new Error(err.error?.message || apiReq.statusText);
+                const apiReq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if(apiReq.ok) {
+                    const apiData = await apiReq.json();
+                    let responseText = apiData.choices[0].message.content;
+                    let cleanJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+                    return JSON.parse(cleanJsonString);
+                } else {
+                    const err = await apiReq.json();
+                    erroFinal = err.error?.message || apiReq.statusText;
+                }
             }
-            const apiData = await apiReq.json();
-            return JSON.parse(apiData.choices[0].message.content);
+            throw new Error(`Nenhum modelo da Groq respondeu. Último erro: ${erroFinal}`);
         }
 
         // --- SISTEMA DE SCORING E RENDERIZAÇÃO UNIFICADO ---
