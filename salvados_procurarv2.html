@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador Global - Salvados v2</title>
+    <title>Buscador Global - Salvados</title>
     
     <!-- SISTEMA ANTI-ACESSO DIRETO -->
     <script>
@@ -187,7 +187,7 @@
     <!-- MODAL ASSISTENTE IA -->
     <div class="modal-overlay" id="modal-ia">
         <div class="modal-content">
-            <div class="modal-header"><div class="modal-title" style="color: var(--accent-blue);">✨ Assistente Inteligente V1</div><button class="close-modal" onclick="fecharModalIA()">×</button></div>
+            <div class="modal-header"><div class="modal-title" style="color: var(--accent-blue);">✨ Assistente Inteligente</div><button class="close-modal" onclick="fecharModalIA()">×</button></div>
             <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados das bases com imagens da bancada ou anúncios do Mercado Livre.</div>
             
             <div class="ia-input-group">
@@ -218,7 +218,7 @@
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const DB_NODES = { 'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata', 'q10': 'salvados_q10', 'q15': 'salvados_q15', 'qonhub': 'salvados_qonhub', 'cftv': 'salvados_cftv', 'parado': 'salvados_parado' };
 
-        // ⚠️ CHAVE DE API GEMINI VISION
+        // ⚠️ CHAVE DE API GEMINI VISION ATUALIZADA
         const GEMINI_API_KEY = "AQ.Ab8RN6KKQxvBtTlRluYCFxJ50YyN0cGQGEgOt4oUTcgHwmE3gA";
 
         let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; 
@@ -296,7 +296,6 @@
                 await registrarLogFirebase("Buscador Global", `Marcou o item <b>${id}</b> como ENCONTRADO.`);
                 executarSmartSearch(); // Recarrega tela
                 
-                // Se a IA estiver aberta, atualiza a tela da IA também
                 if(document.getElementById('modal-ia').classList.contains('active')) {
                     document.getElementById('ia-resultado').innerHTML = `<div style="color: var(--accent-green); font-weight: 900; text-align:center; padding: 20px;">✅ Pacote Registrado com Sucesso!</div>`;
                 }
@@ -341,7 +340,6 @@
             resBox.innerHTML = "⏳ <i>Conectando à Inteligência Artificial... Extraindo características visuais e de texto...</i>";
 
             try {
-                // Montando o Prompt de Engenharia para forçar JSON
                 const promptText = `
                     Você é um analista de logística de alta performance. Sua missão é identificar características de produtos para ajudar a cruzar dados de pacotes perdidos no armazém.
                     ${link ? `Analise este link do Mercado Livre (Extraia palavras chaves dele se possível): ${link}` : ''}
@@ -360,7 +358,6 @@
 
                 const payloadContents = [{ parts: [{ text: promptText }] }];
 
-                // Se tiver foto, processa e anexa ao payload da Vision API
                 if(file) {
                     const base64Data = await fileToBase64(file);
                     payloadContents[0].parts.push({
@@ -368,7 +365,6 @@
                     });
                 }
 
-                // Chamada REST para a API do Google Gemini
                 const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -376,41 +372,35 @@
                 });
 
                 if(!apiReq.ok) {
-                    throw new Error("Falha na autenticação da API. Verifique a chave configurada.");
+                    const errorDetails = await apiReq.json();
+                    const realErrorMessage = errorDetails.error?.message || apiReq.statusText;
+                    throw new Error(`Google API retornou: ${realErrorMessage}`);
                 }
 
                 const apiData = await apiReq.json();
                 let aiResponseText = apiData.candidates[0].content.parts[0].text;
                 
-                // Limpeza do retorno para garantir que é um JSON parseável
                 let cleanJsonString = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
                 let aiResult = JSON.parse(cleanJsonString);
 
-                // ===============================================
-                // CRUZAMENTO MATEMÁTICO DE DADOS (O SCORING)
-                // ===============================================
                 let matches = [];
                 BANCO_GLOBAL.forEach(item => {
                     let idClean = String(item.ID).toLowerCase().trim().replace(/[.#$\[\]]/g, "_");
-                    if(ITENS_ENCONTRADOS.has(idClean)) return; // Já foi achado, ignora.
+                    if(ITENS_ENCONTRADOS.has(idClean)) return; 
 
                     let desc = (item.Descricao || '').toLowerCase();
                     let valorNum = item.ValorNum || 0;
                     let score = 0;
 
-                    // Match de Termo (Muito forte)
                     let termo = (aiResult.termo_base || '').toLowerCase();
                     if(termo && desc.includes(termo)) score += 50;
 
-                    // Match de Cor
                     let cor = (aiResult.cor || '').toLowerCase();
                     if(cor && desc.includes(cor)) score += 20;
 
-                    // Match de Marca
                     let marca = (aiResult.marca || '').toLowerCase();
                     if(marca && desc.includes(marca)) score += 20;
 
-                    // Match de Preço (O Produto está na faixa de valor estimada?)
                     if(valorNum > 0 && valorNum >= (aiResult.preco_min * 0.8) && valorNum <= (aiResult.preco_max * 1.2)) {
                         score += 30;
                     }
@@ -421,11 +411,8 @@
                 });
 
                 matches.sort((a,b) => b.aiScore - a.aiScore);
-                let topMatches = matches.slice(0, 5); // Pega o top 5 melhores
+                let topMatches = matches.slice(0, 5); 
 
-                // ===============================================
-                // RENDERIZAR RESULTADO NA TELA DA IA
-                // ===============================================
                 let htmlResult = `
                     <div style="color: var(--accent-green); font-weight: 900; margin-bottom: 5px;">✅ Inteligência Artificial Finalizou:</div>
                     <div style="font-size: 0.8rem; background: var(--bg-body); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 15px;">
@@ -439,7 +426,7 @@
                     htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém.</div>`;
                 } else {
                     topMatches.forEach(m => {
-                        let percent = Math.min(100, Math.round((m.aiScore / 120) * 100)); // Calculo visual de %
+                        let percent = Math.min(100, Math.round((m.aiScore / 120) * 100)); 
                         let [origemNome, origemClass] = getClassOrigem(m.OrigemDb);
                         
                         htmlResult += `
@@ -461,14 +448,14 @@
                 resBox.innerHTML = htmlResult;
 
             } catch(e) {
-                resBox.innerHTML = `<span style='color:#FF5252; font-weight: bold;'>❌ Erro no Processamento IA: ${e.message}</span>`;
+                resBox.innerHTML = `<span style='color:#FF5252; font-weight: bold;'>❌ Erro no Processamento IA: <br>${e.message}</span>`;
             } finally {
                 btnRun.disabled = false; btnRun.innerText = "🔎 Analisar e Buscar Padrões";
             }
         }
 
         // ==========================================
-        // INICIALIZAÇÃO DE DADOS 
+        // PROCESSAMENTO DE DADOS 
         // ==========================================
         function removerAcentos(str) { return String(str ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
         function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
