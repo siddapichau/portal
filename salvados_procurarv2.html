@@ -134,10 +134,10 @@
             <div style="width: 100%;"><input type="text" class="search-input" id="search-input" placeholder="🔍 Buscar ID, Rastreio ou Descrição..." oninput="executarSmartSearch()"></div>
         </div>
         <div class="nav-right" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
-            <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')" title="Google Gemini (Original)">✨ V1</button>
-            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Groq Llama (Rápido)">🚀 V2</button>
-            <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Llama 3.2 Vision (OpenRouter)">🤖 V3</button>
-            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="Gemini 2.0 Pro (OpenRouter)">⚡ V4</button>
+            <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')" title="Google Gemini">✨ V1</button>
+            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Llama 3 Vision">🚀 V2</button>
+            <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Gemini 2.0 Flash">🤖 V3</button>
+            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="Gemini 2.0 Pro">⚡ V4</button>
             <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none; margin-left: 10px;">📂 CSVs</button>
         </div>
     </div>
@@ -205,7 +205,7 @@
                 <div class="modal-title" id="modal-ia-title">✨ Assistente Inteligente</div>
                 <button class="close-modal" onclick="fecharModalIA()">×</button>
             </div>
-            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados das bases com imagens da bancada ou anúncios do Mercado Livre.</div>
+            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados das bases com anúncios do Mercado Livre (apenas link ou com imagem).</div>
             
             <div class="ia-input-group">
                 <label>Link do Anúncio (Mercado Livre)</label>
@@ -213,7 +213,7 @@
             </div>
             
             <div class="ia-input-group">
-                <label>Foto da Bancada (Obrigatório nas V2, V3 e V4)</label>
+                <label>Foto da Bancada (Opcional, mas recomendado)</label>
                 <div class="upload-wrapper" style="border: 1px dashed var(--border-card); border-radius: 8px;">
                     <button class="btn" style="background: transparent; border: none; padding: 15px; color: var(--text-muted);" id="btn-ia-file-label">📷 Anexar Foto do Item</button>
                     <input type="file" accept="image/*" id="ia-foto" onchange="previewIAFile(this)" />
@@ -239,9 +239,8 @@
         // ⚠️ CHAVES DE API 
         // ==============================
         const GEMINI_API_KEY = "AQ.Ab8RN6KKQxvBtTlRluYCFxJ50YyN0cGQGEgOt4oUTcgHwmE3gA";
-        const GROQ_API_KEY = "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";
         
-        // 👉 A CHAVE MESTRA (OpenRouter Adicionada):
+        // CHAVE MESTRA (OpenRouter):
         const OPENROUTER_API_KEY = "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"; 
         
         let CURRENT_IA = 'v1'; 
@@ -275,16 +274,16 @@
             CURRENT_IA = versao;
             const title = document.getElementById('modal-ia-title');
             const btnRun = document.getElementById('btn-run-ia');
-            document.getElementById('ia-resultado').innerHTML = "Aguardando entrada de dados... A IA extrairá características e varrerá o banco procurando pelo maior 'Match'.";
+            document.getElementById('ia-resultado').innerHTML = "Aguardando entrada de dados... A IA extrairá características do link/imagem e varrerá o banco procurando pelo maior 'Match'.";
             
             if(versao === 'v1') {
-                title.innerHTML = "✨ IA V1 (Gemini)"; title.style.color = "var(--accent-blue)"; btnRun.style.background = "var(--accent-blue)";
+                title.innerHTML = "✨ IA V1 (Gemini Flash)"; title.style.color = "var(--accent-blue)"; btnRun.style.background = "var(--accent-blue)";
             } else if(versao === 'v2') {
-                title.innerHTML = "🚀 IA V2 (Groq)"; title.style.color = "#f97316"; btnRun.style.background = "#f97316";
+                title.innerHTML = "🚀 IA V2 (Llama Vision)"; title.style.color = "#f97316"; btnRun.style.background = "#f97316";
             } else if(versao === 'v3') {
-                title.innerHTML = "🤖 IA V3 (Llama Vision)"; title.style.color = "#8b5cf6"; btnRun.style.background = "#8b5cf6";
+                title.innerHTML = "🤖 IA V3 (Gemini 2.0 Flash)"; title.style.color = "#8b5cf6"; btnRun.style.background = "#8b5cf6";
             } else if(versao === 'v4') {
-                title.innerHTML = "⚡ IA V4 (Gemini Pro OR)"; title.style.color = "#10b981"; btnRun.style.background = "#10b981";
+                title.innerHTML = "⚡ IA V4 (Gemini 2.0 Pro)"; title.style.color = "#10b981"; btnRun.style.background = "#10b981";
             }
             document.getElementById('modal-ia').classList.add('active'); 
         }
@@ -310,7 +309,6 @@
             else { btnLabel.innerHTML = `📷 Anexar Foto do Item`; btnLabel.style.color = "var(--text-muted)"; }
         }
 
-        // Retorna o base64 puro (sem o mime type header) para o Gemini v1, e o completo para OpenRouter
         function fileToBase64(file, full = false) {
             return new Promise((resolve, reject) => { 
                 const reader = new FileReader(); 
@@ -327,32 +325,36 @@
             const btnRun = document.getElementById('btn-run-ia');
             
             if(!link && !file) {
-                resBox.innerHTML = "<span style='color:#FF5252; font-weight: bold;'>⚠️ Por favor, insira um Link ou anexe uma foto.</span>";
+                resBox.innerHTML = "<span style='color:#FF5252; font-weight: bold;'>⚠️ Por favor, insira um Link do Mercado Livre ou anexe uma foto.</span>";
                 return;
             }
 
             btnRun.disabled = true; btnRun.innerText = "⏳ Analisando...";
-            resBox.innerHTML = "⏳ <i>Conectando à IA... Processando Visão Computacional...</i>";
+            resBox.innerHTML = "⏳ <i>Conectando à IA... Extraindo dados de texto ou visão...</i>";
 
-            const promptText = `Você é um analista de logística.
-${link ? `Analise este link do Mercado Livre se possível: ${link}` : ''}
-Analise a imagem anexada e retorne APENAS um objeto JSON válido, sem nenhum texto antes ou depois, com esta exata estrutura:
+            // Prompt adaptável: Se não houver foto, a IA lerá apenas o Link e contexto
+            const promptText = `Você é um analista de logística. Sua missão é classificar um produto perdido.
+${link ? `[LINK DO ANÚNCIO]: Analise e extraia as informações baseadas no texto e palavras chave presentes nesta URL: ${link}` : ''}
+${file ? `[IMAGEM]: Analise a imagem anexada junto para obter mais detalhes de cor e formato.` : '[AVISO]: Nenhuma foto foi enviada. Baseie sua resposta puramente na leitura do link do produto.'}
+
+Retorne APENAS um objeto JSON válido, sem nenhum texto antes ou depois, com esta exata estrutura:
 {
-    "termo_base": "Nome genérico do produto (ex: celular, tenis, camisa, pneu, tv)",
-    "cor": "Cor predominante (ex: azul, preto)",
-    "marca": "Marca visível (ex: samsung, nike)",
+    "termo_base": "Nome genérico simples (ex: celular, tenis, camisa, pneu, tv)",
+    "cor": "Cor predominante se identificável ou 'nao identificada' (ex: azul, preto)",
+    "marca": "Marca se for evidente no link/foto ou 'nao identificada' (ex: samsung, nike)",
     "preco_min": 10.00,
     "preco_max": 9999.00
 }`;
 
             try {
                 let aiResult;
+                // V1 = Gemini Direto, V2/V3/V4 = OpenRouter
                 if(CURRENT_IA === 'v1') { 
                     aiResult = await chamarAPI_Gemini_Hardcoded(promptText, file); 
                 } else if(CURRENT_IA === 'v2') { 
-                    aiResult = await chamarAPI_Groq(promptText, file); 
-                } else if(CURRENT_IA === 'v3') { 
                     aiResult = await chamarAPI_OpenRouter(promptText, file, "meta-llama/llama-3.2-11b-vision-instruct:free"); 
+                } else if(CURRENT_IA === 'v3') { 
+                    aiResult = await chamarAPI_OpenRouter(promptText, file, "google/gemini-2.0-flash-lite-preview-02-05:free"); 
                 } else if(CURRENT_IA === 'v4') { 
                     aiResult = await chamarAPI_OpenRouter(promptText, file, "google/gemini-2.0-pro-exp-02-05:free"); 
                 }
@@ -365,7 +367,7 @@ Analise a imagem anexada e retorne APENAS um objeto JSON válido, sem nenhum tex
             }
         }
 
-        // --- IA V1: GEMINI FIXO --- (Blindado contra loops, usa apenas o modelo estável padrão)
+        // --- IA V1: GEMINI FIXO (Trata a foto como opcional perfeitamente) ---
         async function chamarAPI_Gemini_Hardcoded(promptText, file) {
             const payloadContents = [{ parts: [{ text: promptText }] }];
             if(file) {
@@ -379,37 +381,33 @@ Analise a imagem anexada e retorne APENAS um objeto JSON válido, sem nenhum tex
 
             if(!apiReq.ok) {
                 const err = await apiReq.json();
-                if(err.error?.message?.includes("Quota")) throw new Error("O Google bloqueou a sua cota gratuita diária/por minuto para esta chave.");
+                if(err.error?.message?.includes("Quota")) throw new Error("Cota limite diária excedida na API do Google. Use as versões V2, V3 ou V4.");
                 throw new Error(err.error?.message || apiReq.statusText);
             }
             
             const apiData = await apiReq.json();
             let aiResponseText = apiData.candidates[0].content.parts[0].text;
-            let cleanJsonString = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            let cleanJsonString = aiResponseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const match = cleanJsonString.match(/\{[\s\S]*\}/);
+            if (match) { cleanJsonString = match[0]; }
             return JSON.parse(cleanJsonString);
         }
 
-        // --- IA V2: GROQ --- (Mantido com aviso caso continuem sem os modelos visuais gratuitos)
-        async function chamarAPI_Groq(promptText, file) {
-            throw new Error("A Groq desativou seus modelos gratuitos de Visão. Por favor, utilize a V3 ou V4 (OpenRouter).");
-        }
-
-        // --- IA V3 e V4: OPENROUTER (A Solução Definitiva) ---
+        // --- IA V2, V3 e V4: OPENROUTER (Trata a foto como opcional perfeitamente) ---
         async function chamarAPI_OpenRouter(promptText, file, modelName) {
-            if(!OPENROUTER_API_KEY || OPENROUTER_API_KEY.includes("COLOQUE_SUA_CHAVE")) throw new Error("Por favor, crie e insira sua chave em openrouter.ai na variável OPENROUTER_API_KEY no código.");
-            if(!file) throw new Error("As IAs do OpenRouter exigem que uma foto da bancada seja anexada.");
+            if(!OPENROUTER_API_KEY || OPENROUTER_API_KEY.includes("COLOQUE_SUA_CHAVE")) throw new Error("Chave do OpenRouter não inserida corretamente no código.");
 
-            const baseDataFull = await fileToBase64(file, true);
+            let contentArray = [{ type: "text", text: promptText }];
+
+            // Somente anexa bloco de imagem no payload do OpenRouter se o usuário fez o upload
+            if(file) {
+                const baseDataFull = await fileToBase64(file, true);
+                contentArray.push({ type: "image_url", image_url: { url: baseDataFull } });
+            }
             
             const payload = {
                 model: modelName,
-                messages: [{
-                    role: "user",
-                    content: [
-                        { type: "text", text: promptText },
-                        { type: "image_url", image_url: { url: baseDataFull } }
-                    ]
-                }]
+                messages: [{ role: "user", content: contentArray }]
             };
 
             const apiReq = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -417,7 +415,7 @@ Analise a imagem anexada e retorne APENAS um objeto JSON válido, sem nenhum tex
                 headers: { 
                     "Authorization": `Bearer ${OPENROUTER_API_KEY}`, 
                     "Content-Type": "application/json",
-                    "HTTP-Referer": "https://seu-site.com", // Obrigatório pelo OpenRouter
+                    "HTTP-Referer": window.location.href, // Segurança exigida pelo OpenRouter
                     "X-Title": "Buscador Logistica"
                 },
                 body: JSON.stringify(payload)
@@ -425,22 +423,21 @@ Analise a imagem anexada e retorne APENAS um objeto JSON válido, sem nenhum tex
 
             if(!apiReq.ok) {
                 const err = await apiReq.json();
-                throw new Error(err.error?.message || "Falha na comunicação com o OpenRouter.");
+                throw new Error(err.error?.message || "Falha na comunicação com a IA.");
             }
             
             const apiData = await apiReq.json();
             let responseText = apiData.choices[0].message.content;
             
-            // Limpa formatação markdown se a IA retornar com ela
+            // Limpeza robusta para forçar JSON
             let cleanJsonString = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            // Caso o modelo retorne texto junto do JSON, tenta extrair o primeiro bloco {}
             const match = cleanJsonString.match(/\{[\s\S]*\}/);
             if (match) { cleanJsonString = match[0]; }
             
             return JSON.parse(cleanJsonString);
         }
 
-        // --- SISTEMA DE SCORING E RENDERIZAÇÃO UNIFICADO ---
+        // --- SISTEMA DE SCORING E RENDERIZAÇÃO ---
         function processarResultadoIA(aiResult, resBox) {
             let matches = [];
             BANCO_GLOBAL.forEach(item => {
@@ -449,8 +446,8 @@ Analise a imagem anexada e retorne APENAS um objeto JSON válido, sem nenhum tex
 
                 let desc = (item.Descricao || '').toLowerCase(); let valorNum = item.ValorNum || 0; let score = 0;
                 let termo = (aiResult.termo_base || '').toLowerCase(); if(termo && desc.includes(termo)) score += 50;
-                let cor = (aiResult.cor || '').toLowerCase(); if(cor && desc.includes(cor)) score += 20;
-                let marca = (aiResult.marca || '').toLowerCase(); if(marca && desc.includes(marca)) score += 20;
+                let cor = (aiResult.cor || '').toLowerCase(); if(cor && cor !== 'nao identificada' && desc.includes(cor)) score += 20;
+                let marca = (aiResult.marca || '').toLowerCase(); if(marca && marca !== 'nao identificada' && desc.includes(marca)) score += 20;
                 if(valorNum > 0 && valorNum >= (aiResult.preco_min * 0.8) && valorNum <= (aiResult.preco_max * 1.2)) score += 30;
 
                 if(score >= 30) matches.push({ ...item, aiScore: score });
@@ -461,8 +458,9 @@ Analise a imagem anexada e retorne APENAS um objeto JSON válido, sem nenhum tex
 
             let iconeTitle = ''; let corTitle = '';
             if(CURRENT_IA === 'v1') { iconeTitle = '✅ IA V1 (Gemini)'; corTitle = 'var(--accent-blue)'; }
-            else if(CURRENT_IA === 'v3') { iconeTitle = '🤖 IA V3 (Llama)'; corTitle = '#8b5cf6'; }
-            else if(CURRENT_IA === 'v4') { iconeTitle = '⚡ IA V4 (Gemini Pro)'; corTitle = '#10b981'; }
+            else if(CURRENT_IA === 'v2') { iconeTitle = '🚀 IA V2 (Llama)'; corTitle = '#f97316'; }
+            else if(CURRENT_IA === 'v3') { iconeTitle = '🤖 IA V3 (Gemini 2.0 Flash)'; corTitle = '#8b5cf6'; }
+            else if(CURRENT_IA === 'v4') { iconeTitle = '⚡ IA V4 (Gemini 2.0 Pro)'; corTitle = '#10b981'; }
 
             let htmlResult = `
                 <div style="color: ${corTitle}; font-weight: 900; margin-bottom: 5px;">${iconeTitle} Finalizou:</div>
