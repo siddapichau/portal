@@ -124,7 +124,7 @@
     <div class="top-navbar">
         <div class="nav-logo-wrapper"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
         <div class="nav-center">
-            <div class="nav-title">Buscador Global V2.0</div>
+            <div class="nav-title">Buscador Global V2</div>
             <div style="width: 100%;"><input type="text" class="search-input" id="search-input" placeholder="🔍 Buscar ID, Rastreio ou Descrição..." oninput="executarSmartSearch()"></div>
         </div>
         <div class="nav-right" style="display: flex; gap: 8px;">
@@ -233,7 +233,7 @@
         const GEMINI_API_KEY = "AQ.Ab8RN6KKQxvBtTlRluYCFxJ50YyN0cGQGEgOt4oUTcgHwmE3gA";
         const GROQ_API_KEY = "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"; // Crie a chave em console.groq.com
         
-        let CURRENT_IA = 'v1'; // Define qual IA vai ser chamada
+        let CURRENT_IA = 'v1'; 
         
         let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; 
         let ITENS_ENCONTRADOS = new Set(); 
@@ -260,7 +260,6 @@
         function abrirModalGerenciador() { document.getElementById('modal-gerenciador').classList.add('active'); }
         function fecharModalGerenciador() { document.getElementById('modal-gerenciador').classList.remove('active'); }
         
-        // Controlador visual do modal IA
         function abrirModalIA(versao) { 
             CURRENT_IA = versao;
             const title = document.getElementById('modal-ia-title');
@@ -294,9 +293,6 @@
             } catch (e) { alert("Erro de comunicação."); }
         };
 
-        // ==========================================
-        // CÉREBRO DAS INTELIGÊNCIAS ARTIFICIAIS
-        // ==========================================
         function previewIAFile(input) {
             const btnLabel = document.getElementById('btn-ia-file-label');
             if(input.files && input.files[0]) { btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`; btnLabel.style.color = "var(--accent-green)"; } 
@@ -336,8 +332,8 @@
 
             try {
                 let aiResult;
-                if(CURRENT_IA === 'v1') { aiResult = await chamarAPI_Gemini(promptText, file); } 
-                else { aiResult = await chamarAPI_Groq(promptText, file); }
+                if(CURRENT_IA === 'v1') { aiResult = await chamarAPI_Gemini_AutoDiscovery(promptText, file); } 
+                else { aiResult = await chamarAPI_Groq_AutoDiscovery(promptText, file); }
 
                 processarResultadoIA(aiResult, resBox);
             } catch(e) {
@@ -347,76 +343,101 @@
             }
         }
 
-        // --- INTEGRAÇÃO V1: GOOGLE GEMINI (Com Sistema de Auto-Fallback) ---
-        async function chamarAPI_Gemini(promptText, file) {
+        // --- SISTEMA DEFINITIVO: RADAR AUTOMÁTICO GEMINI ---
+        async function chamarAPI_Gemini_AutoDiscovery(promptText, file) {
+            // 1. Pergunta ao Google quais modelos estão liberados para esta chave exata
+            const modelReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`);
+            const modelData = await modelReq.json();
+            
+            if(!modelReq.ok) throw new Error("Falha ao listar modelos do Google: " + (modelData.error?.message || "Erro desconhecido"));
+
+            const modelosDisponiveis = modelData.models || [];
+            let modeloEscolhido = null;
+
+            // 2. Filtra dinamicamente procurando o melhor modelo de visão que suporta geração de conteúdo
+            const preferencias = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.0-pro-vision'];
+            
+            for(let pref of preferencias) {
+                let found = modelosDisponiveis.find(m => m.name === `models/${pref}`);
+                if(found && found.supportedGenerationMethods.includes('generateContent')) {
+                    modeloEscolhido = pref;
+                    break;
+                }
+            }
+
+            // Se não achar as preferências, pega literalmente qualquer modelo com "flash" ou "vision" que a chave tenha acesso
+            if(!modeloEscolhido) {
+                let fallback = modelosDisponiveis.find(m => (m.name.includes('flash') || m.name.includes('vision')) && m.supportedGenerationMethods.includes('generateContent'));
+                if(fallback) modeloEscolhido = fallback.name.replace('models/', '');
+            }
+
+            if(!modeloEscolhido) throw new Error("Sua chave de API do Google não tem acesso a nenhum modelo visual no momento.");
+
+            // 3. Monta o payload e manda apenas uma vez (sem loop para evitar Rate Limit)
             const payloadContents = [{ parts: [{ text: promptText }] }];
             if(file) {
                 const baseDataFull = await fileToBase64(file);
                 payloadContents[0].parts.push({ inline_data: { mime_type: file.type, data: baseDataFull.split(',')[1] } });
             }
             
-            // Lista de modelos oficiais atualizados para teste em cascata (Fallback)
-            const modelos = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash'];
-            let erroFinal = '';
+            const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modeloEscolhido}:generateContent?key=${GEMINI_API_KEY}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: payloadContents })
+            });
 
-            for (let modelo of modelos) {
-                const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: payloadContents })
-                });
-
-                if(apiReq.ok) {
-                    const apiData = await apiReq.json();
-                    let aiResponseText = apiData.candidates[0].content.parts[0].text;
-                    let cleanJsonString = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
-                    return JSON.parse(cleanJsonString);
-                } else {
-                    const err = await apiReq.json();
-                    erroFinal = err.error?.message || apiReq.statusText;
-                }
+            if(!apiReq.ok) {
+                const err = await apiReq.json();
+                throw new Error(`Erro de Execução no modelo ativo (${modeloEscolhido}): ` + (err.error?.message || apiReq.statusText));
             }
-            throw new Error(`Nenhum modelo do Google respondeu. Último erro: ${erroFinal}`);
+            const apiData = await apiReq.json();
+            let aiResponseText = apiData.candidates[0].content.parts[0].text;
+            let cleanJsonString = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+            return JSON.parse(cleanJsonString);
         }
 
-        // --- INTEGRAÇÃO V2: GROQ (Com Sistema de Auto-Fallback) ---
-        async function chamarAPI_Groq(promptText, file) {
-            if(!GROQ_API_KEY || GROQ_API_KEY.includes("COLOQUE_AQUI")) throw new Error("Chave da Groq não configurada no código-fonte.");
-            if(!file) throw new Error("O modelo Vision da Groq exige obrigatoriamente que uma foto seja enviada.");
+        // --- SISTEMA DEFINITIVO: RADAR AUTOMÁTICO GROQ ---
+        async function chamarAPI_Groq_AutoDiscovery(promptText, file) {
+            if(!GROQ_API_KEY || GROQ_API_KEY.includes("COLOQUE_AQUI")) throw new Error("Chave da Groq não configurada.");
+            if(!file) throw new Error("O modelo Vision da Groq exige que uma foto seja enviada.");
+
+            // 1. Puxa a lista de modelos ativos da Groq em tempo real
+            const modelReq = await fetch("https://api.groq.com/openai/v1/models", {
+                headers: { "Authorization": `Bearer ${GROQ_API_KEY}` }
+            });
+            const modelData = await modelReq.json();
+            if(!modelReq.ok) throw new Error("Falha ao acessar Lista da Groq: " + (modelData.error?.message || ""));
+
+            const modelos = modelData.data || [];
+            
+            // 2. Procura pelo modelo de visão que estiver ativo hoje nos servidores deles
+            let modeloEscolhido = modelos.find(m => m.id.includes('vision') && !m.id.includes('text'))?.id;
+
+            if(!modeloEscolhido) throw new Error("A Groq desativou todos os modelos gratuitos de Visão (Vision) no momento. Por favor, utilize o Assistente V1 (Gemini) até que eles restaurem.");
 
             const baseDataFull = await fileToBase64(file);
-            
-            // Modelos de produção oficiais da Meta/Groq para teste em cascata (Fallback)
-            const modelos = ['llama-3.2-11b-vision-instruct', 'llama-3.2-90b-vision-instruct'];
-            let erroFinal = '';
+            const payload = {
+                model: modeloEscolhido,
+                messages: [{
+                    role: "user",
+                    content: [
+                        { type: "text", text: promptText },
+                        { type: "image_url", image_url: { url: baseDataFull } }
+                    ]
+                }],
+                response_format: { type: "json_object" }
+            };
 
-            for (let modelo of modelos) {
-                const payload = {
-                    model: modelo,
-                    messages: [{
-                        role: "user",
-                        content: [
-                            { type: "text", text: promptText },
-                            { type: "image_url", image_url: { url: baseDataFull } }
-                        ]
-                    }]
-                };
+            const apiReq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
 
-                const apiReq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-
-                if(apiReq.ok) {
-                    const apiData = await apiReq.json();
-                    let responseText = apiData.choices[0].message.content;
-                    let cleanJsonString = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-                    return JSON.parse(cleanJsonString);
-                } else {
-                    const err = await apiReq.json();
-                    erroFinal = err.error?.message || apiReq.statusText;
-                }
+            if(!apiReq.ok) {
+                const err = await apiReq.json();
+                throw new Error(`Erro na IA da Groq (${modeloEscolhido}): ` + (err.error?.message || apiReq.statusText));
             }
-            throw new Error(`Nenhum modelo da Groq respondeu. Último erro: ${erroFinal}`);
+            const apiData = await apiReq.json();
+            return JSON.parse(apiData.choices[0].message.content);
         }
 
         // --- SISTEMA DE SCORING E RENDERIZAÇÃO UNIFICADO ---
@@ -474,9 +495,6 @@
             resBox.innerHTML = htmlResult;
         }
 
-        // ==========================================
-        // PROCESSAMENTO DE DADOS EXATOS/APROXIMADOS
-        // ==========================================
         function removerAcentos(str) { return String(str ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
         function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
 
