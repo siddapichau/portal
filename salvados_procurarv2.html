@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador Global - Salvados V3</title>
+    <title>Buscador Global - Salvados V3.0</title>
 
-    <!-- SISTEMA ANTI-ACESSO DIRETO -->
     <script>
         if (window === window.top) {
             const paginaAtual = window.location.pathname.split('/').pop() || 'salvados_procurar.html';
@@ -16,8 +15,6 @@
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-
-    <!-- CSS GLOBAL -->
     <link rel="stylesheet" href="style.css">
 
     <style>
@@ -116,8 +113,8 @@
         <div class="nav-right" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
             <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')" title="Gemini Original">✨ V1</button>
             <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Groq Text/Vision">🚀 V2</button>
-            <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Gemini Cascade (OR)">🤖 V3</button>
-            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="Llama Cascade (OR)">⚡ V4</button>
+            <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Gemini Cascata (OR)">🤖 V3</button>
+            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="Llama/Mistral Cascata (OR)">⚡ V4</button>
             <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none; margin-left: 10px;">📂 CSVs</button>
         </div>
     </div>
@@ -185,7 +182,7 @@
                 <div class="modal-title" id="modal-ia-title" style="color: var(--accent-blue);">✨ Assistente Inteligente</div>
                 <button class="close-modal" onclick="fecharModalIA()">×</button>
             </div>
-            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados lendo a descrição do link ou avaliando a imagem.</div>
+            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">A IA usará a descrição do link, ou a foto caso anexada, para varrer a base.</div>
 
             <div class="ia-input-group">
                 <label>Link do Anúncio (Mercado Livre)</label>
@@ -205,7 +202,7 @@
             <div class="ia-input-group" style="margin-top: 10px;">
                 <label>📡 Resposta da Inteligência</label>
                 <div class="ia-box-resultado" id="ia-resultado">
-                    Aguardando entrada de dados... A IA extrairá características do texto do link ou varrerá a imagem.
+                    Aguardando entrada de dados... A IA vai extrair palavras-chave e varrer o banco.
                 </div>
             </div>
         </div>
@@ -215,8 +212,8 @@
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const DB_NODES = { 'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata', 'q10': 'salvados_q10', 'q15': 'salvados_q15', 'qonhub': 'salvados_qonhub', 'cftv': 'salvados_cftv', 'parado': 'salvados_parado' };
 
-        // ⚠️ SUAS CHAVES DE API AQUI:
-        const GEMINI_API_KEY = "AQ.Ab8RN6KKQxvBtTlRluYCFxJ50YyN0cGQGEgOt4oUTcgHwmE3gA";
+        // ⚠️ SUAS CHAVES DE API ATUALIZADAS AQUI:
+        const GEMINI_API_KEY = "AQ.Ab8RN6JcxpS5S4-IB4XNGcP5GDrMbWQiDdfWuiGV2gxnMLQFfA";
         const GROQ_API_KEY = "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";
         const OPENROUTER_API_KEY = "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";
 
@@ -224,7 +221,7 @@
         let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; let ITENS_ENCONTRADOS = new Set();
         let PAGE_SIZE = 50; let CUR_PAGE_EXATOS = 0; let CUR_PAGE_APROX = 0;
 
-        const STOPWORDS = ['de', 'para', 'com', 'o', 'a', 'os', 'as', 'em', 'um', 'uma', 'uns', 'umas', 'no', 'na', 'nos', 'nas', 'do', 'da', 'dos', 'das', 'por', 'sem'];
+        const STOPWORDS = ['de', 'para', 'com', 'o', 'a', 'os', 'as', 'em', 'um', 'uma', 'uns', 'umas', 'no', 'na', 'nos', 'nas', 'do', 'da', 'dos', 'das', 'por', 'sem', 'e', 'ou'];
         const DICIONARIO_SINONIMOS = { 'tenis': ['sapato', 'calcado', 'sneaker', 'chuteira', 'bota'], 'celular': ['smartphone', 'telefone', 'iphone', 'aparelho', 'mobile'], 'tv': ['televisao', 'televisor', 'smartv', 'monitor', 'tela'], 'pc': ['computador', 'notebook', 'desktop', 'laptop', 'macbook'], 'geladeira': ['refrigerador', 'freezer', 'frigobar'], 'fone': ['headset', 'headphone', 'earphone', 'airpods', 'ouvido'], 'relogio': ['smartwatch', 'pulseira', 'watch'], 'bicicleta': ['bike', 'bici', 'ciclismo'], 'pneu': ['pneus', 'borracha', 'roda', 'aro'], 'video': ['game', 'videogame', 'console', 'playstation', 'xbox', 'nintendo'] };
 
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
@@ -250,7 +247,7 @@
             if (versao === 'v1') { title.innerHTML = "✨ IA V1 (Gemini Original)"; title.style.color = "var(--accent-blue)"; btnRun.style.background = "var(--accent-blue)"; }
             else if (versao === 'v2') { title.innerHTML = "🚀 IA V2 (Groq Txt/Vis)"; title.style.color = "#f97316"; btnRun.style.background = "#f97316"; }
             else if (versao === 'v3') { title.innerHTML = "🤖 IA V3 (Gemini Cascata OR)"; title.style.color = "#8b5cf6"; btnRun.style.background = "#8b5cf6"; }
-            else if (versao === 'v4') { title.innerHTML = "⚡ IA V4 (Llama Cascata OR)"; title.style.color = "#10b981"; btnRun.style.background = "#10b981"; }
+            else if (versao === 'v4') { title.innerHTML = "⚡ IA V4 (Llama/Mistral OR)"; title.style.color = "#10b981"; btnRun.style.background = "#10b981"; }
             document.getElementById('modal-ia').classList.add('active');
         }
 
@@ -268,10 +265,10 @@
             } catch (e) { alert("Erro de comunicação."); }
         };
 
-        const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        const GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash'];
         
-        // CASCATA OPENROUTER: Garante que se o modelo 1 for desativado, ele usa o 2 ou o 3 silenciosamente.
-        const OR_MODELS_V3 = ["google/gemini-2.0-flash-exp:free", "google/gemini-2.0-pro-exp-02-05:free", "google/gemini-2.5-flash"];
+        // CASCATA OPENROUTER (Corrigido com modelos gratuitos disponíveis atuais)
+        const OR_MODELS_V3 = ["google/gemini-2.0-pro-exp-02-05:free", "google/gemini-2.0-flash-exp:free", "google/gemini-2.5-flash-free"];
         const OR_MODELS_V4 = ["meta-llama/llama-3.2-11b-vision-instruct:free", "mistralai/pixtral-12b:free", "meta-llama/llama-3.3-70b-instruct:free"];
 
         function previewIAFile(input) { const btnLabel = document.getElementById('btn-ia-file-label'); if (input.files && input.files[0]) { btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`; btnLabel.style.color = "var(--accent-green)"; } else { btnLabel.innerHTML = `📷 Anexar Foto do Item`; btnLabel.style.color = "var(--text-muted)"; } }
@@ -307,32 +304,32 @@
             } catch (e) { return ''; }
         }
 
-        // PROMPT DE ENGENHARIA TURBINADO: Instruções super estritas para pegar o Modelo e não algo genérico.
-        function montarPromptIA(link, contextoLink) {
+        // PROMPT DE ENGENHARIA TURBINADO: Extrai modelo e nomes específicos
+        function montarPromptIA(link, contextoLink, file) {
             let dicaSlug = "";
             try { if(link) dicaSlug = new URL(link).pathname.split('/').find(p => p.length > 5 && p.includes('-')) || ""; } catch(e){}
 
-            return `Você é um analista de logística sênior. Identifique o produto com a MAIOR PRECISÃO POSSÍVEL para cruzar com uma planilha de estoque.
+            return `Você é um analista de logística sênior. Sua tarefa é identificar um produto com a MÁXIMA PRECISÃO para cruzar com uma planilha de estoque.
 
 DADOS FORNECIDOS:
-- Link da URL (Contém o nome do produto): ${link || 'Nenhum'}
-- Dica extraída da URL: ${dicaSlug.replace(/-/g, ' ')}
-- Texto do anúncio: ${contextoLink ? contextoLink : 'Sem texto'}
+${file ? "- UMA IMAGEM DO PRODUTO FOI ANEXADA. Observe-a atentamente (cor, formato, marca visível).\n" : ""}
+- Link do anúncio: ${link || 'Nenhum'}
+- Dica de palavras do Link: ${dicaSlug.replace(/-/g, ' ')}
+- Texto extraído da página: ${contextoLink ? contextoLink : 'Sem texto'}
 
 REGRAS:
-1. termo_base: NÃO use nomes genéricos (como apenas "camera"). Use o NOME ESPECÍFICO E MODELO (ex: "Camera Mini Redonda A9 Wifi", "Smartphone Galaxy S23"). Pegue isso da dica da URL ou do texto.
-2. cor: Cor predominante ou "indefinida".
-3. marca: Marca real ou "indefinida".
-4. preco: Se não achar no texto, ESTIME o valor de mercado atual em BRL (números apenas, com casas decimais).
+1. termo_base: NUNCA responda algo genérico como apenas "Câmera" ou "Celular". Escreva o TIPO + MODELO exato (ex: "Camera Mini Redonda A9 Wifi", "Celular Samsung S23").
+2. palavras_chave: Extraia de 3 a 6 palavras essenciais e únicas (ex: "a9", "mini", "wifi", "espia").
+3. preco: Se não achar no texto, ESTIME o valor de mercado atual em BRL (apenas número).
 
-Retorne APENAS um JSON:
+Retorne APENAS um JSON válido:
 {
   "termo_base": "Nome específico e modelo completo",
-  "cor": "cor",
-  "marca": "marca",
-  "preco_min": 50.00,
-  "preco_max": 150.00,
-  "palavras_chave": ["p1", "p2"]
+  "cor": "cor predominante ou indefinida",
+  "marca": "marca exata ou indefinida",
+  "preco_min": 10.00,
+  "preco_max": 200.00,
+  "palavras_chave": ["palavra1", "palavra2", "palavra3"]
 }`;
         }
 
@@ -386,7 +383,7 @@ Retorne APENAS um JSON:
                 let contextoLink = '';
                 if (link) { resBox.innerHTML = "⏳ <i>Lendo contexto do anúncio e preparando análise...</i>"; contextoLink = await obterResumoAnuncio(link); }
 
-                const promptText = montarPromptIA(link, contextoLink);
+                const promptText = montarPromptIA(link, contextoLink, file);
                 let aiResult;
 
                 if (CURRENT_IA === 'v1') {
@@ -466,7 +463,6 @@ Retorne APENAS um JSON:
             }
         }
 
-        // NOVO: SISTEMA DE CASCATA PARA OPENROUTER (V3 e V4 nunca mais falharão por causa de Endpoint sumindo)
         async function chamarAPI_OpenRouter_Cascade(promptText, file, modelosArray, isFallback = false) {
             let contentArray = [{ type: "text", text: promptText }];
             if(file && !isFallback) {
@@ -479,7 +475,8 @@ Retorne APENAS um JSON:
             let erroFinal = "";
 
             for (const modelName of modelosArray) {
-                const payload = { model: modelName, messages: [{ role: "user", content: contentArray }] };
+                // TRAVA DE TOKENS (Fix do erro 65535 do OpenRouter)
+                const payload = { model: modelName, messages: [{ role: "user", content: contentArray }], max_tokens: 1000 };
                 try {
                     const apiReq = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                         method: "POST",
@@ -490,7 +487,7 @@ Retorne APENAS um JSON:
                     const apiData = await apiReq.json().catch(() => ({}));
                     if(!apiReq.ok) { 
                         erroFinal = apiData?.error?.message || "Falha OR"; 
-                        continue; // Falhou neste modelo? Vai para o próximo!
+                        continue; 
                     }
                     
                     const responseText = apiData?.choices?.[0]?.message?.content || '';
@@ -500,7 +497,6 @@ Retorne APENAS um JSON:
                 }
             }
 
-            // Se rodou todos os modelos com a foto e falhou, faz o fallback SEM A FOTO (Texto puro)
             if(file && !isFallback) {
                 console.log("Todos os modelos visuais falharam. Rodando fallback de texto puro...");
                 return await chamarAPI_OpenRouter_Cascade(promptText, null, modelosArray, true);
@@ -509,29 +505,75 @@ Retorne APENAS um JSON:
             throw new Error(`Nenhum modelo do OpenRouter respondeu. Último erro: ${erroFinal}`);
         }
 
+        // NOVO SCORING: O TEXTO MANDA! PREÇO É APENAS BÔNUS.
         function processarResultadoIA(aiResult, resBox) {
-            const termo = removerAcentos(aiResult.termo_base || '').toLowerCase(); const cor = removerAcentos(aiResult.cor || '').toLowerCase(); const marca = removerAcentos(aiResult.marca || '').toLowerCase(); const palavras = Array.isArray(aiResult.palavras_chave) ? aiResult.palavras_chave : [];
-            const termosBusca = [termo, marca, cor, ...palavras].map(x => removerAcentos(String(x || '').toLowerCase().trim())).filter(x => x && x !== 'indefinida' && x !== 'undefined' && x !== 'null');
-            const termosExpandidos = new Set(termosBusca); termosBusca.forEach(t => { const primeira = t.split(/\s+/)[0]; if (DICIONARIO_SINONIMOS[primeira]) DICIONARIO_SINONIMOS[primeira].forEach(s => termosExpandidos.add(removerAcentos(s.toLowerCase()))); });
+            
+            // Reúne todas as palavras poderosas deduzidas pela IA
+            let palavrasIAPuras = new Set();
+            (aiResult.termo_base || '').split(/[\s-]+/).forEach(w => palavrasIAPuras.add(removerAcentos(w).toLowerCase()));
+            if(aiResult.marca && aiResult.marca !== 'indefinida') palavrasIAPuras.add(removerAcentos(aiResult.marca).toLowerCase());
+            if(aiResult.cor && aiResult.cor !== 'indefinida') palavrasIAPuras.add(removerAcentos(aiResult.cor).toLowerCase());
+            if(Array.isArray(aiResult.palavras_chave)) {
+                aiResult.palavras_chave.forEach(w => palavrasIAPuras.add(removerAcentos(String(w)).toLowerCase()));
+            }
+
+            // Limpa palavras inúteis (stopwords e palavras muito curtas)
+            let termosFortes = Array.from(palavrasIAPuras).filter(x => x.length >= 2 && !STOPWORDS.includes(x));
+            
+            // Adiciona sinônimos
+            const termosExpandidos = new Set(termosFortes); 
+            termosFortes.forEach(t => { 
+                if (DICIONARIO_SINONIMOS[t]) DICIONARIO_SINONIMOS[t].forEach(s => termosExpandidos.add(removerAcentos(s.toLowerCase()))); 
+            });
+
             let matches = [];
+
             BANCO_GLOBAL.forEach(item => {
                 let idClean = String(item.ID || '').toLowerCase().trim().replace(/[.#$\[\]]/g, '_'); if (ITENS_ENCONTRADOS.has(idClean)) return;
-                let desc = removerAcentos(item.Descricao || '').toLowerCase(); let idTxt = removerAcentos(item.ID || '').toLowerCase(); let textoItem = `${idTxt} ${desc}`; let valorNum = Number(item.ValorNum || 0); let score = 0; let motivos = [];
-                if (termo && desc.includes(termo)) { score += 45; motivos.push('produto'); }
-                if (marca && marca !== 'indefinida' && desc.includes(marca)) { score += 25; motivos.push('marca'); }
-                if (cor && cor !== 'indefinida' && desc.includes(cor)) { score += 15; motivos.push('cor'); }
-                termosExpandidos.forEach(t => { if (t.length >= 3 && textoItem.includes(t)) score += 8; });
-                const min = Number(aiResult.preco_min || 0); const max = Number(aiResult.preco_max || 0);
-                if (valorNum > 0 && min > 0 && max > 0) { if (valorNum >= min * 0.75 && valorNum <= max * 1.25) { score += 25; motivos.push('valor'); } else { const alvo = (min + max) / 2; const distancia = Math.abs(valorNum - alvo) / Math.max(alvo, 1); if (distancia < 0.6) score += 8; } }
-                if (score >= 30) matches.push({ ...item, aiScore: score, aiMotivos: motivos });
+                
+                let desc = removerAcentos(item.Descricao || '').toLowerCase(); 
+                let idTxt = removerAcentos(item.ID || '').toLowerCase(); 
+                let textoItem = `${idTxt} ${desc}`; 
+                let valorNum = Number(item.ValorNum || 0); 
+                
+                let score = 0; 
+                let matchCountText = 0;
+                let motivos = [];
+
+                // 1. CHECAGEM DE TEXTO: CADA PALAVRA EXATA GANHA 25 PONTOS!
+                termosExpandidos.forEach(t => { 
+                    if (textoItem.includes(t)) {
+                        score += 25; 
+                        matchCountText++;
+                        if(!motivos.includes('texto')) motivos.push('texto');
+                    }
+                });
+
+                // 2. CHECAGEM DE PREÇO: APENAS COMO BÔNUS (Não exclui o item se errar o preço)
+                const min = Number(aiResult.preco_min || 0); 
+                const max = Number(aiResult.preco_max || 0);
+                
+                if (valorNum > 0 && min > 0 && max > 0) { 
+                    if (valorNum >= min * 0.7 && valorNum <= max * 1.3) { 
+                        score += 20; // Bonus se o preço estiver na faixa
+                        motivos.push('valor'); 
+                    } 
+                }
+
+                // Só aprova se tiver pelo menos 2 palavras iguais OU 1 palavra + preço
+                if (score >= 45) {
+                    matches.push({ ...item, aiScore: score, aiMotivos: motivos });
+                }
             });
-            matches.sort((a, b) => b.aiScore - a.aiScore); let topMatches = matches.slice(0, 8);
+
+            matches.sort((a, b) => b.aiScore - a.aiScore); 
+            let topMatches = matches.slice(0, 8);
             
             let iconeTitle = ''; let corTitle = '';
-            if(CURRENT_IA === 'v1') { iconeTitle = '✅ IA V1 (Gemini)'; corTitle = 'var(--accent-blue)'; }
-            else if(CURRENT_IA === 'v2') { iconeTitle = '🚀 IA V2 (Groq)'; corTitle = '#f97316'; }
-            else if(CURRENT_IA === 'v3') { iconeTitle = '🤖 IA V3 (Gemini OR)'; corTitle = '#8b5cf6'; }
-            else if(CURRENT_IA === 'v4') { iconeTitle = '⚡ IA V4 (Llama OR)'; corTitle = '#10b981'; }
+            if(CURRENT_IA === 'v1') { iconeTitle = '✅ IA V1 (Gemini Original)'; corTitle = 'var(--accent-blue)'; }
+            else if(CURRENT_IA === 'v2') { iconeTitle = '🚀 IA V2 (Groq Txt/Vis)'; corTitle = '#f97316'; }
+            else if(CURRENT_IA === 'v3') { iconeTitle = '🤖 IA V3 (Gemini Cascata OR)'; corTitle = '#8b5cf6'; }
+            else if(CURRENT_IA === 'v4') { iconeTitle = '⚡ IA V4 (Llama/Mistral OR)'; corTitle = '#10b981'; }
             
             let htmlResult = `
                 <div style="color: ${corTitle}; font-weight: 900; margin-bottom: 5px;">${iconeTitle} Finalizou:</div>
@@ -539,13 +581,15 @@ Retorne APENAS um JSON:
                     <b>Produto (Acurado):</b> <span style="text-transform: capitalize; color: var(--accent-blue); font-weight: bold;">${escapeHtml(aiResult.termo_base)}</span> <br>
                     <b>Cor:</b> ${escapeHtml(aiResult.cor)} | <b>Marca:</b> ${escapeHtml(aiResult.marca)}<br>
                     <b>Est. Valor:</b> R$ ${Number(aiResult.preco_min || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} até R$ ${Number(aiResult.preco_max || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
-                    <b>Palavras:</b> ${escapeHtml((aiResult.palavras_chave || []).join(', ') || '-')}
+                    <b>Palavras de Busca Forte:</b> ${escapeHtml(termosFortes.join(', ') || '-')}
                 </div>
                 <div style="font-weight: 900; font-size: 0.85rem; color: var(--text-title); text-transform: uppercase;">Top Possibilidades na Base:</div>
             `;
-            if (topMatches.length === 0) { htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém.</div>`; } else {
+            if (topMatches.length === 0) { htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém. O item pode não ter sido bipado ainda.</div>`; } else {
                 topMatches.forEach(m => {
-                    let percent = Math.min(100, Math.round((m.aiScore / 130) * 100)); let [origemNome, origemClass] = getClassOrigem(m.OrigemDb); let valorFmt = Number(m.ValorNum || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    // O Score agora pode passar de 100 fácil (4 palavras = 100 pts + 20 preço). Limitamos no visual a 99%.
+                    let percent = Math.min(99, Math.round((m.aiScore / 130) * 100)); 
+                    let [origemNome, origemClass] = getClassOrigem(m.OrigemDb); let valorFmt = Number(m.ValorNum || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                     htmlResult += `
                         <div class="ia-match-card">
                             <div class="ia-match-header"><div class="ia-match-title">${escapeHtml(m.ID)} <span class="badge ${origemClass}">${origemNome}</span></div><div class="ia-match-prob">🔥 ${percent}% Match</div></div>
