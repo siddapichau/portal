@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador Global - Salvados V2</title>
+    <title>Buscador Global - Salvados V3</title>
 
     <!-- SISTEMA ANTI-ACESSO DIRETO -->
     <script>
@@ -16,6 +16,8 @@
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <!-- CSS GLOBAL -->
     <link rel="stylesheet" href="style.css">
 
     <style>
@@ -30,12 +32,16 @@
         .nav-title { font-size: 1.25rem; font-weight: 900; color: #333333 !important; text-transform: uppercase; white-space: nowrap; letter-spacing: 0.5px; }
         .search-input { width: 100%; background: #FFFFFF !important; color: #333333 !important; border: 2px solid transparent; border-radius: 30px; padding: 10px 20px; outline: none; font-size: 0.95rem; font-weight: 600; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); transition: all 0.3s ease; }
         .search-input:focus { border-color: var(--accent-blue) !important; box-shadow: 0 2px 15px rgba(52, 131, 250, 0.2) !important; }
-        .btn-header { background: #FFFFFF !important; color: #333333 !important; border: 1px solid #CCCCCC !important; border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all .2s ease; }
+        .btn-header { background: #FFFFFF !important; color: #333333 !important; border: 1px solid #CCCCCC !important; border-radius: 6px; padding: 8px 10px; font-size: .75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all .2s ease; }
         .btn-header:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important; }
-        .btn-ia-1 { border-color: var(--accent-blue) !important; color: var(--accent-blue) !important; font-size: 0.9rem;}
+        .btn-ia-1 { border-color: var(--accent-blue) !important; color: var(--accent-blue) !important; }
         .btn-ia-1:hover { background: var(--accent-blue) !important; color: #fff !important; }
-        .btn-ia-2 { border-color: #f97316 !important; color: #f97316 !important; font-size: 0.9rem;}
+        .btn-ia-2 { border-color: #f97316 !important; color: #f97316 !important; }
         .btn-ia-2:hover { background: #f97316 !important; color: #fff !important; }
+        .btn-ia-3 { border-color: #8b5cf6 !important; color: #8b5cf6 !important; }
+        .btn-ia-3:hover { background: #8b5cf6 !important; color: #fff !important; }
+        .btn-ia-4 { border-color: #10b981 !important; color: #10b981 !important; }
+        .btn-ia-4:hover { background: #10b981 !important; color: #fff !important; }
         .btn { background: var(--bg-body); color: var(--text-title); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: 0.2s; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .status-ticker-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 4px; flex: 0 0 auto; scrollbar-width: none; }
@@ -70,6 +76,8 @@
         .badge-aging { color: #475569; border: 1px solid rgba(71, 85, 105, 0.3); background: rgba(71, 85, 105, 0.1); }
         .match-exact { border-left: 3px solid var(--accent-green) !important; background: rgba(0, 166, 80, 0.02); }
         .match-partial { border-left: 3px solid var(--accent-warn) !important; }
+
+        /* POP-UPs */
         .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 9999; }
         .modal-overlay.active { display: flex; }
         .modal-content { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; width: 90%; max-width: 650px; padding: 20px; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.3); }
@@ -81,6 +89,8 @@
         .upload-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
         .upload-wrapper input[type=file] { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 10; }
         .upload-wrapper .btn { width: 100%; pointer-events: none; }
+
+        /* Estilos do Modal da IA */
         .ia-input-group { display: flex; flex-direction: column; gap: 5px; }
         .ia-input-group label { font-size: 0.8rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; }
         .ia-input { background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); padding: 10px; border-radius: 8px; font-size: 0.9rem; outline: none;}
@@ -95,17 +105,20 @@
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
 </head>
+
 <body data-theme="light">
     <div class="top-navbar">
         <div class="nav-logo-wrapper"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
         <div class="nav-center">
-            <div class="nav-title">Buscador Global V2.0</div>
+            <div class="nav-title">Buscador Global V3.0</div>
             <div style="width: 100%;"><input type="text" class="search-input" id="search-input" placeholder="🔍 Buscar ID, Rastreio ou Descrição..." oninput="executarSmartSearch()"></div>
         </div>
-        <div class="nav-right" style="display: flex; gap: 8px;">
-            <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')">✨ Assistente V1</button>
-            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')">🚀 Assistente V2</button>
-            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none;">📂 Arquivos</button>
+        <div class="nav-right" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
+            <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')" title="Gemini Original">✨ V1</button>
+            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Groq Text/Vision">🚀 V2</button>
+            <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Gemini Cascade (OR)">🤖 V3</button>
+            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="Llama Cascade (OR)">⚡ V4</button>
+            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none; margin-left: 10px;">📂 CSVs</button>
         </div>
     </div>
 
@@ -124,7 +137,7 @@
     <div class="resultados-container" id="resultados-container">
         <div class="table-wrapper glass-panel" id="container-vazio">
             <table>
-                <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) &amp; Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
+                <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) & Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
                 <tbody id="tbody-vazio"><tr><td colspan="6" class="center" style="padding: 35px; color: var(--text-muted); font-weight: 600;">Digite os termos acima para cruzar dados nas bases.</td></tr></tbody>
             </table>
         </div>
@@ -132,7 +145,7 @@
             <div class="section-title title-exatos" id="titulo-exatos">🎯 CORRESPONDÊNCIA EXATA (0)</div>
             <div class="table-wrapper glass-panel" id="scroll-exatos" onscroll="carregarMaisExatos()">
                 <table>
-                    <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) &amp; Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
+                    <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) & Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
                     <tbody id="tbody-exatos"></tbody>
                 </table>
             </div>
@@ -141,7 +154,7 @@
             <div class="section-title title-aproximados" id="titulo-aproximados">💡 RESULTADOS APROXIMADOS (0)</div>
             <div class="table-wrapper glass-panel" id="scroll-aproximados" onscroll="carregarMaisAproximados()">
                 <table>
-                    <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) &amp; Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
+                    <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) & Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
                     <tbody id="tbody-aproximados"></tbody>
                 </table>
             </div>
@@ -172,7 +185,7 @@
                 <div class="modal-title" id="modal-ia-title" style="color: var(--accent-blue);">✨ Assistente Inteligente</div>
                 <button class="close-modal" onclick="fecharModalIA()">×</button>
             </div>
-            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados lendo apenas o link ou enviando a foto.</div>
+            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados lendo a descrição do link ou avaliando a imagem.</div>
 
             <div class="ia-input-group">
                 <label>Link do Anúncio (Mercado Livre)</label>
@@ -192,7 +205,7 @@
             <div class="ia-input-group" style="margin-top: 10px;">
                 <label>📡 Resposta da Inteligência</label>
                 <div class="ia-box-resultado" id="ia-resultado">
-                    Aguardando entrada de dados... A IA extrairá características e varrerá o banco procurando pelo maior 'Match'.
+                    Aguardando entrada de dados... A IA extrairá características do texto do link ou varrerá a imagem.
                 </div>
             </div>
         </div>
@@ -202,8 +215,10 @@
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const DB_NODES = { 'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata', 'q10': 'salvados_q10', 'q15': 'salvados_q15', 'qonhub': 'salvados_qonhub', 'cftv': 'salvados_cftv', 'parado': 'salvados_parado' };
 
+        // ⚠️ SUAS CHAVES DE API AQUI:
         const GEMINI_API_KEY = "AQ.Ab8RN6KKQxvBtTlRluYCFxJ50YyN0cGQGEgOt4oUTcgHwmE3gA";
         const GROQ_API_KEY = "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";
+        const OPENROUTER_API_KEY = "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";
 
         let CURRENT_IA = 'v1';
         let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; let ITENS_ENCONTRADOS = new Set();
@@ -232,11 +247,10 @@
             const btnRun = document.getElementById('btn-run-ia');
             document.getElementById('ia-resultado').innerHTML = "Aguardando entrada de dados... A IA extrairá características e varrerá o banco procurando pelo maior 'Match'.";
 
-            if (versao === 'v1') {
-                title.innerHTML = "✨ Assistente Inteligente V1 (Gemini)"; title.style.color = "var(--accent-blue)"; btnRun.style.background = "var(--accent-blue)";
-            } else {
-                title.innerHTML = "🚀 Assistente Inteligente V2 (Groq)"; title.style.color = "#f97316"; btnRun.style.background = "#f97316";
-            }
+            if (versao === 'v1') { title.innerHTML = "✨ IA V1 (Gemini Original)"; title.style.color = "var(--accent-blue)"; btnRun.style.background = "var(--accent-blue)"; }
+            else if (versao === 'v2') { title.innerHTML = "🚀 IA V2 (Groq Txt/Vis)"; title.style.color = "#f97316"; btnRun.style.background = "#f97316"; }
+            else if (versao === 'v3') { title.innerHTML = "🤖 IA V3 (Gemini Cascata OR)"; title.style.color = "#8b5cf6"; btnRun.style.background = "#8b5cf6"; }
+            else if (versao === 'v4') { title.innerHTML = "⚡ IA V4 (Llama Cascata OR)"; title.style.color = "#10b981"; btnRun.style.background = "#10b981"; }
             document.getElementById('modal-ia').classList.add('active');
         }
 
@@ -255,6 +269,11 @@
         };
 
         const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        
+        // CASCATA OPENROUTER: Garante que se o modelo 1 for desativado, ele usa o 2 ou o 3 silenciosamente.
+        const OR_MODELS_V3 = ["google/gemini-2.0-flash-exp:free", "google/gemini-2.0-pro-exp-02-05:free", "google/gemini-2.5-flash"];
+        const OR_MODELS_V4 = ["meta-llama/llama-3.2-11b-vision-instruct:free", "mistralai/pixtral-12b:free", "meta-llama/llama-3.3-70b-instruct:free"];
+
         function previewIAFile(input) { const btnLabel = document.getElementById('btn-ia-file-label'); if (input.files && input.files[0]) { btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`; btnLabel.style.color = "var(--accent-green)"; } else { btnLabel.innerHTML = `📷 Anexar Foto do Item`; btnLabel.style.color = "var(--text-muted)"; } }
         function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
 
@@ -288,28 +307,42 @@
             } catch (e) { return ''; }
         }
 
+        // PROMPT DE ENGENHARIA TURBINADO: Instruções super estritas para pegar o Modelo e não algo genérico.
         function montarPromptIA(link, contextoLink) {
-            return `Você é um analista de logística especializado em identificar produtos de e-commerce e cruzar com uma base interna de pacotes perdidos/salvados.
-Sua tarefa:
-1. Analise a foto enviada, se houver.
-2. Analise o link e o contexto do anúncio, se houver.
-3. Extraia características úteis para procurar em descrições curtas de planilhas: produto genérico, marca, cor, faixa de preço e palavras-chave.
-4. Não invente marca: se não estiver visível ou clara, use "indefinida".
-5. Retorne preços em número puro, usando ponto decimal. Exemplo: 149.90.
-Link informado: ${link ? normalizarLinkIA(link) : 'não informado'}
-Contexto lido do anúncio: ${contextoLink ? contextoLink : 'não disponível'}
-Retorne APENAS um JSON válido, sem markdown, sem explicação e sem texto fora do JSON, exatamente neste formato:
-{ "termo_base": "nome genérico do produto, exemplo: celular, tênis, camisa", "cor": "cor predominante ou indefinida", "marca": "marca visível ou indefinida", "preco_min": 0, "preco_max": 0, "palavras_chave": ["palavra1", "palavra2", "palavra3"] }`;
+            let dicaSlug = "";
+            try { if(link) dicaSlug = new URL(link).pathname.split('/').find(p => p.length > 5 && p.includes('-')) || ""; } catch(e){}
+
+            return `Você é um analista de logística sênior. Identifique o produto com a MAIOR PRECISÃO POSSÍVEL para cruzar com uma planilha de estoque.
+
+DADOS FORNECIDOS:
+- Link da URL (Contém o nome do produto): ${link || 'Nenhum'}
+- Dica extraída da URL: ${dicaSlug.replace(/-/g, ' ')}
+- Texto do anúncio: ${contextoLink ? contextoLink : 'Sem texto'}
+
+REGRAS:
+1. termo_base: NÃO use nomes genéricos (como apenas "camera"). Use o NOME ESPECÍFICO E MODELO (ex: "Camera Mini Redonda A9 Wifi", "Smartphone Galaxy S23"). Pegue isso da dica da URL ou do texto.
+2. cor: Cor predominante ou "indefinida".
+3. marca: Marca real ou "indefinida".
+4. preco: Se não achar no texto, ESTIME o valor de mercado atual em BRL (números apenas, com casas decimais).
+
+Retorne APENAS um JSON:
+{
+  "termo_base": "Nome específico e modelo completo",
+  "cor": "cor",
+  "marca": "marca",
+  "preco_min": 50.00,
+  "preco_max": 150.00,
+  "palavras_chave": ["p1", "p2"]
+}`;
         }
 
-        // LIMPEZA TURBINADA (Remove as tags <think> da Groq/Qwen)
         function extrairJsonIA(texto) {
             let clean = String(texto || '').trim();
-            clean = clean.replace(/<think>[\s\S]*?<\/think>/gi, '').trim(); // Remove pensamento
+            clean = clean.replace(/<think>[\s\S]*?<\/think>/gi, '').trim(); 
             clean = clean.replace(/^\uFEFF/, '').replace(/```json/gi, '').replace(/```/g, '').trim();
 
             const ini = clean.indexOf('{'); const fim = clean.lastIndexOf('}');
-            if (ini === -1 || fim === -1 || fim <= ini) { throw new Error('A IA não retornou JSON válido. Resposta processada: ' + clean.slice(0, 150)); }
+            if (ini === -1 || fim === -1 || fim <= ini) { throw new Error('A IA não retornou JSON válido. Resposta: ' + clean.slice(0, 100)); }
             clean = clean.slice(ini, fim + 1); return JSON.parse(clean);
         }
 
@@ -358,8 +391,12 @@ Retorne APENAS um JSON válido, sem markdown, sem explicação e sem texto fora 
 
                 if (CURRENT_IA === 'v1') {
                     aiResult = await chamarAPI_Gemini(promptText, file);
-                } else {
+                } else if (CURRENT_IA === 'v2') {
                     aiResult = await chamarAPI_Groq(promptText, file);
+                } else if (CURRENT_IA === 'v3') {
+                    aiResult = await chamarAPI_OpenRouter_Cascade(promptText, file, OR_MODELS_V3);
+                } else if (CURRENT_IA === 'v4') {
+                    aiResult = await chamarAPI_OpenRouter_Cascade(promptText, file, OR_MODELS_V4);
                 }
 
                 processarResultadoIA(aiResult, resBox);
@@ -383,7 +420,7 @@ Retorne APENAS um JSON válido, sem markdown, sem explicação e sem texto fora 
                         const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                         const apiData = await apiReq.json().catch(() => ({}));
                         if (!apiReq.ok) { 
-                            if(apiData?.error?.message?.includes("authentication credentials")) throw new Error("Chave do Google (GEMINI_API_KEY) revogada ou inválida. Insira uma nova chave no código.");
+                            if(apiData?.error?.message?.includes("authentication credentials")) throw new Error("A sua chave do Google (GEMINI_API_KEY) foi revogada ou está expirada. Insira uma nova chave no código fonte.");
                             erroFinal = apiData?.error?.message || `${apiReq.status} ${apiReq.statusText}`; continue; 
                         }
                         const partes = apiData?.candidates?.[0]?.content?.parts || [];
@@ -396,13 +433,12 @@ Retorne APENAS um JSON válido, sem markdown, sem explicação e sem texto fora 
             throw new Error(`Nenhum modelo do Google respondeu. Último erro: ${erroFinal}`);
         }
 
-        // SISTEMA DE FALLBACK DA GROQ: Tenta com foto (Vision). Se falhar, tenta sem a foto (Texto).
         async function chamarAPI_Groq(promptText, file, isFallback = false) {
-            let modelToUse = "llama-3.3-70b-versatile"; // Modelo padrão de texto incrivelmente rapido e preciso
+            let modelToUse = "llama-3.3-70b-versatile"; 
             let messages = [];
 
             if (file && !isFallback) {
-                modelToUse = "llama-3.2-90b-vision-preview"; // Tenta forçar o Vision
+                modelToUse = "llama-3.2-90b-vision-preview"; 
                 try {
                     const img = await fileToOptimizedImage(file);
                     messages = [{ role: 'user', content: [ { type: 'text', text: promptText }, { type: 'image_url', image_url: { url: img.dataUrl } } ] }];
@@ -422,13 +458,55 @@ Retorne APENAS um JSON válido, sem markdown, sem explicação e sem texto fora 
                 const responseText = apiData?.choices?.[0]?.message?.content || '';
                 return normalizarRespostaIA(extrairJsonIA(responseText));
             } catch (e) {
-                // SE DEU ERRO DE IMAGEM, RODA AUTOMATICAMENTE SEM A IMAGEM!
                 if (file && !isFallback) {
-                    console.log("Erro na Groq Vision. Fazendo fallback para Groq Text...", e);
+                    console.log("Erro na Groq Vision. Tentando apenas com texto via fallback...", e);
                     return await chamarAPI_Groq(promptText, null, true);
                 }
                 throw new Error(`Groq falhou: ${e.message}`);
             }
+        }
+
+        // NOVO: SISTEMA DE CASCATA PARA OPENROUTER (V3 e V4 nunca mais falharão por causa de Endpoint sumindo)
+        async function chamarAPI_OpenRouter_Cascade(promptText, file, modelosArray, isFallback = false) {
+            let contentArray = [{ type: "text", text: promptText }];
+            if(file && !isFallback) {
+                try {
+                    const img = await fileToOptimizedImage(file);
+                    contentArray.push({ type: "image_url", image_url: { url: img.dataUrl } });
+                } catch (e) {}
+            }
+            
+            let erroFinal = "";
+
+            for (const modelName of modelosArray) {
+                const payload = { model: modelName, messages: [{ role: "user", content: contentArray }] };
+                try {
+                    const apiReq = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                        method: "POST",
+                        headers: { "Authorization": `Bearer ${OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": window.location.href, "X-Title": "Buscador Logistica" },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const apiData = await apiReq.json().catch(() => ({}));
+                    if(!apiReq.ok) { 
+                        erroFinal = apiData?.error?.message || "Falha OR"; 
+                        continue; // Falhou neste modelo? Vai para o próximo!
+                    }
+                    
+                    const responseText = apiData?.choices?.[0]?.message?.content || '';
+                    return normalizarRespostaIA(extrairJsonIA(responseText));
+                } catch(e) {
+                    erroFinal = e.message;
+                }
+            }
+
+            // Se rodou todos os modelos com a foto e falhou, faz o fallback SEM A FOTO (Texto puro)
+            if(file && !isFallback) {
+                console.log("Todos os modelos visuais falharam. Rodando fallback de texto puro...");
+                return await chamarAPI_OpenRouter_Cascade(promptText, null, modelosArray, true);
+            }
+
+            throw new Error(`Nenhum modelo do OpenRouter respondeu. Último erro: ${erroFinal}`);
         }
 
         function processarResultadoIA(aiResult, resBox) {
@@ -448,11 +526,18 @@ Retorne APENAS um JSON válido, sem markdown, sem explicação e sem texto fora 
                 if (score >= 30) matches.push({ ...item, aiScore: score, aiMotivos: motivos });
             });
             matches.sort((a, b) => b.aiScore - a.aiScore); let topMatches = matches.slice(0, 8);
-            let iconeTitle = CURRENT_IA === 'v1' ? '✅ IA V1 (Gemini)' : '🚀 IA V2 (Groq)'; let corTitle = CURRENT_IA === 'v1' ? 'var(--accent-blue)' : '#f97316';
+            
+            let iconeTitle = ''; let corTitle = '';
+            if(CURRENT_IA === 'v1') { iconeTitle = '✅ IA V1 (Gemini)'; corTitle = 'var(--accent-blue)'; }
+            else if(CURRENT_IA === 'v2') { iconeTitle = '🚀 IA V2 (Groq)'; corTitle = '#f97316'; }
+            else if(CURRENT_IA === 'v3') { iconeTitle = '🤖 IA V3 (Gemini OR)'; corTitle = '#8b5cf6'; }
+            else if(CURRENT_IA === 'v4') { iconeTitle = '⚡ IA V4 (Llama OR)'; corTitle = '#10b981'; }
+            
             let htmlResult = `
                 <div style="color: ${corTitle}; font-weight: 900; margin-bottom: 5px;">${iconeTitle} Finalizou:</div>
                 <div style="font-size: 0.8rem; background: var(--bg-body); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 15px;">
-                    <b>Produto:</b> <span style="text-transform: capitalize;">${escapeHtml(aiResult.termo_base)}</span> | <b>Cor:</b> ${escapeHtml(aiResult.cor)} | <b>Marca:</b> ${escapeHtml(aiResult.marca)}<br>
+                    <b>Produto (Acurado):</b> <span style="text-transform: capitalize; color: var(--accent-blue); font-weight: bold;">${escapeHtml(aiResult.termo_base)}</span> <br>
+                    <b>Cor:</b> ${escapeHtml(aiResult.cor)} | <b>Marca:</b> ${escapeHtml(aiResult.marca)}<br>
                     <b>Est. Valor:</b> R$ ${Number(aiResult.preco_min || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} até R$ ${Number(aiResult.preco_max || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
                     <b>Palavras:</b> ${escapeHtml((aiResult.palavras_chave || []).join(', ') || '-')}
                 </div>
