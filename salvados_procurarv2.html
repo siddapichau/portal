@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador Global - Correção Minha Versão</title>
-    
+    <title>Buscador Global - Salvados V2</title>
+
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
     <script>
         if (window === window.top) {
             const paginaAtual = window.location.pathname.split('/').pop() || 'salvados_procurar.html';
@@ -29,20 +30,16 @@
         .nav-title { font-size: 1.25rem; font-weight: 900; color: #333333 !important; text-transform: uppercase; white-space: nowrap; letter-spacing: 0.5px; }
         .search-input { width: 100%; background: #FFFFFF !important; color: #333333 !important; border: 2px solid transparent; border-radius: 30px; padding: 10px 20px; outline: none; font-size: 0.95rem; font-weight: 600; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); transition: all 0.3s ease; }
         .search-input:focus { border-color: var(--accent-blue) !important; box-shadow: 0 2px 15px rgba(52, 131, 250, 0.2) !important; }
-        .btn-header { background: #FFFFFF !important; color: #333333 !important; border: 1px solid #CCCCCC !important; border-radius: 6px; padding: 8px 10px; font-size: .75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all .2s ease; }
+        .btn-header { background: #FFFFFF !important; color: #333333 !important; border: 1px solid #CCCCCC !important; border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all .2s ease; }
         .btn-header:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important; }
-        .btn-ia-1 { border-color: var(--accent-blue) !important; color: var(--accent-blue) !important; }
+        .btn-ia-1 { border-color: var(--accent-blue) !important; color: var(--accent-blue) !important; font-size: 0.9rem;}
         .btn-ia-1:hover { background: var(--accent-blue) !important; color: #fff !important; }
-        .btn-ia-2 { border-color: #f97316 !important; color: #f97316 !important; }
+        .btn-ia-2 { border-color: #f97316 !important; color: #f97316 !important; font-size: 0.9rem;}
         .btn-ia-2:hover { background: #f97316 !important; color: #fff !important; }
-        .btn-ia-3 { border-color: #8b5cf6 !important; color: #8b5cf6 !important; }
-        .btn-ia-3:hover { background: #8b5cf6 !important; color: #fff !important; }
-        .btn-ia-4 { border-color: #10b981 !important; color: #10b981 !important; }
-        .btn-ia-4:hover { background: #10b981 !important; color: #fff !important; }
         .btn { background: var(--bg-body); color: var(--text-title); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: 0.2s; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .status-ticker-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 4px; flex: 0 0 auto; scrollbar-width: none; }
-        .status-ticker-row::-webkit-scrollbar { display: none; } 
+        .status-ticker-row::-webkit-scrollbar { display: none; }
         .status-pill { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 20px; padding: 6px 12px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-card); color: var(--text-main); }
         .pill-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
         .resultados-container { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 8px; }
@@ -105,15 +102,14 @@
             <div class="nav-title">Buscador Global V2.0</div>
             <div style="width: 100%;"><input type="text" class="search-input" id="search-input" placeholder="🔍 Buscar ID, Rastreio ou Descrição..." oninput="executarSmartSearch()"></div>
         </div>
-        <div class="nav-right" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
-            <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')" title="Google Gemini">✨ V1</button>
-            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Groq Rápido">🚀 V2</button>
-            <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Llama Vision (OR)">🤖 V3</button>
-            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="Gemini Pro (OR)">⚡ V4</button>
-            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none; margin-left: 10px;">📂 CSVs</button>
+        <div class="nav-right" style="display: flex; gap: 8px;">
+            <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')">✨ Assistente V1</button>
+            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')">🚀 Assistente V2</button>
+            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none;">📂 Arquivos</button>
         </div>
     </div>
 
+    <!-- Tickers de Status da Base -->
     <div class="status-ticker-row" id="status-ticker">
         <div class="status-pill"><span class="pill-dot" style="background:#e11d48"></span>Devolução 2.0: <span id="lbl-devolucao">Carregando...</span></div>
         <div class="status-pill"><span class="pill-dot" style="background:#2563eb"></span>ID Data: <span id="lbl-iddata">Carregando...</span></div>
@@ -124,10 +120,11 @@
         <div class="status-pill"><span class="pill-dot" style="background:#d97706"></span>Parado Percurso: <span id="lbl-parado">Carregando...</span></div>
     </div>
 
+    <!-- Resultados -->
     <div class="resultados-container" id="resultados-container">
         <div class="table-wrapper glass-panel" id="container-vazio">
             <table>
-                <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) & Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
+                <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) &amp; Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
                 <tbody id="tbody-vazio"><tr><td colspan="6" class="center" style="padding: 35px; color: var(--text-muted); font-weight: 600;">Digite os termos acima para cruzar dados nas bases.</td></tr></tbody>
             </table>
         </div>
@@ -135,7 +132,7 @@
             <div class="section-title title-exatos" id="titulo-exatos">🎯 CORRESPONDÊNCIA EXATA (0)</div>
             <div class="table-wrapper glass-panel" id="scroll-exatos" onscroll="carregarMaisExatos()">
                 <table>
-                    <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) & Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
+                    <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) &amp; Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
                     <tbody id="tbody-exatos"></tbody>
                 </table>
             </div>
@@ -144,13 +141,14 @@
             <div class="section-title title-aproximados" id="titulo-aproximados">💡 RESULTADOS APROXIMADOS (0)</div>
             <div class="table-wrapper glass-panel" id="scroll-aproximados" onscroll="carregarMaisAproximados()">
                 <table>
-                    <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) & Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
+                    <thead><tr><th style="width:18%;">Ação / ID / Rastreio</th><th style="width:18%;">Base(s) &amp; Tempo</th><th style="width:28%;">Descrição do Item</th><th style="width:11%;">Status</th><th style="width:14%;">Substatus / Resolução</th><th style="width:11%;">Valor</th></tr></thead>
                     <tbody id="tbody-aproximados"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
+    <!-- MODAL DE UPLOAD -->
     <div class="modal-overlay" id="modal-gerenciador">
         <div class="modal-content">
             <div class="modal-header"><div class="modal-title">📂 Gerenciar Planilhas</div><button class="close-modal" onclick="fecharModalGerenciador()">×</button></div>
@@ -167,19 +165,20 @@
         </div>
     </div>
 
+    <!-- MODAL ASSISTENTE IA -->
     <div class="modal-overlay" id="modal-ia">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title" id="modal-ia-title">✨ Assistente Inteligente</div>
+                <div class="modal-title" id="modal-ia-title" style="color: var(--accent-blue);">✨ Assistente Inteligente</div>
                 <button class="close-modal" onclick="fecharModalIA()">×</button>
             </div>
-            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados das bases lendo a descrição do link ou avaliando a imagem.</div>
-            
+            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados lendo apenas o link ou enviando a foto.</div>
+
             <div class="ia-input-group">
                 <label>Link do Anúncio (Mercado Livre)</label>
                 <input type="text" class="ia-input" id="ia-link" placeholder="Ex: https://produto.mercadolivre.com.br/MLB-...">
             </div>
-            
+
             <div class="ia-input-group">
                 <label>Foto da Bancada (Opcional)</label>
                 <div class="upload-wrapper" style="border: 1px dashed var(--border-card); border-radius: 8px;">
@@ -188,12 +187,12 @@
                 </div>
             </div>
 
-            <button class="btn" id="btn-run-ia" style="color: #fff; width: 100%; padding: 12px; margin-top: 10px; font-size: 1rem;" onclick="executarBuscaIA()">🔎 Analisar e Buscar Padrões</button>
+            <button class="btn" id="btn-run-ia" style="background: var(--accent-blue); color: #fff; width: 100%; padding: 12px; margin-top: 10px; font-size: 1rem;" onclick="executarBuscaIA()">🔎 Analisar e Buscar Padrões</button>
 
             <div class="ia-input-group" style="margin-top: 10px;">
                 <label>📡 Resposta da Inteligência</label>
                 <div class="ia-box-resultado" id="ia-resultado">
-                    Aguardando entrada de dados... A IA extrairá características do texto do link ou varrerá a imagem.
+                    Aguardando entrada de dados... A IA extrairá características e varrerá o banco procurando pelo maior 'Match'.
                 </div>
             </div>
         </div>
@@ -205,265 +204,379 @@
 
         const GEMINI_API_KEY = "AQ.Ab8RN6KKQxvBtTlRluYCFxJ50YyN0cGQGEgOt4oUTcgHwmE3gA";
         const GROQ_API_KEY = "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";
-        const OPENROUTER_API_KEY = "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"; 
-        
-        let CURRENT_IA = 'v1'; 
-        let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; let ITENS_ENCONTRADOS = new Set(); 
+
+        let CURRENT_IA = 'v1';
+        let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; let ITENS_ENCONTRADOS = new Set();
         let PAGE_SIZE = 50; let CUR_PAGE_EXATOS = 0; let CUR_PAGE_APROX = 0;
-        
+
         const STOPWORDS = ['de', 'para', 'com', 'o', 'a', 'os', 'as', 'em', 'um', 'uma', 'uns', 'umas', 'no', 'na', 'nos', 'nas', 'do', 'da', 'dos', 'das', 'por', 'sem'];
         const DICIONARIO_SINONIMOS = { 'tenis': ['sapato', 'calcado', 'sneaker', 'chuteira', 'bota'], 'celular': ['smartphone', 'telefone', 'iphone', 'aparelho', 'mobile'], 'tv': ['televisao', 'televisor', 'smartv', 'monitor', 'tela'], 'pc': ['computador', 'notebook', 'desktop', 'laptop', 'macbook'], 'geladeira': ['refrigerador', 'freezer', 'frigobar'], 'fone': ['headset', 'headphone', 'earphone', 'airpods', 'ouvido'], 'relogio': ['smartwatch', 'pulseira', 'watch'], 'bicicleta': ['bike', 'bici', 'ciclismo'], 'pneu': ['pneus', 'borracha', 'roda', 'aro'], 'video': ['game', 'videogame', 'console', 'playstation', 'xbox', 'nintendo'] };
 
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
-        syncTheme(); window.addEventListener('message', (event) => { if (event.data.type === 'THEME_CHANGED') document.body.setAttribute('data-theme', event.data.theme); });
+        syncTheme(); window.addEventListener('message', (event) => { if (event.data && event.data.type === 'THEME_CHANGED') { document.body.setAttribute('data-theme', event.data.theme); } });
 
         const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
         let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
         const paginaNome = window.location.pathname.split('/').pop() || 'salvados_procurar.html';
         let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
-        if(canEdit) { document.getElementById('btn-gerenciar').style.display = 'inline-flex'; }
+        if (canEdit) { document.getElementById('btn-gerenciar').style.display = 'inline-flex'; }
 
-        async function registrarLogFirebase(modulo, acao) {
-            try { await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modulo, acao, usuario: userName, timestamp: Date.now() }) }); } catch(e) {}
-        }
+        async function registrarLogFirebase(modulo, acao) { try { await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modulo, acao, usuario: userName, timestamp: Date.now() }) }); } catch(e) {} }
 
         function abrirModalGerenciador() { document.getElementById('modal-gerenciador').classList.add('active'); }
         function fecharModalGerenciador() { document.getElementById('modal-gerenciador').classList.remove('active'); }
-        
-        function abrirModalIA(versao) { 
+
+        function abrirModalIA(versao) {
             CURRENT_IA = versao;
             const title = document.getElementById('modal-ia-title');
             const btnRun = document.getElementById('btn-run-ia');
             document.getElementById('ia-resultado').innerHTML = "Aguardando entrada de dados... A IA extrairá características e varrerá o banco procurando pelo maior 'Match'.";
-            
-            if(versao === 'v1') { title.innerHTML = "✨ IA V1 (Gemini)"; title.style.color = "var(--accent-blue)"; btnRun.style.background = "var(--accent-blue)"; }
-            else if(versao === 'v2') { title.innerHTML = "🚀 IA V2 (Groq)"; title.style.color = "#f97316"; btnRun.style.background = "#f97316"; }
-            else if(versao === 'v3') { title.innerHTML = "🤖 IA V3 (Llama Vision)"; title.style.color = "#8b5cf6"; btnRun.style.background = "#8b5cf6"; }
-            else if(versao === 'v4') { title.innerHTML = "⚡ IA V4 (Gemini Pro OR)"; title.style.color = "#10b981"; btnRun.style.background = "#10b981"; }
-            
-            document.getElementById('modal-ia').classList.add('active'); 
+
+            if (versao === 'v1') {
+                title.innerHTML = "✨ Assistente Inteligente V1 (Gemini)"; title.style.color = "var(--accent-blue)"; btnRun.style.background = "var(--accent-blue)";
+            } else {
+                title.innerHTML = "🚀 Assistente Inteligente V2 (Groq)"; title.style.color = "#f97316"; btnRun.style.background = "#f97316";
+            }
+            document.getElementById('modal-ia').classList.add('active');
         }
+
         function fecharModalIA() { document.getElementById('modal-ia').classList.remove('active'); }
 
-        async function carregarListaEncontrados() { try { const res = await fetch(`${FIREBASE_URL}salvados_encontrados.json`); const data = await res.json(); if(data) { Object.keys(data).forEach(k => ITENS_ENCONTRADOS.add(k)); } } catch(e) {} }
+        async function carregarListaEncontrados() { try { const res = await fetch(`${FIREBASE_URL}salvados_encontrados.json`); const data = await res.json(); if (data) Object.keys(data).forEach(k => ITENS_ENCONTRADOS.add(k)); } catch(e) {} }
 
         window.marcarComoEncontrado = async function(id) {
-            if(!confirm(`Tem certeza que deseja marcar o pacote ${id} como ENCONTRADO?`)) return;
+            if (!confirm(`Tem certeza que deseja marcar o pacote ${id} como ENCONTRADO?`)) return;
             let idLimpo = String(id).toLowerCase().trim().replace(/[.#$\[\]]/g, "_");
             try {
                 await fetch(`${FIREBASE_URL}salvados_encontrados/${idLimpo}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ data: Date.now(), user: userName }) });
-                ITENS_ENCONTRADOS.add(idLimpo); await registrarLogFirebase("Buscador Global", `Marcou item <b>${id}</b> como ENCONTRADO.`); executarSmartSearch(); 
-                if(document.getElementById('modal-ia').classList.contains('active')) { document.getElementById('ia-resultado').innerHTML = `<div style="color: var(--accent-green); font-weight: 900; text-align:center; padding: 20px;">✅ Pacote Registrado com Sucesso!</div>`; }
+                ITENS_ENCONTRADOS.add(idLimpo); await registrarLogFirebase("Buscador Global", `Marcou item <b>${id}</b> como ENCONTRADO.`); executarSmartSearch();
+                if (document.getElementById('modal-ia').classList.contains('active')) { document.getElementById('ia-resultado').innerHTML = `<div style="color: var(--accent-green); font-weight: 900; text-align:center; padding: 20px;">✅ Pacote Registrado com Sucesso!</div>`; }
             } catch (e) { alert("Erro de comunicação."); }
         };
 
-        function previewIAFile(input) {
-            const btnLabel = document.getElementById('btn-ia-file-label');
-            if(input.files && input.files[0]) { btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`; btnLabel.style.color = "var(--accent-green)"; } 
-            else { btnLabel.innerHTML = `📷 Anexar Foto do Item`; btnLabel.style.color = "var(--text-muted)"; }
-        }
+        const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        function previewIAFile(input) { const btnLabel = document.getElementById('btn-ia-file-label'); if (input.files && input.files[0]) { btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`; btnLabel.style.color = "var(--accent-green)"; } else { btnLabel.innerHTML = `📷 Anexar Foto do Item`; btnLabel.style.color = "var(--text-muted)"; } }
+        function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
 
-        function fileToBase64(file, full = false) {
-            return new Promise((resolve, reject) => { 
-                const reader = new FileReader(); 
-                reader.readAsDataURL(file); 
-                reader.onload = () => resolve(full ? reader.result : reader.result.split(',')[1]); 
-                reader.onerror = error => reject(error); 
+        function fileToOptimizedImage(file, maxDim = 1280, quality = 0.85) {
+            return new Promise((resolve, reject) => {
+                if (!file || !String(file.type || '').startsWith('image/')) {
+                    return fileToBase64(file).then(dataUrl => resolve({ dataUrl, base64: String(dataUrl).split(',')[1], mimeType: file?.type || 'image/jpeg' })).catch(reject);
+                }
+                const reader = new FileReader(); const img = new Image();
+                reader.onerror = reject; img.onerror = reject;
+                img.onload = () => {
+                    try {
+                        let { width, height } = img; const maior = Math.max(width, height);
+                        if (maior > maxDim) { const scale = maxDim / maior; width = Math.round(width * scale); height = Math.round(height * scale); }
+                        const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality); resolve({ dataUrl, base64: dataUrl.split(',')[1], mimeType: 'image/jpeg' });
+                    } catch (e) { reject(e); }
+                };
+                reader.onload = () => { img.src = reader.result; }; reader.readAsDataURL(file);
             });
         }
+
+        function normalizarLinkIA(link) { let url = String(link || '').trim(); if (!url) return ''; if (!/^https?:\/\//i.test(url)) url = 'https://' + url; try { return new URL(url).href; } catch (e) { return String(link || '').trim(); } }
+
+        async function obterResumoAnuncio(link) {
+            const url = normalizarLinkIA(link); if (!url) return '';
+            try {
+                const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 8000);
+                const readerUrl = `https://r.jina.ai/${encodeURI(url)}`; const res = await fetch(readerUrl, { signal: controller.signal });
+                clearTimeout(timeout); if (!res.ok) return ''; const texto = await res.text(); return String(texto || '').replace(/\s+/g, ' ').slice(0, 5000);
+            } catch (e) { return ''; }
+        }
+
+        function montarPromptIA(link, contextoLink) {
+            return `Você é um analista de logística especializado em identificar produtos de e-commerce e cruzar com uma base interna de pacotes perdidos/salvados.
+Sua tarefa:
+1. Analise a foto enviada, se houver.
+2. Analise o link e o contexto do anúncio, se houver.
+3. Extraia características úteis para procurar em descrições curtas de planilhas: produto genérico, marca, cor, faixa de preço e palavras-chave.
+4. Não invente marca: se não estiver visível ou clara, use "indefinida".
+5. Retorne preços em número puro, usando ponto decimal. Exemplo: 149.90.
+Link informado: ${link ? normalizarLinkIA(link) : 'não informado'}
+Contexto lido do anúncio: ${contextoLink ? contextoLink : 'não disponível'}
+Retorne APENAS um JSON válido, sem markdown, sem explicação e sem texto fora do JSON, exatamente neste formato:
+{ "termo_base": "nome genérico do produto, exemplo: celular, tênis, camisa", "cor": "cor predominante ou indefinida", "marca": "marca visível ou indefinida", "preco_min": 0, "preco_max": 0, "palavras_chave": ["palavra1", "palavra2", "palavra3"] }`;
+        }
+
+        // LIMPEZA TURBINADA (Remove as tags <think> da Groq/Qwen)
+        function extrairJsonIA(texto) {
+            let clean = String(texto || '').trim();
+            clean = clean.replace(/<think>[\s\S]*?<\/think>/gi, '').trim(); // Remove pensamento
+            clean = clean.replace(/^\uFEFF/, '').replace(/```json/gi, '').replace(/```/g, '').trim();
+
+            const ini = clean.indexOf('{'); const fim = clean.lastIndexOf('}');
+            if (ini === -1 || fim === -1 || fim <= ini) { throw new Error('A IA não retornou JSON válido. Resposta processada: ' + clean.slice(0, 150)); }
+            clean = clean.slice(ini, fim + 1); return JSON.parse(clean);
+        }
+
+        function numeroIA(v) {
+            if (typeof v === 'number' && isFinite(v)) return v;
+            let s = String(v ?? '').replace(/R\$/gi, '').replace(/\s/g, '').trim(); if (!s) return 0;
+            const lastComma = s.lastIndexOf(','); const lastPeriod = s.lastIndexOf('.');
+            if (lastComma > lastPeriod) s = s.replace(/\./g, '').replace(',', '.'); else if (lastPeriod > lastComma) s = s.replace(/,/g, '');
+            s = s.replace(/[^0-9.-]/g, ''); const n = parseFloat(s); return isFinite(n) ? n : 0;
+        }
+
+        function normalizarRespostaIA(obj) {
+            const out = {
+                termo_base: String(obj?.termo_base || obj?.produto || obj?.item || 'produto').trim().toLowerCase(),
+                cor: String(obj?.cor || 'indefinida').trim().toLowerCase(),
+                marca: String(obj?.marca || 'indefinida').trim().toLowerCase(),
+                preco_min: numeroIA(obj?.preco_min), preco_max: numeroIA(obj?.preco_max),
+                palavras_chave: Array.isArray(obj?.palavras_chave) ? obj.palavras_chave.map(x => String(x).trim().toLowerCase()).filter(Boolean) : []
+            };
+            if (out.preco_min > 0 && out.preco_max === 0) out.preco_max = out.preco_min * 1.5;
+            if (out.preco_max > 0 && out.preco_min === 0) out.preco_min = out.preco_max * 0.5;
+            if (out.preco_min > out.preco_max) { const tmp = out.preco_min; out.preco_min = out.preco_max; out.preco_max = tmp; }
+            out.preco_min = Number(out.preco_min.toFixed(2)); out.preco_max = Number(out.preco_max.toFixed(2));
+            return out;
+        }
+
+        function escapeJsAttr(v) { return String(v ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ').replace(/\r/g, ' '); }
 
         async function executarBuscaIA() {
             const resBox = document.getElementById('ia-resultado');
             const link = document.getElementById('ia-link').value.trim();
             const file = document.getElementById('ia-foto').files[0];
             const btnRun = document.getElementById('btn-run-ia');
-            
-            if(!link && !file) {
-                resBox.innerHTML = "<span style='color:#FF5252; font-weight: bold;'>⚠️ Por favor, insira um Link ou anexe uma foto.</span>";
-                return;
-            }
+
+            if (!link && !file) { resBox.innerHTML = "<span style='color:#FF5252; font-weight: bold;'>⚠️ Por favor, insira um link ou anexe uma foto.</span>"; return; }
 
             btnRun.disabled = true; btnRun.innerText = "⏳ Analisando...";
-            resBox.innerHTML = "⏳ <i>Conectando à IA... Processando texto/imagem...</i>";
-
-            const promptText = `Você é um analista de logística. Sua missão é extrair dados de produtos para cruzamento em planilhas.
-${link ? `Avalie as palavras chave contidas neste link do Mercado Livre: ${link}` : ''}
-${file ? `Utilize a imagem em anexo para confirmar formato e cor.` : 'Como nenhuma imagem foi enviada, deduza pelo contexto fornecido pelo link.'}
-
-Retorne APENAS um objeto JSON válido, sem formato markdown ou texto extra, usando exatamente esta estrutura:
-{
-    "termo_base": "Nome genérico do produto (ex: celular, tenis, camisa, pneu, tv)",
-    "cor": "Cor predominante ou 'nao identificada'",
-    "marca": "Marca do produto ou 'nao identificada'",
-    "preco_min": 10.00,
-    "preco_max": 9999.00
-}`;
+            resBox.innerHTML = "⏳ <i>Preparando dados... Lendo anúncio/imagem e conectando à IA...</i>";
 
             try {
+                let contextoLink = '';
+                if (link) { resBox.innerHTML = "⏳ <i>Lendo contexto do anúncio e preparando análise...</i>"; contextoLink = await obterResumoAnuncio(link); }
+
+                const promptText = montarPromptIA(link, contextoLink);
                 let aiResult;
-                if(CURRENT_IA === 'v1') { aiResult = await chamarAPI_Gemini_Hardcoded(promptText, file); } 
-                else if(CURRENT_IA === 'v2') { aiResult = await chamarAPI_Groq(promptText, file); } 
-                else if(CURRENT_IA === 'v3') { aiResult = await chamarAPI_OpenRouter(promptText, file, "meta-llama/llama-3.2-11b-vision-instruct:free"); } 
-                else if(CURRENT_IA === 'v4') { aiResult = await chamarAPI_OpenRouter(promptText, file, "google/gemini-2.0-pro-exp-02-05:free"); }
+
+                if (CURRENT_IA === 'v1') {
+                    aiResult = await chamarAPI_Gemini(promptText, file);
+                } else {
+                    aiResult = await chamarAPI_Groq(promptText, file);
+                }
 
                 processarResultadoIA(aiResult, resBox);
-            } catch(e) {
-                resBox.innerHTML = `<span style='color:#FF5252; font-weight: bold;'>❌ Erro na IA (${CURRENT_IA.toUpperCase()}): <br>${e.message}</span>`;
+            } catch (e) {
+                resBox.innerHTML = `<span style='color:#FF5252; font-weight: bold;'>❌ Erro na IA (${CURRENT_IA.toUpperCase()}):<br>${escapeHtml(e.message)}</span>`;
             } finally {
                 btnRun.disabled = false; btnRun.innerText = "🔎 Analisar e Buscar Padrões";
             }
         }
 
-        async function chamarAPI_Gemini_Hardcoded(promptText, file) {
-            const payloadContents = [{ parts: [{ text: promptText }] }];
-            if(file) {
-                const baseData = await fileToBase64(file, false);
-                payloadContents[0].parts.push({ inline_data: { mime_type: file.type, data: baseData } });
-            }
-            
-            const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: payloadContents })
-            });
+        async function chamarAPI_Gemini(promptText, file) {
+            const parts = [{ text: promptText }];
+            if (file) { const img = await fileToOptimizedImage(file); parts.push({ inline_data: { mime_type: img.mimeType, data: img.base64 } }); }
+            const payloadJson = { contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.1, topP: 0.95, maxOutputTokens: 1024, response_mime_type: 'application/json' } };
+            const payloadFallback = { contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.1, topP: 0.95, maxOutputTokens: 1024 } };
 
-            if(!apiReq.ok) {
-                const err = await apiReq.json();
-                if(err.error?.message?.includes("Quota")) throw new Error("O Google bloqueou a sua cota gratuita diária/por minuto para esta chave.");
-                throw new Error(err.error?.message || apiReq.statusText);
+            let erroFinal = '';
+            for (const modelo of GEMINI_MODELS) {
+                for (const payload of [payloadJson, payloadFallback]) {
+                    try {
+                        const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                        const apiData = await apiReq.json().catch(() => ({}));
+                        if (!apiReq.ok) { 
+                            if(apiData?.error?.message?.includes("authentication credentials")) throw new Error("Chave do Google (GEMINI_API_KEY) revogada ou inválida. Insira uma nova chave no código.");
+                            erroFinal = apiData?.error?.message || `${apiReq.status} ${apiReq.statusText}`; continue; 
+                        }
+                        const partes = apiData?.candidates?.[0]?.content?.parts || [];
+                        const aiResponseText = partes.map(p => p.text || '').join('\n').trim();
+                        if (!aiResponseText) { erroFinal = `Gemini retornou resposta vazia.`; continue; }
+                        return normalizarRespostaIA(extrairJsonIA(aiResponseText));
+                    } catch (e) { erroFinal = e.message; if(e.message.includes("revogada")) throw e; }
+                }
             }
-            const apiData = await apiReq.json();
-            let aiResponseText = apiData.candidates[0].content.parts[0].text;
-            let cleanJsonString = aiResponseText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            const match = cleanJsonString.match(/\{[\s\S]*\}/);
-            if (match) { cleanJsonString = match[0]; }
-            return JSON.parse(cleanJsonString);
+            throw new Error(`Nenhum modelo do Google respondeu. Último erro: ${erroFinal}`);
         }
 
-        async function chamarAPI_Groq(promptText, file) {
-            // Se enviou foto, o Groq Vision foi desativado, então orientamos a usar texto.
-            if(file) throw new Error("A Groq desativou seus modelos visuais gratuitos. Para analisar fotos, use V3 ou V4. Se quiser usar a V2, envie apenas o Link sem foto.");
+        // SISTEMA DE FALLBACK DA GROQ: Tenta com foto (Vision). Se falhar, tenta sem a foto (Texto).
+        async function chamarAPI_Groq(promptText, file, isFallback = false) {
+            let modelToUse = "llama-3.3-70b-versatile"; // Modelo padrão de texto incrivelmente rapido e preciso
+            let messages = [];
 
-            const payload = {
-                model: "llama-3.3-70b-versatile",
-                messages: [{ role: "user", content: promptText }],
-                response_format: { type: "json_object" }
-            };
-
-            const apiReq = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${GROQ_API_KEY}`, "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            if(!apiReq.ok) {
-                const err = await apiReq.json();
-                throw new Error(err.error?.message || "Falha na comunicação com a Groq.");
+            if (file && !isFallback) {
+                modelToUse = "llama-3.2-90b-vision-preview"; // Tenta forçar o Vision
+                try {
+                    const img = await fileToOptimizedImage(file);
+                    messages = [{ role: 'user', content: [ { type: 'text', text: promptText }, { type: 'image_url', image_url: { url: img.dataUrl } } ] }];
+                } catch(e) {
+                    messages = [{ role: 'user', content: promptText }]; modelToUse = "llama-3.3-70b-versatile";
+                }
+            } else {
+                messages = [{ role: 'user', content: promptText }];
             }
-            const apiData = await apiReq.json();
-            let cleanJsonString = apiData.choices[0].message.content.replace(/```json/gi, '').replace(/```/g, '').trim();
-            return JSON.parse(cleanJsonString);
-        }
 
-        async function chamarAPI_OpenRouter(promptText, file, modelName) {
-            let contentArray = [{ type: "text", text: promptText }];
-            if(file) {
-                const baseDataFull = await fileToBase64(file, true);
-                contentArray.push({ type: "image_url", image_url: { url: baseDataFull } });
+            const payload = { model: modelToUse, messages: messages, temperature: 0.1, max_completion_tokens: 1024, response_format: { type: 'json_object' } };
+
+            try {
+                const apiReq = await fetch('https://api.groq.com/openai/v1/chat/completions', { method: 'POST', headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const apiData = await apiReq.json().catch(() => ({}));
+                if (!apiReq.ok) { throw new Error(apiData?.error?.message || `${apiReq.status} ${apiReq.statusText}`); }
+                const responseText = apiData?.choices?.[0]?.message?.content || '';
+                return normalizarRespostaIA(extrairJsonIA(responseText));
+            } catch (e) {
+                // SE DEU ERRO DE IMAGEM, RODA AUTOMATICAMENTE SEM A IMAGEM!
+                if (file && !isFallback) {
+                    console.log("Erro na Groq Vision. Fazendo fallback para Groq Text...", e);
+                    return await chamarAPI_Groq(promptText, null, true);
+                }
+                throw new Error(`Groq falhou: ${e.message}`);
             }
-            
-            const payload = { model: modelName, messages: [{ role: "user", content: contentArray }] };
-
-            const apiReq = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                method: "POST",
-                headers: { "Authorization": `Bearer ${OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": window.location.href, "X-Title": "Buscador Logistica" },
-                body: JSON.stringify(payload)
-            });
-
-            if(!apiReq.ok) {
-                const err = await apiReq.json();
-                throw new Error(err.error?.message || "Falha na comunicação com o OpenRouter.");
-            }
-            
-            const apiData = await apiReq.json();
-            let responseText = apiData.choices[0].message.content;
-            let cleanJsonString = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            const match = cleanJsonString.match(/\{[\s\S]*\}/);
-            if (match) { cleanJsonString = match[0]; }
-            return JSON.parse(cleanJsonString);
         }
 
         function processarResultadoIA(aiResult, resBox) {
+            const termo = removerAcentos(aiResult.termo_base || '').toLowerCase(); const cor = removerAcentos(aiResult.cor || '').toLowerCase(); const marca = removerAcentos(aiResult.marca || '').toLowerCase(); const palavras = Array.isArray(aiResult.palavras_chave) ? aiResult.palavras_chave : [];
+            const termosBusca = [termo, marca, cor, ...palavras].map(x => removerAcentos(String(x || '').toLowerCase().trim())).filter(x => x && x !== 'indefinida' && x !== 'undefined' && x !== 'null');
+            const termosExpandidos = new Set(termosBusca); termosBusca.forEach(t => { const primeira = t.split(/\s+/)[0]; if (DICIONARIO_SINONIMOS[primeira]) DICIONARIO_SINONIMOS[primeira].forEach(s => termosExpandidos.add(removerAcentos(s.toLowerCase()))); });
             let matches = [];
             BANCO_GLOBAL.forEach(item => {
-                let idClean = String(item.ID).toLowerCase().trim().replace(/[.#$\[\]]/g, "_");
-                if(ITENS_ENCONTRADOS.has(idClean)) return; 
-
-                let desc = (item.Descricao || '').toLowerCase(); let valorNum = item.ValorNum || 0; let score = 0;
-                let termo = (aiResult.termo_base || '').toLowerCase(); if(termo && desc.includes(termo)) score += 50;
-                let cor = (aiResult.cor || '').toLowerCase(); if(cor && cor !== 'nao identificada' && desc.includes(cor)) score += 20;
-                let marca = (aiResult.marca || '').toLowerCase(); if(marca && marca !== 'nao identificada' && desc.includes(marca)) score += 20;
-                if(valorNum > 0 && valorNum >= (aiResult.preco_min * 0.8) && valorNum <= (aiResult.preco_max * 1.2)) score += 30;
-
-                if(score >= 30) matches.push({ ...item, aiScore: score });
+                let idClean = String(item.ID || '').toLowerCase().trim().replace(/[.#$\[\]]/g, '_'); if (ITENS_ENCONTRADOS.has(idClean)) return;
+                let desc = removerAcentos(item.Descricao || '').toLowerCase(); let idTxt = removerAcentos(item.ID || '').toLowerCase(); let textoItem = `${idTxt} ${desc}`; let valorNum = Number(item.ValorNum || 0); let score = 0; let motivos = [];
+                if (termo && desc.includes(termo)) { score += 45; motivos.push('produto'); }
+                if (marca && marca !== 'indefinida' && desc.includes(marca)) { score += 25; motivos.push('marca'); }
+                if (cor && cor !== 'indefinida' && desc.includes(cor)) { score += 15; motivos.push('cor'); }
+                termosExpandidos.forEach(t => { if (t.length >= 3 && textoItem.includes(t)) score += 8; });
+                const min = Number(aiResult.preco_min || 0); const max = Number(aiResult.preco_max || 0);
+                if (valorNum > 0 && min > 0 && max > 0) { if (valorNum >= min * 0.75 && valorNum <= max * 1.25) { score += 25; motivos.push('valor'); } else { const alvo = (min + max) / 2; const distancia = Math.abs(valorNum - alvo) / Math.max(alvo, 1); if (distancia < 0.6) score += 8; } }
+                if (score >= 30) matches.push({ ...item, aiScore: score, aiMotivos: motivos });
             });
-
-            matches.sort((a,b) => b.aiScore - a.aiScore);
-            let topMatches = matches.slice(0, 5); 
-
-            let iconeTitle = ''; let corTitle = '';
-            if(CURRENT_IA === 'v1') { iconeTitle = '✅ IA V1 (Gemini)'; corTitle = 'var(--accent-blue)'; }
-            else if(CURRENT_IA === 'v2') { iconeTitle = '🚀 IA V2 (Groq Texto)'; corTitle = '#f97316'; }
-            else if(CURRENT_IA === 'v3') { iconeTitle = '🤖 IA V3 (Llama)'; corTitle = '#8b5cf6'; }
-            else if(CURRENT_IA === 'v4') { iconeTitle = '⚡ IA V4 (Gemini Pro)'; corTitle = '#10b981'; }
-
+            matches.sort((a, b) => b.aiScore - a.aiScore); let topMatches = matches.slice(0, 8);
+            let iconeTitle = CURRENT_IA === 'v1' ? '✅ IA V1 (Gemini)' : '🚀 IA V2 (Groq)'; let corTitle = CURRENT_IA === 'v1' ? 'var(--accent-blue)' : '#f97316';
             let htmlResult = `
                 <div style="color: ${corTitle}; font-weight: 900; margin-bottom: 5px;">${iconeTitle} Finalizou:</div>
                 <div style="font-size: 0.8rem; background: var(--bg-body); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 15px;">
-                    <b>Produto:</b> <span style="text-transform: capitalize;">${aiResult.termo_base}</span> | <b>Cor:</b> ${aiResult.cor} | <b>Marca:</b> ${aiResult.marca} <br>
-                    <b>Est. Valor:</b> R$ ${aiResult.preco_min} até R$ ${aiResult.preco_max}
+                    <b>Produto:</b> <span style="text-transform: capitalize;">${escapeHtml(aiResult.termo_base)}</span> | <b>Cor:</b> ${escapeHtml(aiResult.cor)} | <b>Marca:</b> ${escapeHtml(aiResult.marca)}<br>
+                    <b>Est. Valor:</b> R$ ${Number(aiResult.preco_min || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} até R$ ${Number(aiResult.preco_max || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
+                    <b>Palavras:</b> ${escapeHtml((aiResult.palavras_chave || []).join(', ') || '-')}
                 </div>
                 <div style="font-weight: 900; font-size: 0.85rem; color: var(--text-title); text-transform: uppercase;">Top Possibilidades na Base:</div>
             `;
-
-            if(topMatches.length === 0) { htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém.</div>`; } 
-            else {
+            if (topMatches.length === 0) { htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém.</div>`; } else {
                 topMatches.forEach(m => {
-                    let percent = Math.min(100, Math.round((m.aiScore / 120) * 100)); 
-                    let [origemNome, origemClass] = getClassOrigem(m.OrigemDb);
+                    let percent = Math.min(100, Math.round((m.aiScore / 130) * 100)); let [origemNome, origemClass] = getClassOrigem(m.OrigemDb); let valorFmt = Number(m.ValorNum || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                     htmlResult += `
                         <div class="ia-match-card">
-                            <div class="ia-match-header">
-                                <div class="ia-match-title">${escapeHtml(m.ID)} <span class="badge ${origemClass}">${origemNome}</span></div>
-                                <div class="ia-match-prob">🔥 ${percent}% Match</div>
-                            </div>
+                            <div class="ia-match-header"><div class="ia-match-title">${escapeHtml(m.ID)} <span class="badge ${origemClass}">${origemNome}</span></div><div class="ia-match-prob">🔥 ${percent}% Match</div></div>
                             <div style="font-size: 0.75rem; color: var(--text-main); font-weight: 600;">${escapeHtml(m.Descricao)}</div>
-                            <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-                                <div style="font-size: 0.75rem; color: var(--accent-green); font-weight: 900;">R$ ${m.ValorNum.toLocaleString('pt-BR', {minimumFractionDigits:2})}</div>
-                                <button class="btn" style="padding: 4px 10px; font-size: 0.7rem; background: var(--accent-green); color: #fff; border:none;" onclick="marcarComoEncontrado('${m.ID}')">✅ Este é o Pacote</button>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">Motivos: ${escapeHtml((m.aiMotivos || []).join(', ') || 'similaridade')}</div>
+                            <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 4px; gap: 8px;">
+                                <div style="font-size: 0.75rem; color: var(--accent-green); font-weight: 900;">R$ ${valorFmt}</div>
+                                <button class="btn" style="padding: 4px 10px; font-size: 0.7rem; background: var(--accent-green); color: #fff; border:none;" onclick="marcarComoEncontrado('${escapeJsAttr(m.ID)}')">✅ Este é o Pacote</button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
             }
             resBox.innerHTML = htmlResult;
         }
 
         function removerAcentos(str) { return String(str ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-        function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
+        function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;'); }
         function parseCurrency(valStr) { if (!valStr) return 0; let s = String(valStr).replace(/R\$/gi, '').replace(/\s/g, '').trim(); let lastComma = s.lastIndexOf(','); let lastPeriod = s.lastIndexOf('.'); if (lastComma > lastPeriod) { s = s.replace(/\./g, '').replace(',', '.'); } else if (lastPeriod > lastComma) { s = s.replace(/,/g, ''); } return parseFloat(s) || 0; }
-        function cleanKey(k) { return k.toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-        function getVal(row, possibleKeys) { let keys = Object.keys(row); for (let pk of possibleKeys) { let cleanPk = cleanKey(pk); let found = keys.find(k => cleanKey(k) === cleanPk); if (found && row[found] !== undefined && row[found] !== null && String(row[found]).trim() !== '') { return String(row[found]).trim(); } } return ''; }
-        function extrairID(row) { let val = getVal(row, ['id', 'id do pacote', 'pacote', 'shipment', 'tracking', 'numero', 'n pacote', 'rastreio', 'shipment id']); if (val) return val; let chaves = Object.keys(row); if (chaves.length > 0) return String(row[chaves[0]]).trim(); return ''; }
+        function cleanKey(k) { return String(k || '').toLowerCase().trim().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+        function getVal(row, possibleKeys) { let keys = Object.keys(row || {}); for (let pk of possibleKeys) { let cleanPk = cleanKey(pk); let found = keys.find(k => cleanKey(k) === cleanPk); if (found && row[found] !== undefined && row[found] !== null && String(row[found]).trim() !== '') { return String(row[found]).trim(); } } return ''; }
+        function extrairID(row) { let val = getVal(row, ['id', 'id do pacote', 'pacote', 'shipment', 'tracking', 'numero', 'n pacote', 'rastreio', 'shipment id']); if (val) return val; let chaves = Object.keys(row || {}); if (chaves.length > 0) return String(row[chaves[0]]).trim(); return ''; }
 
-        async function carregarTodosBancos() { BANCO_GLOBAL = []; for (const [key, node] of Object.entries(DB_NODES)) { try { const response = await fetch(`${FIREBASE_URL}${node}.json`); if (response.ok) { const data = await response.json(); let listaReal = []; let dataAtualizacao = "Sem data"; if (data) { if (Array.isArray(data)) { listaReal = data; } else if (data.lista) { listaReal = Array.isArray(data.lista) ? data.lista : Object.values(data.lista); dataAtualizacao = data.atualizadoEm || "Sem data"; } else { listaReal = Object.values(data); } } const lbl = document.getElementById(`lbl-${key}`); if (listaReal.length > 0) { let itensMapeados = listaReal.map(i => ({ ...i, OrigemDb: key })); BANCO_GLOBAL.push(...itensMapeados); if (lbl) lbl.innerHTML = `${listaReal.length} u. <span class="upload-date">(${dataAtualizacao.split(',')[0]})</span>`; } else { if (lbl) lbl.innerText = `Vazio`; } } } catch (e) { const lbl = document.getElementById(`lbl-${key}`); if (lbl) lbl.innerText = `Erro ❌`; } } if(document.getElementById('search-input').value.trim() !== '') executarSmartSearch(); }
-        function processarUpload(inputElement, dbKey) { if(!canEdit) return; const file = inputElement.files[0]; if (!file) return; document.getElementById(`lbl-${dbKey}`).innerText = 'Processando...'; Papa.parse(file, { header: true, skipEmptyLines: true, complete: async function(results) { let data = results.data; let dadosLimpos = data.map(row => { let valText = getVal(row, ['valor_real', 'valor_brl', 'valor', 'preco', 'preço', 'price', 'total', 'vl']); return { ID: extrairID(row), Descricao: getVal(row, ['descricao', 'descrição', 'descricao_do_produto', 'descricao do produto', 'produto', 'item', 'title', 'titulo', 'nome']), Status: getVal(row, ['shp_lg_status', 'status_logistics', 'status', 'staus', 'status do pacote', 'staus do pacote', 'estado', 'situacao', 'situação']), Substatus: getVal(row, ['shp_lg_sub_status', 'substatus_logistics', 'substatus', 'sub status', 'sub-status', 'ultimo status', 'ultimo_status', 'resolucao', 'resolução', 'motivo', 'detalhe', 'final analise']), Valor: valText, ValorNum: parseCurrency(valText), Aging: getVal(row, ['aging', 'dias estocados', 'parados', 'dias parados', 'dias', 'age']) }; }).filter(i => i.ID && i.ID.toLowerCase() !== 'nan' && i.ID.toLowerCase() !== 'undefined'); if(dadosLimpos.length === 0) { alert("Arquivo inválido."); document.getElementById(`lbl-${dbKey}`).innerText = 'Falha ❌'; return; } try { const payload = { atualizadoEm: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }), lista: dadosLimpos }; await fetch(`${FIREBASE_URL}${DB_NODES[dbKey]}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); await registrarLogFirebase("Buscador Global", `Atualizou a base <b>${dbKey.toUpperCase()}</b> via CSV (${dadosLimpos.length} itens).`); carregarTodosBancos(); fecharModalGerenciador(); inputElement.value = ""; } catch (e) { alert('Erro na nuvem.'); document.getElementById(`lbl-${dbKey}`).innerText = 'Erro Nuvem ❌'; } } }); }
-        function agruparResultados(listaItems) { let mapa = {}; listaItems.forEach(item => { let idReal = (item.ID && String(item.ID).trim() !== '') ? String(item.ID).trim().toLowerCase() : 'SEM_ID_' + Math.random(); if (!mapa[idReal]) { mapa[idReal] = { ...item, OrigensDb: [item.OrigemDb] }; } else { if (!mapa[idReal].OrigensDb.includes(item.OrigemDb)) mapa[idReal].OrigensDb.push(item.OrigemDb); if ((item.ValorNum || 0) > (mapa[idReal].ValorNum || 0)) { mapa[idReal].ValorNum = item.ValorNum; mapa[idReal].Valor = item.Valor; } if (!mapa[idReal].Descricao && item.Descricao) mapa[idReal].Descricao = item.Descricao; if (!mapa[idReal].Aging && item.Aging) mapa[idReal].Aging = item.Aging; } }); return Object.values(mapa); }
-        function executarSmartSearch() { let query = document.getElementById('search-input').value; const contVazio = document.getElementById('container-vazio'); const secExatos = document.getElementById('section-exatos'); const secAprox = document.getElementById('section-aproximados'); const tbodyExatos = document.getElementById('tbody-exatos'); const tbodyAprox = document.getElementById('tbody-aproximados'); if (!query || query.trim().length < 2) { DADOS_EXATOS = []; DADOS_APROXIMADOS = []; contVazio.style.display = 'block'; secExatos.style.display = 'none'; secAprox.style.display = 'none'; return; } let qNormalizado = removerAcentos(query).toLowerCase().trim(); let queryTokens = qNormalizado.split(/\s+/).filter(w => !STOPWORDS.includes(w) && w.length > 1); let expandedTokensGroups = queryTokens.map(qt => { let group = [qt]; if (DICIONARIO_SINONIMOS[qt]) group.push(...DICIONARIO_SINONIMOS[qt]); return group; }); let exatosBrutos = []; let aproximadosBrutos = []; for (let i = 0; i < BANCO_GLOBAL.length; i++) { let item = BANCO_GLOBAL[i]; if (!item) continue; let id = String(item.ID || '').toLowerCase().trim(); let cleanIdFirebase = id.replace(/[.#$\[\]]/g, "_"); if(ITENS_ENCONTRADOS.has(cleanIdFirebase)) continue; let desc = removerAcentos(String(item.Descricao || '')).toLowerCase().trim(); if (id === qNormalizado || id.includes(qNormalizado) || desc.includes(qNormalizado)) { exatosBrutos.push(item); continue; } if (queryTokens.length > 0) { let descTokens = desc.split(/\s+/); let matchedTokens = 0; expandedTokensGroups.forEach(group => { if (descTokens.some(dt => group.some(syn => dt.includes(syn)))) matchedTokens++; }); if (matchedTokens > 0) { let score = matchedTokens === queryTokens.length ? 2000 + matchedTokens : (matchedTokens >= 2 ? 500 + matchedTokens : (queryTokens.length === 1 && matchedTokens === 1 ? 500 : 50)); aproximadosBrutos.push({ ...item, scoreTemp: score }); } } } let exatosAgrupados = agruparResultados(exatosBrutos); let aproximadosAgrupados = agruparResultados(aproximadosBrutos); exatosAgrupados.sort((a, b) => (b.ValorNum || 0) - (a.ValorNum || 0)); aproximadosAgrupados.sort((a, b) => { let scoreA = a.scoreTemp || 0; let scoreB = b.scoreTemp || 0; if (scoreB !== scoreA) return scoreB - scoreA; return (b.ValorNum || 0) - (a.ValorNum || 0); }); DADOS_EXATOS = exatosAgrupados; DADOS_APROXIMADOS = aproximadosAgrupados; CUR_PAGE_EXATOS = 0; CUR_PAGE_APROX = 0; tbodyExatos.innerHTML = ''; tbodyAprox.innerHTML = ''; contVazio.style.display = 'none'; secExatos.style.display = 'flex'; secAprox.style.display = 'flex'; document.getElementById('titulo-exatos').innerText = `🎯 CORRESPONDÊNCIA EXATA (${DADOS_EXATOS.length})`; if (DADOS_EXATOS.length > 0) { renderizarPedaçoExatos(); } else { tbodyExatos.innerHTML = `<tr><td colspan="6" class="center" style="color:var(--text-muted); padding:20px;">Nenhuma correspondência exata encontrada.</td></tr>`; } document.getElementById('titulo-aproximados').innerText = `💡 RESULTADOS APROXIMADOS (${DADOS_APROXIMADOS.length})`; if (DADOS_APROXIMADOS.length > 0) { renderizarPedaçoAproximados(); } else { tbodyAprox.innerHTML = `<tr><td colspan="6" class="center" style="color:var(--text-muted); padding:20px;">Nenhum resultado aproximado.</td></tr>`; } }
+        async function carregarTodosBancos() {
+            BANCO_GLOBAL = [];
+            for (const [key, node] of Object.entries(DB_NODES)) {
+                try {
+                    const response = await fetch(`${FIREBASE_URL}${node}.json`);
+                    if (response.ok) {
+                        const data = await response.json(); let listaReal = []; let dataAtualizacao = "Sem data";
+                        if (data) { if (Array.isArray(data)) { listaReal = data; } else if (data.lista) { listaReal = Array.isArray(data.lista) ? data.lista : Object.values(data.lista); dataAtualizacao = data.atualizadoEm || "Sem data"; } else { listaReal = Object.values(data); } }
+                        const lbl = document.getElementById(`lbl-${key}`);
+                        if (listaReal.length > 0) { let itensMapeados = listaReal.map(i => ({ ...i, ValorNum: Number(i.ValorNum || parseCurrency(i.Valor)), OrigemDb: key })); BANCO_GLOBAL.push(...itensMapeados); if (lbl) lbl.innerHTML = `${listaReal.length} u. <span class="upload-date">(${String(dataAtualizacao).split(',')[0]})</span>`; } else { if (lbl) lbl.innerText = `Vazio`; }
+                    }
+                } catch (e) { const lbl = document.getElementById(`lbl-${key}`); if (lbl) lbl.innerText = `Erro ❌`; }
+            }
+            if (document.getElementById('search-input').value.trim() !== '') executarSmartSearch();
+        }
+
+        function processarUpload(inputElement, dbKey) {
+            if (!canEdit) return; const file = inputElement.files[0]; if (!file) return; document.getElementById(`lbl-${dbKey}`).innerText = 'Processando...';
+            Papa.parse(file, {
+                header: true, skipEmptyLines: true,
+                complete: async function(results) {
+                    let data = results.data || [];
+                    let dadosLimpos = data.map(row => {
+                        let valText = getVal(row, ['valor_real', 'valor_brl', 'valor', 'preco', 'preço', 'price', 'total', 'vl']);
+                        return { ID: extrairID(row), Descricao: getVal(row, ['descricao', 'descrição', 'descricao_do_produto', 'descricao do produto', 'produto', 'item', 'title', 'titulo', 'nome']), Status: getVal(row, ['shp_lg_status', 'status_logistics', 'status', 'staus', 'status do pacote', 'staus do pacote', 'estado', 'situacao', 'situação']), Substatus: getVal(row, ['shp_lg_sub_status', 'substatus_logistics', 'substatus', 'sub status', 'sub-status', 'ultimo status', 'ultimo_status', 'resolucao', 'resolução', 'motivo', 'detalhe', 'final analise']), Valor: valText, ValorNum: parseCurrency(valText), Aging: getVal(row, ['aging', 'dias estocados', 'parados', 'dias parados', 'dias', 'age']) };
+                    }).filter(i => i.ID && i.ID.toLowerCase() !== 'nan' && i.ID.toLowerCase() !== 'undefined');
+                    if (dadosLimpos.length === 0) { alert("Arquivo inválido."); document.getElementById(`lbl-${dbKey}`).innerText = 'Falha ❌'; return; }
+                    try {
+                        const payload = { atualizadoEm: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }), lista: dadosLimpos };
+                        await fetch(`${FIREBASE_URL}${DB_NODES[dbKey]}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                        await registrarLogFirebase("Buscador Global", `Atualizou a base <b>${dbKey.toUpperCase()}</b> via CSV (${dadosLimpos.length} itens).`);
+                        carregarTodosBancos(); fecharModalGerenciador(); inputElement.value = "";
+                    } catch (e) { alert('Erro na nuvem.'); document.getElementById(`lbl-${dbKey}`).innerText = 'Erro Nuvem ❌'; }
+                }
+            });
+        }
+
+        function agruparResultados(listaItems) {
+            let mapa = {};
+            listaItems.forEach(item => {
+                let idReal = (item.ID && String(item.ID).trim() !== '') ? String(item.ID).trim().toLowerCase() : 'SEM_ID_' + Math.random();
+                if (!mapa[idReal]) { mapa[idReal] = { ...item, OrigensDb: [item.OrigemDb] }; } else {
+                    if (!mapa[idReal].OrigensDb.includes(item.OrigemDb)) mapa[idReal].OrigensDb.push(item.OrigemDb);
+                    if ((item.ValorNum || 0) > (mapa[idReal].ValorNum || 0)) { mapa[idReal].ValorNum = item.ValorNum; mapa[idReal].Valor = item.Valor; }
+                    if ((item.scoreTemp || 0) > (mapa[idReal].scoreTemp || 0)) mapa[idReal].scoreTemp = item.scoreTemp;
+                    if (!mapa[idReal].Descricao && item.Descricao) mapa[idReal].Descricao = item.Descricao;
+                    if (!mapa[idReal].Aging && item.Aging) mapa[idReal].Aging = item.Aging;
+                }
+            });
+            return Object.values(mapa);
+        }
+
+        function executarSmartSearch() {
+            let query = document.getElementById('search-input').value;
+            const contVazio = document.getElementById('container-vazio'); const secExatos = document.getElementById('section-exatos'); const secAprox = document.getElementById('section-aproximados'); const tbodyExatos = document.getElementById('tbody-exatos'); const tbodyAprox = document.getElementById('tbody-aproximados');
+            if (!query || query.trim().length < 2) { DADOS_EXATOS = []; DADOS_APROXIMADOS = []; contVazio.style.display = 'block'; secExatos.style.display = 'none'; secAprox.style.display = 'none'; return; }
+            let qNormalizado = removerAcentos(query).toLowerCase().trim(); let queryTokens = qNormalizado.split(/\s+/).filter(w => !STOPWORDS.includes(w) && w.length > 1); let expandedTokensGroups = queryTokens.map(qt => { let group = [qt]; if (DICIONARIO_SINONIMOS[qt]) group.push(...DICIONARIO_SINONIMOS[qt]); return group; });
+            let exatosBrutos = []; let aproximadosBrutos = [];
+            for (let i = 0; i < BANCO_GLOBAL.length; i++) {
+                let item = BANCO_GLOBAL[i]; if (!item) continue;
+                let idOriginal = String(item.ID || '').toLowerCase().trim(); let id = removerAcentos(idOriginal); let cleanIdFirebase = idOriginal.replace(/[.#$\[\]]/g, "_");
+                if (ITENS_ENCONTRADOS.has(cleanIdFirebase)) continue;
+                let desc = removerAcentos(String(item.Descricao || '')).toLowerCase().trim();
+                if (id === qNormalizado || id.includes(qNormalizado) || desc.includes(qNormalizado)) { exatosBrutos.push(item); continue; }
+                if (queryTokens.length > 0) {
+                    let descTokens = desc.split(/\s+/); let matchedTokens = 0;
+                    expandedTokensGroups.forEach(group => { if (descTokens.some(dt => group.some(syn => dt.includes(syn)))) matchedTokens++; });
+                    if (matchedTokens > 0) { let score = matchedTokens === queryTokens.length ? 2000 + matchedTokens : (matchedTokens >= 2 ? 500 + matchedTokens : (queryTokens.length === 1 && matchedTokens === 1 ? 500 : 50)); aproximadosBrutos.push({ ...item, scoreTemp: score }); }
+                }
+            }
+            let exatosAgrupados = agruparResultados(exatosBrutos); let aproximadosAgrupados = agruparResultados(aproximadosBrutos);
+            exatosAgrupados.sort((a, b) => (b.ValorNum || 0) - (a.ValorNum || 0)); aproximadosAgrupados.sort((a, b) => { let scoreA = a.scoreTemp || 0; let scoreB = b.scoreTemp || 0; if (scoreB !== scoreA) return scoreB - scoreA; return (b.ValorNum || 0) - (a.ValorNum || 0); });
+            DADOS_EXATOS = exatosAgrupados; DADOS_APROXIMADOS = aproximadosAgrupados; CUR_PAGE_EXATOS = 0; CUR_PAGE_APROX = 0; tbodyExatos.innerHTML = ''; tbodyAprox.innerHTML = '';
+            contVazio.style.display = 'none'; secExatos.style.display = 'flex'; secAprox.style.display = 'flex';
+            document.getElementById('titulo-exatos').innerText = `🎯 CORRESPONDÊNCIA EXATA (${DADOS_EXATOS.length})`; if (DADOS_EXATOS.length > 0) { renderizarPedaçoExatos(); } else { tbodyExatos.innerHTML = `<tr><td colspan="6" class="center" style="color:var(--text-muted); padding:20px;">Nenhuma correspondência exata encontrada.</td></tr>`; }
+            document.getElementById('titulo-aproximados').innerText = `💡 RESULTADOS APROXIMADOS (${DADOS_APROXIMADOS.length})`; if (DADOS_APROXIMADOS.length > 0) { renderizarPedaçoAproximados(); } else { tbodyAprox.innerHTML = `<tr><td colspan="6" class="center" style="color:var(--text-muted); padding:20px;">Nenhum resultado aproximado.</td></tr>`; }
+        }
+
         function getClassOrigem(origemKey) { const map = { 'devolucao': ['Devolução 2.0', 'origem-devolucao'], 'iddata': ['ID Data', 'origem-iddata'], 'q10': ['Q 10 Dias', 'origem-q10'], 'q15': ['Q 15 Dias', 'origem-q15'], 'qonhub': ['Q OnHub', 'origem-qonhub'], 'cftv': ['Pendências CFTV', 'origem-cftv'], 'parado': ['Parado Percurso', 'origem-parado'] }; return map[origemKey] || ['Desconhecido', '']; }
-        function renderizarLinha(i, ehExato) { let id = i.ID || '-'; let linkHtml = id !== '-' ? ` <div style="display:flex; gap: 4px; align-items:center;"> <button class="action-icon check" onclick="marcarComoEncontrado('${escapeHtml(id)}')" title="Marcar item como Encontrado">✅</button> <a href="https://envios.adminml.com/logistics/package-management/package/${escapeHtml(id)}" target="_blank" class="action-icon">🔍</a> <a href="https://shipping-bo.adminml.com/sauron/shipments/shipment/${escapeHtml(id)}" target="_blank" class="action-icon sauron">📋</a> </div> ` : ''; let badgesHtml = ''; if (i.OrigensDb && i.OrigensDb.length > 0) { badgesHtml = i.OrigensDb.map(origem => { let [nome, classe] = getClassOrigem(origem); return `<span class="badge ${classe}">${nome}</span>`; }).join(''); } if (i.Aging) { badgesHtml += `<span class="badge badge-aging">⏳ ${escapeHtml(i.Aging)} Dias</span>`; } let matchClass = ehExato ? 'match-exact' : 'match-partial'; return `<tr class="${matchClass}"><td class="col-id">${linkHtml}<span>${escapeHtml(id)}</span></td><td><div style="display: flex; flex-wrap: wrap; gap: 4px;">${badgesHtml}</div></td><td style="font-weight:600;">${escapeHtml(i.Descricao || '-')}</td><td>${escapeHtml(i.Status || '-')}</td><td style="color:var(--text-muted);">${escapeHtml(i.Substatus || '-')}</td><td class="col-val">R$ ${i.ValorNum.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`; }
+
+        function renderizarLinha(i, ehExato) {
+            let id = i.ID || '-'; let idUrl = encodeURIComponent(id);
+            let linkHtml = id !== '-' ? ` <div style="display:flex; gap: 4px; align-items:center;"> <button class="action-icon check" onclick="marcarComoEncontrado('${escapeJsAttr(id)}')" title="Marcar item como Encontrado">✅</button> <a href="https://envios.adminml.com/logistics/package-management/package/${idUrl}" target="_blank" class="action-icon">🔍</a> <a href="https://shipping-bo.adminml.com/sauron/shipments/shipment/${idUrl}" target="_blank" class="action-icon sauron">📋</a> </div> ` : '';
+            let badgesHtml = ''; if (i.OrigensDb && i.OrigensDb.length > 0) { badgesHtml = i.OrigensDb.map(origem => { let [nome, classe] = getClassOrigem(origem); return `<span class="badge ${classe}">${nome}</span>`; }).join(''); }
+            if (i.Aging) badgesHtml += `<span class="badge badge-aging">⏳ ${escapeHtml(i.Aging)} Dias</span>`;
+            let matchClass = ehExato ? 'match-exact' : 'match-partial'; let valorNum = Number(i.ValorNum || 0);
+            return `<tr class="${matchClass}"><td class="col-id">${linkHtml}<span>${escapeHtml(id)}</span></td><td><div style="display: flex; flex-wrap: wrap; gap: 4px;">${badgesHtml}</div></td><td style="font-weight:600;">${escapeHtml(i.Descricao || '-')}</td><td>${escapeHtml(i.Status || '-')}</td><td style="color:var(--text-muted);">${escapeHtml(i.Substatus || '-')}</td><td class="col-val">R$ ${valorNum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td></tr>`;
+        }
+
         function renderizarPedaçoExatos() { let start = CUR_PAGE_EXATOS * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_EXATOS.slice(start, end); let html = pedaco.map(i => renderizarLinha(i, true)).join(''); document.getElementById('tbody-exatos').insertAdjacentHTML('beforeend', html); }
         function carregarMaisExatos() { let container = document.getElementById('scroll-exatos'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 60) { if ((CUR_PAGE_EXATOS + 1) * PAGE_SIZE < DADOS_EXATOS.length) { CUR_PAGE_EXATOS++; renderizarPedaçoExatos(); } } }
         function renderizarPedaçoAproximados() { let start = CUR_PAGE_APROX * PAGE_SIZE; let end = start + PAGE_SIZE; let pedaco = DADOS_APROXIMADOS.slice(start, end); let html = pedaco.map(i => renderizarLinha(i, false)).join(''); document.getElementById('tbody-aproximados').insertAdjacentHTML('beforeend', html); }
         function carregarMaisAproximados() { let container = document.getElementById('scroll-aproximados'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 60) { if ((CUR_PAGE_APROX + 1) * PAGE_SIZE < DADOS_APROXIMADOS.length) { CUR_PAGE_APROX++; renderizarPedaçoAproximados(); } } }
+
         window.onload = async () => { await carregarListaEncontrados(); carregarTodosBancos(); };
     </script>
 </body>
