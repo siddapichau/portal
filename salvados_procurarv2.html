@@ -113,8 +113,8 @@
         <div class="nav-right" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
             <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')" title="Gemini Original">✨ V1</button>
             <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Groq Text/Vision">🚀 V2</button>
-            <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Gemini Cascata (OR)">🤖 V3</button>
-            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="Llama/Mistral Cascata (OR)">⚡ V4</button>
+            <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Cohere API">🤖 V3</button>
+            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="Together.xyz API">⚡ V4</button>
             <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none; margin-left: 10px;">📂 CSVs</button>
         </div>
     </div>
@@ -212,10 +212,12 @@
         const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
         const DB_NODES = { 'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata', 'q10': 'salvados_q10', 'q15': 'salvados_q15', 'qonhub': 'salvados_qonhub', 'cftv': 'salvados_cftv', 'parado': 'salvados_parado' };
 
-        // ⚠️ SUAS CHAVES DE API ATUALIZADAS AQUI:
+        // ⚠️ SUAS CHAVES DE API AQUI:
+        // Lembre-se: A Chave do Gemini (V1) PRECISA começar com "AIzaSy". Substitua essa quando criar a correta.
         const GEMINI_API_KEY = "AQ.Ab8RN6JcxpS5S4-IB4XNGcP5GDrMbWQiDdfWuiGV2gxnMLQFfA";
         const GROQ_API_KEY = "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";
-        const OPENROUTER_API_KEY = "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";
+        const COHERE_API_KEY = "B9Qq2SmEi6FMbHyxMxye9p9iCTFBbLderRdhPvpO";
+        const TOGETHER_API_KEY = "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";
 
         let CURRENT_IA = 'v1';
         let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; let ITENS_ENCONTRADOS = new Set();
@@ -246,8 +248,8 @@
 
             if (versao === 'v1') { title.innerHTML = "✨ IA V1 (Gemini Original)"; title.style.color = "var(--accent-blue)"; btnRun.style.background = "var(--accent-blue)"; }
             else if (versao === 'v2') { title.innerHTML = "🚀 IA V2 (Groq Txt/Vis)"; title.style.color = "#f97316"; btnRun.style.background = "#f97316"; }
-            else if (versao === 'v3') { title.innerHTML = "🤖 IA V3 (Gemini Cascata OR)"; title.style.color = "#8b5cf6"; btnRun.style.background = "#8b5cf6"; }
-            else if (versao === 'v4') { title.innerHTML = "⚡ IA V4 (Llama/Mistral OR)"; title.style.color = "#10b981"; btnRun.style.background = "#10b981"; }
+            else if (versao === 'v3') { title.innerHTML = "🤖 IA V3 (Cohere API)"; title.style.color = "#8b5cf6"; btnRun.style.background = "#8b5cf6"; }
+            else if (versao === 'v4') { title.innerHTML = "⚡ IA V4 (Together.xyz API)"; title.style.color = "#10b981"; btnRun.style.background = "#10b981"; }
             document.getElementById('modal-ia').classList.add('active');
         }
 
@@ -266,10 +268,6 @@
         };
 
         const GEMINI_MODELS = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash'];
-        
-        // CASCATA OPENROUTER (Corrigido com modelos gratuitos disponíveis atuais)
-        const OR_MODELS_V3 = ["google/gemini-2.0-pro-exp-02-05:free", "google/gemini-2.0-flash-exp:free", "google/gemini-2.5-flash-free"];
-        const OR_MODELS_V4 = ["meta-llama/llama-3.2-11b-vision-instruct:free", "mistralai/pixtral-12b:free", "meta-llama/llama-3.3-70b-instruct:free"];
 
         function previewIAFile(input) { const btnLabel = document.getElementById('btn-ia-file-label'); if (input.files && input.files[0]) { btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`; btnLabel.style.color = "var(--accent-green)"; } else { btnLabel.innerHTML = `📷 Anexar Foto do Item`; btnLabel.style.color = "var(--text-muted)"; } }
         function fileToBase64(file) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = () => resolve(reader.result); reader.onerror = error => reject(error); }); }
@@ -304,31 +302,30 @@
             } catch (e) { return ''; }
         }
 
-        // PROMPT DE ENGENHARIA TURBINADO: Extrai modelo e nomes específicos
         function montarPromptIA(link, contextoLink, file) {
             let dicaSlug = "";
             try { if(link) dicaSlug = new URL(link).pathname.split('/').find(p => p.length > 5 && p.includes('-')) || ""; } catch(e){}
 
-            return `Você é um analista de logística sênior. Sua tarefa é identificar um produto com a MÁXIMA PRECISÃO para cruzar com uma planilha de estoque.
+            return `Você é um analista de logística sênior. Identifique o produto com a MAIOR PRECISÃO POSSÍVEL para cruzar com uma planilha de estoque.
 
 DADOS FORNECIDOS:
-${file ? "- UMA IMAGEM DO PRODUTO FOI ANEXADA. Observe-a atentamente (cor, formato, marca visível).\n" : ""}
+${file ? "- UMA IMAGEM FOI ANEXADA. Observe-a atentamente (cor, formato, marca visível).\n" : ""}
 - Link do anúncio: ${link || 'Nenhum'}
 - Dica de palavras do Link: ${dicaSlug.replace(/-/g, ' ')}
 - Texto extraído da página: ${contextoLink ? contextoLink : 'Sem texto'}
 
 REGRAS:
-1. termo_base: NUNCA responda algo genérico como apenas "Câmera" ou "Celular". Escreva o TIPO + MODELO exato (ex: "Camera Mini Redonda A9 Wifi", "Celular Samsung S23").
-2. palavras_chave: Extraia de 3 a 6 palavras essenciais e únicas (ex: "a9", "mini", "wifi", "espia").
-3. preco: Se não achar no texto, ESTIME o valor de mercado atual em BRL (apenas número).
+1. termo_base: NÃO use nomes genéricos (como apenas "camera"). Use o NOME ESPECÍFICO E MODELO (ex: "Camera Mini Redonda A9 Wifi", "Celular Samsung S23").
+2. palavras_chave: Extraia de 3 a 6 palavras essenciais e únicas do modelo (ex: "a9", "mini", "wifi", "espia").
+3. preco_min e preco_max: Se não achar no texto, ESTIME o valor de mercado atual em BRL (números apenas, ex: 25.50).
 
 Retorne APENAS um JSON válido:
 {
   "termo_base": "Nome específico e modelo completo",
-  "cor": "cor predominante ou indefinida",
-  "marca": "marca exata ou indefinida",
+  "cor": "cor",
+  "marca": "marca",
   "preco_min": 10.00,
-  "preco_max": 200.00,
+  "preco_max": 150.00,
   "palavras_chave": ["palavra1", "palavra2", "palavra3"]
 }`;
         }
@@ -391,9 +388,9 @@ Retorne APENAS um JSON válido:
                 } else if (CURRENT_IA === 'v2') {
                     aiResult = await chamarAPI_Groq(promptText, file);
                 } else if (CURRENT_IA === 'v3') {
-                    aiResult = await chamarAPI_OpenRouter_Cascade(promptText, file, OR_MODELS_V3);
+                    aiResult = await chamarAPI_Cohere(promptText, file);
                 } else if (CURRENT_IA === 'v4') {
-                    aiResult = await chamarAPI_OpenRouter_Cascade(promptText, file, OR_MODELS_V4);
+                    aiResult = await chamarAPI_Together(promptText, file);
                 }
 
                 processarResultadoIA(aiResult, resBox);
@@ -417,17 +414,19 @@ Retorne APENAS um JSON válido:
                         const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                         const apiData = await apiReq.json().catch(() => ({}));
                         if (!apiReq.ok) { 
-                            if(apiData?.error?.message?.includes("authentication credentials")) throw new Error("A sua chave do Google (GEMINI_API_KEY) foi revogada ou está expirada. Insira uma nova chave no código fonte.");
+                            if(apiData?.error?.message?.includes("authentication credentials") || apiData?.error?.message?.includes("API key")) {
+                                throw new Error("A sua chave do Google não é válida para a API Gemini (As chaves do Gemini sempre começam com 'AIzaSy'). Gere uma nova em aistudio.google.com/app/apikey.");
+                            }
                             erroFinal = apiData?.error?.message || `${apiReq.status} ${apiReq.statusText}`; continue; 
                         }
                         const partes = apiData?.candidates?.[0]?.content?.parts || [];
                         const aiResponseText = partes.map(p => p.text || '').join('\n').trim();
                         if (!aiResponseText) { erroFinal = `Gemini retornou resposta vazia.`; continue; }
                         return normalizarRespostaIA(extrairJsonIA(aiResponseText));
-                    } catch (e) { erroFinal = e.message; if(e.message.includes("revogada")) throw e; }
+                    } catch (e) { erroFinal = e.message; if(e.message.includes("AIzaSy")) throw e; }
                 }
             }
-            throw new Error(`Nenhum modelo do Google respondeu. Último erro: ${erroFinal}`);
+            throw new Error(`Falha Gemini: ${erroFinal}`);
         }
 
         async function chamarAPI_Groq(promptText, file, isFallback = false) {
@@ -456,75 +455,102 @@ Retorne APENAS um JSON válido:
                 return normalizarRespostaIA(extrairJsonIA(responseText));
             } catch (e) {
                 if (file && !isFallback) {
-                    console.log("Erro na Groq Vision. Tentando apenas com texto via fallback...", e);
+                    console.log("Fallback Groq Vision -> Text", e);
                     return await chamarAPI_Groq(promptText, null, true);
                 }
                 throw new Error(`Groq falhou: ${e.message}`);
             }
         }
 
-        async function chamarAPI_OpenRouter_Cascade(promptText, file, modelosArray, isFallback = false) {
-            let contentArray = [{ type: "text", text: promptText }];
-            if(file && !isFallback) {
-                try {
-                    const img = await fileToOptimizedImage(file);
-                    contentArray.push({ type: "image_url", image_url: { url: img.dataUrl } });
-                } catch (e) {}
-            }
+        // INTEGRAÇÃO V3: COHERE API
+        async function chamarAPI_Cohere(promptText, file) {
+            if (!COHERE_API_KEY) throw new Error("Chave da Cohere ausente.");
             
-            let erroFinal = "";
+            // Cohere não foca em imagens no chat padrão ainda. Iremos ignorar a imagem e forçar a leitura do link/texto.
+            let aviso = file ? " (Nota: A Cohere avaliou apenas o Link do anúncio, pois não suporta imagens nativamente)." : "";
 
-            for (const modelName of modelosArray) {
-                // TRAVA DE TOKENS (Fix do erro 65535 do OpenRouter)
-                const payload = { model: modelName, messages: [{ role: "user", content: contentArray }], max_tokens: 1000 };
-                try {
-                    const apiReq = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                        method: "POST",
-                        headers: { "Authorization": `Bearer ${OPENROUTER_API_KEY}`, "Content-Type": "application/json", "HTTP-Referer": window.location.href, "X-Title": "Buscador Logistica" },
-                        body: JSON.stringify(payload)
-                    });
+            const payload = {
+                model: "command-r-plus", 
+                message: promptText,
+                temperature: 0.1
+            };
 
-                    const apiData = await apiReq.json().catch(() => ({}));
-                    if(!apiReq.ok) { 
-                        erroFinal = apiData?.error?.message || "Falha OR"; 
-                        continue; 
-                    }
-                    
-                    const responseText = apiData?.choices?.[0]?.message?.content || '';
-                    return normalizarRespostaIA(extrairJsonIA(responseText));
-                } catch(e) {
-                    erroFinal = e.message;
-                }
-            }
+            const apiReq = await fetch('https://api.cohere.ai/v1/chat', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${COHERE_API_KEY}`, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
 
-            if(file && !isFallback) {
-                console.log("Todos os modelos visuais falharam. Rodando fallback de texto puro...");
-                return await chamarAPI_OpenRouter_Cascade(promptText, null, modelosArray, true);
-            }
+            const apiData = await apiReq.json().catch(() => ({}));
+            if (!apiReq.ok) throw new Error(apiData.message || "Erro na comunicação com a Cohere.");
 
-            throw new Error(`Nenhum modelo do OpenRouter respondeu. Último erro: ${erroFinal}`);
+            const responseText = apiData.text || '';
+            let resultadoFinal = normalizarRespostaIA(extrairJsonIA(responseText));
+            
+            if(aviso) resultadoFinal.aviso_cohere = aviso;
+            return resultadoFinal;
         }
 
-        // NOVO SCORING: O TEXTO MANDA! PREÇO É APENAS BÔNUS.
+        // INTEGRAÇÃO V4: TOGETHER.XYZ API (Compatível com Llama 3.2 Vision)
+        async function chamarAPI_Together(promptText, file, isFallback = false) {
+            if (!TOGETHER_API_KEY) throw new Error("Chave da Together.xyz ausente.");
+
+            let modelToUse = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo";
+            let messages = [];
+
+            if (file && !isFallback) {
+                modelToUse = "meta-llama/Llama-3.2-11B-Vision-Instruct-Turbo";
+                try {
+                    const img = await fileToOptimizedImage(file);
+                    messages = [{ role: 'user', content: [ { type: 'text', text: promptText }, { type: 'image_url', image_url: { url: img.dataUrl } } ] }];
+                } catch(e) {
+                    messages = [{ role: 'user', content: promptText }]; modelToUse = "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo";
+                }
+            } else {
+                messages = [{ role: 'user', content: promptText }];
+            }
+
+            const payload = {
+                model: modelToUse,
+                messages: messages,
+                temperature: 0.1,
+                max_tokens: 1024,
+                response_format: { type: "json_object" }
+            };
+
+            try {
+                const apiReq = await fetch('https://api.together.xyz/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${TOGETHER_API_KEY}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const apiData = await apiReq.json().catch(() => ({}));
+                if (!apiReq.ok) throw new Error(apiData?.error?.message || "Erro na comunicação com a Together API.");
+
+                const responseText = apiData?.choices?.[0]?.message?.content || '';
+                return normalizarRespostaIA(extrairJsonIA(responseText));
+            } catch (e) {
+                if (file && !isFallback) {
+                    console.log("Fallback Together Vision -> Text");
+                    return await chamarAPI_Together(promptText, null, true);
+                }
+                throw new Error(`Together falhou: ${e.message}`);
+            }
+        }
+
         function processarResultadoIA(aiResult, resBox) {
             
-            // Reúne todas as palavras poderosas deduzidas pela IA
             let palavrasIAPuras = new Set();
             (aiResult.termo_base || '').split(/[\s-]+/).forEach(w => palavrasIAPuras.add(removerAcentos(w).toLowerCase()));
             if(aiResult.marca && aiResult.marca !== 'indefinida') palavrasIAPuras.add(removerAcentos(aiResult.marca).toLowerCase());
             if(aiResult.cor && aiResult.cor !== 'indefinida') palavrasIAPuras.add(removerAcentos(aiResult.cor).toLowerCase());
-            if(Array.isArray(aiResult.palavras_chave)) {
-                aiResult.palavras_chave.forEach(w => palavrasIAPuras.add(removerAcentos(String(w)).toLowerCase()));
-            }
+            if(Array.isArray(aiResult.palavras_chave)) { aiResult.palavras_chave.forEach(w => palavrasIAPuras.add(removerAcentos(String(w)).toLowerCase())); }
 
-            // Limpa palavras inúteis (stopwords e palavras muito curtas)
             let termosFortes = Array.from(palavrasIAPuras).filter(x => x.length >= 2 && !STOPWORDS.includes(x));
             
-            // Adiciona sinônimos
             const termosExpandidos = new Set(termosFortes); 
-            termosFortes.forEach(t => { 
-                if (DICIONARIO_SINONIMOS[t]) DICIONARIO_SINONIMOS[t].forEach(s => termosExpandidos.add(removerAcentos(s.toLowerCase()))); 
-            });
+            termosFortes.forEach(t => { if (DICIONARIO_SINONIMOS[t]) DICIONARIO_SINONIMOS[t].forEach(s => termosExpandidos.add(removerAcentos(s.toLowerCase()))); });
 
             let matches = [];
 
@@ -537,43 +563,36 @@ Retorne APENAS um JSON válido:
                 let valorNum = Number(item.ValorNum || 0); 
                 
                 let score = 0; 
-                let matchCountText = 0;
                 let motivos = [];
 
-                // 1. CHECAGEM DE TEXTO: CADA PALAVRA EXATA GANHA 25 PONTOS!
                 termosExpandidos.forEach(t => { 
                     if (textoItem.includes(t)) {
                         score += 25; 
-                        matchCountText++;
                         if(!motivos.includes('texto')) motivos.push('texto');
                     }
                 });
 
-                // 2. CHECAGEM DE PREÇO: APENAS COMO BÔNUS (Não exclui o item se errar o preço)
                 const min = Number(aiResult.preco_min || 0); 
                 const max = Number(aiResult.preco_max || 0);
                 
                 if (valorNum > 0 && min > 0 && max > 0) { 
                     if (valorNum >= min * 0.7 && valorNum <= max * 1.3) { 
-                        score += 20; // Bonus se o preço estiver na faixa
+                        score += 20; 
                         motivos.push('valor'); 
                     } 
                 }
 
-                // Só aprova se tiver pelo menos 2 palavras iguais OU 1 palavra + preço
-                if (score >= 45) {
-                    matches.push({ ...item, aiScore: score, aiMotivos: motivos });
-                }
+                if (score >= 45) { matches.push({ ...item, aiScore: score, aiMotivos: motivos }); }
             });
 
             matches.sort((a, b) => b.aiScore - a.aiScore); 
             let topMatches = matches.slice(0, 8);
             
             let iconeTitle = ''; let corTitle = '';
-            if(CURRENT_IA === 'v1') { iconeTitle = '✅ IA V1 (Gemini Original)'; corTitle = 'var(--accent-blue)'; }
+            if(CURRENT_IA === 'v1') { iconeTitle = '✅ IA V1 (Gemini)'; corTitle = 'var(--accent-blue)'; }
             else if(CURRENT_IA === 'v2') { iconeTitle = '🚀 IA V2 (Groq Txt/Vis)'; corTitle = '#f97316'; }
-            else if(CURRENT_IA === 'v3') { iconeTitle = '🤖 IA V3 (Gemini Cascata OR)'; corTitle = '#8b5cf6'; }
-            else if(CURRENT_IA === 'v4') { iconeTitle = '⚡ IA V4 (Llama/Mistral OR)'; corTitle = '#10b981'; }
+            else if(CURRENT_IA === 'v3') { iconeTitle = '🤖 IA V3 (Cohere)'; corTitle = '#8b5cf6'; }
+            else if(CURRENT_IA === 'v4') { iconeTitle = '⚡ IA V4 (Together.xyz)'; corTitle = '#10b981'; }
             
             let htmlResult = `
                 <div style="color: ${corTitle}; font-weight: 900; margin-bottom: 5px;">${iconeTitle} Finalizou:</div>
@@ -582,12 +601,12 @@ Retorne APENAS um JSON válido:
                     <b>Cor:</b> ${escapeHtml(aiResult.cor)} | <b>Marca:</b> ${escapeHtml(aiResult.marca)}<br>
                     <b>Est. Valor:</b> R$ ${Number(aiResult.preco_min || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} até R$ ${Number(aiResult.preco_max || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
                     <b>Palavras de Busca Forte:</b> ${escapeHtml(termosFortes.join(', ') || '-')}
+                    ${aiResult.aviso_cohere ? `<br><i style="color:var(--text-muted); font-size: 0.7rem;">${aiResult.aviso_cohere}</i>` : ""}
                 </div>
                 <div style="font-weight: 900; font-size: 0.85rem; color: var(--text-title); text-transform: uppercase;">Top Possibilidades na Base:</div>
             `;
             if (topMatches.length === 0) { htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém. O item pode não ter sido bipado ainda.</div>`; } else {
                 topMatches.forEach(m => {
-                    // O Score agora pode passar de 100 fácil (4 palavras = 100 pts + 20 preço). Limitamos no visual a 99%.
                     let percent = Math.min(99, Math.round((m.aiScore / 130) * 100)); 
                     let [origemNome, origemClass] = getClassOrigem(m.OrigemDb); let valorFmt = Number(m.ValorNum || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
                     htmlResult += `
