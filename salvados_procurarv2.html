@@ -356,7 +356,7 @@
             }
             
             // Usando modelo corrigido (2.5-flash)
-            const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+            const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-002:generateContent?key=${GEMINI_API_KEY}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: payloadContents })
             });
 
@@ -378,7 +378,7 @@
             const baseDataFull = await fileToBase64(file);
             
             const payload = {
-                model: "llama-3.2-11b-vision-instruct",
+                model: "llama-3.2-90b-vision-preview",
                 messages: [{
                     role: "user",
                     content: [
