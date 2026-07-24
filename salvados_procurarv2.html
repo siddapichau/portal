@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador Global - Salvados</title>
+    <title>Buscador Global - Salvados V3</title>
 
     <!-- SISTEMA ANTI-ACESSO DIRETO -->
     <script>
@@ -32,12 +32,19 @@
         .nav-title { font-size: 1.25rem; font-weight: 900; color: #333333 !important; text-transform: uppercase; white-space: nowrap; letter-spacing: 0.5px; }
         .search-input { width: 100%; background: #FFFFFF !important; color: #333333 !important; border: 2px solid transparent; border-radius: 30px; padding: 10px 20px; outline: none; font-size: 0.95rem; font-weight: 600; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); transition: all 0.3s ease; }
         .search-input:focus { border-color: var(--accent-blue) !important; box-shadow: 0 2px 15px rgba(52, 131, 250, 0.2) !important; }
-        .btn-header { background: #FFFFFF !important; color: #333333 !important; border: 1px solid #CCCCCC !important; border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all .2s ease; }
+        
+        .btn-header { background: #FFFFFF !important; color: #333333 !important; border: 1px solid #CCCCCC !important; border-radius: 6px; padding: 8px 10px; font-size: .75rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); transition: all .2s ease; }
         .btn-header:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.15) !important; }
-        .btn-ia-1 { border-color: var(--accent-blue) !important; color: var(--accent-blue) !important; font-size: 0.9rem;}
+        
+        .btn-ia-1 { border-color: var(--accent-blue) !important; color: var(--accent-blue) !important; }
         .btn-ia-1:hover { background: var(--accent-blue) !important; color: #fff !important; }
-        .btn-ia-2 { border-color: #f97316 !important; color: #f97316 !important; font-size: 0.9rem;}
+        .btn-ia-2 { border-color: #f97316 !important; color: #f97316 !important; }
         .btn-ia-2:hover { background: #f97316 !important; color: #fff !important; }
+        .btn-ia-3 { border-color: #8b5cf6 !important; color: #8b5cf6 !important; }
+        .btn-ia-3:hover { background: #8b5cf6 !important; color: #fff !important; }
+        .btn-ia-4 { border-color: #10b981 !important; color: #10b981 !important; }
+        .btn-ia-4:hover { background: #10b981 !important; color: #fff !important; }
+
         .btn { background: var(--bg-body); color: var(--text-title); border: 1px solid var(--border-card); border-radius: 6px; padding: 8px 14px; font-size: .85rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); transition: 0.2s; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .status-ticker-row { display: flex; gap: 8px; overflow-x: auto; padding: 2px 4px; flex: 0 0 auto; scrollbar-width: none; }
@@ -106,13 +113,15 @@
     <div class="top-navbar">
         <div class="nav-logo-wrapper"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo"></div>
         <div class="nav-center">
-            <div class="nav-title">Buscador Global V2.</div>
+            <div class="nav-title">Buscador Global V3.</div>
             <div style="width: 100%;"><input type="text" class="search-input" id="search-input" placeholder="🔍 Buscar ID, Rastreio ou Descrição..." oninput="executarSmartSearch()"></div>
         </div>
-        <div class="nav-right" style="display: flex; gap: 8px;">
-            <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')">✨ Assistente V1</button>
-            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')">🚀 Assistente V2</button>
-            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none;">📂 Arquivos</button>
+        <div class="nav-right" style="display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end;">
+            <button class="btn-header btn-ia-1" onclick="abrirModalIA('v1')" title="Gemini 1.5">✨ V1</button>
+            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Groq Vision">🚀 V2</button>
+            <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Llama Vision (OR)">🤖 V3</button>
+            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="Gemini Pro (OR)">⚡ V4</button>
+            <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none; margin-left: 10px;">📂 CSVs</button>
         </div>
     </div>
 
@@ -181,7 +190,7 @@
                 <div class="modal-title" id="modal-ia-title" style="color: var(--accent-blue);">✨ Assistente Inteligente</div>
                 <button class="close-modal" onclick="fecharModalIA()">×</button>
             </div>
-            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados das bases com imagens da bancada ou anúncios do Mercado Livre.</div>
+            <div style="font-size:0.85rem; color: var(--text-muted); margin-bottom: 5px;">Cruze os dados das bases com anúncios do ML (apenas link) ou imagens da bancada.</div>
 
             <div class="ia-input-group">
                 <label>Link do Anúncio (Mercado Livre)</label>
@@ -189,7 +198,7 @@
             </div>
 
             <div class="ia-input-group">
-                <label>Foto da Bancada (Obrigatório na V2)</label>
+                <label>Foto da Bancada (Opcional se enviar o Link)</label>
                 <div class="upload-wrapper" style="border: 1px dashed var(--border-card); border-radius: 8px;">
                     <button class="btn" style="background: transparent; border: none; padding: 15px; color: var(--text-muted);" id="btn-ia-file-label">📷 Anexar Foto do Item</button>
                     <input type="file" accept="image/*" id="ia-foto" onchange="previewIAFile(this)" />
@@ -220,11 +229,11 @@
         };
 
         // ==============================
-        // ⚠️ CHAVES DE API
+        // ⚠️ CHAVES DE API INSERIDAS 
         // ==============================
-        // Por segurança, não repeti as chaves aqui. Cole suas chaves novas nestas duas linhas.
-        const GEMINI_API_KEY = "COLE_AQUI_SUA_CHAVE_GEMINI";
-        const GROQ_API_KEY = "COLE_AQUI_SUA_CHAVE_GROQ";
+        const GEMINI_API_KEY = "AQ.Ab8RN6KKQxvBtTlRluYCFxJ50YyN0cGQGEgOt4oUTcgHwmE3gA";
+        const GROQ_API_KEY = "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";
+        const OPENROUTER_API_KEY = "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";
 
         let CURRENT_IA = 'v1';
         let BANCO_GLOBAL = [];
@@ -295,10 +304,18 @@
                 title.innerHTML = "✨ Assistente Inteligente V1 (Gemini)";
                 title.style.color = "var(--accent-blue)";
                 btnRun.style.background = "var(--accent-blue)";
-            } else {
+            } else if (versao === 'v2') {
                 title.innerHTML = "🚀 Assistente Inteligente V2 (Groq)";
                 title.style.color = "#f97316";
                 btnRun.style.background = "#f97316";
+            } else if (versao === 'v3') {
+                title.innerHTML = "🤖 Assistente V3 (Llama Vision OR)";
+                title.style.color = "#8b5cf6";
+                btnRun.style.background = "#8b5cf6";
+            } else if (versao === 'v4') {
+                title.innerHTML = "⚡ Assistente V4 (Gemini Pro OR)";
+                title.style.color = "#10b981";
+                btnRun.style.background = "#10b981";
             }
             document.getElementById('modal-ia').classList.add('active');
         }
@@ -332,120 +349,109 @@
                 alert("Erro de comunicação.");
             }
         };
-// ==========================================
-// CÉREBRO DAS INTELIGÊNCIAS ARTIFICIAIS - ATUALIZADO
-// ==========================================
 
-// Mantenha suas chaves atuais já declaradas acima:
-// const GEMINI_API_KEY = "...";
-// const GROQ_API_KEY = "...";
+        // ==========================================
+        // CÉREBRO DAS INTELIGÊNCIAS ARTIFICIAIS
+        // ==========================================
 
-// Fallback do Gemini: se um modelo não estiver liberado na sua conta, tenta o próximo.
-const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        const GROQ_VISION_MODEL = 'qwen/qwen3.6-27b';
 
-// Modelo vision atual da Groq para imagem + JSON.
-const GROQ_VISION_MODEL = 'qwen/qwen3.6-27b';
-
-function previewIAFile(input) {
-    const btnLabel = document.getElementById('btn-ia-file-label');
-    if (input.files && input.files[0]) {
-        btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`;
-        btnLabel.style.color = "var(--accent-green)";
-    } else {
-        btnLabel.innerHTML = `📷 Anexar Foto do Item`;
-        btnLabel.style.color = "var(--text-muted)";
-    }
-}
-
-function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
-}
-
-// Reduz a imagem antes de enviar para evitar payload grande/lentidão.
-function fileToOptimizedImage(file, maxDim = 1280, quality = 0.85) {
-    return new Promise((resolve, reject) => {
-        if (!file || !String(file.type || '').startsWith('image/')) {
-            return fileToBase64(file).then(dataUrl => resolve({
-                dataUrl,
-                base64: String(dataUrl).split(',')[1],
-                mimeType: file?.type || 'image/jpeg'
-            })).catch(reject);
+        function previewIAFile(input) {
+            const btnLabel = document.getElementById('btn-ia-file-label');
+            if (input.files && input.files[0]) {
+                btnLabel.innerHTML = `✅ Imagem Carregada: ${input.files[0].name}`;
+                btnLabel.style.color = "var(--accent-green)";
+            } else {
+                btnLabel.innerHTML = `📷 Anexar Foto do Item`;
+                btnLabel.style.color = "var(--text-muted)";
+            }
         }
 
-        const reader = new FileReader();
-        const img = new Image();
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
 
-        reader.onerror = reject;
-        img.onerror = reject;
-
-        img.onload = () => {
-            try {
-                let { width, height } = img;
-                const maior = Math.max(width, height);
-                if (maior > maxDim) {
-                    const scale = maxDim / maior;
-                    width = Math.round(width * scale);
-                    height = Math.round(height * scale);
+        function fileToOptimizedImage(file, maxDim = 1280, quality = 0.85) {
+            return new Promise((resolve, reject) => {
+                if (!file || !String(file.type || '').startsWith('image/')) {
+                    return fileToBase64(file).then(dataUrl => resolve({
+                        dataUrl,
+                        base64: String(dataUrl).split(',')[1],
+                        mimeType: file?.type || 'image/jpeg'
+                    })).catch(reject);
                 }
 
-                const canvas = document.createElement('canvas');
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
+                const reader = new FileReader();
+                const img = new Image();
 
-                const dataUrl = canvas.toDataURL('image/jpeg', quality);
-                resolve({
-                    dataUrl,
-                    base64: dataUrl.split(',')[1],
-                    mimeType: 'image/jpeg'
-                });
+                reader.onerror = reject;
+                img.onerror = reject;
+
+                img.onload = () => {
+                    try {
+                        let { width, height } = img;
+                        const maior = Math.max(width, height);
+                        if (maior > maxDim) {
+                            const scale = maxDim / maior;
+                            width = Math.round(width * scale);
+                            height = Math.round(height * scale);
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve({
+                            dataUrl,
+                            base64: dataUrl.split(',')[1],
+                            mimeType: 'image/jpeg'
+                        });
+                    } catch (e) {
+                        reject(e);
+                    }
+                };
+
+                reader.onload = () => { img.src = reader.result; };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function normalizarLinkIA(link) {
+            let url = String(link || '').trim();
+            if (!url) return '';
+            if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+            try { return new URL(url).href; } catch (e) { return String(link || '').trim(); }
+        }
+
+        async function obterResumoAnuncio(link) {
+            const url = normalizarLinkIA(link);
+            if (!url) return '';
+
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 8000);
+                const readerUrl = `https://r.jina.ai/${encodeURI(url)}`;
+                const res = await fetch(readerUrl, { signal: controller.signal });
+                clearTimeout(timeout);
+                if (!res.ok) return '';
+                const texto = await res.text();
+                return String(texto || '').replace(/\s+/g, ' ').slice(0, 5000);
             } catch (e) {
-                reject(e);
+                return '';
             }
-        };
+        }
 
-        reader.onload = () => { img.src = reader.result; };
-        reader.readAsDataURL(file);
-    });
-}
-
-function normalizarLinkIA(link) {
-    let url = String(link || '').trim();
-    if (!url) return '';
-    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-    try { return new URL(url).href; } catch (e) { return String(link || '').trim(); }
-}
-
-// Tenta ler o anúncio para a IA ter contexto real do link.
-// Se falhar por CORS/proxy/rede, segue normalmente só com o link e/ou imagem.
-async function obterResumoAnuncio(link) {
-    const url = normalizarLinkIA(link);
-    if (!url) return '';
-
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000);
-        const readerUrl = `https://r.jina.ai/${encodeURI(url)}`;
-        const res = await fetch(readerUrl, { signal: controller.signal });
-        clearTimeout(timeout);
-        if (!res.ok) return '';
-        const texto = await res.text();
-        return String(texto || '')
-            .replace(/\s+/g, ' ')
-            .slice(0, 5000);
-    } catch (e) {
-        return '';
-    }
-}
-
-function montarPromptIA(link, contextoLink) {
-    return `
+        function montarPromptIA(link, contextoLink) {
+            return `
 Você é um analista de logística especializado em identificar produtos de e-commerce e cruzar com uma base interna de pacotes perdidos/salvados.
 
 Sua tarefa:
@@ -467,349 +473,372 @@ Retorne APENAS um JSON válido, sem markdown, sem explicação e sem texto fora 
   "preco_max": 0,
   "palavras_chave": ["palavra1", "palavra2", "palavra3"]
 }`;
-}
-
-function extrairJsonIA(texto) {
-    let clean = String(texto || '')
-        .replace(/^\uFEFF/, '')
-        .replace(/```json/gi, '')
-        .replace(/```/g, '')
-        .trim();
-
-    const ini = clean.indexOf('{');
-    const fim = clean.lastIndexOf('}');
-    if (ini === -1 || fim === -1 || fim <= ini) {
-        throw new Error('A IA não retornou JSON válido. Resposta: ' + clean.slice(0, 300));
-    }
-
-    clean = clean.slice(ini, fim + 1);
-    return JSON.parse(clean);
-}
-
-function numeroIA(v) {
-    if (typeof v === 'number' && isFinite(v)) return v;
-    let s = String(v ?? '').replace(/R\$/gi, '').replace(/\s/g, '').trim();
-    if (!s) return 0;
-    const lastComma = s.lastIndexOf(',');
-    const lastPeriod = s.lastIndexOf('.');
-    if (lastComma > lastPeriod) s = s.replace(/\./g, '').replace(',', '.');
-    else if (lastPeriod > lastComma) s = s.replace(/,/g, '');
-    s = s.replace(/[^0-9.-]/g, '');
-    const n = parseFloat(s);
-    return isFinite(n) ? n : 0;
-}
-
-function normalizarRespostaIA(obj) {
-    const out = {
-        termo_base: String(obj?.termo_base || obj?.produto || obj?.item || 'produto').trim().toLowerCase(),
-        cor: String(obj?.cor || 'indefinida').trim().toLowerCase(),
-        marca: String(obj?.marca || 'indefinida').trim().toLowerCase(),
-        preco_min: numeroIA(obj?.preco_min),
-        preco_max: numeroIA(obj?.preco_max),
-        palavras_chave: Array.isArray(obj?.palavras_chave) ? obj.palavras_chave.map(x => String(x).trim().toLowerCase()).filter(Boolean) : []
-    };
-
-    if (out.preco_min > 0 && out.preco_max === 0) out.preco_max = out.preco_min * 1.5;
-    if (out.preco_max > 0 && out.preco_min === 0) out.preco_min = out.preco_max * 0.5;
-    if (out.preco_min > out.preco_max) {
-        const tmp = out.preco_min;
-        out.preco_min = out.preco_max;
-        out.preco_max = tmp;
-    }
-
-    out.preco_min = Number(out.preco_min.toFixed(2));
-    out.preco_max = Number(out.preco_max.toFixed(2));
-    return out;
-}
-
-function escapeJsAttr(v) {
-    return String(v ?? '')
-        .replace(/\\/g, '\\\\')
-        .replace(/'/g, "\\'")
-        .replace(/"/g, '&quot;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\n/g, ' ')
-        .replace(/\r/g, ' ');
-}
-
-async function executarBuscaIA() {
-    const resBox = document.getElementById('ia-resultado');
-    const link = document.getElementById('ia-link').value.trim();
-    const file = document.getElementById('ia-foto').files[0];
-    const btnRun = document.getElementById('btn-run-ia');
-
-    if (!link && !file) {
-        resBox.innerHTML = "<span style='color:#FF5252; font-weight: bold;'>⚠️ Por favor, insira um link ou anexe uma foto.</span>";
-        return;
-    }
-
-    // Mantém sua regra da tela: na V2 a foto é obrigatória.
-    if (CURRENT_IA === 'v2' && !file) {
-        resBox.innerHTML = "<span style='color:#FF5252; font-weight: bold;'>⚠️ Na Assistente V2, anexe uma foto do item para usar o modelo Vision da Groq.</span>";
-        return;
-    }
-
-    btnRun.disabled = true;
-    btnRun.innerText = "⏳ Analisando...";
-    resBox.innerHTML = "⏳ <i>Preparando dados... Lendo anúncio/imagem e conectando à IA...</i>";
-
-    try {
-        let contextoLink = '';
-        if (link) {
-            resBox.innerHTML = "⏳ <i>Lendo contexto do anúncio e preparando análise...</i>";
-            contextoLink = await obterResumoAnuncio(link);
         }
 
-        const promptText = montarPromptIA(link, contextoLink);
-        let aiResult;
+        function extrairJsonIA(texto) {
+            let clean = String(texto || '')
+                .replace(/^\uFEFF/, '')
+                .replace(/```json/gi, '')
+                .replace(/```/g, '')
+                .trim();
 
-        if (CURRENT_IA === 'v1') {
-            aiResult = await chamarAPI_Gemini(promptText, file);
-        } else {
-            aiResult = await chamarAPI_Groq(promptText, file);
+            const ini = clean.indexOf('{');
+            const fim = clean.lastIndexOf('}');
+            if (ini === -1 || fim === -1 || fim <= ini) {
+                throw new Error('A IA não retornou JSON válido. Resposta: ' + clean.slice(0, 300));
+            }
+
+            clean = clean.slice(ini, fim + 1);
+            return JSON.parse(clean);
         }
 
-        processarResultadoIA(aiResult, resBox);
-    } catch (e) {
-        resBox.innerHTML = `<span style='color:#FF5252; font-weight: bold;'>❌ Erro na IA (${CURRENT_IA.toUpperCase()}):<br>${escapeHtml(e.message)}</span>`;
-    } finally {
-        btnRun.disabled = false;
-        btnRun.innerText = "🔎 Analisar e Buscar Padrões";
-    }
-}
-
-// --- INTEGRAÇÃO V1: GOOGLE GEMINI ---
-async function chamarAPI_Gemini(promptText, file) {
-    if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('COLOQUE_AQUI')) {
-        throw new Error('Chave do Gemini não configurada no código-fonte.');
-    }
-
-    const parts = [{ text: promptText }];
-    if (file) {
-        const img = await fileToOptimizedImage(file);
-        parts.push({ inline_data: { mime_type: img.mimeType, data: img.base64 } });
-    }
-
-    const payloadJson = {
-        contents: [{ role: 'user', parts }],
-        generationConfig: {
-            temperature: 0.1,
-            topP: 0.95,
-            maxOutputTokens: 1024,
-            response_mime_type: 'application/json'
+        function numeroIA(v) {
+            if (typeof v === 'number' && isFinite(v)) return v;
+            let s = String(v ?? '').replace(/R\$/gi, '').replace(/\s/g, '').trim();
+            if (!s) return 0;
+            const lastComma = s.lastIndexOf(',');
+            const lastPeriod = s.lastIndexOf('.');
+            if (lastComma > lastPeriod) s = s.replace(/\./g, '').replace(',', '.');
+            else if (lastPeriod > lastComma) s = s.replace(/,/g, '');
+            s = s.replace(/[^0-9.-]/g, '');
+            const n = parseFloat(s);
+            return isFinite(n) ? n : 0;
         }
-    };
 
-    const payloadFallback = {
-        contents: [{ role: 'user', parts }],
-        generationConfig: {
-            temperature: 0.1,
-            topP: 0.95,
-            maxOutputTokens: 1024
+        function normalizarRespostaIA(obj) {
+            const out = {
+                termo_base: String(obj?.termo_base || obj?.produto || obj?.item || 'produto').trim().toLowerCase(),
+                cor: String(obj?.cor || 'indefinida').trim().toLowerCase(),
+                marca: String(obj?.marca || 'indefinida').trim().toLowerCase(),
+                preco_min: numeroIA(obj?.preco_min),
+                preco_max: numeroIA(obj?.preco_max),
+                palavras_chave: Array.isArray(obj?.palavras_chave) ? obj.palavras_chave.map(x => String(x).trim().toLowerCase()).filter(Boolean) : []
+            };
+
+            if (out.preco_min > 0 && out.preco_max === 0) out.preco_max = out.preco_min * 1.5;
+            if (out.preco_max > 0 && out.preco_min === 0) out.preco_min = out.preco_max * 0.5;
+            if (out.preco_min > out.preco_max) {
+                const tmp = out.preco_min;
+                out.preco_min = out.preco_max;
+                out.preco_max = tmp;
+            }
+
+            out.preco_min = Number(out.preco_min.toFixed(2));
+            out.preco_max = Number(out.preco_max.toFixed(2));
+            return out;
         }
-    };
 
-    let erroFinal = '';
+        function escapeJsAttr(v) {
+            return String(v ?? '')
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\n/g, ' ')
+                .replace(/\r/g, ' ');
+        }
 
-    for (const modelo of GEMINI_MODELS) {
-        for (const payload of [payloadJson, payloadFallback]) {
+        async function executarBuscaIA() {
+            const resBox = document.getElementById('ia-resultado');
+            const link = document.getElementById('ia-link').value.trim();
+            const file = document.getElementById('ia-foto').files[0];
+            const btnRun = document.getElementById('btn-run-ia');
+
+            if (!link && !file) {
+                resBox.innerHTML = "<span style='color:#FF5252; font-weight: bold;'>⚠️ Por favor, insira um link ou anexe uma foto.</span>";
+                return;
+            }
+
+            btnRun.disabled = true;
+            btnRun.innerText = "⏳ Analisando...";
+            resBox.innerHTML = "⏳ <i>Preparando dados... Lendo anúncio/imagem e conectando à IA...</i>";
+
             try {
-                const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const apiData = await apiReq.json().catch(() => ({}));
-
-                if (!apiReq.ok) {
-                    erroFinal = apiData?.error?.message || `${apiReq.status} ${apiReq.statusText}`;
-                    continue;
+                let contextoLink = '';
+                if (link) {
+                    resBox.innerHTML = "⏳ <i>Lendo contexto do anúncio e preparando análise...</i>";
+                    contextoLink = await obterResumoAnuncio(link);
                 }
 
-                const partes = apiData?.candidates?.[0]?.content?.parts || [];
-                const aiResponseText = partes.map(p => p.text || '').join('\n').trim();
+                const promptText = montarPromptIA(link, contextoLink);
+                let aiResult;
 
-                if (!aiResponseText) {
-                    const block = apiData?.promptFeedback?.blockReason || apiData?.candidates?.[0]?.finishReason || 'resposta vazia';
-                    erroFinal = `Gemini retornou vazio/bloqueado: ${block}`;
-                    continue;
+                if (CURRENT_IA === 'v1') {
+                    aiResult = await chamarAPI_Gemini(promptText, file);
+                } else if (CURRENT_IA === 'v2') {
+                    if (!file) throw new Error("A IA V2 (Groq) exige que uma foto seja enviada no momento.");
+                    aiResult = await chamarAPI_Groq(promptText, file);
+                } else if (CURRENT_IA === 'v3') {
+                    aiResult = await chamarAPI_OpenRouter(promptText, file, "meta-llama/llama-3.2-11b-vision-instruct:free");
+                } else if (CURRENT_IA === 'v4') {
+                    aiResult = await chamarAPI_OpenRouter(promptText, file, "google/gemini-2.0-pro-exp-02-05:free");
                 }
 
-                return normalizarRespostaIA(extrairJsonIA(aiResponseText));
+                processarResultadoIA(aiResult, resBox);
             } catch (e) {
-                erroFinal = e.message;
+                resBox.innerHTML = `<span style='color:#FF5252; font-weight: bold;'>❌ Erro na IA (${CURRENT_IA.toUpperCase()}):<br>${escapeHtml(e.message)}</span>`;
+            } finally {
+                btnRun.disabled = false;
+                btnRun.innerText = "🔎 Analisar e Buscar Padrões";
             }
         }
-    }
 
-    throw new Error(`Nenhum modelo do Google respondeu. Último erro: ${erroFinal}`);
-}
+        // --- INTEGRAÇÃO V1: GOOGLE GEMINI ---
+        async function chamarAPI_Gemini(promptText, file) {
+            const parts = [{ text: promptText }];
+            if (file) {
+                const img = await fileToOptimizedImage(file);
+                parts.push({ inline_data: { mime_type: img.mimeType, data: img.base64 } });
+            }
 
-// --- INTEGRAÇÃO V2: GROQ ---
-async function chamarAPI_Groq(promptText, file) {
-    if (!GROQ_API_KEY || GROQ_API_KEY.includes('COLOQUE_AQUI')) {
-        throw new Error('Chave da Groq não configurada no código-fonte.');
-    }
+            const payloadJson = {
+                contents: [{ role: 'user', parts }],
+                generationConfig: {
+                    temperature: 0.1,
+                    topP: 0.95,
+                    maxOutputTokens: 1024,
+                    response_mime_type: 'application/json'
+                }
+            };
 
-    if (!file) {
-        throw new Error('O modelo Vision da Groq exige que uma foto seja enviada.');
-    }
+            const payloadFallback = {
+                contents: [{ role: 'user', parts }],
+                generationConfig: { temperature: 0.1, topP: 0.95, maxOutputTokens: 1024 }
+            };
 
-    const img = await fileToOptimizedImage(file);
+            let erroFinal = '';
 
-    const payload = {
-        model: GROQ_VISION_MODEL,
-        messages: [{
-            role: 'user',
-            content: [
-                { type: 'text', text: promptText },
-                { type: 'image_url', image_url: { url: img.dataUrl } }
-            ]
-        }],
-        temperature: 0.1,
-        max_completion_tokens: 1024,
-        response_format: { type: 'json_object' }
-    };
+            for (const modelo of GEMINI_MODELS) {
+                for (const payload of [payloadJson, payloadFallback]) {
+                    try {
+                        const apiReq = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${GEMINI_API_KEY}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
 
-    const tentativas = [payload, { ...payload, response_format: undefined }];
-    let erroFinal = '';
+                        const apiData = await apiReq.json().catch(() => ({}));
 
-    for (const tentativa of tentativas) {
-        try {
-            const apiReq = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
+                        if (!apiReq.ok) {
+                            erroFinal = apiData?.error?.message || `${apiReq.status} ${apiReq.statusText}`;
+                            continue;
+                        }
+
+                        const partes = apiData?.candidates?.[0]?.content?.parts || [];
+                        const aiResponseText = partes.map(p => p.text || '').join('\n').trim();
+
+                        if (!aiResponseText) {
+                            const block = apiData?.promptFeedback?.blockReason || apiData?.candidates?.[0]?.finishReason || 'resposta vazia';
+                            erroFinal = `Gemini retornou vazio/bloqueado: ${block}`;
+                            continue;
+                        }
+
+                        return normalizarRespostaIA(extrairJsonIA(aiResponseText));
+                    } catch (e) {
+                        erroFinal = e.message;
+                    }
+                }
+            }
+
+            throw new Error(`Nenhum modelo do Google respondeu. Último erro: ${erroFinal}`);
+        }
+
+        // --- INTEGRAÇÃO V2: GROQ ---
+        async function chamarAPI_Groq(promptText, file) {
+            const img = await fileToOptimizedImage(file);
+            const payload = {
+                model: GROQ_VISION_MODEL,
+                messages: [{
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: promptText },
+                        { type: 'image_url', image_url: { url: img.dataUrl } }
+                    ]
+                }],
+                temperature: 0.1,
+                max_completion_tokens: 1024,
+                response_format: { type: 'json_object' }
+            };
+
+            const tentativas = [payload, { ...payload, response_format: undefined }];
+            let erroFinal = '';
+
+            for (const tentativa of tentativas) {
+                try {
+                    const apiReq = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${GROQ_API_KEY}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(tentativa)
+                    });
+
+                    const apiData = await apiReq.json().catch(() => ({}));
+
+                    if (!apiReq.ok) {
+                        erroFinal = apiData?.error?.message || `${apiReq.status} ${apiReq.statusText}`;
+                        continue;
+                    }
+
+                    const responseText = apiData?.choices?.[0]?.message?.content || '';
+                    if (!responseText.trim()) {
+                        erroFinal = 'Groq retornou resposta vazia.';
+                        continue;
+                    }
+
+                    return normalizarRespostaIA(extrairJsonIA(responseText));
+                } catch (e) {
+                    erroFinal = e.message;
+                }
+            }
+
+            throw new Error(`Groq/${GROQ_VISION_MODEL}: ${erroFinal}`);
+        }
+
+        // --- INTEGRAÇÃO V3 E V4: OPENROUTER ---
+        async function chamarAPI_OpenRouter(promptText, file, modelName) {
+            let contentArray = [{ type: "text", text: promptText }];
+
+            if (file) {
+                const img = await fileToOptimizedImage(file);
+                contentArray.push({ type: "image_url", image_url: { url: img.dataUrl } });
+            }
+
+            const payload = {
+                model: modelName,
+                messages: [{ role: "user", content: contentArray }]
+            };
+
+            const apiReq = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                method: "POST",
                 headers: {
-                    'Authorization': `Bearer ${GROQ_API_KEY}`,
-                    'Content-Type': 'application/json'
+                    "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": window.location.href, 
+                    "X-Title": "Buscador Logistica"
                 },
-                body: JSON.stringify(tentativa)
+                body: JSON.stringify(payload)
             });
 
             const apiData = await apiReq.json().catch(() => ({}));
 
             if (!apiReq.ok) {
-                erroFinal = apiData?.error?.message || `${apiReq.status} ${apiReq.statusText}`;
-                continue;
+                throw new Error(apiData?.error?.message || `${apiReq.status} ${apiReq.statusText}`);
             }
 
             const responseText = apiData?.choices?.[0]?.message?.content || '';
             if (!responseText.trim()) {
-                erroFinal = 'Groq retornou resposta vazia.';
-                continue;
+                throw new Error('OpenRouter retornou resposta vazia.');
             }
 
             return normalizarRespostaIA(extrairJsonIA(responseText));
-        } catch (e) {
-            erroFinal = e.message;
-        }
-    }
-
-    throw new Error(`Groq/${GROQ_VISION_MODEL}: ${erroFinal}`);
-}
-
-// --- SISTEMA DE SCORING E RENDERIZAÇÃO UNIFICADO ---
-function processarResultadoIA(aiResult, resBox) {
-    const termo = removerAcentos(aiResult.termo_base || '').toLowerCase();
-    const cor = removerAcentos(aiResult.cor || '').toLowerCase();
-    const marca = removerAcentos(aiResult.marca || '').toLowerCase();
-    const palavras = Array.isArray(aiResult.palavras_chave) ? aiResult.palavras_chave : [];
-
-    const termosBusca = [termo, marca, cor, ...palavras]
-        .map(x => removerAcentos(String(x || '').toLowerCase().trim()))
-        .filter(x => x && x !== 'indefinida' && x !== 'undefined' && x !== 'null');
-
-    // Adiciona sinônimos do seu dicionário global, sem mexer no buscador principal.
-    const termosExpandidos = new Set(termosBusca);
-    termosBusca.forEach(t => {
-        const primeira = t.split(/\s+/)[0];
-        if (DICIONARIO_SINONIMOS[primeira]) DICIONARIO_SINONIMOS[primeira].forEach(s => termosExpandidos.add(removerAcentos(s.toLowerCase())));
-    });
-
-    let matches = [];
-
-    BANCO_GLOBAL.forEach(item => {
-        let idClean = String(item.ID || '').toLowerCase().trim().replace(/[.#$\[\]]/g, '_');
-        if (ITENS_ENCONTRADOS.has(idClean)) return;
-
-        let desc = removerAcentos(item.Descricao || '').toLowerCase();
-        let idTxt = removerAcentos(item.ID || '').toLowerCase();
-        let textoItem = `${idTxt} ${desc}`;
-        let valorNum = Number(item.ValorNum || 0);
-        let score = 0;
-        let motivos = [];
-
-        if (termo && desc.includes(termo)) { score += 45; motivos.push('produto'); }
-        if (marca && marca !== 'indefinida' && desc.includes(marca)) { score += 25; motivos.push('marca'); }
-        if (cor && cor !== 'indefinida' && desc.includes(cor)) { score += 15; motivos.push('cor'); }
-
-        termosExpandidos.forEach(t => {
-            if (t.length >= 3 && textoItem.includes(t)) score += 8;
-        });
-
-        const min = Number(aiResult.preco_min || 0);
-        const max = Number(aiResult.preco_max || 0);
-        if (valorNum > 0 && min > 0 && max > 0) {
-            if (valorNum >= min * 0.75 && valorNum <= max * 1.25) {
-                score += 25;
-                motivos.push('valor');
-            } else {
-                const alvo = (min + max) / 2;
-                const distancia = Math.abs(valorNum - alvo) / Math.max(alvo, 1);
-                if (distancia < 0.6) score += 8;
-            }
         }
 
-        if (score >= 30) matches.push({ ...item, aiScore: score, aiMotivos: motivos });
-    });
+        // --- SISTEMA DE SCORING E RENDERIZAÇÃO UNIFICADO ---
+        function processarResultadoIA(aiResult, resBox) {
+            const termo = removerAcentos(aiResult.termo_base || '').toLowerCase();
+            const cor = removerAcentos(aiResult.cor || '').toLowerCase();
+            const marca = removerAcentos(aiResult.marca || '').toLowerCase();
+            const palavras = Array.isArray(aiResult.palavras_chave) ? aiResult.palavras_chave : [];
 
-    matches.sort((a, b) => b.aiScore - a.aiScore);
-    let topMatches = matches.slice(0, 8);
+            const termosBusca = [termo, marca, cor, ...palavras]
+                .map(x => removerAcentos(String(x || '').toLowerCase().trim()))
+                .filter(x => x && x !== 'indefinida' && x !== 'undefined' && x !== 'null');
 
-    let iconeTitle = CURRENT_IA === 'v1' ? '✅ IA V1 (Gemini)' : '🚀 IA V2 (Groq)';
-    let corTitle = CURRENT_IA === 'v1' ? 'var(--accent-blue)' : '#f97316';
+            const termosExpandidos = new Set(termosBusca);
+            termosBusca.forEach(t => {
+                const primeira = t.split(/\s+/)[0];
+                if (DICIONARIO_SINONIMOS[primeira]) DICIONARIO_SINONIMOS[primeira].forEach(s => termosExpandidos.add(removerAcentos(s.toLowerCase())));
+            });
 
-    let htmlResult = `
-        <div style="color: ${corTitle}; font-weight: 900; margin-bottom: 5px;">${iconeTitle} Finalizou:</div>
-        <div style="font-size: 0.8rem; background: var(--bg-body); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 15px;">
-            <b>Produto:</b> <span style="text-transform: capitalize;">${escapeHtml(aiResult.termo_base)}</span> |
-            <b>Cor:</b> ${escapeHtml(aiResult.cor)} |
-            <b>Marca:</b> ${escapeHtml(aiResult.marca)}<br>
-            <b>Est. Valor:</b> R$ ${Number(aiResult.preco_min || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-            até R$ ${Number(aiResult.preco_max || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
-            <b>Palavras:</b> ${escapeHtml((aiResult.palavras_chave || []).join(', ') || '-')}
-        </div>
-        <div style="font-weight: 900; font-size: 0.85rem; color: var(--text-title); text-transform: uppercase;">Top Possibilidades na Base:</div>
-    `;
+            let matches = [];
 
-    if (topMatches.length === 0) {
-        htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém.</div>`;
-    } else {
-        topMatches.forEach(m => {
-            let percent = Math.min(100, Math.round((m.aiScore / 130) * 100));
-            let [origemNome, origemClass] = getClassOrigem(m.OrigemDb);
-            let valorFmt = Number(m.ValorNum || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            BANCO_GLOBAL.forEach(item => {
+                let idClean = String(item.ID || '').toLowerCase().trim().replace(/[.#$\[\]]/g, '_');
+                if (ITENS_ENCONTRADOS.has(idClean)) return;
 
-            htmlResult += `
-                <div class="ia-match-card">
-                    <div class="ia-match-header">
-                        <div class="ia-match-title">${escapeHtml(m.ID)} <span class="badge ${origemClass}">${origemNome}</span></div>
-                        <div class="ia-match-prob">🔥 ${percent}% Match</div>
-                    </div>
-                    <div style="font-size: 0.75rem; color: var(--text-main); font-weight: 600;">${escapeHtml(m.Descricao)}</div>
-                    <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">Motivos: ${escapeHtml((m.aiMotivos || []).join(', ') || 'similaridade')}</div>
-                    <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 4px; gap: 8px;">
-                        <div style="font-size: 0.75rem; color: var(--accent-green); font-weight: 900;">R$ ${valorFmt}</div>
-                        <button class="btn" style="padding: 4px 10px; font-size: 0.7rem; background: var(--accent-green); color: #fff; border:none;" onclick="marcarComoEncontrado('${escapeJsAttr(m.ID)}')">✅ Este é o Pacote</button>
-                    </div>
+                let desc = removerAcentos(item.Descricao || '').toLowerCase();
+                let idTxt = removerAcentos(item.ID || '').toLowerCase();
+                let textoItem = `${idTxt} ${desc}`;
+                let valorNum = Number(item.ValorNum || 0);
+                let score = 0;
+                let motivos = [];
+
+                if (termo && desc.includes(termo)) { score += 45; motivos.push('produto'); }
+                if (marca && marca !== 'indefinida' && desc.includes(marca)) { score += 25; motivos.push('marca'); }
+                if (cor && cor !== 'indefinida' && desc.includes(cor)) { score += 15; motivos.push('cor'); }
+
+                termosExpandidos.forEach(t => {
+                    if (t.length >= 3 && textoItem.includes(t)) score += 8;
+                });
+
+                const min = Number(aiResult.preco_min || 0);
+                const max = Number(aiResult.preco_max || 0);
+                if (valorNum > 0 && min > 0 && max > 0) {
+                    if (valorNum >= min * 0.75 && valorNum <= max * 1.25) {
+                        score += 25;
+                        motivos.push('valor');
+                    } else {
+                        const alvo = (min + max) / 2;
+                        const distancia = Math.abs(valorNum - alvo) / Math.max(alvo, 1);
+                        if (distancia < 0.6) score += 8;
+                    }
+                }
+
+                if (score >= 30) matches.push({ ...item, aiScore: score, aiMotivos: motivos });
+            });
+
+            matches.sort((a, b) => b.aiScore - a.aiScore);
+            let topMatches = matches.slice(0, 8);
+
+            let iconeTitle = ''; let corTitle = '';
+            if(CURRENT_IA === 'v1') { iconeTitle = '✅ IA V1 (Gemini)'; corTitle = 'var(--accent-blue)'; }
+            else if(CURRENT_IA === 'v2') { iconeTitle = '🚀 IA V2 (Groq)'; corTitle = '#f97316'; }
+            else if(CURRENT_IA === 'v3') { iconeTitle = '🤖 IA V3 (Llama Vision OR)'; corTitle = '#8b5cf6'; }
+            else if(CURRENT_IA === 'v4') { iconeTitle = '⚡ IA V4 (Gemini Pro OR)'; corTitle = '#10b981'; }
+
+            let htmlResult = `
+                <div style="color: ${corTitle}; font-weight: 900; margin-bottom: 5px;">${iconeTitle} Finalizou:</div>
+                <div style="font-size: 0.8rem; background: var(--bg-body); padding: 8px; border-radius: 6px; border: 1px solid var(--border-card); margin-bottom: 15px;">
+                    <b>Produto:</b> <span style="text-transform: capitalize;">${escapeHtml(aiResult.termo_base)}</span> |
+                    <b>Cor:</b> ${escapeHtml(aiResult.cor)} |
+                    <b>Marca:</b> ${escapeHtml(aiResult.marca)}<br>
+                    <b>Est. Valor:</b> R$ ${Number(aiResult.preco_min || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    até R$ ${Number(aiResult.preco_max || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}<br>
+                    <b>Palavras:</b> ${escapeHtml((aiResult.palavras_chave || []).join(', ') || '-')}
                 </div>
+                <div style="font-weight: 900; font-size: 0.85rem; color: var(--text-title); text-transform: uppercase;">Top Possibilidades na Base:</div>
             `;
-        });
-    }
 
-    resBox.innerHTML = htmlResult;
-}
+            if (topMatches.length === 0) {
+                htmlResult += `<div class="ia-match-card" style="text-align: center; color: var(--accent-warn);">Nenhuma correspondência forte encontrada no armazém.</div>`;
+            } else {
+                topMatches.forEach(m => {
+                    let percent = Math.min(100, Math.round((m.aiScore / 130) * 100));
+                    let [origemNome, origemClass] = getClassOrigem(m.OrigemDb);
+                    let valorFmt = Number(m.ValorNum || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+                    htmlResult += `
+                        <div class="ia-match-card">
+                            <div class="ia-match-header">
+                                <div class="ia-match-title">${escapeHtml(m.ID)} <span class="badge ${origemClass}">${origemNome}</span></div>
+                                <div class="ia-match-prob">🔥 ${percent}% Match</div>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-main); font-weight: 600;">${escapeHtml(m.Descricao)}</div>
+                            <div style="font-size: 0.68rem; color: var(--text-muted); font-weight: 700;">Motivos: ${escapeHtml((m.aiMotivos || []).join(', ') || 'similaridade')}</div>
+                            <div style="display:flex; justify-content: space-between; align-items: center; margin-top: 4px; gap: 8px;">
+                                <div style="font-size: 0.75rem; color: var(--accent-green); font-weight: 900;">R$ ${valorFmt}</div>
+                                <button class="btn" style="padding: 4px 10px; font-size: 0.7rem; background: var(--accent-green); color: #fff; border:none;" onclick="marcarComoEncontrado('${escapeJsAttr(m.ID)}')">✅ Este é o Pacote</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            resBox.innerHTML = htmlResult;
+        }
 
         // ==========================================
         // PROCESSAMENTO DE DADOS EXATOS/APROXIMADOS
