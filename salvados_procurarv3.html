@@ -143,8 +143,8 @@
             </div>
         </div>
         <div class="nav-right" style="display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end;">
-            <button class="btn-header btn-ia-ok" onclick="abrirModalIA('ok')" title="Groq (Perfeita)">✅ OK (Oficial)</button>
-            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Mistral AI">🤖 IA 2</button>
+            <button class="btn-header btn-ia-ok" onclick="abrirModalIA('ok')" title="Groq (Perfeita)">✅ OK (V1)</button>
+            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Mistral AI">✅ OK (V2)</button>
             <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Google Gemini">🤖 IA 3</button>
             <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="OpenRouter ou Customizável">🤖 IA 4</button>
             <button class="btn-header" id="btn-memoria" onclick="abrirModalMemoria()" title="Ver aprendizado da IA">🧠 Memória</button>
@@ -278,6 +278,15 @@
             </div>
 
             <div class="ia-input-group">
+                <label>Palavras-chave obrigatórias (separadas por vírgula)</label>
+                <div style="display:flex; gap:6px;">
+                    <input type="text" class="ia-input" id="ia-keywords" placeholder="câmera, wifi, mini" style="flex:1;">
+                    <button class="btn" id="btn-freeze" onclick="toggleFreeze()" style="background:#8b5cf6; color:#fff; border:none; padding:0 12px; white-space:nowrap;">❄️ Congelar</button>
+                </div>
+                <div id="freeze-status" style="font-size:0.7rem; color:var(--text-muted); margin-top:3px;">❄️ Descongelado</div>
+            </div>
+
+            <div class="ia-input-group">
                 <label>Foto da Bancada (Opcional)</label>
                 <div class="upload-wrapper" style="border:1px dashed var(--border-card); border-radius:8px;">
                     <button class="btn" style="background:transparent; border:none; padding:15px; color:var(--text-muted);" id="btn-ia-file-label">📷 Anexar Foto do Item</button>
@@ -313,7 +322,7 @@
                 <div class="modal-title" style="color:#8b5cf6;">🧠 Memória da IA (Aprendizado)</div>
                 <button class="close-modal" onclick="fecharModalMemoria()">×</button>
             </div>
-            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:5px;">Estes são os padrões que a IA está usando para melhorar suas buscas.</div>
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:5px;">Estes são os padrões que a IA está usando para melhorar suas buscas. Você pode remover itens que não são mais relevantes.</div>
             <div class="ia-box-resultado" id="memoria-resultado" style="margin-top:10px; border-color: #8b5cf6; max-height: 60vh; overflow-y: auto;">Carregando memória...</div>
         </div>
     </div>
@@ -336,10 +345,10 @@
     const GROQ_API_KEY = "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";
 
     // V2 - Mistral AI (Substituiu DeepSeek - 1M tokens/mês grátis) -> Gere em console.mistral.ai
-    const MISTRAL_API_KEY = "1pxcwS6ieGLWyfUszWR3fGWX9cjKpxHA";
+    const MISTRAL_API_KEY = "COLE_AQUI_SUA_CHAVE_MISTRAL";
 
-    // V3 - Google Gemini (Grátis, chave DEVE começar com AIzaSy) -> Gere em aistudio.google.com
-    const GEMINI_API_KEY = "AQ.Ab8RN6LU7T9EcRTqRVhNOuQvuJ-K1XhVYEgF0h4AIgVaLAnn-g";
+    // V3 - Google Gemini (Agora aceita chaves AIzaSy ou AQ...) -> Gere em aistudio.google.com
+    const GEMINI_API_KEY = "AQ.Ab8RN6IeSPyai1tQDIk7-MYP5Oy8yWxFX-iNLp_zpaHWV7jaRw"; // ou AIzaSy...
 
     // V4 - OpenRouter (Já configurado com modelos gratuitos) -> Gere em openrouter.ai
     const OPENROUTER_API_KEY = "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";
@@ -359,6 +368,10 @@
     // Cache de IAs Customizadas
     let CUSTOM_IA_CONFIGS = {};
     let SELECTED_CUSTOM_IA = null;
+
+    // Controle de palavras-chave congeladas
+    let KEYWORDS_FROZEN = false;
+    let KEYWORDS_LIST = [];
 
     const STOPWORDS = ['de','para','com','o','a','os','as','em','um','uma','uns','umas','no','na','nos','nas','do','da','dos','das','por','sem'];
 
@@ -380,10 +393,10 @@
     };
 
     const IA_CONFIG = {
-        ok: { titulo: "✅ OK — A IA Principal Perfeita",  cor: "#059669", icone: "✅", classe: "ia-info-ok", descricao: "Funcionando Perfeitamente 🟢 · Motor Groq Llama Vision" },
-        v2: { titulo: "🤖 IA 2 — Mistral AI",   cor: "#4d6bfe", icone: "🤖", classe: "ia-info-v2", descricao: "Mistral AI · 1M tokens/mês grátis" },
-        v3: { titulo: "🤖 IA 3 — Google Gemini", cor: "var(--accent-blue)", icone: "🤖", classe: "ia-info-v3", descricao: "Google Gemini Free API · Requer chave AIzaSy" },
-        v4: { titulo: "🤖 IA 4 — OpenRouter / Custom",  cor: "#8b5cf6", icone: "🤖", classe: "ia-info-v4", descricao: "OpenRouter Free Models ou IA Customizada" }
+        ok: { titulo: "✅ V1 — Groq (Perfeita)",  cor: "#059669", icone: "✅", classe: "ia-info-ok", descricao: "Funcionando Perfeitamente 🟢 · Motor Groq Llama Vision" },
+        v2: { titulo: "✅ V2 — Mistral AI",   cor: "#4d6bfe", icone: "✅", classe: "ia-info-v2", descricao: "Mistral AI · 1M tokens/mês grátis" },
+        v3: { titulo: "🤖 V3 — Google Gemini", cor: "var(--accent-blue)", icone: "🤖", classe: "ia-info-v3", descricao: "Google Gemini · Aceita AIzaSy ou AQ" },
+        v4: { titulo: "🤖 V4 — OpenRouter / Custom",  cor: "#8b5cf6", icone: "🤖", classe: "ia-info-v4", descricao: "OpenRouter Free Models ou IA Customizada" }
     };
 
     // ============================================================
@@ -446,8 +459,8 @@
 
         // Avisos de Chave Ausente
         if (versao === 'v2' && MISTRAL_API_KEY.includes('COLE_AQUI')) document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Insira sua chave Mistral no código (console.mistral.ai/api-keys).</span>`;
-        if (versao === 'v3' && (!GEMINI_API_KEY.includes('COLE_AQUI') && !GEMINI_API_KEY.startsWith('AIzaSy'))) {
-            document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Sua chave Gemini é inválida (NÃO é OAuth). A chave correta começa com "AIzaSy". Gere em aistudio.google.com.</span>`;
+        if (versao === 'v3' && (GEMINI_API_KEY.includes('COLE_AQUI') || GEMINI_API_KEY.length < 10)) {
+            document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Chave Gemini ausente ou inválida. Gere em aistudio.google.com.</span>`;
         }
         if (versao === 'v4' && OPENROUTER_API_KEY.includes('COLE_AQUI') && !SELECTED_CUSTOM_IA) {
             document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Insira sua chave OpenRouter no código ou crie uma IA customizada.</span>`;
@@ -575,22 +588,37 @@
             }
             let html = `<div style="font-weight:900; margin-bottom:10px;">Total: ${Object.keys(data).length} exemplos</div>`;
             const lista = Object.values(data).reverse();
-            lista.forEach(ex => {
+            for (const [key, ex] of Object.entries(data).reverse()) {
                 const dataStr = ex.timestamp ? new Date(ex.timestamp).toLocaleString('pt-BR') : '';
                 html += `
-                    <div class="ia-match-card" style="margin-bottom:8px;">
-                        <div style="font-weight:800; color:var(--accent-blue);">🔍 "${ex.termo || 'manual'}"</div>
-                        <div style="font-size:0.8rem; color:var(--text-main);">📦 ${ex.descricao || '-'}</div>
-                        <div style="font-size:0.7rem; color:var(--text-muted);">📌 Status: ${ex.status || '-'} | Sub: ${ex.substatus || '-'}</div>
-                        <div style="font-size:0.6rem; color:var(--text-muted); text-align:right;">${dataStr}</div>
+                    <div class="ia-match-card" style="margin-bottom:8px; position:relative;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div style="flex:1;">
+                                <div style="font-weight:800; color:var(--accent-blue);">🔍 "${ex.termo || 'manual'}"</div>
+                                <div style="font-size:0.8rem; color:var(--text-main);">📦 ${ex.descricao || '-'}</div>
+                                <div style="font-size:0.7rem; color:var(--text-muted);">📌 Status: ${ex.status || '-'} | Sub: ${ex.substatus || '-'}</div>
+                                <div style="font-size:0.6rem; color:var(--text-muted); text-align:right;">${dataStr}</div>
+                            </div>
+                            <button class="btn" style="padding:2px 8px; font-size:0.6rem; background:#e11d48; color:#fff; border:none;" onclick="removerMemoria('${key}')">🗑️ Remover</button>
+                        </div>
                     </div>
                 `;
-            });
+            }
             box.innerHTML = html;
         } catch(e) {
             box.innerHTML = `<span style="color:#FF5252;">Erro ao carregar memória: ${escapeHtml(e.message)}</span>`;
         }
     }
+
+    // Função para remover um item da memória
+    window.removerMemoria = async function(key) {
+        if (!confirm("Remover este item da memória?")) return;
+        try {
+            await fetch(`${FIREBASE_URL}salvados_aprendizado/${key}.json`, { method: 'DELETE' });
+            await atualizarIndicadorMemoria();
+            abrirModalMemoria(); // recarrega o modal
+        } catch(e) { alert("Erro ao remover."); }
+    };
 
     window.marcarComoEncontrado = async function(id) {
         if (!confirm(`Tem certeza que deseja marcar o pacote ${id} como ENCONTRADO?`)) return;
@@ -623,6 +651,38 @@
             }
         } catch(e) { alert("Erro de comunicação."); }
     };
+
+    // ============================================================
+    //  CONTROLE DE PALAVRAS-CHAVE CONGELADAS
+    // ============================================================
+    function toggleFreeze() {
+        const input = document.getElementById('ia-keywords');
+        const btn = document.getElementById('btn-freeze');
+        const status = document.getElementById('freeze-status');
+        
+        if (!KEYWORDS_FROZEN) {
+            // Ativar
+            const raw = input.value.trim();
+            if (!raw) { alert("Digite pelo menos uma palavra-chave antes de congelar."); return; }
+            KEYWORDS_LIST = raw.split(',').map(k => removerAcentos(k.trim().toLowerCase())).filter(k => k.length >= 2);
+            if (KEYWORDS_LIST.length === 0) { alert("Palavras-chave inválidas."); return; }
+            KEYWORDS_FROZEN = true;
+            btn.innerHTML = "🔓 Descongelar";
+            btn.style.background = "#e11d48";
+            status.innerHTML = "❄️ Congelado - Palavras obrigatórias: " + KEYWORDS_LIST.join(', ');
+            status.style.color = "#e11d48";
+            input.disabled = true;
+        } else {
+            // Desativar
+            KEYWORDS_FROZEN = false;
+            KEYWORDS_LIST = [];
+            btn.innerHTML = "❄️ Congelar";
+            btn.style.background = "#8b5cf6";
+            status.innerHTML = "❄️ Descongelado";
+            status.style.color = "var(--text-muted)";
+            input.disabled = false;
+        }
+    }
 
     // ============================================================
     //  UTILITÁRIOS DE IMAGEM E LINKS
@@ -692,7 +752,7 @@
     }
 
     // ============================================================
-    //  PROMPT TURBINADO COM APRENDIZADO
+    //  PROMPT TURBINADO COM APRENDIZADO E PALAVRAS-CHAVE CONGELADAS
     // ============================================================
     async function montarPromptIA(link, contextoLink, descManual) {
         const slug = extrairSlugDaUrl(link);
@@ -700,11 +760,15 @@
         try { const u = new URL(normalizarLink(link)); termoBusca = u.searchParams.get('q') || u.searchParams.get('search') || ''; } catch(e) {}
 
         const exemplos = await carregarExemplosAprendizado(10);
+        const frozenKeywords = KEYWORDS_FROZEN ? KEYWORDS_LIST.join(', ') : 'Nenhuma';
 
         return `Você é um detetive de logística e inteligência artificial. Identifique o produto com MÁXIMA PRECISÃO usando o link, imagem (se houver) e descrição manual.
 
 EXEMPLOS DE SUCESSO APRENDIDOS (Use os padrões de descrição e status):
 ${exemplos || 'Nenhum exemplo ainda. Use o bom senso.'}
+
+PALAVRAS-CHAVE OBRIGATÓRIAS (Congeladas): ${frozenKeywords}
+(Se houver, o produto DEVE conter essas palavras na descrição ou ID. Use-as como filtro principal.)
 
 DADOS FORNECIDOS:
 - Link: ${link || 'Não'}
@@ -715,7 +779,8 @@ DADOS FORNECIDOS:
 REGRAS DE ANÁLISE:
 1. Analise o link, a descrição manual e a imagem para extrair o termo base correto.
 2. Considere os padrões de status encontrados nos exemplos.
-3. Retorne APENAS um JSON válido:
+3. Se houver palavras-chave congeladas, certifique-se de que elas estejam presentes no termo base ou nas palavras-chave geradas.
+4. Retorne APENAS um JSON válido:
 {
   "termo_base": "nome completo e modelo",
   "cor": "cor predominante ou indefinida",
@@ -903,33 +968,42 @@ Retorne APENAS um JSON válido:
     }
 
     // ============================================================
-    //  V3: GOOGLE GEMINI (Com validação de chave AIzaSy)
+    //  V3: GOOGLE GEMINI (Aceita AIzaSy ou AQ)
     // ============================================================
     async function chamarAPI_Gemini(prompt, file) {
         if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("COLE_AQUI")) throw new Error("Chave Gemini ausente.");
-        if (!GEMINI_API_KEY.startsWith("AIzaSy")) throw new Error("Chave Gemini inválida. A chave correta começa com 'AIzaSy'. Gere em aistudio.google.com/app/apikey.");
         
+        // Determinar se é API key (AIzaSy) ou token OAuth (AQ...)
+        let headers = { 'Content-Type': 'application/json' };
+        let url;
+        if (GEMINI_API_KEY.startsWith('AIzaSy')) {
+            // API Key
+            url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+        } else if (GEMINI_API_KEY.startsWith('AQ')) {
+            // Token OAuth
+            headers['Authorization'] = `Bearer ${GEMINI_API_KEY}`;
+            url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
+        } else {
+            throw new Error("Chave Gemini inválida. Deve começar com 'AIzaSy' ou 'AQ'.");
+        }
+
         const parts = [{ text: prompt }];
         if (file) {
             const img = await fileToOptimizedImage(file);
             parts.push({ inline_data: { mime_type: img.mimeType, data: img.base64 } });
         }
 
-        const modelos = ['gemini-2.0-flash', 'gemini-1.5-flash'];
-        let erro = '';
-        for (const mod of modelos) {
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${GEMINI_API_KEY}`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.1, response_mime_type: 'application/json' } })
-                });
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok) { erro = data?.error?.message; continue; }
-                const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                return normalizarRespostaIA(extrairJsonIA(texto));
-            } catch(e) { erro = e.message; }
-        }
-        throw new Error(erro);
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ contents: [{ role: 'user', parts }], generationConfig: { temperature: 0.1, response_mime_type: 'application/json' } })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error?.message || `${res.status}`);
+            const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            return normalizarRespostaIA(extrairJsonIA(texto));
+        } catch(e) { throw e; }
     }
 
     // ============================================================
@@ -1009,7 +1083,7 @@ Retorne APENAS um JSON válido:
     }
 
     // ============================================================
-    //  ALGORITMO DE SCORING (TEXTO >> PREÇO)
+    //  ALGORITMO DE SCORING (TEXTO >> PREÇO + PALAVRAS CONGELADAS)
     // ============================================================
     function processarResultadoIA(aiResult, resBox, isBuscaExpress = false) {
         const termo = removerAcentos(aiResult.termo_base || '').toLowerCase();
@@ -1042,6 +1116,25 @@ Retorne APENAS um JSON válido:
             const textoItem = `${idTxt} ${desc}`;
             const valorNum  = Number(item.ValorNum || 0);
             let score = 0; let motivos = [];
+
+            // VERIFICAÇÃO DE PALAVRAS-CHAVE CONGELADAS (OBRIGATÓRIAS)
+            if (KEYWORDS_FROZEN && KEYWORDS_LIST.length > 0) {
+                let allPresent = true;
+                for (const kw of KEYWORDS_LIST) {
+                    if (!textoItem.includes(kw)) {
+                        allPresent = false;
+                        break;
+                    }
+                }
+                if (!allPresent) {
+                    // Se alguma palavra congelada não estiver presente, descarta
+                    return;
+                } else {
+                    // Se todas estão presentes, dá um bônus
+                    score += 30;
+                    motivos.push('Palavras obrigatórias presentes');
+                }
+            }
 
             let tokensMatch = 0;
             termosDoNome.forEach(token => { if (textoItem.includes(token)) tokensMatch++; });
