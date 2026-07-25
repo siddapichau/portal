@@ -143,12 +143,13 @@
             </div>
         </div>
         <div class="nav-right" style="display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end;">
-            <button class="btn-header btn-ia-ok" onclick="abrirModalIA('ok')" title="A Inteligência Oficial Perfeita">✅ OK (Oficial)</button>
-            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="DeepSeek">🤖 IA 2</button>
+            <button class="btn-header btn-ia-ok" onclick="abrirModalIA('ok')" title="Groq (Perfeita)">✅ OK (Oficial)</button>
+            <button class="btn-header btn-ia-2" onclick="abrirModalIA('v2')" title="Mistral AI">🤖 IA 2</button>
             <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Google Gemini">🤖 IA 3</button>
-            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="OpenRouter">🤖 IA 4</button>
+            <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="OpenRouter ou Customizável">🤖 IA 4</button>
             <button class="btn-header" id="btn-memoria" onclick="abrirModalMemoria()" title="Ver aprendizado da IA">🧠 Memória</button>
             <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none; margin-left:10px;">📂 CSVs</button>
+            <button class="btn-header" id="btn-gerenciar-ia" onclick="abrirModalGerenciarIA()" style="display:none; margin-left:10px; background:#8b5cf6; color:#fff; border:none;">⚙️ Gerenciar IAs</button>
         </div>
     </div>
 
@@ -210,6 +211,48 @@
         </div>
     </div>
 
+    <!-- MODAL GERENCIAR IA (Admin) -->
+    <div class="modal-overlay" id="modal-gerenciar-ia">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" style="color:#8b5cf6;">⚙️ Gerenciar IAs Customizadas</div>
+                <button class="close-modal" onclick="fecharModalGerenciarIA()">×</button>
+            </div>
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:5px;">Adicione qualquer IA compatível com OpenAI (ChatGPT, Claude, Mistral, etc). A chave ficará salva no Firebase.</div>
+            
+            <div class="modal-grid" id="lista-ias-custom" style="max-height: 40vh; overflow-y: auto; border:1px solid var(--border-card); padding:10px; border-radius:8px;">
+                <div style="text-align:center; color:var(--text-muted);">Carregando IAs cadastradas...</div>
+            </div>
+
+            <div style="border-top:1px solid var(--border-card); padding-top:10px; margin-top:10px;">
+                <div class="ia-input-group">
+                    <label>Nome da IA (Ex: "GPT-4 Custom")</label>
+                    <input type="text" class="ia-input" id="ia-custom-nome" placeholder="Meu GPT-4">
+                </div>
+                <div class="ia-input-group">
+                    <label>API Key</label>
+                    <input type="password" class="ia-input" id="ia-custom-key" placeholder="sk-...">
+                </div>
+                <div class="ia-input-group">
+                    <label>Base URL (Endpoint)</label>
+                    <input type="text" class="ia-input" id="ia-custom-url" placeholder="https://api.openai.com/v1">
+                </div>
+                <div class="ia-input-group">
+                    <label>Modelo (Ex: gpt-4o, claude-3-opus)</label>
+                    <input type="text" class="ia-input" id="ia-custom-model" placeholder="gpt-4o">
+                </div>
+                <div class="ia-input-group">
+                    <label>Suporta Visão? (Imagens)</label>
+                    <select class="ia-input" id="ia-custom-vision">
+                        <option value="true">Sim</option>
+                        <option value="false">Não</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="salvarIACustom()" style="background:#8b5cf6; color:#fff; width:100%; padding:10px; margin-top:5px; border:none;">➕ Adicionar / Salvar IA</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL IA PRINCIPAL -->
     <div class="modal-overlay" id="modal-ia">
         <div class="modal-content">
@@ -219,6 +262,11 @@
             </div>
             <div id="ia-info-descricao" style="font-size:0.82rem; color:var(--text-muted); margin-bottom:2px;"></div>
             
+            <div id="ia-custom-selector" style="display:none; margin-bottom:10px;">
+                <label style="font-size:0.8rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">Selecionar IA Customizada:</label>
+                <select class="ia-input" id="ia-custom-select" onchange="selecionarIACustom()"></select>
+            </div>
+
             <div class="ia-input-group">
                 <label>Link do Anúncio (Mercado Livre)</label>
                 <input type="text" class="ia-input" id="ia-link" placeholder="Ex: https://produto.mercadolivre.com.br/MLB-...">
@@ -287,13 +335,13 @@
     // V1 - A IA Principal perfeita (Groq Llama)
     const GROQ_API_KEY = "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";
 
-    // V2 - DeepSeek (1M tokens/mês grátis)
-    const DEEPSEEK_API_KEY = "sk-9f8a44802e9a4c40b461d0d0f27fdd74";
+    // V2 - Mistral AI (Substituiu DeepSeek - 1M tokens/mês grátis) -> Gere em console.mistral.ai
+    const MISTRAL_API_KEY = "COLE_AQUI_SUA_CHAVE_MISTRAL";
 
-    // V3 - Google Gemini (Grátis, chave AIzaSy ou formato fornecido)
-    const GEMINI_API_KEY = "AQ.Ab8RN6IeSPyai1tQDIk7-MYP5Oy8yWxFX-iNLp_zpaHWV7jaRw";
+    // V3 - Google Gemini (Grátis, chave DEVE começar com AIzaSy) -> Gere em aistudio.google.com
+    const GEMINI_API_KEY = "COLE_AQUI_SUA_CHAVE_AIZASY_DO_GOOGLE";
 
-    // V4 - OpenRouter (Modelos gratuitos)
+    // V4 - OpenRouter (Já configurado com modelos gratuitos) -> Gere em openrouter.ai
     const OPENROUTER_API_KEY = "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";
 
     // ============================================================
@@ -307,6 +355,10 @@
     let PAGE_SIZE = 50;
     let CUR_PAGE_EXATOS = 0;
     let CUR_PAGE_APROX = 0;
+
+    // Cache de IAs Customizadas
+    let CUSTOM_IA_CONFIGS = {};
+    let SELECTED_CUSTOM_IA = null;
 
     const STOPWORDS = ['de','para','com','o','a','os','as','em','um','uma','uns','umas','no','na','nos','nas','do','da','dos','das','por','sem'];
 
@@ -329,13 +381,13 @@
 
     const IA_CONFIG = {
         ok: { titulo: "✅ OK — A IA Principal Perfeita",  cor: "#059669", icone: "✅", classe: "ia-info-ok", descricao: "Funcionando Perfeitamente 🟢 · Motor Groq Llama Vision" },
-        v2: { titulo: "🤖 IA 2 — DeepSeek",   cor: "#4d6bfe", icone: "🤖", classe: "ia-info-v2", descricao: "DeepSeek API · 1M tokens/mês grátis" },
-        v3: { titulo: "🤖 IA 3 — Google Gemini", cor: "var(--accent-blue)", icone: "🤖", classe: "ia-info-v3", descricao: "Google Gemini Free API" },
-        v4: { titulo: "🤖 IA 4 — OpenRouter",  cor: "#8b5cf6", icone: "🤖", classe: "ia-info-v4", descricao: "OpenRouter Free Models" }
+        v2: { titulo: "🤖 IA 2 — Mistral AI",   cor: "#4d6bfe", icone: "🤖", classe: "ia-info-v2", descricao: "Mistral AI · 1M tokens/mês grátis" },
+        v3: { titulo: "🤖 IA 3 — Google Gemini", cor: "var(--accent-blue)", icone: "🤖", classe: "ia-info-v3", descricao: "Google Gemini Free API · Requer chave AIzaSy" },
+        v4: { titulo: "🤖 IA 4 — OpenRouter / Custom",  cor: "#8b5cf6", icone: "🤖", classe: "ia-info-v4", descricao: "OpenRouter Free Models ou IA Customizada" }
     };
 
     // ============================================================
-    //  TEMA
+    //  TEMA E PERMISSÕES
     // ============================================================
     function syncTheme() { const t = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', t); }
     syncTheme();
@@ -345,17 +397,21 @@
     let userName = currentUser?.usuario || 'Sistema';
     const paginaNome = window.location.pathname.split('/').pop() || 'salvados_procurar.html';
     let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
-    if (canEdit) document.getElementById('btn-gerenciar').style.display = 'inline-flex';
+    if (canEdit) {
+        document.getElementById('btn-gerenciar').style.display = 'inline-flex';
+        document.getElementById('btn-gerenciar-ia').style.display = 'inline-flex';
+    }
 
     async function registrarLogFirebase(modulo, acao) {
         try { await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ modulo, acao, usuario: userName, timestamp: Date.now() }) }); } catch(e) {}
     }
 
     // ============================================================
-    //  MODAIS
+    //  MODAIS (Geral)
     // ============================================================
     function abrirModalGerenciador() { document.getElementById('modal-gerenciador').classList.add('active'); }
     function fecharModalGerenciador() { document.getElementById('modal-gerenciador').classList.remove('active'); }
+    function fecharModalMemoria() { document.getElementById('modal-memoria').classList.remove('active'); }
 
     function abrirModalIA(versao) {
         CURRENT_IA = versao;
@@ -366,14 +422,118 @@
         document.getElementById('ia-info-descricao').innerHTML = `<span class="ia-info-badge ${cfg.classe}">${cfg.descricao}</span>`;
         document.getElementById('ia-resultado').innerHTML = "Aguardando entrada de dados... Adicione uma descrição manual, link ou foto para começar.";
         
+        // Controle do seletor de IAs Customizadas (Apenas para V4)
+        const selectorDiv = document.getElementById('ia-custom-selector');
+        if (versao === 'v4') {
+            carregarIAsCustomizadas().then(() => {
+                if (Object.keys(CUSTOM_IA_CONFIGS).length > 0) {
+                    selectorDiv.style.display = 'block';
+                    const select = document.getElementById('ia-custom-select');
+                    select.innerHTML = '<option value="">Selecionar IA Padrão (OpenRouter)</option>';
+                    for (const [key, ia] of Object.entries(CUSTOM_IA_CONFIGS)) {
+                        select.innerHTML += `<option value="${key}">${ia.nome}</option>`;
+                    }
+                    SELECTED_CUSTOM_IA = null;
+                } else {
+                    selectorDiv.style.display = 'none';
+                    SELECTED_CUSTOM_IA = null;
+                }
+            });
+        } else {
+            selectorDiv.style.display = 'none';
+            SELECTED_CUSTOM_IA = null;
+        }
+
         // Avisos de Chave Ausente
-        if (versao === 'v2' && DEEPSEEK_API_KEY.includes('COLE_AQUI')) document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Insira sua chave DeepSeek no código.</span>`;
-        if (versao === 'v3' && GEMINI_API_KEY.includes('COLE_AQUI')) document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Insira sua chave Gemini no código.</span>`;
-        if (versao === 'v4' && OPENROUTER_API_KEY.includes('COLE_AQUI')) document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Insira sua chave OpenRouter no código.</span>`;
+        if (versao === 'v2' && MISTRAL_API_KEY.includes('COLE_AQUI')) document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Insira sua chave Mistral no código (console.mistral.ai/api-keys).</span>`;
+        if (versao === 'v3' && (!GEMINI_API_KEY.includes('COLE_AQUI') && !GEMINI_API_KEY.startsWith('AIzaSy'))) {
+            document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Sua chave Gemini é inválida (NÃO é OAuth). A chave correta começa com "AIzaSy". Gere em aistudio.google.com.</span>`;
+        }
+        if (versao === 'v4' && OPENROUTER_API_KEY.includes('COLE_AQUI') && !SELECTED_CUSTOM_IA) {
+            document.getElementById('ia-resultado').innerHTML = `<span style="color:#f97316; font-weight:800;">⚠️ Insira sua chave OpenRouter no código ou crie uma IA customizada.</span>`;
+        }
         
         document.getElementById('modal-ia').classList.add('active');
     }
     function fecharModalIA() { document.getElementById('modal-ia').classList.remove('active'); }
+
+    function selecionarIACustom() {
+        const select = document.getElementById('ia-custom-select');
+        const val = select.value;
+        if (val) {
+            SELECTED_CUSTOM_IA = CUSTOM_IA_CONFIGS[val];
+            document.getElementById('modal-ia-title').innerHTML = `🤖 ${SELECTED_CUSTOM_IA.nome} (Custom)`;
+            document.getElementById('modal-ia-title').style.color = '#8b5cf6';
+        } else {
+            SELECTED_CUSTOM_IA = null;
+            document.getElementById('modal-ia-title').innerHTML = IA_CONFIG['v4'].titulo;
+            document.getElementById('modal-ia-title').style.color = '#8b5cf6';
+        }
+    }
+
+    // ============================================================
+    //  GERENCIADOR DE IAs CUSTOMIZADAS (Admin)
+    // ============================================================
+    function abrirModalGerenciarIA() { 
+        document.getElementById('modal-gerenciar-ia').classList.add('active'); 
+        carregarIAsCustomizadas();
+    }
+    function fecharModalGerenciarIA() { document.getElementById('modal-gerenciar-ia').classList.remove('active'); }
+
+    async function carregarIAsCustomizadas() {
+        try {
+            const res = await fetch(`${FIREBASE_URL}salvados_ia_config.json`);
+            const data = await res.json();
+            CUSTOM_IA_CONFIGS = data || {};
+            const container = document.getElementById('lista-ias-custom');
+            const keys = Object.keys(CUSTOM_IA_CONFIGS);
+            if (keys.length === 0) {
+                container.innerHTML = `<div style="text-align:center; color:var(--text-muted); padding:10px;">Nenhuma IA customizada cadastrada.</div>`;
+                return;
+            }
+            let html = '';
+            for (const [key, ia] of Object.entries(CUSTOM_IA_CONFIGS)) {
+                html += `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 8px; border-bottom:1px solid var(--border-card);">
+                        <div><b>${ia.nome}</b> <span style="font-size:0.7rem; color:var(--text-muted);">(${ia.modelo})</span></div>
+                        <button class="btn" style="padding:2px 8px; font-size:0.6rem; background:#e11d48; color:#fff; border:none;" onclick="removerIACustom('${key}')">Remover</button>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        } catch(e) { document.getElementById('lista-ias-custom').innerHTML = `Erro ao carregar.`; }
+    }
+
+    async function salvarIACustom() {
+        const nome = document.getElementById('ia-custom-nome').value.trim();
+        const key = document.getElementById('ia-custom-key').value.trim();
+        const url = document.getElementById('ia-custom-url').value.trim();
+        const modelo = document.getElementById('ia-custom-model').value.trim();
+        const visao = document.getElementById('ia-custom-vision').value === 'true';
+
+        if (!nome || !key || !url || !modelo) { alert("Preencha todos os campos!"); return; }
+
+        const novaIA = { nome, api_key: key, base_url: url, modelo, visao };
+        const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 5);
+
+        try {
+            await fetch(`${FIREBASE_URL}salvados_ia_config/${id}.json`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(novaIA) });
+            await registrarLogFirebase("Buscador Global", `Cadastrou nova IA customizada: <b>${nome}</b>`);
+            document.getElementById('ia-custom-nome').value = '';
+            document.getElementById('ia-custom-key').value = '';
+            document.getElementById('ia-custom-url').value = '';
+            document.getElementById('ia-custom-model').value = '';
+            await carregarIAsCustomizadas();
+        } catch(e) { alert("Erro ao salvar no Firebase."); }
+    }
+
+    async function removerIACustom(id) {
+        if (!confirm("Remover esta IA?")) return;
+        try {
+            await fetch(`${FIREBASE_URL}salvados_ia_config/${id}.json`, { method: 'DELETE' });
+            await carregarIAsCustomizadas();
+        } catch(e) { alert("Erro ao remover."); }
+    }
 
     // ============================================================
     //  ENCONTRADOS + SISTEMA DE APRENDIZADO (MEMÓRIA REFINADA)
@@ -401,9 +561,6 @@
             document.getElementById('lbl-memoria').innerText = count;
         } catch(e) { document.getElementById('lbl-memoria').innerText = 'Erro'; }
     }
-
-    // NOVO: Abrir modal de memória
-    function fecharModalMemoria() { document.getElementById('modal-memoria').classList.remove('active'); }
 
     async function abrirModalMemoria() {
         document.getElementById('modal-memoria').classList.add('active');
@@ -458,7 +615,6 @@
             ITENS_ENCONTRADOS.add(idLimpo);
             await registrarLogFirebase("Buscador Global", `Marcou item <b>${id}</b> como ENCONTRADO. Termo: "${termoAtual}"`);
             
-            // Atualizar indicador
             await atualizarIndicadorMemoria();
             executarSmartSearch();
             
@@ -469,7 +625,7 @@
     };
 
     // ============================================================
-    //  UTILITÁRIOS DE IMAGEM
+    //  UTILITÁRIOS DE IMAGEM E LINKS
     // ============================================================
     function previewIAFile(input) {
         const btn = document.getElementById('btn-ia-file-label');
@@ -503,9 +659,6 @@
         });
     }
 
-    // ============================================================
-    //  LEITURA DO ANÚNCIO VIA JINA
-    // ============================================================
     function normalizarLink(link) {
         let url = String(link || '').trim();
         if (!url) return '';
@@ -539,14 +692,13 @@
     }
 
     // ============================================================
-    //  PROMPT TURBINADO COM APRENDIZADO DE STATUS E DESCRIÇÃO
+    //  PROMPT TURBINADO COM APRENDIZADO
     // ============================================================
     async function montarPromptIA(link, contextoLink, descManual) {
         const slug = extrairSlugDaUrl(link);
         let termoBusca = '';
         try { const u = new URL(normalizarLink(link)); termoBusca = u.searchParams.get('q') || u.searchParams.get('search') || ''; } catch(e) {}
 
-        // Carrega exemplos de acertos anteriores (com status e descrição)
         const exemplos = await carregarExemplosAprendizado(10);
 
         return `Você é um detetive de logística e inteligência artificial. Identifique o produto com MÁXIMA PRECISÃO usando o link, imagem (se houver) e descrição manual.
@@ -562,7 +714,7 @@ DADOS FORNECIDOS:
 
 REGRAS DE ANÁLISE:
 1. Analise o link, a descrição manual e a imagem para extrair o termo base correto.
-2. Considere os padrões de status encontrados nos exemplos (ex: se itens com "câmera" costumam ter status "Parado", isso é um forte indicador).
+2. Considere os padrões de status encontrados nos exemplos.
 3. Retorne APENAS um JSON válido:
 {
   "termo_base": "nome completo e modelo",
@@ -617,7 +769,7 @@ REGRAS DE ANÁLISE:
     function escapeJsAttr(v) { return String(v ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,' ').replace(/\r/g,' '); }
 
     // ============================================================
-    //  EXECUTOR DA BUSCA NA BARRA VIA IA (BOTÃO ROXO)
+    //  EXECUTOR DA BUSCA NA BARRA VIA IA
     // ============================================================
     async function buscarComIANaBarra() {
         const query = document.getElementById('search-input').value.trim();
@@ -629,8 +781,6 @@ REGRAS DE ANÁLISE:
 
         const promptBusca = `Você é um analista de dados. O usuário digitou o seguinte termo na barra de pesquisa de um estoque de encomendas perdidas:
 "${query}"
-
-Sua missão é extrair e expandir essas informações para encontrarmos o produto na planilha de estoque.
 Retorne APENAS um JSON válido:
 {
   "termo_base": "Nome limpo do produto",
@@ -675,9 +825,15 @@ Retorne APENAS um JSON válido:
             let aiResult;
 
             if      (CURRENT_IA === 'ok') aiResult = await chamarAPI_Groq(prompt, file);
-            else if (CURRENT_IA === 'v2') aiResult = await chamarAPI_DeepSeek(prompt, file);
+            else if (CURRENT_IA === 'v2') aiResult = await chamarAPI_Mistral(prompt, file);
             else if (CURRENT_IA === 'v3') aiResult = await chamarAPI_Gemini(prompt, file);
-            else if (CURRENT_IA === 'v4') aiResult = await chamarAPI_OpenRouter(prompt, file);
+            else if (CURRENT_IA === 'v4') {
+                if (SELECTED_CUSTOM_IA) {
+                    aiResult = await chamarAPI_Custom(SELECTED_CUSTOM_IA, prompt, file);
+                } else {
+                    aiResult = await chamarAPI_OpenRouter(prompt, file);
+                }
+            }
 
             processarResultadoIA(aiResult, resBox);
         } catch(e) {
@@ -688,7 +844,7 @@ Retorne APENAS um JSON válido:
     }
 
     // ============================================================
-    //  V1: IA "OK" (GROQ) - A Inteligência Perfeita
+    //  V1: IA "OK" (GROQ)
     // ============================================================
     async function chamarAPI_Groq(prompt, file, semImagem = false) {
         if (!GROQ_API_KEY) throw new Error("Chave Groq ausente.");
@@ -698,7 +854,7 @@ Retorne APENAS um JSON válido:
         if (file && !semImagem) {
             try {
                 const img = await fileToOptimizedImage(file);
-                messages = [{ role: 'user', content: [ { type: 'text', text: prompt + " BASEIE-SE FORTEMENTE NESTA IMAGEM PARA DESCOBRIR A COR E MODELO:" }, { type: 'image_url', image_url: { url: img.dataUrl } } ]}];
+                messages = [{ role: 'user', content: [ { type: 'text', text: prompt + " BASEIE-SE FORTEMENTE NESTA IMAGEM:" }, { type: 'image_url', image_url: { url: img.dataUrl } } ]}];
                 modelToUse = "llama-3.2-90b-vision-preview";
             } catch(e) {
                 messages = [{ role: 'user', content: prompt }];
@@ -726,18 +882,19 @@ Retorne APENAS um JSON válido:
     }
 
     // ============================================================
-    //  V2: DEEPSEEK (100% Gratuito, Texto)
+    //  V2: MISTRAL AI (Substitui DeepSeek - 100% Gratuito)
     // ============================================================
-    async function chamarAPI_DeepSeek(prompt, file) {
-        if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY.includes("COLE_AQUI")) throw new Error("Chave DeepSeek ausente.");
+    async function chamarAPI_Mistral(prompt, file) {
+        if (!MISTRAL_API_KEY || MISTRAL_API_KEY.includes("COLE_AQUI")) throw new Error("Chave Mistral ausente. Gere em console.mistral.ai/api-keys");
         
         let messages = [{ role: 'user', content: prompt }];
+        // Mistral não suporta visão no tier free, então ignoramos a imagem
 
         try {
-            const res = await fetch('https://api.deepseek.com/chat/completions', {
+            const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${DEEPSEEK_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ model: 'deepseek-chat', messages, temperature: 0.1, max_tokens: 1024, response_format: { type: 'json_object' } })
+                headers: { 'Authorization': `Bearer ${MISTRAL_API_KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: 'mistral-tiny', messages, temperature: 0.1, max_tokens: 1024, response_format: { type: 'json_object' } })
             });
             const data = await res.json().catch(() => ({}));
             if (!res.ok) throw new Error(data?.error?.message || `${res.status}`);
@@ -746,10 +903,11 @@ Retorne APENAS um JSON válido:
     }
 
     // ============================================================
-    //  V3: GOOGLE GEMINI (100% Gratuito)
+    //  V3: GOOGLE GEMINI (Com validação de chave AIzaSy)
     // ============================================================
     async function chamarAPI_Gemini(prompt, file) {
         if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("COLE_AQUI")) throw new Error("Chave Gemini ausente.");
+        if (!GEMINI_API_KEY.startsWith("AIzaSy")) throw new Error("Chave Gemini inválida. A chave correta começa com 'AIzaSy'. Gere em aistudio.google.com/app/apikey.");
         
         const parts = [{ text: prompt }];
         if (file) {
@@ -775,21 +933,20 @@ Retorne APENAS um JSON válido:
     }
 
     // ============================================================
-    //  V4: OPENROUTER (100% Gratuito)
+    //  V4: OPENROUTER (Modelos atualizados para 100% gratuitos)
     // ============================================================
     async function chamarAPI_OpenRouter(prompt, file, isFallback = false) {
-        if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY.includes("COLE_AQUI")) throw new Error("Chave OpenRouter ausente.");
+        if (!OPENROUTER_API_KEY || OPENROUTER_API_KEY.includes("COLE_AQUI")) throw new Error("Chave OpenRouter ausente. Gere em openrouter.ai/keys");
         
         let contentArray = [{ type: "text", text: prompt }];
-        let modelos = ["google/gemini-2.0-flash-lite-001:free", "meta-llama/llama-3.2-11b-vision-instruct:free"];
+        // Modelos gratuitos confirmados (Atualizados)
+        let modelos = ["google/gemini-2.0-flash-lite-preview-02-05:free", "meta-llama/llama-3.2-11b-vision-instruct:free", "mistralai/mistral-7b-instruct-v0.3:free"];
         
         if (file && !isFallback) {
             try {
                 const img = await fileToOptimizedImage(file);
                 contentArray.push({ type: "image_url", image_url: { url: img.dataUrl } });
             } catch(e) {}
-        } else {
-            modelos.push("mistralai/mistral-small-24b-instruct-2501:free");
         }
 
         let erroFinal = '';
@@ -809,6 +966,46 @@ Retorne APENAS um JSON válido:
         
         if (file && !isFallback) return await chamarAPI_OpenRouter(prompt, null, true);
         throw new Error(erroFinal);
+    }
+
+    // ============================================================
+    //  V4: IA CUSTOMIZÁVEL (Dinâmica salva no Firebase)
+    // ============================================================
+    async function chamarAPI_Custom(iaConfig, prompt, file) {
+        if (!iaConfig || !iaConfig.api_key) throw new Error("Configuração da IA customizada inválida.");
+        
+        let messages = [{ role: 'user', content: prompt }];
+        let body = {
+            model: iaConfig.modelo,
+            messages: messages,
+            temperature: 0.1,
+            max_tokens: 1024,
+            response_format: { type: 'json_object' }
+        };
+
+        // Se suporta visão e tem imagem
+        if (iaConfig.visao && file) {
+            const img = await fileToOptimizedImage(file);
+            messages = [{
+                role: 'user',
+                content: [
+                    { type: 'text', text: prompt },
+                    { type: 'image_url', image_url: { url: img.dataUrl } }
+                ]
+            }];
+            body.messages = messages;
+        }
+
+        try {
+            const res = await fetch(`${iaConfig.base_url}/chat/completions`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${iaConfig.api_key}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) throw new Error(data?.error?.message || `${res.status}`);
+            return normalizarRespostaIA(extrairJsonIA(data?.choices?.[0]?.message?.content || ''));
+        } catch(e) { throw e; }
     }
 
     // ============================================================
