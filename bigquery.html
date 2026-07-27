@@ -67,6 +67,7 @@
             .filter-section { width: 100%; }
         }
     </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -74,6 +75,7 @@
         <div class="bq-header-container">
             <h1 class="bq-header-title">Biblioteca BigQuery</h1>
             <p class="bq-header-subtitle">Encontre, entenda e copie queries prontas em 1 clique.</p>
+            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
         </div>
 
         <div class="bq-layout-grid">
@@ -394,6 +396,19 @@
                 alert("Falha ao copiar texto. Selecione e copie manualmente.");
             });
         }
-    </script>
+    
+        // ==========================================
+        // EXPORTAÇÃO CSV (usa js/export-csv.js)
+        // Exporta o catálogo de queries da biblioteca.
+        // ==========================================
+        function exportarCSV() {
+            var lista = (typeof globalBqList !== 'undefined' && globalBqList) ? globalBqList : [];
+            PortalCSV.deObjetos(PortalCSV.nomeComData('biblioteca_bigquery'), lista,
+                ['titulo', 'categoria', 'tags', 'descricao', 'autor', 'data', 'codigo_sql']);
+        }
+
+        </script>
+    <script src="js/export-csv.js"></script>
+    <script src="js/mobile.js"></script>
 </body>
 </html>

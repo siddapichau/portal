@@ -84,6 +84,7 @@
             .kpi-card { flex: 1; min-width: 220px; }
         }
     </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -102,6 +103,7 @@
                         <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
                     </svg>
                 </button>
+            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
                 
                 <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Subir Base de Dados CSV/XLSX">
                     <button class="btn">
@@ -425,6 +427,36 @@
                 });
             }, 150);
         }
-    </script>
+    
+        // ==========================================
+        // EXPORTAÇÃO CSV (usa js/export-csv.js)
+        // BANCO_GLOBAL aqui é um objeto de KPIs/agregados, então
+        // exportamos o conteúdo em pares Indicador/Valor.
+        // ==========================================
+        function exportarCSV() {
+            var fonte = (typeof BANCO_GLOBAL !== 'undefined') ? BANCO_GLOBAL : null;
+            if (Array.isArray(fonte) && fonte.length) {
+                PortalCSV.deObjetos(PortalCSV.nomeComData('expedir_devolucao'), fonte);
+                return;
+            }
+            var linhas = [];
+            if (fonte && typeof fonte === 'object') {
+                Object.keys(fonte).forEach(function (chave) {
+                    var v = fonte[chave];
+                    if (v !== null && typeof v === 'object') {
+                        Object.keys(v).forEach(function (sub) {
+                            linhas.push([chave + ' > ' + sub, v[sub]]);
+                        });
+                    } else {
+                        linhas.push([chave, v]);
+                    }
+                });
+            }
+            PortalCSV.baixar(PortalCSV.nomeComData('expedir_devolucao'), ['Indicador', 'Valor'], linhas);
+        }
+
+        </script>
+    <script src="js/export-csv.js"></script>
+    <script src="js/mobile.js"></script>
 </body>
 </html>

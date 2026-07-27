@@ -112,6 +112,7 @@
         ::-webkit-scrollbar-track { background: var(--bg-body); }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 
 <body data-theme="light">
@@ -132,6 +133,7 @@
             <button class="btn-header btn-ia-3" onclick="abrirModalIA('v3')" title="Hugging Face">🤖 IA 3</button>
             <button class="btn-header btn-ia-4" onclick="abrirModalIA('v4')" title="OpenRouter Free">🤖 IA 4</button>
             <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none; margin-left:10px;">📂 CSVs</button>
+            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
         </div>
     </div>
 
@@ -1006,6 +1008,35 @@ Retorne APENAS um JSON válido:
     function carregarMaisAproximados()     { const c = document.getElementById('scroll-aproximados'); if (c.scrollTop+c.clientHeight >= c.scrollHeight-60 && (CUR_PAGE_APROX+1)*PAGE_SIZE < DADOS_APROXIMADOS.length) { CUR_PAGE_APROX++; renderizarPedaçoAproximados(); } }
 
     window.onload = async () => { await carregarListaEncontrados(); carregarTodosBancos(); };
-    </script>
+    
+        // ==========================================
+        // EXPORTAÇÃO CSV (usa js/export-csv.js)
+        // Junta resultados exatos e aproximados num único arquivo,
+        // com uma coluna indicando o tipo de correspondência.
+        // ==========================================
+        function exportarCSV() {
+            var linhas = [];
+            function juntar(lista, tipo) {
+                (lista || []).forEach(function (item) {
+                    var copia = { Correspondencia: tipo };
+                    for (var k in item) {
+                        if (Object.prototype.hasOwnProperty.call(item, k)) copia[k] = item[k];
+                    }
+                    linhas.push(copia);
+                });
+            }
+            if (typeof DADOS_EXATOS !== 'undefined') juntar(DADOS_EXATOS, 'Exato');
+            if (typeof DADOS_APROXIMADOS !== 'undefined') juntar(DADOS_APROXIMADOS, 'Aproximado');
+
+            if (!linhas.length && typeof BANCO_GLOBAL !== 'undefined') {
+                PortalCSV.deObjetos(PortalCSV.nomeComData('salvados_base'), BANCO_GLOBAL);
+                return;
+            }
+            PortalCSV.deObjetos(PortalCSV.nomeComData('salvados_resultado'), linhas);
+        }
+
+        </script>
+    <script src="js/export-csv.js"></script>
+    <script src="js/mobile.js"></script>
 </body>
 </html>

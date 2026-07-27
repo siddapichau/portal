@@ -1,0 +1,6 @@
+# Dependências de ferramentas de análise (não fazem parte do portal)
+node_modules/
+package-lock.json
+
+# Scripts temporários de auditoria
+.analysis/

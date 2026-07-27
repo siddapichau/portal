@@ -20,6 +20,17 @@
     --btn-minimal-border: #cbd5e1; 
     --btn-minimal-icon: #2D3277; 
     --btn-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    /* CORREÇÃO: --shadow-card era usada em 21 páginas mas nunca foi definida.
+       Sem esta linha, todo box-shadow: var(--shadow-card) era simplesmente ignorado. */
+    --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+    /* Fallback de último recurso para páginas que NÃO declaram estas variáveis.
+       Fica só no :root (html): qualquer página que declare o seu próprio :root
+       depois continua vencendo, porque a folha local vem após o style.css. */
+    --bg-input: #ffffff;
+    --border-input: #cbd5e1;
+    --border-light: rgba(0, 0, 0, 0.06);
 }
 
 [data-theme="dark"] {
@@ -34,6 +45,11 @@
     --btn-minimal-border: #cbd5e1;
     --btn-minimal-icon: #2D3277;
     --btn-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
+
+    /* ATENÇÃO: data-theme fica no <body>. Declarar aqui uma variável que alguma
+       página define no seu :root (html) faria o valor global VENCER o local.
+       Por isso só entra aqui o --shadow-card, que nenhuma página define. */
+    --shadow-card: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
