@@ -108,6 +108,7 @@
 
         @media (max-width: 900px) { .top-header { flex-direction: column; align-items: center; } .header-center { white-space: normal; } .filters-card { grid-template-columns: 1fr; } .summary { grid-template-columns: 1fr; } .items-list { grid-template-columns: 1fr; } }
     </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
     <div class="top-header">
@@ -116,6 +117,7 @@
         <div class="header-right">
             <span class="status-badge" id="data-status">Conectando...</span>
             <button class="btn btn-dark" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">Exportar 4K</button>
+            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
             <button class="btn btn-dark" onclick="carregarDoFirebase()">Sync</button>
             <button class="btn btn-green" id="btn-novo-item" onclick="abrirModalAdicionar()">+ Novo Item</button>
         </div>
@@ -141,7 +143,7 @@
             <div class="modal-header"><div class="modal-title">Ajuste Rápido</div><button class="modal-close" onclick="fecharModal('edit-modal')">×</button></div>
             <div class="modal-body">
                 <div class="preview-row">
-                    <img id="modal-preview" class="preview-img" src="" alt="Foto">
+                    <img id="modal-preview" class="preview-img" alt="Foto">
                     <div class="preview-text">Altere apenas a foto e a quantidade atual.<br>A data da contagem será atualizada.</div>
                 </div>
                 <div class="modal-fields">
@@ -378,6 +380,17 @@
             }, 300);
         }
         carregarDoFirebase();
-    </script>
+    
+        // ==========================================
+        // EXPORTAÇÃO CSV (usa js/export-csv.js)
+        // ==========================================
+        function exportarCSV() {
+            PortalCSV.deObjetos(PortalCSV.nomeComData('contagem_insumos'),
+                (typeof ALL_ITEMS !== 'undefined' ? ALL_ITEMS : []));
+        }
+
+        </script>
+    <script src="js/export-csv.js"></script>
+    <script src="js/mobile.js"></script>
 </body>
 </html>

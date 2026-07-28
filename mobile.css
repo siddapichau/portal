@@ -1,0 +1,175 @@
+/* =========================================================================
+   mobile.css — Camada de otimização para celular
+   -------------------------------------------------------------------------
+   Carregada DEPOIS do style.css e depois do <style> de cada página.
+   Tudo aqui vive dentro de @media (max-width: ...), então no desktop o
+   arquivo é inerte: nenhuma regra chega a ser aplicada e o layout atual
+   continua exatamente igual.
+
+   Objetivos:
+     1) Nada de scroll horizontal na página inteira.
+     2) Tabelas largas rolam sozinhas, sem espremer o resto do layout.
+     3) Alvos de toque com no mínimo ~40px.
+     4) Fonte >= 16px nos inputs (evita o zoom automático do iOS).
+   ========================================================================= */
+
+/* ---------- 1. Tablet e abaixo ---------- */
+@media (max-width: 1024px) {
+    /* Grades fixas de dashboard viram coluna única quando não cabem */
+    .dashboard-grid,
+    .right-column {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* ---------- 2. Celular ---------- */
+@media (max-width: 768px) {
+
+    /* --- 2.1 Trava o scroll horizontal do documento --- */
+    html, body {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    /* --- 2.2 Tabelas: rolagem própria com inércia --- */
+    /* O wrapper .tabela-scroll-mobile é injetado por mobile.js em toda
+       <table> que ainda não tenha um contêiner rolável. */
+    .tabela-scroll-mobile {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+    }
+    .tabela-scroll-mobile > table {
+        min-width: max-content;
+    }
+
+    /* Densidade menor para caber mais coluna na tela */
+    table { font-size: 0.78rem; }
+    th, td { padding: 8px 10px !important; white-space: nowrap; }
+
+    /* --- 2.3 Barras de ferramentas quebram em linha --- */
+    .top-bar,
+    .top-header,
+    .header-actions,
+    .filters-card,
+    .admin-tabs,
+    .editor-toolbar {
+        flex-wrap: wrap !important;
+    }
+
+    /* --- 2.4 Alvos de toque confortáveis --- */
+    button,
+    .btn,
+    .btn-icon,
+    .btn-dark,
+    .btn-action,
+    .admin-tab,
+    .tab-btn,
+    a.action-icon {
+        min-height: 40px;
+    }
+
+    /* --- 2.5 iOS só evita o auto-zoom se a fonte for >= 16px --- */
+    input,
+    select,
+    textarea {
+        font-size: 16px !important;
+        max-width: 100%;
+    }
+
+    /* --- 2.6 Modais ocupam a tela inteira, com rolagem interna --- */
+    .custom-modal .modal-box,
+    .modal-content,
+    .bq-modal-content,
+    .auth-box {
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 88vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* --- 2.7 KPIs e cards empilham --- */
+    .kpi-container,
+    .summary,
+    .chips,
+    .items-list {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+    }
+
+    /* --- 2.8 Gráficos não estouram a largura --- */
+    canvas {
+        max-width: 100% !important;
+    }
+
+    /* --- 2.9 Imagens responsivas --- */
+    img { max-width: 100%; height: auto; }
+}
+
+/* ---------- 3. Celular pequeno ---------- */
+@media (max-width: 480px) {
+    .kpi-container,
+    .summary,
+    .chips {
+        grid-template-columns: 1fr 1fr !important;
+    }
+
+    table { font-size: 0.72rem; }
+    th, td { padding: 6px 8px !important; }
+
+    /* Botão que só mostra ícone ganha rótulo curto */
+    .btn, .btn-dark, .btn-icon { font-size: 0.78rem; }
+
+    /* Cabeçalhos de página menores */
+    h1 { font-size: 1.2rem !important; }
+    h2 { font-size: 1.05rem !important; }
+    h3 { font-size: 0.95rem !important; }
+}
+
+/* ---------- 4. Barra de exportação (usada pelos botões de CSV) ---------- */
+.portal-export-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-csv {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    min-height: 38px;
+    border: 1px solid var(--accent-green, #00A650);
+    border-radius: 8px;
+    background: var(--accent-green, #00A650);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 800;
+    font-size: 0.82rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: filter 0.2s, transform 0.2s, box-shadow 0.2s;
+    white-space: nowrap;
+}
+.btn-csv:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 166, 80, 0.35);
+}
+.btn-csv:active { transform: translateY(0); }
+.btn-csv:focus-visible {
+    outline: 2px solid var(--accent-blue, #3483FA);
+    outline-offset: 2px;
+}
+.btn-csv[disabled] { opacity: 0.6; cursor: not-allowed; }
+
+/* Some na exportação de imagem 4K, junto com os demais controles */
+body.exporting .btn-csv,
+body.exporting .portal-export-bar { display: none !important; }
+
+@media (max-width: 480px) {
+    .btn-csv { padding: 8px 10px; font-size: 0.75rem; min-height: 40px; }
+}

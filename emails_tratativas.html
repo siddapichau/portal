@@ -134,6 +134,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -143,6 +144,7 @@
         <div class="header-actions">
             <button class="btn-acao btn-dark" onclick="toggleViewMode()" id="btn-toggle-view">📊 Visão Kanban</button>
             <button class="btn-acao" onclick="abrirModal(null)" id="btn-add-novo">➕ Cadastrar E-mail</button>
+            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
         </div>
     </div>
 
@@ -718,6 +720,26 @@
                 alert("Erro ao deletar.");
             }
         }
-    </script>
+    
+        // ==========================================
+        // EXPORTAÇÃO CSV (usa js/export-csv.js)
+        // BANCO_EMAILS é um objeto do Firebase -> vira lista de registros.
+        // ==========================================
+        function exportarCSV() {
+            var base = (typeof BANCO_EMAILS !== 'undefined' && BANCO_EMAILS) ? BANCO_EMAILS : {};
+            var lista = Object.keys(base).map(function (key) {
+                var item = base[key] || {};
+                var copia = { id: key };
+                for (var k in item) {
+                    if (Object.prototype.hasOwnProperty.call(item, k)) copia[k] = item[k];
+                }
+                return copia;
+            });
+            PortalCSV.deObjetos(PortalCSV.nomeComData('emails_tratativas'), lista);
+        }
+
+        </script>
+    <script src="js/export-csv.js"></script>
+    <script src="js/mobile.js"></script>
 </body>
 </html>

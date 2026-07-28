@@ -141,6 +141,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="dark">
 
@@ -153,6 +154,7 @@
         <div class="header-right">
             <span class="status-badge" id="data-atualizacao">Atualizado: --/--/----</span>
             <button class="btn btn-icon" onclick="baixarFoto4K()" id="btn-print" title="Baixar Snapshot em 4K">📸</button>
+            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
             
             <div class="upload-wrapper" id="upload-aderencia-wrapper" style="display:none;">
                 <button class="btn btn-white" title="Fazer Upload do CSV da Aderência">
@@ -591,6 +593,35 @@
 
         carregarDoFirebase();
 
-    </script>
+    
+        // ==========================================
+        // EXPORTAÇÃO CSV (usa js/export-csv.js)
+        // ==========================================
+        function exportarCSV() {
+            if (typeof DADOS_ATUAIS !== 'undefined' && DADOS_ATUAIS && DADOS_ATUAIS.length) {
+                PortalCSV.deObjetos(PortalCSV.nomeComData('pendentes_inventario'), DADOS_ATUAIS);
+                return;
+            }
+            // Fallback: exporta as tabelas de aderência renderizadas na tela
+            var colunas = ['Areas', 'Verificados', 'Pendentes', 'Total', '%'];
+            var linhas = [];
+            ['tbody-geral', 'tbody-sem-ativos', 'tbody-ativos'].forEach(function (id) {
+                var tbody = document.getElementById(id);
+                if (!tbody) return;
+                var trs = tbody.querySelectorAll('tr');
+                for (var i = 0; i < trs.length; i++) {
+                    var tds = trs[i].querySelectorAll('td');
+                    if (tds.length < 2) continue;
+                    var linha = [];
+                    for (var c = 0; c < tds.length; c++) linha.push(PortalCSV.semHtml(tds[c].textContent));
+                    linhas.push(linha);
+                }
+            });
+            PortalCSV.baixar(PortalCSV.nomeComData('pendentes_inventario'), colunas, linhas);
+        }
+
+        </script>
+    <script src="js/export-csv.js"></script>
+    <script src="js/mobile.js"></script>
 </body>
 </html>

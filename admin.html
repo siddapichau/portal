@@ -2,6 +2,9 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <!-- CORREÇÃO: esta era a única página do portal sem <meta viewport>.
+         Sem ela o celular renderizava o layout em 980px e "encolhia" tudo. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Gerenciar Menu e Usuários</title>
     <script>
         if (window === window.top) {
@@ -51,6 +54,7 @@
         .rich-editor img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
         .rich-editor a { color: var(--accent-blue); text-decoration: underline; font-weight: bold;}
     </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -65,11 +69,12 @@
             <h2 style="margin-bottom: 20px; color: var(--text-title);">⚙️ Painel de Administração</h2>
             
             <div class="admin-tabs">
-                <div class="admin-tab active" onclick="switchAdminTab('menus')">Gestão de Menus</div>
-                <div class="admin-tab" onclick="switchAdminTab('users')">Gestão de Usuários</div>
-                <div class="admin-tab" onclick="switchAdminTab('news')">Mural de Notícias</div>
-                <div class="admin-tab" onclick="switchAdminTab('status')">Gestão de Status</div>
-                <div class="admin-tab" onclick="switchAdminTab('bigquery')">Biblioteca BigQuery</div>
+                <div class="admin-tab active" data-tab="menus" onclick="switchAdminTab('menus', this)">Gestão de Menus</div>
+                <div class="admin-tab" data-tab="users" onclick="switchAdminTab('users', this)">Gestão de Usuários</div>
+                <div class="admin-tab" data-tab="news" onclick="switchAdminTab('news', this)">Mural de Notícias</div>
+                <div class="admin-tab" data-tab="status" onclick="switchAdminTab('status', this)">Gestão de Status</div>
+                <div class="admin-tab" data-tab="bigquery" onclick="switchAdminTab('bigquery', this)">Biblioteca BigQuery</div>
+                <div class="admin-tab" data-tab="logs" onclick="switchAdminTab('logs', this)">Auditoria / Logs</div>
             </div>
 
             <!-- ABA DE MENUS -->
@@ -90,7 +95,36 @@
             <!-- ABA DE USUÁRIOS -->
             <div id="tab-users" style="display:none;">
                 <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos diretamente no banco Firebase.</p>
+
+                <!-- NOVO: painel de resumo da base de usuários -->
+                <div id="users-kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:15px;"></div>
+
+                <!-- NOVO: busca + filtros + ações em massa -->
+                <div class="header-actions" style="align-items:center;">
+                    <input type="text" id="users-search" placeholder="🔎 Buscar por usuário ou e-mail..."
+                           oninput="renderUserTable()"
+                           style="flex:1; min-width:200px; padding:10px; border-radius:6px; border:1px solid var(--border-card); background:var(--bg-body); color:var(--text-main);">
+                    <select id="users-filter-status" onchange="renderUserTable()"
+                            style="padding:10px; border-radius:6px; border:1px solid var(--border-card); background:var(--bg-body); color:var(--text-main);">
+                        <option value="">Todos os status</option>
+                        <option value="pendente">Pendentes</option>
+                        <option value="aprovado">Aprovados</option>
+                        <option value="bloqueado">Bloqueados</option>
+                    </select>
+                    <select id="users-filter-cargo" onchange="renderUserTable()"
+                            style="padding:10px; border-radius:6px; border:1px solid var(--border-card); background:var(--bg-body); color:var(--text-main);">
+                        <option value="">Todos os cargos</option>
+                        <option value="view">View</option>
+                        <option value="view2">View Plus</option>
+                        <option value="editor">Editor</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+
                 <div class="header-actions">
+                    <button class="btn btn-green" onclick="aprovarTodosPendentes()" title="Aprova de uma vez todos os cadastros pendentes">✅ Aprovar Todos Pendentes</button>
+                    <button class="btn btn-dark" onclick="exportarUsuariosCSV()" title="Baixar a lista de usuários em CSV">⬇️ Exportar Usuários (CSV)</button>
+                    <button class="btn btn-blue" onclick="fetchUsersFromFirebase()" title="Recarregar do Firebase">🔄 Atualizar</button>
                     <button class="btn btn-warn" id="btn-import-users" onclick="importarUsuariosDaPlanilha()">⬇️ Migrar Usuários da Planilha Antiga</button>
                 </div>
                 <div style="overflow-x: auto;">
@@ -127,7 +161,7 @@
                         <button class="btn btn-dark" onclick="insertVideoLink('news-body')" title="Inserir Vídeo do YouTube">🎥 Vídeo</button>
                         <button class="btn btn-dark" onclick="insertFileLink('news-body')" title="Inserir botão de Download (PDF, Drive)">📄 Anexar Arquivo</button>
                         <div class="toolbar-divider"></div>
-                        <button class="btn btn-dark" id="btn-toggle-html" onclick="toggleHTML('news-body', 'btn-toggle-html')" title="Ver e Editar o Código HTML Puro">💻 </> Code</button>
+                        <button class="btn btn-dark" id="btn-toggle-html" onclick="toggleHTML('news-body', 'btn-toggle-html')" title="Ver e Editar o Código HTML Puro">💻 &lt;/&gt; Code</button>
                     </div>
                     <div id="news-body" contenteditable="true" class="rich-editor"></div>
                     
@@ -205,7 +239,7 @@
                         <input type="file" id="bq-img-upload" accept="image/*" style="display:none;" onchange="insertImageUpload(this, 'bq-body')">
                         <button class="btn btn-dark" onclick="insertImageLink('bq-body')">🔗 Img (URL)</button>
                         <div class="toolbar-divider"></div>
-                        <button class="btn btn-dark" id="btn-toggle-html-bq" onclick="toggleHTML('bq-body', 'btn-toggle-html-bq')">💻 </> Code</button>
+                        <button class="btn btn-dark" id="btn-toggle-html-bq" onclick="toggleHTML('bq-body', 'btn-toggle-html-bq')">💻 &lt;/&gt; Code</button>
                     </div>
                     <div id="bq-body" contenteditable="true" class="rich-editor"></div>
                     
@@ -217,6 +251,44 @@
                 
                 <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-title); font-weight: 900; text-transform: uppercase;">Queries Salvas</h3>
                 <div id="bq-list-admin" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+
+            <!-- NOVA ABA: AUDITORIA / LOGS -->
+            <div id="tab-logs" style="display:none;">
+                <p style="color: var(--text-muted); margin-bottom: 15px;">
+                    Histórico de ações registradas pelo portal. Útil para auditar quem subiu planilha, quem alterou permissão e quando.
+                </p>
+
+                <div id="logs-kpis" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:15px;"></div>
+
+                <div class="header-actions" style="align-items:center;">
+                    <input type="text" id="logs-search" placeholder="🔎 Buscar por usuário, módulo ou ação..."
+                           oninput="renderLogs()"
+                           style="flex:1; min-width:200px; padding:10px; border-radius:6px; border:1px solid var(--border-card); background:var(--bg-body); color:var(--text-main);">
+                    <select id="logs-filter-user" onchange="renderLogs()"
+                            style="padding:10px; border-radius:6px; border:1px solid var(--border-card); background:var(--bg-body); color:var(--text-main);">
+                        <option value="">Todos os usuários</option>
+                    </select>
+                    <select id="logs-filter-modulo" onchange="renderLogs()"
+                            style="padding:10px; border-radius:6px; border:1px solid var(--border-card); background:var(--bg-body); color:var(--text-main);">
+                        <option value="">Todos os módulos</option>
+                    </select>
+                </div>
+
+                <div class="header-actions">
+                    <button class="btn btn-blue" onclick="carregarLogsAdmin()">🔄 Atualizar Logs</button>
+                    <button class="btn btn-dark" onclick="exportarLogsCSV()">⬇️ Exportar Logs (CSV)</button>
+                    <button class="btn btn-red" onclick="limparLogsAntigos()" title="Remove registros com mais de 90 dias">🧹 Limpar Logs Antigos</button>
+                </div>
+
+                <div style="overflow-x:auto;">
+                    <table class="user-table">
+                        <thead><tr><th>Data / Hora</th><th>Usuário</th><th>Módulo</th><th>Ação</th></tr></thead>
+                        <tbody id="logs-tbody">
+                            <tr><td colspan="4" style="text-align:center; padding:20px;">Clique em "Atualizar Logs" para carregar.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         </div>
@@ -313,17 +385,180 @@
             fetchUsersFromFirebase();
         };
 
-        function switchAdminTab(tab) {
+        function switchAdminTab(tab, elemento) {
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
             document.getElementById('tab-menus').style.display = tab === 'menus' ? 'block' : 'none';
             document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
             document.getElementById('tab-news').style.display = tab === 'news' ? 'block' : 'none';
             document.getElementById('tab-status').style.display = tab === 'status' ? 'block' : 'none';
             document.getElementById('tab-bigquery').style.display = tab === 'bigquery' ? 'block' : 'none';
-            event.target.classList.add('active');
+            document.getElementById('tab-logs').style.display = tab === 'logs' ? 'block' : 'none';
+
+            // CORREÇÃO: antes usava o "event" implícito (window.event), que só
+            // existe no Chrome/Edge. No Firefox dava ReferenceError e a aba
+            // trocava de conteúdo mas nunca ficava destacada. Agora o próprio
+            // elemento é passado no onclick, com fallback para quem chamar
+            // switchAdminTab('users') via código.
+            const alvo = elemento
+                || (typeof event !== 'undefined' && event && event.currentTarget)
+                || document.querySelector(`.admin-tab[data-tab="${tab}"]`);
+            if (alvo && alvo.classList) alvo.classList.add('active');
             if(tab === 'news') carregarNoticiasAdmin();
             if(tab === 'status') carregarStatusAdmin();
             if(tab === 'bigquery') carregarBQAdmin();
+            if(tab === 'logs') carregarLogsAdmin();
+        }
+
+        // ==========================================
+        // NOVA ABA: AUDITORIA / LOGS
+        // O portal já gravava em /logs, mas não havia nenhuma tela para ler.
+        // ==========================================
+        let TODOS_LOGS = [];
+
+        async function carregarLogsAdmin() {
+            const tbody = document.getElementById('logs-tbody');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Carregando...</td></tr>';
+            try {
+                const res = await fetch(`${FIREBASE_URL}logs.json?_=${Date.now()}`);
+                const data = await res.json();
+                if (!data) {
+                    TODOS_LOGS = [];
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px;">Nenhum log registrado ainda.</td></tr>';
+                    renderLogKpis();
+                    return;
+                }
+                TODOS_LOGS = (Array.isArray(data)
+                    ? data.map((v, i) => (v ? Object.assign({ key: String(i) }, v) : null)).filter(Boolean)
+                    : Object.keys(data).map(k => Object.assign({ key: k }, data[k])))
+                    .filter(l => l && l.timestamp);
+
+                TODOS_LOGS.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                popularFiltrosDeLog();
+                renderLogs();
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#FF5252;">Erro ao carregar os logs.</td></tr>';
+            }
+        }
+
+        function popularFiltrosDeLog() {
+            const selUser = document.getElementById('logs-filter-user');
+            const selMod = document.getElementById('logs-filter-modulo');
+            const usuarios = [...new Set(TODOS_LOGS.map(l => l.usuario).filter(Boolean))].sort();
+            const modulos = [...new Set(TODOS_LOGS.map(l => l.modulo).filter(Boolean))].sort();
+
+            const manter = (sel, itens, rotulo) => {
+                const atual = sel.value;
+                sel.innerHTML = `<option value="">${rotulo}</option>` +
+                    itens.map(i => `<option value="${escaparAttr(i)}">${escaparHtmlLog(i)}</option>`).join('');
+                if (itens.indexOf(atual) !== -1) sel.value = atual;
+            };
+            manter(selUser, usuarios, 'Todos os usuários');
+            manter(selMod, modulos, 'Todos os módulos');
+        }
+
+        function escaparHtmlLog(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function escaparAttr(v) { return escaparHtmlLog(v).replace(/"/g, '&quot;'); }
+
+        function getLogsFiltrados() {
+            const busca = (document.getElementById('logs-search').value || '').trim().toLowerCase();
+            const fUser = document.getElementById('logs-filter-user').value;
+            const fMod = document.getElementById('logs-filter-modulo').value;
+
+            return TODOS_LOGS.filter(l => {
+                if (fUser && l.usuario !== fUser) return false;
+                if (fMod && l.modulo !== fMod) return false;
+                if (busca) {
+                    const alvo = [l.usuario, l.modulo, l.acao].join(' ').toLowerCase();
+                    // a ação pode conter HTML (<b>), então limpamos antes de buscar
+                    if (alvo.replace(/<[^>]*>/g, ' ').indexOf(busca) === -1) return false;
+                }
+                return true;
+            });
+        }
+
+        function renderLogKpis() {
+            const box = document.getElementById('logs-kpis');
+            if (!box) return;
+            const agora = Date.now();
+            const dia = 24 * 60 * 60 * 1000;
+            const cards = [
+                { rotulo: 'Total', valor: TODOS_LOGS.length, cor: 'var(--accent-blue)' },
+                { rotulo: 'Últimas 24h', valor: TODOS_LOGS.filter(l => agora - l.timestamp < dia).length, cor: 'var(--accent-green)' },
+                { rotulo: 'Últimos 7 dias', valor: TODOS_LOGS.filter(l => agora - l.timestamp < 7 * dia).length, cor: 'var(--accent-warn)' },
+                { rotulo: 'Usuários ativos', valor: new Set(TODOS_LOGS.filter(l => agora - l.timestamp < 7 * dia).map(l => l.usuario)).size, cor: 'var(--text-title)' }
+            ];
+            box.innerHTML = cards.map(c =>
+                `<div style="background:var(--bg-body); border:1px solid var(--border-card); border-radius:8px; padding:12px; text-align:center;">
+                    <div style="font-size:1.5rem; font-weight:900; color:${c.cor};">${c.valor}</div>
+                    <div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">${c.rotulo}</div>
+                 </div>`).join('');
+        }
+
+        const LOGS_POR_PAGINA = 200;
+
+        function renderLogs() {
+            renderLogKpis();
+            const tbody = document.getElementById('logs-tbody');
+            const lista = getLogsFiltrados();
+
+            if (!lista.length) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">Nenhum log encontrado com os filtros atuais.</td></tr>';
+                return;
+            }
+
+            const recorte = lista.slice(0, LOGS_POR_PAGINA);
+            tbody.innerHTML = recorte.map(l => {
+                const d = l.timestamp ? new Date(l.timestamp) : null;
+                const quando = d ? d.toLocaleString('pt-BR') : '-';
+                // l.acao é gravada com HTML simples (<b>) pelas páginas: mantemos
+                // a formatação, mas o campo passa por sanitização básica de tags.
+                const acaoSegura = String(l.acao || '')
+                    .replace(/<(?!\/?(b|i|strong|em)\b)[^>]*>/gi, '');
+                return `<tr>
+                    <td style="white-space:nowrap;">${quando}</td>
+                    <td><strong>${escaparHtmlLog(l.usuario || '-')}</strong></td>
+                    <td>${escaparHtmlLog(l.modulo || '-')}</td>
+                    <td>${acaoSegura}</td>
+                </tr>`;
+            }).join('');
+
+            if (lista.length > LOGS_POR_PAGINA) {
+                tbody.innerHTML += `<tr><td colspan="4" style="text-align:center; padding:12px; color:var(--text-muted); font-weight:700;">
+                    Exibindo os ${LOGS_POR_PAGINA} registros mais recentes de ${lista.length}. Use a busca para refinar.
+                </td></tr>`;
+            }
+        }
+
+        function exportarLogsCSV() {
+            const lista = getLogsFiltrados().map(l => ({
+                data_hora: l.timestamp ? new Date(l.timestamp).toLocaleString('pt-BR') : '',
+                usuario: l.usuario || '',
+                modulo: l.modulo || '',
+                acao: String(l.acao || '').replace(/<[^>]*>/g, '')
+            }));
+            PortalCSV.deObjetos(PortalCSV.nomeComData('auditoria_logs'), lista,
+                ['data_hora', 'usuario', 'modulo', 'acao']);
+        }
+
+        async function limparLogsAntigos() {
+            const limite = Date.now() - (90 * 24 * 60 * 60 * 1000);
+            const antigos = TODOS_LOGS.filter(l => l.timestamp && l.timestamp < limite);
+            if (!antigos.length) return alert('Não há logs com mais de 90 dias para remover.');
+            if (!confirm(`Remover ${antigos.length} registro(s) com mais de 90 dias?\n\nEsta ação não pode ser desfeita.`)) return;
+
+            let ok = 0, erro = 0;
+            for (const l of antigos) {
+                try {
+                    await fetch(`${FIREBASE_URL}logs/${l.key}.json`, { method: 'DELETE' });
+                    ok++;
+                } catch (e) { erro++; }
+            }
+            alert('Removidos: ' + ok + (erro ? ' | Falhas: ' + erro : ''));
+            await registrarLogFirebase('Painel Admin', `Limpou <b>${ok}</b> log(s) com mais de 90 dias`);
+            carregarLogsAdmin();
         }
 
         // ==========================================
@@ -389,9 +624,60 @@
 
         function populateDatalist() { const dl = document.getElementById('lista-usuarios'); dl.innerHTML = ''; allUsers.forEach(u => { dl.innerHTML += `<option value="${u.usuario}">`; }); }
         
+        // Atualiza os cartões de resumo da base de usuários
+        function renderUserKpis() {
+            const box = document.getElementById('users-kpis');
+            if (!box) return;
+            const total = allUsers.length;
+            const cont = function (campo, valor) {
+                return allUsers.filter(function (u) { return (u[campo] || '') === valor; }).length;
+            };
+            const cards = [
+                { rotulo: 'Total', valor: total, cor: 'var(--accent-blue)' },
+                { rotulo: 'Pendentes', valor: cont('solicitacao', 'pendente'), cor: 'var(--accent-warn)' },
+                { rotulo: 'Aprovados', valor: cont('solicitacao', 'aprovado'), cor: 'var(--accent-green)' },
+                { rotulo: 'Bloqueados', valor: cont('solicitacao', 'bloqueado'), cor: '#FF5252' },
+                { rotulo: 'Admins', valor: cont('cargo', 'admin'), cor: 'var(--text-title)' }
+            ];
+            box.innerHTML = cards.map(function (c) {
+                return '<div style="background:var(--bg-body); border:1px solid var(--border-card); border-radius:8px; padding:12px; text-align:center;">' +
+                    '<div style="font-size:1.5rem; font-weight:900; color:' + c.cor + ';">' + c.valor + '</div>' +
+                    '<div style="font-size:0.7rem; font-weight:800; color:var(--text-muted); text-transform:uppercase;">' + c.rotulo + '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        // Aplica busca + filtros de status/cargo sobre a lista completa
+        function getUsuariosFiltrados() {
+            const elBusca = document.getElementById('users-search');
+            const elStatus = document.getElementById('users-filter-status');
+            const elCargo = document.getElementById('users-filter-cargo');
+            const busca = elBusca ? elBusca.value.trim().toLowerCase() : '';
+            const status = elStatus ? elStatus.value : '';
+            const cargo = elCargo ? elCargo.value : '';
+
+            return allUsers.filter(function (u) {
+                const alvo = ((u.usuario || '') + ' ' + (u.email || '')).toLowerCase();
+                if (busca && alvo.indexOf(busca) === -1) return false;
+                if (status && (u.solicitacao || '') !== status) return false;
+                if (cargo && (u.cargo || '') !== cargo) return false;
+                return true;
+            });
+        }
+
         function renderUserTable() {
             const tbody = document.getElementById('users-tbody'); tbody.innerHTML = '';
-            allUsers.forEach((u, idx) => {
+            renderUserKpis();
+
+            const visiveis = getUsuariosFiltrados();
+            if (!visiveis.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Nenhum usuário encontrado com os filtros atuais.</td></tr>';
+                return;
+            }
+
+            visiveis.forEach((u) => {
+                // índice real na lista completa (os handlers usam allUsers[idx])
+                const idx = allUsers.indexOf(u);
                 tbody.innerHTML += `<tr>
                     <td><strong>${u.usuario}</strong></td>
                     <td>${u.email}</td>
@@ -420,6 +706,46 @@
                     </td>
                 </tr>`;
             });
+        }
+
+        // ==========================================
+        // NOVO: aprovar em massa todos os cadastros pendentes
+        // ==========================================
+        async function aprovarTodosPendentes() {
+            const pendentes = allUsers.filter(function (u) { return (u.solicitacao || '') === 'pendente'; });
+            if (!pendentes.length) return alert('Não há cadastros pendentes no momento.');
+            if (!confirm('Aprovar ' + pendentes.length + ' cadastro(s) pendente(s)?\n\nTodos entrarão com o cargo atual (padrão: View).')) return;
+
+            let ok = 0, erro = 0;
+            for (const u of pendentes) {
+                try {
+                    await fetch(`${FIREBASE_URL}users/${u.key}.json`, {
+                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ solicitacao: 'aprovado' })
+                    });
+                    ok++;
+                } catch (e) { erro++; }
+            }
+            alert('Aprovados: ' + ok + (erro ? ' | Falhas: ' + erro : ''));
+            await registrarLogFirebase('Painel Admin', `Aprovou <b>${ok}</b> cadastro(s) pendente(s) em massa`);
+            fetchUsersFromFirebase();
+        }
+
+        // ==========================================
+        // NOVO: exportar a base de usuários em CSV
+        // ==========================================
+        function exportarUsuariosCSV() {
+            const lista = getUsuariosFiltrados().map(function (u) {
+                return {
+                    usuario: u.usuario || '',
+                    email: u.email || '',
+                    cargo: u.cargo || '',
+                    status: u.solicitacao || '',
+                    favoritos: u.favorito || ''
+                };
+            });
+            PortalCSV.deObjetos(PortalCSV.nomeComData('usuarios_portal'), lista,
+                ['usuario', 'email', 'cargo', 'status', 'favoritos']);
         }
 
         async function salvarUsuario(idx, key, username) {
@@ -967,5 +1293,7 @@
         }
 
     </script>
+    <script src="js/export-csv.js"></script>
+    <script src="js/mobile.js"></script>
 </body>
 </html>

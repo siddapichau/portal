@@ -110,6 +110,7 @@
     /* Exportação */
     .exporting .top-bar { display: none !important; }
   </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 
 <body data-theme="light">
@@ -125,6 +126,7 @@
         </svg>
         Exportar 4K
     </button>
+            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
 
     <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Selecione o CSV exportado da aba 'Ofensores'">
       <button class="btn-upload">
@@ -491,7 +493,20 @@
       }
     });
   });
-</script>
 
+        // ==========================================
+        // EXPORTAÇÃO CSV (usa js/export-csv.js)
+        // ==========================================
+        function exportarCSV() {
+            var tbody = document.getElementById('tbody-ofensores');
+            var tabela = tbody ? tbody.closest('table') : null;
+            if (!tabela) { alert('Nenhum dado disponível para exportar.'); return; }
+            PortalCSV.deTabela(PortalCSV.nomeComData('aderencia_ofensores'), tabela);
+        }
+
+        </script>
+
+    <script src="js/export-csv.js"></script>
+    <script src="js/mobile.js"></script>
 </body>
 </html>

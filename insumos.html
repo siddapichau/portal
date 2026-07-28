@@ -105,6 +105,7 @@
             .total-info { margin-left: 0; text-align: right; }
         }
     </style>
+    <link rel="stylesheet" href="mobile.css">
 </head>
 
 <body data-theme="light">
@@ -118,6 +119,7 @@
         <div class="header-right">
             <span class="status-badge" id="data-status">Conectando ao banco...</span>
             <button class="btn-action btn-dark" onclick="baixarDashboardComoImagem()" title="Exportar Tabela em Imagem UHD 4K">Exportar 4K</button>
+            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
             <a href="contagem_insumos.html" class="btn-action btn-blue">Contagem</a>
             <button class="btn-action btn-dark" onclick="carregarDoFirebase()">Atualizar</button>
         </div>
@@ -281,6 +283,17 @@
         $('#filter-categoria').addEventListener('change', () => { renderTabela(ALL_ITEMS); });
         document.getElementById('main-title').innerText = `Estoque de Insumos Operacional Crítico - ${obterDataHojeFormatada()}`;
         carregarDoFirebase();
-    </script>
+    
+        // ==========================================
+        // EXPORTAÇÃO CSV (usa js/export-csv.js)
+        // ==========================================
+        function exportarCSV() {
+            PortalCSV.deObjetos(PortalCSV.nomeComData('insumos'),
+                (typeof ALL_ITEMS !== 'undefined' ? ALL_ITEMS : []));
+        }
+
+        </script>
+    <script src="js/export-csv.js"></script>
+    <script src="js/mobile.js"></script>
 </body>
 </html>
