@@ -27,7 +27,7 @@ O portal hoje é um SPA estático (`index.html` + `menu.js` como "corpo") que ca
 
 ### 1.2 Páginas de reporte (dados dos gráficos)
 
-Cada página lê o seu "nó" de dados (que vira uma aba `db_<nó>` na planilha) e grava nele os uploads de CSV/XLSX. Mapa completo:
+Cada página lê o seu "nó" de dados **na planilha que já existe dela** (não nesta planilha do portal). Nesta fase o cérebro (menu, notícias, usuários…) é o que precisa funcionar. Mapa das páginas, para a Fase 2.1:
 
 | Página | Nó(s) de dados |
 |---|---|
@@ -60,7 +60,7 @@ Cada página lê o seu "nó" de dados (que vira uma aba `db_<nó>` na planilha) 
 └──────────────┘                └───────────────────────────┘                └──────────────────┘
 ```
 
-- **Google Sheets** = banco de dados. Cada "nó" vira uma **aba** da planilha.
+- **Google Sheets (cérebro)** = banco do portal. Só abas de menu, usuários, notícias, status, logs e `_Config`. Cada página de reporte continua com a **planilha dela**.
 - **Google Apps Script** (`apps-script/Code.gs`) = a API. Contrato **idêntico** ao Firebase REST, então nenhuma página precisou mudar de lógica — só a URL base.
 - **`js/portal-db.js`** = ponto único de configuração (URL da API + tradutor de métodos).
 - **Firebase: 0% no portal.** Não existe fallback nem URL do Firebase em nenhum `.html`/`.js` do front. A **única** referência ao Firebase no repositório está dentro do Apps Script (`FIREBASE_URL_ORIGEM`), usada **exclusivamente** pelas funções de importação para copiar os dados já existentes.
@@ -93,8 +93,8 @@ Regras do codec (implementadas no `Code.gs`):
 Importar tudo de uma vez estourava os limites do Google (tempo de execução). Por isso o script agora tem **menu próprio na planilha** (`⚙️ Portal`), com **um item para cada parte**:
 
 - **🧠 Importar — Núcleo do portal:** Usuários, Menu, Cargos, Funções, Notícias, Status, BigQuery, Logs, Presença, Favoritos.
-- **📄 Importar — Páginas (reportes):** equipamentos, aderência, devolução, salvados (4 partes), e-mails, insumos, parado em percurso, CFTV, avarias, aduana, BPP, inventário… (22 itens).
-- **📥 Importar nó personalizado…** para qualquer nó não listado.
+- **📄 Páginas:** o DB de cada reporte **não** é importado nesta planilha. Cada página já tem a planilha dela; ligamos isso na Fase 2.1.
+- **🧹 Remover abas db_*:** apaga as abas de página que o setup antigo criou por engano.
 - **🔄 Continuar importações pendentes:** se uma parte for grande demais e o tempo do Google esgotar, o script para num ponto seguro e **continua de onde parou** na próxima execução (cursor salvo em `PropertiesService`).
 
 Como funciona por dentro: leitura do Firebase **paginada** (`orderBy="$key"`, lotes de 200), gravação na planilha **em bateladas** de 500 linhas, guarda de tempo de 4,5 min por execução. Não existe opção "importar tudo" de propósito.
@@ -120,13 +120,26 @@ Como funciona por dentro: leitura do Firebase **paginada** (`orderBy="$key"`, lo
 - [x] **Portal 100% planilha**: removida toda e qualquer conexão Firebase do front-end (`portal-db.js` sem fallback; 21 páginas de reporte apontadas para a camada única; `js/firebase.config.js` removido; textos da UI atualizados).
 - [x] `salvados_procurarv3.html`: suporte no backend a `?orderBy="campo"&limitToLast=N` (usado pela página).
 
-### 🔜 FASE 2 — Página a página (1 PR por página)
-A base (a "torneira" dos dados) já está ligada em todas as páginas. Nesta fase, refinamos cada uma:
-1. Validar leitura/gravação da página na sua aba `db_<nó>` (gráficos alimentados direto da planilha).
-2. Opcional: substituir "subir CSV → regravar nó inteiro" por "ler/gravar direto na aba" com escrita incremental.
-3. Testar upload, backup diário e exportação da página.
+### 🔧 FASE 2 — Cérebro funcionando de verdade (esta PR)
+A Fase 1.5 ligou a torneira, mas o portal **não carregava** menu, notícias, status nem usuários. Causas encontradas no `/exec` implantado:
 
-**Ordem sugerida:** `equipamentos.html` → `salvados_procurarv3.html` → `parado_percurso.html` → `pendencias_cftv.html` → `avarias-diario.html` → … até cobrir todas.
+1. **URL sem barra.** `PortalDB.URL` terminava em `/exec` e as páginas fazem `` `${base}menu_global.json` `` → virava `.../execmenu_global.json` (URL inválida).
+2. **pathInfo exige login.** Mesmo com barra, `.../exec/menu_global.json` cai no login do Google (limitação do Apps Script em web app "Qualquer pessoa"). Por isso o GET raiz respondia `{error:"Rota inválida"}` e o path autenticava.
+3. **Abas `db_*` no cérebro.** `setupPortal()` criava uma aba `db_<nó>` para cada página. **Esta planilha é só portal + config.** O DB de cada página continua na planilha que já existe dela e será ligado depois.
+
+O que esta PR entrega:
+- [x] `portal-db.js` reescreve GET para `?path=menu_global.json` (query pública) e devolve a base com `/`.
+- [x] `Code.gs` lê `e.parameter.path`. Abrir `/exec` sem path agora devolve um JSON de saúde (`ok:true` + contagem por aba), não mais "Rota inválida".
+- [x] Planilha **só cérebro**: Menu, Usuarios, Noticias, Status, Logs, Presenca, Favoritos, Cargos, Funcoes, BigQuery, `_Config`.
+- [x] `setupPortal` não cria mais `db_*`. Menu da planilha ganhou **🧹 Remover abas db_***.
+- [x] Cabeçalhos de Notícias / Status / BigQuery alinhados aos campos reais do portal (`corpo`, `tag`, `likes`, `likedBy`…).
+- [ ] **Você:** colar o `Code.gs` novo + **Nova versão** da implantação (sem isso o `/exec` continua o código velho).
+- [ ] Importar o núcleo (Menu, Usuários, Notícias, Status, Logs).
+
+### 🔜 FASE 2.1 — Páginas (planilhas próprias, futuro)
+Cada página puxa o DB da planilha que **já existe** dela. Não entra nesta planilha do portal.
+
+**Ordem sugerida quando formos ligar:** `equipamentos.html` → `salvados_procurarv3.html` → `parado_percurso.html` → `pendencias_cftv.html` → `avarias-diario.html` → … até cobrir todas.
 
 ### 🔜 FASE 3 — Melhorias (opcionais, escolha do usuário)
 Ver §5.
@@ -176,14 +189,14 @@ Ver §5.
 
 ---
 
-## 7. Critérios de aceite (Fase 1.5 — esta PR)
+## 7. Critérios de aceite (Fase 2 — esta PR)
 
-- [x] Nenhuma URL/strings Firebase no front-end (somente `FIREBASE_URL_ORIGEM` dentro do Apps Script, exclusiva da importação).
-- [x] Backend grava cada aba em formato colunar (1 linha = 1 registro, 1 coluna = 1 campo).
-- [x] Codec de `menu_global` ida-e-volta testado (aba `Menu` ⇄ JSON de 3 níveis).
-- [x] Menu da planilha com importação parte por parte + continuação automática.
-- [ ] Portal abre, login/registro funcionam (após implantar o Apps Script e configurar `PortalDB.URL`).
-- [ ] Painel admin e perfil funcionam gravando na planilha.
+- [x] GET do portal vai para `/exec?path=...` (não mais `/exec/node.json`, que pedia login).
+- [x] `/exec` sem path devolve saúde (`ok:true` + contagem por aba), não `"Rota inválida"`.
+- [x] `setupPortal` cria só o cérebro. Existe **🧹 Remover abas db_***.
+- [x] Cabeçalhos de Notícias/Status/BigQuery batem com o que o portal grava (`corpo`, `tag`, `likes`…).
+- [ ] Após **Nova versão** da implantação, abrir `/exec` mostra `{ok:true,…}`.
+- [ ] Depois de importar o núcleo: menu, notícias, status, login e radar carregam no portal.
 
 ## 8. Rollback
 
