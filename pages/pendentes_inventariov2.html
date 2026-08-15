@@ -9,7 +9,7 @@
     <script>
         if (window === window.top) {
             const paginaAtual = window.location.pathname.split('/').pop() || 'analise_ofensores.html';
-            window.location.replace('index.html?page=' + paginaAtual);
+            window.location.replace('../index.html?page=pages/' + paginaAtual);
         }
     </script>
 
@@ -23,7 +23,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
     <!-- CSS GLOBAL -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../style.css">
 
     <style>
         /* Variáveis Específicas do Painel */
@@ -147,7 +147,7 @@
     <div id="toast-container"></div>
 
     <div class="top-header">
-        <a href="index.html"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre"></a>
+        <a href="../index.html"><img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" class="ml-logo" alt="Mercado Livre"></a>
         <div class="header-center" id="main-header-title">Análise Pendentes do Inventário - Ofensores</div>
         
         <div class="header-right">

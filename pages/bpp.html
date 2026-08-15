@@ -8,12 +8,12 @@
     <script>
         if (window === window.top) {
             const paginaAtual = window.location.pathname.split('/').pop() || 'bpp.html';
-            window.location.replace('index.html?page=' + paginaAtual);
+            window.location.replace('../index.html?page=pages/' + paginaAtual);
         }
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../style.css">
 
     <!-- Dependências -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

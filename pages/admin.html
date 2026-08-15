@@ -6,11 +6,12 @@
     <script>
         if (window === window.top) {
             const paginaAtual = window.location.pathname.split('/').pop() || 'admin.html';
-            window.location.replace('index.html?page=' + paginaAtual);
+            window.location.replace('../index.html?page=pages/' + paginaAtual);
         }
     </script>
 
-    <link rel="stylesheet" href="style.css">
+    <script src="../js/portal-db.js"></script>
+    <link rel="stylesheet" href="../style.css">
     <style>
         body { background: transparent !important; padding: 20px; }
         #main-content { max-width: 1200px; margin: 0 auto; width: 100%; }
@@ -226,7 +227,7 @@
 
     <script>
         const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = (window.PortalDB ? window.PortalDB.baseAtiva() : "https://reportes-bdb0a-default-rtdb.firebaseio.com/");
         const ICONES_LOGISTICA = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑", "↳"];
         
         let adMenuData = { categorias: [] }; 
