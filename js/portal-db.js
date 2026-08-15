@@ -36,7 +36,7 @@
         URL: 'https://script.google.com/macros/s/AKfycbw3vDT2-dwTBnXP0NDZztLA8YzIxbb7i6TAZLvg7t5Q1j646XEl6BKeCkUdAdqLjhbDJw/exec',
         versionTtlMs: 15000, // intervalo mínimo entre checagens de versão no servidor
         CACHE_TTL: 2 * 60 * 1000, // 2 min de cache por nó
-        PRESERVE_KEYS: ['loggedUser', 'themePreference', 'portal_app_version', 'portal_app_version_check', 'lastNewsTime', 'lastStatusTime'],
+        PRESERVE_KEYS: ['loggedUser', 'themePreference', 'portal_app_version', 'portal_app_version_check', 'lastNewsTime', 'lastStatusTime', 'portal_page_urls'],
         __v3: true
     };
 
@@ -75,20 +75,104 @@
         return String(PortalDB.URL || '').replace(/\/+$/, '');
     }
 
-    PortalDB.urlConfigurada = function () {
-        var u = execBase();
+    function urlValida_(u) {
+        u = String(u || '').replace(/\/+$/, '');
         return /\/macros\/s\/.+\/exec$/i.test(u) && !/COLE_SUA_URL/i.test(u);
+    }
+
+    PortalDB.urlConfigurada = function () {
+        return urlValida_(execBase());
     };
 
-    PortalDB.baseAtiva = function () {
-        if (!PortalDB.urlConfigurada()) {
+    // =========================================================================
+    // URLs /exec POR PÁGINA (cada página pode ter a planilha dela)
+    // -------------------------------------------------------------------------
+    // O Admin (aba "Planilhas por Página") grava no nó `config` chaves no
+    // formato:  url_pages/insumos.html  ->  https://.../exec
+    // Aqui elas ficam espelhadas em localStorage.portal_page_urls para que
+    // baseAtiva() consiga responder de forma SÍNCRONA já no carregamento.
+    // =========================================================================
+    var LS_PAGE_URLS = 'portal_page_urls';
+    var PAGE_URL_PREFIX = 'url_';
+
+    function pageUrlsMap_() { return lsGet_(LS_PAGE_URLS, {}) || {}; }
+
+    // "pages/insumos.html" a partir do endereço atual (funciona dentro do iframe)
+    PortalDB.paginaAtual = function () {
+        try {
+            var p = String(global.location.pathname || '');
+            var partes = p.split('/').filter(Boolean);
+            var arq = partes.length ? partes[partes.length - 1] : '';
+            if (!/\.html?$/i.test(arq)) return 'index.html';
+            var pai = partes.length > 1 ? partes[partes.length - 2] : '';
+            return (pai === 'pages') ? ('pages/' + arq) : arq;
+        } catch (e) { return 'index.html'; }
+    };
+
+    // URL da planilha da página informada (ou da atual). Cai na URL central.
+    PortalDB.urlDaPagina = function (pagina) {
+        var chave = pagina || PortalDB.paginaAtual();
+        var mapa = pageUrlsMap_();
+        var achou = mapa[chave] || mapa[String(chave).replace(/^pages\//, '')] || '';
+        return urlValida_(achou) ? String(achou).replace(/\/+$/, '') : execBase();
+    };
+
+    // Lista de todas as bases conhecidas (central + páginas) — usada pelo fetch
+    function basesConhecidas_() {
+        var out = [];
+        var c = execBase(); if (c) out.push(c);
+        var mapa = pageUrlsMap_();
+        Object.keys(mapa).forEach(function (k) {
+            var u = String(mapa[k] || '').replace(/\/+$/, '');
+            if (u && out.indexOf(u) === -1) out.push(u);
+        });
+        return out;
+    }
+
+    PortalDB.baseAtiva = function (pagina) {
+        var u = PortalDB.urlDaPagina(pagina);
+        if (!urlValida_(u)) {
             console.error(
                 '[PortalDB] ⚠️ URL da planilha NÃO configurada.\n' +
                 '1) Publique o Apps Script (Implantar → Aplicativo da web).\n' +
-                '2) Cole a URL /exec em js/portal-db.js → PortalDB.URL.'
+                '2) Cole a URL /exec em js/portal-db.js → PortalDB.URL\n' +
+                '   (ou configure a planilha da página no Admin → Planilhas por Página).'
             );
         }
-        return execBase() + '/';
+        return u + '/';
+    };
+
+    // Base do "cérebro" (menu, usuários, notícias...). Sempre a URL central.
+    PortalDB.baseCentral = function () { return execBase() + '/'; };
+
+    // Grava/atualiza o espelho local das URLs por página
+    PortalDB.setPageUrls = function (mapa) {
+        var limpo = {};
+        Object.keys(mapa || {}).forEach(function (k) {
+            var v = String(mapa[k] || '').trim().replace(/\/+$/, '');
+            if (v) limpo[k] = v;
+        });
+        lsSet_(LS_PAGE_URLS, limpo);
+        return limpo;
+    };
+    PortalDB.getPageUrls = pageUrlsMap_;
+
+    // Busca no nó `config` todas as chaves url_* e espelha no localStorage
+    PortalDB.syncPageUrls = function () {
+        if (!realFetch || !urlValida_(execBase())) return Promise.resolve({});
+        var url = execBase() + '?path=config.json&nc=1&_=' + Date.now();
+        return realFetch(url, {}).then(function (r) { return r.json(); }).then(function (cfg) {
+            if (!cfg || typeof cfg !== 'object') return {};
+            var mapa = {};
+            Object.keys(cfg).forEach(function (k) {
+                if (k.indexOf(PAGE_URL_PREFIX) !== 0) return;
+                var val = cfg[k];
+                if (val && typeof val === 'object') val = (val.valor !== undefined ? val.valor : '');
+                var pagina = k.slice(PAGE_URL_PREFIX.length);
+                if (val) mapa[pagina] = String(val).trim().replace(/\/+$/, '');
+            });
+            return PortalDB.setPageUrls(mapa);
+        }).catch(function () { return pageUrlsMap_(); });
     };
 
     // --------- helpers querystring ----------
@@ -176,10 +260,20 @@
     }
 
     PortalDB.clearCache = clearCachePreserveLogin_;
+
+    // Recarrega o PORTAL INTEIRO (o shell index.html), não só o iframe.
+    // Assim a nova versão vale para todas as páginas de uma vez.
+    PortalDB.recarregarPortal = function () {
+        try {
+            if (global.top && global.top !== global.self) { global.top.location.reload(); return; }
+        } catch (e) { /* cross-origin: cai no reload local */ }
+        try { global.location.reload(); } catch (e) { }
+    };
+
     PortalDB.forceClearCachePreserveLogin = function () {
         clearCachePreserveLogin_();
         lsSetStr_(LS_LAST_CHECK, '0');
-        try { location.reload(); } catch (e) { }
+        PortalDB.recarregarPortal();
     };
     // compatibilidade com código antigo
     PortalDB.bumpVersionCheck = function () { lsSetStr_(LS_LAST_CHECK, '0'); };
@@ -228,10 +322,10 @@
                         var flagKey = 'portal_reload_' + serverV;
                         if (!global.sessionStorage.getItem(flagKey)) {
                             global.sessionStorage.setItem(flagKey, '1');
-                            setTimeout(function () { try { location.reload(); } catch (e) { } }, 200);
+                            setTimeout(function () { PortalDB.recarregarPortal(); }, 200);
                         }
                     } catch (e) {
-                        setTimeout(function () { try { location.reload(); } catch (e2) { } }, 200);
+                        setTimeout(function () { PortalDB.recarregarPortal(); }, 200);
                     }
                 }
                 return true;
@@ -247,6 +341,10 @@
     try {
         setTimeout(function () { checkAndClearIfVersionChanged_(true); }, 350);
     } catch (e) { }
+    // espelha as URLs /exec por página (não bloqueia nada)
+    try {
+        setTimeout(function () { PortalDB.syncPageUrls(); }, 600);
+    } catch (e) { }
     try {
         setInterval(function () { checkAndClearIfVersionChanged_(true); }, 30000);
     } catch (e) { }
@@ -259,9 +357,15 @@
             init = init || {};
             var method = (init.method || 'GET').toUpperCase();
             var url = typeof input === 'string' ? input : (input && input.url);
-            var base = execBase();
 
-            if (!url || !base || url.indexOf(base) !== 0) {
+            // Descobre qual base /exec essa chamada está usando (central OU de página)
+            var base = null;
+            var todas = basesConhecidas_();
+            for (var b = 0; b < todas.length; b++) {
+                if (url && todas[b] && url.indexOf(todas[b]) === 0) { base = todas[b]; break; }
+            }
+
+            if (!url || !base) {
                 return originalFetch(input, init);
             }
 
@@ -270,7 +374,9 @@
             var params = split.params || {};
             var node = String(path).replace(/\.json$/, '').split('/')[0];
 
-            var isCacheable = CACHE_NODES.indexOf(node) !== -1 && method === 'GET' && !params.nc;
+            // Só cacheamos os nós do "cérebro" na planilha central.
+            var ehCentral = (base === execBase());
+            var isCacheable = ehCentral && CACHE_NODES.indexOf(node) !== -1 && method === 'GET' && !params.nc;
 
             function doRealFetch() {
                 var sendParams = {};
@@ -294,7 +400,7 @@
                             }).catch(function () { });
                         } catch (e) { }
                     } else {
-                        if (CACHE_NODES.indexOf(node) !== -1 && method !== 'GET') {
+                        if (ehCentral && CACHE_NODES.indexOf(node) !== -1 && method !== 'GET') {
                             try { delete cacheStore[node]; lsSet_(LS_CACHE, cacheStore); } catch (e) { }
                         }
                     }
@@ -319,7 +425,7 @@
             }
 
             // bypass de cache (nc=1) → limpa entrada daquele nó
-            if (params.nc && CACHE_NODES.indexOf(node) !== -1) {
+            if (params.nc && ehCentral && CACHE_NODES.indexOf(node) !== -1) {
                 try { delete cacheStore[node]; lsSet_(LS_CACHE, cacheStore); } catch (e) { }
             }
 
@@ -336,7 +442,7 @@
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                         body: JSON.stringify(parsed)
                     }).then(function (r) {
-                        if (CACHE_NODES.indexOf(node) !== -1) {
+                        if (ehCentral && CACHE_NODES.indexOf(node) !== -1) {
                             try { delete cacheStore[node]; lsSet_(LS_CACHE, cacheStore); } catch (e2) { }
                         }
                         return r;
@@ -348,7 +454,7 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                     body: JSON.stringify(payload)
                 }).then(function (r) {
-                    if (CACHE_NODES.indexOf(node) !== -1) {
+                    if (ehCentral && CACHE_NODES.indexOf(node) !== -1) {
                         try { delete cacheStore[node]; lsSet_(LS_CACHE, cacheStore); } catch (e) { }
                     }
                     return r;

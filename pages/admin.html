@@ -13,44 +13,241 @@
     <script src="../js/portal-db.js"></script>
     <link rel="stylesheet" href="../style.css">
     <style>
-        body { background: transparent !important; padding: 20px; }
-        #main-content { max-width: 1200px; margin: 0 auto; width: 100%; }
-        
-        .admin-container { background: var(--bg-card); padding: 30px; border-radius: 12px; border: 1px solid var(--border-card); box-shadow: var(--shadow-card); }
+        /* =========================================================
+           PAINEL ADMIN — visual moderno (v2)
+           ========================================================= */
+        body { background: transparent !important; padding: 0; }
+        #main-content { max-width: 1280px; margin: 0 auto; width: 100%; padding: 18px 18px 60px; }
+
+        /* ---------- Cabeçalho ---------- */
+        .admin-hero {
+            position: relative; overflow: hidden;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 45%, #3483fa 100%);
+            border-radius: 18px; padding: 26px 28px; margin-bottom: 20px;
+            box-shadow: 0 14px 34px rgba(30,60,114,.28);
+        }
+        .admin-hero::after {
+            content: ''; position: absolute; right: -70px; top: -70px; width: 230px; height: 230px;
+            background: rgba(255,255,255,.10); border-radius: 50%;
+        }
+        .admin-hero h1 { color: #fff; font-size: 1.6rem; font-weight: 900; margin: 0 0 6px; letter-spacing: -.5px; }
+        .admin-hero p { color: rgba(255,255,255,.85); font-size: .9rem; margin: 0; max-width: 620px; }
+        .admin-hero-badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; position: relative; z-index: 1; }
+        .hero-badge {
+            background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.25); color: #fff;
+            padding: 7px 14px; border-radius: 999px; font-size: .78rem; font-weight: 800;
+            display: inline-flex; align-items: center; gap: 7px; backdrop-filter: blur(4px);
+        }
+
+        /* ---------- Cartões de resumo ---------- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 20px; }
+        .stat-card {
+            background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 14px;
+            padding: 16px 18px; display: flex; align-items: center; gap: 14px; transition: .25s;
+        }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.10); border-color: var(--accent-blue); }
+        .stat-ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 1.2rem; flex: 0 0 auto; }
+        .stat-val { font-size: 1.5rem; font-weight: 900; color: var(--text-title); line-height: 1; }
+        .stat-lbl { font-size: .72rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-top: 4px; }
+
+        /* ---------- Container / abas ---------- */
+        .admin-container {
+            background: var(--bg-card); padding: 0; border-radius: 18px;
+            border: 1px solid var(--border-card); box-shadow: var(--shadow-card); overflow: hidden;
+        }
+        .admin-tabs {
+            display: flex; gap: 6px; padding: 12px 14px 0; margin: 0;
+            border-bottom: 1px solid var(--border-card); flex-wrap: wrap;
+            background: linear-gradient(180deg, rgba(52,131,250,.05), transparent);
+        }
+        .admin-tab {
+            padding: 11px 16px; cursor: pointer; font-weight: 800; font-size: .85rem; color: var(--text-muted);
+            border: 1px solid transparent; border-bottom: none; border-radius: 10px 10px 0 0;
+            margin-bottom: -1px; transition: .2s; display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+        }
+        .admin-tab:hover { color: var(--text-title); background: rgba(52,131,250,.08); }
+        .admin-tab.active {
+            color: var(--accent-blue); background: var(--bg-card);
+            border-color: var(--border-card); border-bottom: 1px solid var(--bg-card);
+            box-shadow: 0 -3px 0 var(--accent-blue) inset;
+        }
+        .admin-body { padding: 26px 28px 30px; }
+
+        .section-title {
+            font-size: 1.05rem; font-weight: 900; color: var(--text-title); text-transform: uppercase;
+            letter-spacing: .4px; margin: 0 0 4px; display: flex; align-items: center; gap: 9px;
+        }
+        .section-sub { font-size: .85rem; color: var(--text-muted); margin: 0 0 18px; line-height: 1.5; }
+
         .header-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .admin-tabs { display: flex; border-bottom: 2px solid var(--border-card); margin-bottom: 20px; flex-wrap: wrap; gap: 10px;}
-        .admin-tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: var(--text-muted); border-bottom: 3px solid transparent; margin-bottom: -2px; transition: 0.3s;}
-        .admin-tab.active { color: var(--accent-blue); border-bottom: 3px solid var(--accent-blue); }
-        .admin-tab:hover { color: var(--text-title); }
-        
-        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: 0.2s; }
+
+        /* ---------- Cards ---------- */
+        .cat-card { background: var(--bg-body); border: 1px solid var(--border-card); padding: 20px; border-radius: 14px; margin-bottom: 18px; transition: .2s; }
+        .cat-card:hover { border-color: rgba(52,131,250,.45); }
         .drag-over { border: 2px dashed var(--accent-blue) !important; background: rgba(52, 131, 250, 0.05) !important; }
 
-        .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 6px; margin-bottom: 5px; align-items: center; transition: 0.2s; }
-        .sub-subitem-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; background: var(--bg-body); border: 1px dashed var(--accent-blue); border-radius: 6px; margin-left: 40px; margin-top: 5px; transition: 0.2s; }
-        
-        .subitem-row > input, .subitem-row > select, .sub-subitem-row > input, .sub-subitem-row > select { flex: 1; min-width: 100px; padding: 8px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); border-radius: 4px; font-size: 0.8rem;}
-        
-        .btn { padding: 8px 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; justify-content: center;}
-        .btn:hover { transform: translateY(-2px); }
-        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #334155; } .btn-warn { background-color: var(--accent-warn); color: #333;}
+        .subitem-row { display: flex; flex-wrap: wrap; gap: 10px; padding: 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; margin-bottom: 6px; align-items: center; transition: .2s; }
+        .subitem-row:hover { border-color: rgba(52,131,250,.5); }
+        .sub-subitem-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: var(--bg-body); border: 1px dashed var(--accent-blue); border-radius: 10px; margin-left: 40px; margin-top: 6px; transition: .2s; }
 
+        .subitem-row > input, .subitem-row > select, .sub-subitem-row > input, .sub-subitem-row > select { flex: 1; min-width: 100px; padding: 9px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); border-radius: 8px; font-size: .8rem; outline: none; }
+        .subitem-row > input:focus, .sub-subitem-row > input:focus, .subitem-row > select:focus { border-color: var(--accent-blue); }
+
+        /* ---------- Inputs padrão ---------- */
+        .inp {
+            width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border-card);
+            background: var(--bg-input); color: var(--text-main); font-size: .95rem; outline: none;
+            transition: .2s; font-family: inherit;
+        }
+        .inp:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(52,131,250,.14); }
+        .inp-label { display: block; font-size: .74rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px; }
+        .field { margin-bottom: 16px; }
+        .field-hint { font-size: .75rem; color: var(--text-muted); margin-top: 5px; line-height: 1.45; }
+        .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+
+        /* ---------- Botões ---------- */
+        .btn { padding: 10px 15px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; color: #fff; transition: .2s; font-size: .82rem; display: inline-flex; align-items: center; gap: 7px; justify-content: center; font-family: inherit; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 7px 16px rgba(0,0,0,.16); }
+        .btn:active { transform: translateY(0); }
+        .btn-blue { background-color: var(--accent-blue); } .btn-green { background-color: var(--accent-green); } .btn-red { background-color: #FF5252; } .btn-dark { background-color: #334155; } .btn-warn { background-color: var(--accent-warn); color: #333; }
+        .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border-card); }
+        .btn-ghost:hover { color: var(--accent-blue); border-color: var(--accent-blue); }
+
+        /* ---------- Tabelas ---------- */
+        .table-wrap { border: 1px solid var(--border-card); border-radius: 14px; overflow: auto; background: var(--bg-body); }
         .user-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .user-table th, .user-table td { padding: 12px; border-bottom: 1px solid var(--border-card); font-size: 0.85rem; vertical-align: top;}
-        .user-table th { color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
-        .user-table select { padding: 5px; border-radius: 4px; background: var(--bg-body); color: var(--text-main); border: 1px solid var(--border-card); outline: none;}
+        .user-table th, .user-table td { padding: 13px 14px; border-bottom: 1px solid var(--border-card); font-size: .85rem; vertical-align: middle; }
+        .user-table tbody tr:last-child td { border-bottom: none; }
+        .user-table tbody tr { transition: .15s; }
+        .user-table tbody tr:hover { background: rgba(52,131,250,.06); }
+        .user-table th { color: var(--text-muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .6px; font-weight: 900; background: var(--bg-card); position: sticky; top: 0; z-index: 1; }
+        .user-table select { padding: 7px 9px; border-radius: 8px; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); outline: none; font-family: inherit; }
         .user-table select:focus { border-color: var(--accent-blue); }
 
-        .editor-toolbar { display: flex; gap: 5px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px 8px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap; align-items: center;}
+        .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px; border-radius: 999px; font-size: .72rem; font-weight: 900; text-transform: uppercase; letter-spacing: .4px; }
+        .pill-ok { background: rgba(0,168,96,.14); color: var(--accent-green); }
+        .pill-wait { background: rgba(255,183,0,.16); color: #b07d00; }
+        .pill-off { background: rgba(255,82,82,.14); color: #FF5252; }
+        [data-theme="dark"] .pill-wait { color: var(--accent-warn); }
+
+        /* ---------- Switch ---------- */
+        .switch { position: relative; display: inline-block; width: 52px; height: 28px; flex: 0 0 auto; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .switch .slider { position: absolute; inset: 0; cursor: pointer; background: #94a3b8; border-radius: 999px; transition: .25s; }
+        .switch .slider::before { content: ''; position: absolute; height: 22px; width: 22px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .25s; box-shadow: 0 2px 5px rgba(0,0,0,.25); }
+        .switch input:checked + .slider { background: var(--accent-green); }
+        .switch input:checked + .slider::before { transform: translateX(24px); }
+
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px 16px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; margin-bottom: 10px; }
+        .toggle-row .t-title { font-weight: 800; color: var(--text-title); font-size: .9rem; }
+        .toggle-row .t-desc { font-size: .78rem; color: var(--text-muted); margin-top: 3px; }
+
+        /* ---------- Cartão de painel (editores) ---------- */
+        .panel-card {
+            background: var(--bg-body); border: 1px solid var(--border-card);
+            border-radius: 14px; padding: 22px 24px; margin-bottom: 18px;
+        }
+        .panel-card.accent { border-left: 4px solid var(--accent-blue); }
+        .card-title {
+            font-size: .95rem; font-weight: 900; color: var(--text-title);
+            margin: 0 0 16px; display: flex; align-items: center; gap: 8px;
+        }
+        .list-title {
+            font-size: .9rem; font-weight: 900; color: var(--text-title); text-transform: uppercase;
+            letter-spacing: .4px; margin: 28px 0 14px; display: flex; align-items: center; gap: 8px;
+        }
+        .editor-head { display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+        .editor-head .inp { width: auto; }
+        .editor-foot { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+        .editor-foot .btn-lg:first-child { flex: 1; min-width: 200px; }
+        .btn-lg { padding: 13px 20px; font-size: .95rem; }
+        .sql-box {
+            width: 100%; min-height: 170px; padding: 15px; border-radius: 10px;
+            border: 1px solid var(--border-card); background: #1e1e1e; color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', monospace; font-size: .88rem; line-height: 1.5;
+            margin-bottom: 16px; outline: none; white-space: pre; resize: vertical;
+        }
+        .sql-box:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(52,131,250,.14); }
+
+        /* ---------- Editor rich text ---------- */
+        .editor-toolbar { display: flex; gap: 5px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 10px 10px 0 0; border: 1px solid var(--border-card); border-bottom: none; flex-wrap: wrap; align-items: center; }
         [data-theme="light"] .editor-toolbar { background: rgba(0,0,0,0.05); }
-        .editor-toolbar .btn-dark { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); font-size: 0.95rem; padding: 6px 10px; }
-        .editor-toolbar .btn-dark:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        .editor-toolbar .btn-dark { background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border-card); font-size: .95rem; padding: 6px 10px; }
+        .editor-toolbar .btn-dark:hover { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); transform: none; }
         .editor-toolbar .btn-dark.active-btn { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
         .toolbar-divider { width: 1px; height: 24px; background: var(--border-card); margin: 0 5px; }
-        .rich-editor { min-height: 250px; max-height: 500px; overflow-y: auto; padding: 15px; border: 1px solid var(--border-card); border-radius: 0 0 8px 8px; background: var(--bg-input); color: var(--text-main); outline: none; font-size: 0.95rem; line-height: 1.5; }
+        .rich-editor { min-height: 250px; max-height: 500px; overflow-y: auto; padding: 15px; border: 1px solid var(--border-card); border-radius: 0 0 10px 10px; background: var(--bg-input); color: var(--text-main); outline: none; font-size: .95rem; line-height: 1.5; }
         .rich-editor:focus { border-color: var(--accent-blue); }
         .rich-editor img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
-        .rich-editor a { color: var(--accent-blue); text-decoration: underline; font-weight: bold;}
+        .rich-editor a { color: var(--accent-blue); text-decoration: underline; font-weight: bold; }
+
+        /* ---------- Aviso / caixas ---------- */
+        .note { padding: 13px 15px; border-radius: 12px; font-size: .84rem; line-height: 1.55; border: 1px dashed; }
+        .note-info { background: rgba(52,131,250,.08); border-color: var(--accent-blue); color: var(--text-main); }
+        .note-warn { background: rgba(255,183,0,.10); border-color: var(--accent-warn); color: var(--text-main); }
+
+        /* ---------- Planilhas por página ---------- */
+        .url-row { display: grid; grid-template-columns: minmax(180px, 240px) 1fr auto; gap: 10px; align-items: center; padding: 11px 12px; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 10px; margin-bottom: 8px; transition: .2s; }
+        .url-row:hover { border-color: rgba(52,131,250,.5); }
+        .url-row .pg-name { font-weight: 800; font-size: .82rem; color: var(--text-title); overflow: hidden; text-overflow: ellipsis; }
+        .url-row .pg-name small { display: block; font-weight: 500; color: var(--text-muted); font-size: .7rem; }
+        .url-row input { padding: 9px 11px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main); font-size: .8rem; outline: none; font-family: monospace; }
+        .url-row input:focus { border-color: var(--accent-blue); }
+        .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+        .dot-on { background: var(--accent-green); } .dot-off { background: #94a3b8; }
+
+        /* ---------- Versão / cache ---------- */
+        .ver-card {
+            background: var(--bg-body); border: 1px solid var(--border-card);
+            border-radius: 14px; padding: 18px 20px;
+        }
+        .ver-lbl { font-size: .74rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; }
+        .ver-val { font-size: 1.55rem; font-weight: 900; color: var(--text-title); margin: 7px 0 4px; word-break: break-all; }
+        .ver-hint { font-size: .76rem; color: var(--text-muted); line-height: 1.45; }
+        .ver-list { font-size: .84rem; color: var(--text-main); line-height: 1.7; margin: 0; padding-left: 20px; }
+        .ver-list li { margin-bottom: 4px; }
+
+        /* ---------- Chips e vazio ---------- */
+        .chip {
+            background: rgba(52,131,250,.12); color: var(--accent-blue); padding: 3px 10px;
+            border-radius: 999px; font-size: .7rem; font-weight: 800; display: inline-block;
+            margin: 0 5px 5px 0;
+        }
+        .chip-dark { background: rgba(100,116,139,.22); color: var(--text-main); }
+        .empty-box {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            padding: 42px 20px; border: 1px dashed var(--border-card); border-radius: 14px;
+            background: var(--bg-body); color: var(--text-muted); font-weight: 700; font-size: .88rem;
+            text-align: center;
+        }
+        .empty-box::first-line { font-size: 2rem; }
+
+        /* ---------- Toast ---------- */
+        #admin-toast {
+            position: fixed; right: 20px; bottom: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast {
+            background: var(--bg-card); border: 1px solid var(--border-card); border-left: 5px solid var(--accent-blue);
+            color: var(--text-main); padding: 13px 18px; border-radius: 10px; font-size: .85rem; font-weight: 700;
+            box-shadow: 0 12px 30px rgba(0,0,0,.22); animation: toastIn .25s ease; max-width: 340px;
+        }
+        .toast.ok { border-left-color: var(--accent-green); }
+        .toast.err { border-left-color: #FF5252; }
+        .toast.warn { border-left-color: var(--accent-warn); }
+        @keyframes toastIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+        .skeleton { background: linear-gradient(90deg, var(--border-card) 25%, var(--bg-card) 50%, var(--border-card) 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: 8px; height: 14px; }
+        @keyframes sk { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+        @media (max-width: 768px) {
+            #main-content { padding: 12px 12px 50px; }
+            .admin-hero { padding: 20px; border-radius: 14px; }
+            .admin-hero h1 { font-size: 1.25rem; }
+            .admin-body { padding: 18px 14px 24px; }
+            .admin-tabs { padding: 10px 10px 0; }
+            .admin-tab { padding: 9px 12px; font-size: .78rem; }
+            .url-row { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body data-theme="light">
@@ -62,20 +259,59 @@
     <datalist id="bq-tags-list"></datalist>
 
     <div id="main-content">
-        <div class="admin-container" id="adminPanel" style="display:none;">
-            <h2 style="margin-bottom: 20px; color: var(--text-title);">⚙️ Painel de Administração</h2>
-            
+
+        <div id="adminWrap" style="display:none;">
+
+            <!-- ===== CABEÇALHO ===== -->
+            <div class="admin-hero">
+                <h1>⚙️ Painel de Administração</h1>
+                <p>Centro de controle do Portal de Reportes: menus, usuários, mural, status, configurações do portal e as planilhas de cada página.</p>
+                <div class="admin-hero-badges">
+                    <span class="hero-badge">👤 <span id="hero-user">—</span></span>
+                    <span class="hero-badge">🏷️ Versão <span id="hero-versao">—</span></span>
+                    <span class="hero-badge">🕒 <span id="hero-hora">—</span></span>
+                </div>
+            </div>
+
+            <!-- ===== RESUMO ===== -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-ico" style="background:rgba(52,131,250,.14); color:var(--accent-blue);">👥</div>
+                    <div><div class="stat-val" id="stat-users">—</div><div class="stat-lbl">Usuários</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-ico" style="background:rgba(255,183,0,.16); color:#b07d00;">⏳</div>
+                    <div><div class="stat-val" id="stat-pendentes">—</div><div class="stat-lbl">Aguardando aprovação</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-ico" style="background:rgba(0,168,96,.14); color:var(--accent-green);">📂</div>
+                    <div><div class="stat-val" id="stat-cats">—</div><div class="stat-lbl">Categorias no menu</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-ico" style="background:rgba(147,51,234,.14); color:#9333ea;">🗂️</div>
+                    <div><div class="stat-val" id="stat-paginas">—</div><div class="stat-lbl">Páginas do portal</div></div>
+                </div>
+            </div>
+
+        <div class="admin-container" id="adminPanel">
+
             <div class="admin-tabs">
-                <div class="admin-tab active" onclick="switchAdminTab('menus', this)">Gestão de Menus</div>
-                <div class="admin-tab" onclick="switchAdminTab('users', this)">Gestão de Usuários</div>
-                <div class="admin-tab" onclick="switchAdminTab('news', this)">Mural de Notícias</div>
-                <div class="admin-tab" onclick="switchAdminTab('status', this)">Gestão de Status</div>
-                <div class="admin-tab" onclick="switchAdminTab('bigquery', this)">Biblioteca BigQuery</div>
+                <div class="admin-tab active" onclick="switchAdminTab('menus', this)">🧭 Menus</div>
+                <div class="admin-tab" onclick="switchAdminTab('users', this)">👥 Usuários</div>
+                <div class="admin-tab" onclick="switchAdminTab('news', this)">📰 Mural</div>
+                <div class="admin-tab" onclick="switchAdminTab('status', this)">📊 Status</div>
+                <div class="admin-tab" onclick="switchAdminTab('bigquery', this)">💻 BigQuery</div>
+                <div class="admin-tab" onclick="switchAdminTab('portal', this)">🎛️ Configurações do Portal</div>
+                <div class="admin-tab" onclick="switchAdminTab('planilhas', this)">🔗 Planilhas por Página</div>
                 <div class="admin-tab" onclick="switchAdminTab('versao', this)">🔄 Versão / Cache</div>
             </div>
 
+            <div class="admin-body">
+
             <!-- ABA DE MENUS -->
             <div id="tab-menus">
+                <h3 class="section-title">🧭 Gestão de Menus</h3>
+                <p class="section-sub">Monte a navegação do portal: categorias, itens e sub-itens, com controle de permissão por cargo. Arraste para reordenar.</p>
                 <div class="header-actions">
                     <button class="btn btn-blue" onclick="salvarNaNuvem()">💾 Salvar na Nuvem</button>
                     <button class="btn btn-dark" onclick="baixarJSON()">⬇️ Baixar .json</button>
@@ -91,37 +327,50 @@
 
             <!-- ABA DE USUÁRIOS -->
             <div id="tab-users" style="display:none;">
-                <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos diretamente na planilha (banco de dados).</p>
+                <h3 class="section-title">👥 Gestão de Usuários</h3>
+                <p class="section-sub">Aprove acessos, altere cargos e redefina senhas. Tudo é gravado direto na planilha (banco de dados).</p>
 
-                <!-- ✅ Configuração: necessidade de aprovação de novos registros -->
-                <div class="cat-card" style="padding: 18px; margin-bottom: 20px;">
-                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
-                        <div style="flex: 1; min-width: 220px;">
-                            <div style="font-weight: 900; color: var(--text-title); font-size: 0.95rem; margin-bottom: 4px;">🛂 Aprovação de novos registros</div>
-                            <div style="font-size: 0.8rem; color: var(--text-muted);">
-                                <span id="aprovacao-label">Carregando…</span>
-                            </div>
-                        </div>
-                        <button class="btn" id="btn-toggle-aprovacao" onclick="toggleAprovacao()" style="font-size: 0.9rem; padding: 10px 18px;">…</button>
+                <!-- Configuração: necessidade de aprovação de novos registros -->
+                <div class="toggle-row" style="margin-bottom:18px; padding:16px 18px;">
+                    <div style="flex:1; min-width:220px;">
+                        <div class="t-title">🛂 Aprovação de novos registros</div>
+                        <div class="t-desc"><span id="aprovacao-label">Carregando…</span></div>
                     </div>
+                    <label class="switch" title="Ativar/desativar aprovação manual">
+                        <input type="checkbox" id="chk-aprovacao" onchange="toggleAprovacao()">
+                        <span class="slider"></span>
+                    </label>
                 </div>
 
-                <div style="overflow-x: auto;">
+                <div class="header-actions">
+                    <input type="text" class="inp" id="filtro-usuarios" placeholder="🔎 Buscar por nome ou e-mail…" style="max-width:300px;" oninput="renderUserTable()">
+                    <select class="inp" id="filtro-status-user" style="max-width:200px;" onchange="renderUserTable()">
+                        <option value="">Todos os status</option>
+                        <option value="pendente">Somente pendentes</option>
+                        <option value="aprovado">Somente aprovados</option>
+                        <option value="bloqueado">Somente bloqueados</option>
+                    </select>
+                    <button class="btn btn-ghost" onclick="fetchUsers()">🔄 Recarregar</button>
+                </div>
+
+                <div class="table-wrap">
                     <table class="user-table">
-                        <thead><tr><th>Usuário</th><th>E-mail</th><th>Status</th><th>Cargo</th><th>Ação</th></tr></thead>
-                        <tbody id="users-tbody"><tr><td colspan="5" style="text-align:center;">Carregando usuários...</td></tr></tbody>
+                        <thead><tr><th>Usuário</th><th>E-mail</th><th>Situação</th><th>Status</th><th>Cargo</th><th>Ações</th></tr></thead>
+                        <tbody id="users-tbody"><tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">Carregando usuários...</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
             <!-- ABA DE NOTÍCIAS -->
             <div id="tab-news" style="display:none;">
-                <div class="cat-card" style="padding: 25px;" id="news-editor-box">
-                    <h3 id="news-editor-title" style="color: var(--text-title); margin-bottom: 15px; font-weight: 900; text-transform: uppercase;">Criar Nova Publicação</h3>
+                <h3 class="section-title">📰 Mural de Notícias</h3>
+                <p class="section-sub">Publicações que aparecem na coluna central da Home, com tags e curtidas.</p>
+                <div class="panel-card" id="news-editor-box">
+                    <h4 class="card-title" id="news-editor-title">✍️ Criar nova publicação</h4>
                     
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-                        <input type="text" id="news-title" placeholder="Título da Notícia..." style="flex: 2; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
-                        <input type="text" id="news-tag" list="news-tags-list" placeholder="Tags (Use vírgula: Atualização, Aviso)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                    <div class="editor-head">
+                        <input type="text" class="inp" id="news-title" placeholder="Título da notícia…" style="flex:2; min-width:250px;">
+                        <input type="text" class="inp" id="news-tag" list="news-tags-list" placeholder="Tags (separadas por vírgula: Atualização, Aviso)" style="flex:1; min-width:170px;">
                     </div>
                     
                     <div class="editor-toolbar">
@@ -144,43 +393,44 @@
                     </div>
                     <div id="news-body" contenteditable="true" class="rich-editor"></div>
                     
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button class="btn btn-blue" id="btn-publicar" style="flex: 1; padding: 14px; font-size: 1.05rem;" onclick="publicarNoticia()">🚀 Publicar no Mural</button>
-                        <button class="btn btn-dark" id="btn-cancelar-edicao" style="display: none; padding: 14px;" onclick="cancelarEdicao()">✖ Cancelar Edição</button>
+                    <div class="editor-foot">
+                        <button class="btn btn-blue btn-lg" id="btn-publicar" onclick="publicarNoticia()">🚀 Publicar no Mural</button>
+                        <button class="btn btn-ghost btn-lg" id="btn-cancelar-edicao" style="display:none;" onclick="cancelarEdicao()">✖ Cancelar edição</button>
                     </div>
                 </div>
                 
-                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-title); font-weight: 900; text-transform: uppercase;">Publicações Anteriores</h3>
+                <h4 class="list-title">🗂️ Publicações anteriores</h4>
                 <div id="news-list-admin" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
 
             <!-- ABA DE STATUS DOS REPORTES -->
             <div id="tab-status" style="display:none;">
-                <p style="color: var(--text-muted); margin-bottom: 15px;">Crie relatórios com o indicativo (ON/OFF) para a central de status do menu.</p>
+                <h3 class="section-title">📊 Gestão de Status</h3>
+                <p class="section-sub">Crie relatórios com o indicativo (ON/OFF) exibidos na central de status do menu superior.</p>
                 
                 <div class="header-actions">
                     <button class="btn btn-blue" onclick="criarExemplosDeStatus()">📝 Criar Exemplos Automáticos</button>
                     <button class="btn btn-green" onclick="abrirEditorDeStatus()">+ Adicionar Novo Reporte</button>
                 </div>
 
-                <div class="cat-card" id="status-editor-container" style="display:none; padding: 25px; border-left: 4px solid var(--accent-blue);">
-                    <h3 id="status-editor-title" style="color: var(--text-title); margin-bottom: 15px;">Novo Reporte (Status)</h3>
+                <div class="panel-card accent" id="status-editor-container" style="display:none;">
+                    <h4 class="card-title" id="status-editor-title">✍️ Novo reporte (status)</h4>
                     <input type="hidden" id="status-key">
                     
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-                        <select id="status-icon" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem;"></select>
-                        <input type="text" id="status-nome" placeholder="Nome do Reporte (Ex: Controle de Avarias)" style="flex: 2; padding: 10px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
-                        <select id="status-estado" style="padding: 10px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem;">
+                    <div class="editor-head">
+                        <select class="inp" id="status-icon" style="width:auto; min-width:90px;"></select>
+                        <input type="text" class="inp" id="status-nome" placeholder="Nome do reporte (ex: Controle de Avarias)" style="flex:2; min-width:220px;">
+                        <select class="inp" id="status-estado" style="width:auto; min-width:220px;">
                             <option value="on">✅ ON (Operacional)</option>
                             <option value="off">🛑 OFF (Com falhas/Manutenção)</option>
                         </select>
                     </div>
                     
-                    <textarea id="status-desc" placeholder="Breve descrição da última atualização (Ex: Script rodou com sucesso às 14h, ou Planilha travada...)" style="width: 100%; min-height: 80px; padding: 10px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 0.95rem; margin-bottom: 10px; outline: none;"></textarea>
+                    <textarea class="inp" id="status-desc" placeholder="Breve descrição da última atualização (ex: script rodou com sucesso às 14h, ou planilha travada…)" style="min-height:90px; resize:vertical; margin-bottom:12px;"></textarea>
                     
                     <div style="display: flex; gap: 10px;">
                         <button class="btn btn-green" id="btn-salvar-status" onclick="salvarStatus()">💾 Salvar Status</button>
-                        <button class="btn btn-dark" onclick="cancelarEdicaoStatus()">✖ Cancelar</button>
+                        <button class="btn btn-ghost" onclick="cancelarEdicaoStatus()">✖ Cancelar</button>
                     </div>
                 </div>
 
@@ -189,21 +439,23 @@
 
             <!-- ABA DE BIBLIOTECA BIGQUERY -->
             <div id="tab-bigquery" style="display:none;">
-                <div class="cat-card" style="padding: 25px;" id="bq-editor-box">
-                    <h3 id="bq-editor-title" style="color: var(--text-title); margin-bottom: 15px; font-weight: 900; text-transform: uppercase;">Adicionar Script BigQuery</h3>
+                <h3 class="section-title">💻 Biblioteca BigQuery</h3>
+                <p class="section-sub">Catálogo de queries SQL da operação, com categoria, tags e documentação.</p>
+                <div class="panel-card" id="bq-editor-box">
+                    <h4 class="card-title" id="bq-editor-title">✍️ Adicionar script BigQuery</h4>
                     
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
-                        <input type="text" id="bq-title" placeholder="Nome da Query (Ex: Base de Avarias Diárias)" style="flex: 2; min-width: 250px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
-                        <input type="text" id="bq-category" list="bq-cat-list" placeholder="Categoria (Ex: Inventário)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
-                        <input type="text" id="bq-tags" list="bq-tags-list" placeholder="Tags (Ex: sql, auditoria, base)" style="flex: 1; min-width: 150px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 1rem; outline: none;">
+                    <div class="editor-head">
+                        <input type="text" class="inp" id="bq-title" placeholder="Nome da query (ex: Base de Avarias Diárias)" style="flex:2; min-width:250px;">
+                        <input type="text" class="inp" id="bq-category" list="bq-cat-list" placeholder="Categoria (ex: Inventário)" style="flex:1; min-width:160px;">
+                        <input type="text" class="inp" id="bq-tags" list="bq-tags-list" placeholder="Tags (ex: sql, auditoria, base)" style="flex:1; min-width:160px;">
                     </div>
                     
-                    <textarea id="bq-desc" placeholder="Breve descrição sobre o que essa query faz (Para facilitar na barra de busca)..." style="width: 100%; min-height: 60px; padding: 12px; border-radius: 8px; border: 1px solid var(--border-card); background: var(--bg-input); color: var(--text-main); font-size: 0.95rem; margin-bottom: 15px; outline: none;"></textarea>
+                    <textarea class="inp" id="bq-desc" placeholder="Breve descrição do que essa query faz (ajuda na barra de busca)…" style="min-height:70px; resize:vertical; margin-bottom:16px;"></textarea>
 
-                    <h4 style="margin-bottom: 5px; color: var(--text-title);">💻 Código SQL</h4>
-                    <textarea id="bq-sql-code" placeholder="Cole o código SQL aqui. Ele será formatado automaticamente no portal com um botão de Copiar." style="width: 100%; min-height: 150px; padding: 15px; border-radius: 8px; border: 1px solid var(--border-card); background: #1e1e1e; color: #d4d4d4; font-family: monospace; font-size: 0.9rem; margin-bottom: 15px; outline: none; white-space: pre;"></textarea>
+                    <label class="inp-label" style="margin-top:4px;">💻 Código SQL</label>
+                    <textarea id="bq-sql-code" class="sql-box" placeholder="Cole o código SQL aqui. Ele será formatado no portal com um botão de Copiar."></textarea>
 
-                    <h4 style="margin-bottom: 5px; color: var(--text-title);">📄 Documentação / Como Usar (Opcional)</h4>
+                    <label class="inp-label" style="margin-top:4px;">📄 Documentação / como usar (opcional)</label>
                     <div class="editor-toolbar">
                         <button class="btn btn-dark" onclick="formatText('bold', 'bq-body')" title="Negrito"><b>B</b></button>
                         <button class="btn btn-dark" onclick="formatText('italic', 'bq-body')" title="Itálico"><i>I</i></button>
@@ -222,70 +474,454 @@
                     </div>
                     <div id="bq-body" contenteditable="true" class="rich-editor"></div>
                     
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button class="btn btn-blue" id="btn-publicar-bq" style="flex: 1; padding: 14px; font-size: 1.05rem;" onclick="publicarBQ()">💾 Salvar Query na Biblioteca</button>
-                        <button class="btn btn-dark" id="btn-cancelar-edicao-bq" style="display: none; padding: 14px;" onclick="cancelarEdicaoBQ()">✖ Cancelar Edição</button>
+                    <div class="editor-foot">
+                        <button class="btn btn-blue btn-lg" id="btn-publicar-bq" onclick="publicarBQ()">💾 Salvar query na biblioteca</button>
+                        <button class="btn btn-ghost btn-lg" id="btn-cancelar-edicao-bq" style="display:none;" onclick="cancelarEdicaoBQ()">✖ Cancelar edição</button>
                     </div>
                 </div>
                 
-                <h3 style="margin-top: 30px; margin-bottom: 15px; color: var(--text-title); font-weight: 900; text-transform: uppercase;">Queries Salvas</h3>
+                <h4 class="list-title">🗂️ Queries salvas</h4>
                 <div id="bq-list-admin" style="display: flex; flex-direction: column; gap: 10px;"></div>
+            </div>
+
+            <!-- ================= ABA: CONFIGURAÇÕES DO PORTAL ================= -->
+            <div id="tab-portal" style="display:none;">
+                <h3 class="section-title">🎛️ Configurações do Portal</h3>
+                <p class="section-sub">Tudo aqui é salvo na planilha (aba <b>_Config</b>) e aplicado na <b>Home</b> e no portal para todos os usuários, sem precisar mexer no código.</p>
+
+                <div class="grid-2">
+                    <!-- Identidade -->
+                    <div class="cat-card">
+                        <h4 class="section-title" style="font-size:.92rem; margin-bottom:14px;">🏷️ Identidade</h4>
+                        <div class="field">
+                            <label class="inp-label" for="cfg-portal-titulo">Título exibido na Home</label>
+                            <input type="text" class="inp" id="cfg-portal-titulo" placeholder="Portal de Reportes">
+                            <div class="field-hint">Aparece no topo da coluna central da Home.</div>
+                        </div>
+                        <div class="field">
+                            <label class="inp-label" for="cfg-home-banner">Banner da Home (URL da imagem)</label>
+                            <input type="text" class="inp" id="cfg-home-banner" placeholder="https://... (deixe vazio para não exibir)">
+                            <div class="field-hint">Imagem larga exibida acima das notícias. Vazio = sem banner.</div>
+                        </div>
+                    </div>
+
+                    <!-- Blocos da Home -->
+                    <div class="cat-card">
+                        <h4 class="section-title" style="font-size:.92rem; margin-bottom:14px;">🧩 Blocos da Home</h4>
+                        <div class="toggle-row">
+                            <div><div class="t-title">📡 Radar de Atividades</div><div class="t-desc">Coluna esquerda com os últimos logs.</div></div>
+                            <label class="switch"><input type="checkbox" id="cfg-home-radar" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div><div class="t-title">👥 Equipe / Presença</div><div class="t-desc">Coluna direita com quem está online.</div></div>
+                            <label class="switch"><input type="checkbox" id="cfg-home-equipe" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row">
+                            <div><div class="t-title">🏷️ Filtro de Tags</div><div class="t-desc">Caixa de tags para filtrar as notícias.</div></div>
+                            <label class="switch"><input type="checkbox" id="cfg-home-tags" checked><span class="slider"></span></label>
+                        </div>
+                        <div class="toggle-row" style="margin-bottom:0;">
+                            <div><div class="t-title">🔔 Notificações</div><div class="t-desc">Avisa quando sai notícia ou status novo.</div></div>
+                            <label class="switch"><input type="checkbox" id="cfg-notificacoes" checked><span class="slider"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Desempenho -->
+                    <div class="cat-card">
+                        <h4 class="section-title" style="font-size:.92rem; margin-bottom:14px;">⚡ Atualização e Limites</h4>
+                        <div class="field">
+                            <label class="inp-label" for="cfg-home-intervalo">Intervalo de atualização da Home (segundos)</label>
+                            <input type="number" class="inp" id="cfg-home-intervalo" min="10" step="5" placeholder="30">
+                            <div class="field-hint">Mínimo 10s. Valores altos reduzem o consumo da planilha (recomendado: 30 a 60).</div>
+                        </div>
+                        <div class="field" style="margin-bottom:0;">
+                            <label class="inp-label" for="cfg-home-maxnews">Máximo de notícias exibidas</label>
+                            <input type="number" class="inp" id="cfg-home-maxnews" min="0" step="1" placeholder="0 = todas">
+                            <div class="field-hint">0 (zero) mostra todas as notícias publicadas.</div>
+                        </div>
+                    </div>
+
+                    <!-- Manutenção -->
+                    <div class="cat-card">
+                        <h4 class="section-title" style="font-size:.92rem; margin-bottom:14px;">🚧 Aviso de Manutenção</h4>
+                        <div class="toggle-row">
+                            <div><div class="t-title">Exibir faixa de aviso na Home</div><div class="t-desc">Fica no topo, visível para todos.</div></div>
+                            <label class="switch"><input type="checkbox" id="cfg-manutencao"><span class="slider"></span></label>
+                        </div>
+                        <div class="field" style="margin-bottom:0;">
+                            <label class="inp-label" for="cfg-manutencao-msg">Mensagem do aviso</label>
+                            <textarea class="inp" id="cfg-manutencao-msg" rows="3" placeholder="Ex: Portal em manutenção das 22h às 23h. Os dados podem demorar a atualizar."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="header-actions" style="margin-top:6px;">
+                    <button class="btn btn-blue" onclick="salvarConfigPortal()">💾 Salvar Configurações</button>
+                    <button class="btn btn-ghost" onclick="carregarConfigPortalAdmin()">🔄 Recarregar</button>
+                </div>
+                <div id="portal-cfg-log" style="font-size:.85rem; color:var(--text-muted);"></div>
+            </div>
+
+            <!-- ================= ABA: PLANILHAS POR PÁGINA ================= -->
+            <div id="tab-planilhas" style="display:none;">
+                <h3 class="section-title">🔗 Planilhas por Página</h3>
+                <p class="section-sub">
+                    Cada página do portal pode usar a <b>planilha dela</b>. Cole abaixo a URL <code>/exec</code> do Apps Script publicado
+                    daquela planilha. Páginas sem URL continuam usando a <b>planilha central</b> (a do cérebro: menu, usuários, notícias…).
+                </p>
+
+                <div class="cat-card">
+                    <div class="field" style="margin-bottom:10px;">
+                        <label class="inp-label">Planilha central (cérebro do portal)</label>
+                        <input type="text" class="inp" id="cfg-url-central" readonly style="font-family:monospace; font-size:.8rem; opacity:.85;">
+                        <div class="field-hint">Definida em <code>js/portal-db.js → PortalDB.URL</code>. Usada por menu, login, usuários, mural, status e logs.</div>
+                    </div>
+                    <div class="note note-info">
+                        <b>Formato aceito:</b> <code>https://script.google.com/macros/s/AKfy.../exec</code> — implante como <b>Aplicativo da Web</b> com acesso <b>“Qualquer pessoa”</b>.
+                        Depois de salvar, use <b>Versão / Cache</b> para todos receberem a mudança na hora.
+                    </div>
+                </div>
+
+                <div class="header-actions">
+                    <input type="text" class="inp" id="filtro-paginas" placeholder="🔎 Filtrar página…" style="max-width:280px;" oninput="renderPaginasUrls()">
+                    <button class="btn btn-blue" onclick="salvarUrlsPaginas()">💾 Salvar URLs</button>
+                    <button class="btn btn-ghost" onclick="carregarUrlsPaginas()">🔄 Recarregar</button>
+                    <button class="btn btn-ghost" onclick="limparUrlsVazias()">🧹 Limpar campos</button>
+                </div>
+
+                <div id="paginas-urls-container"></div>
+                <div id="urls-log" style="margin-top:12px; font-size:.85rem; color:var(--text-muted);"></div>
             </div>
 
             <!-- ABA DE VERSÃO / CACHE GLOBAL -->
             <div id="tab-versao" style="display:none;">
-                <div class="cat-card" style="padding: 25px;">
-                    <h3 style="color:var(--text-title); margin-bottom:15px;">🔄 Controle de Versão e Cache Global</h3>
-                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">
-                        Mude a versão abaixo para forçar todos os navegadores a limparem o cache (visual e dados). Só o login, avatar e tema são mantidos. Use isso quando mudar algo visual que não aparece para os outros.
-                    </p>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
-                        <div style="background:var(--bg-body); padding:12px; border-radius:8px; border:1px solid var(--border-card);">
-                            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Versão no Servidor (planilha)</div>
-                            <div id="versao-servidor" style="font-size:1.2rem; font-weight:900; color:var(--text-title); margin-top:5px;">Carregando…</div>
-                        </div>
-                        <div style="background:var(--bg-body); padding:12px; border-radius:8px; border:1px solid var(--border-card);">
-                            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Versão Local (seu navegador)</div>
-                            <div id="versao-local" style="font-size:1.2rem; font-weight:900; color:var(--text-title); margin-top:5px;">Carregando…</div>
-                        </div>
+                <h3 class="section-title">🔄 Versão e Cache Global</h3>
+                <p class="section-sub">Publicou uma mudança e ela não aparece para os outros? Suba a versão aqui: <b>todas as páginas</b> do portal limpam o cache sozinhas na próxima visita, mantendo o login.</p>
+
+                <div class="grid-2" style="margin-bottom:18px;">
+                    <div class="ver-card">
+                        <div class="ver-lbl">☁️ Versão no servidor (planilha)</div>
+                        <div class="ver-val" id="versao-servidor">Carregando…</div>
+                        <div class="ver-hint">É esta que manda em todo mundo.</div>
                     </div>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:15px;">
-                        <input type="text" id="input-nova-versao" placeholder="Ex: 12, v2, 2026-08-15-01" style="flex:1; min-width:200px; padding:12px; border-radius:8px; border:1px solid var(--border-card); background:var(--bg-input); color:var(--text-main); font-size:1rem; outline:none;">
-                        <button class="btn btn-blue" onclick="salvarNovaVersao()">💾 Salvar Nova Versão e Limpar Cache Global</button>
+                    <div class="ver-card">
+                        <div class="ver-lbl">💻 Versão local (seu navegador)</div>
+                        <div class="ver-val" id="versao-local">Carregando…</div>
+                        <div class="ver-hint">Se for diferente da do servidor, seu cache é limpo automaticamente.</div>
                     </div>
-                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                        <button class="btn btn-dark" onclick="carregarVersaoInfo()">🔄 Atualizar leitura</button>
-                        <button class="btn btn-warn" onclick="limparMeuCache()">🧹 Limpar Meu Cache (manter login)</button>
-                        <button class="btn btn-dark" onclick="incrementarVersaoAuto()">⚡ Gerar versão automática (timestamp)</button>
-                    </div>
-                    <div id="versao-log" style="margin-top:15px; font-size:0.85rem; color:var(--text-muted);"></div>
                 </div>
-                <div class="cat-card" style="padding:20px;">
-                    <h4 style="margin-bottom:10px;">O que é limpo?</h4>
-                    <ul style="font-size:0.85rem; color:var(--text-main); line-height:1.5; margin-left:20px;">
-                        <li>Todo o cache de dados (menu, usuários, notícias, status, logs, cargos…)</li>
-                        <li>Cache visual de páginas e preferências temporárias</li>
-                        <li><b>NÃO limpa:</b> login, avatar, tema (claro/escuro)</li>
-                        <li>Ao mudar a versão, na próxima visita de cada usuário o navegador detecta e limpa sozinho, depois recarrega.</li>
-                    </ul>
-                    <div style="margin-top:15px; padding:12px; background:rgba(52,131,250,0.08); border:1px dashed var(--accent-blue); border-radius:8px; font-size:0.85rem;">
-                        <b>Como usar:</b> Depois de fazer alterações visuais grandes (CSS, JS, menu), gere uma nova versão em <b>⚡ Gerar versão automática</b> e clique em <b>Salvar Nova Versão</b>. Todos os usuários terão o cache limpo na próxima vez que abrirem o portal, sem precisar deslogar.
+
+                <div class="panel-card">
+                    <h4 class="card-title">🚀 Publicar nova versão</h4>
+                    <div class="header-actions" style="margin-bottom:12px;">
+                        <input type="text" class="inp" id="input-nova-versao" placeholder="Ex: 2, v12, 2026-08-15-01" style="flex:1; min-width:220px;">
+                        <button class="btn btn-blue" onclick="salvarNovaVersao()">💾 Salvar e limpar cache global</button>
+                        <button class="btn btn-ghost" onclick="incrementarVersaoAuto()">⚡ Gerar automática</button>
+                    </div>
+                    <div class="header-actions" style="margin-bottom:0;">
+                        <button class="btn btn-ghost" onclick="carregarVersaoInfo()">🔄 Atualizar leitura</button>
+                        <button class="btn btn-warn" onclick="limparMeuCache()">🧹 Limpar só o meu cache</button>
+                    </div>
+                    <div id="versao-log" class="field-hint" style="margin-top:14px;"></div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="panel-card" style="margin-bottom:0;">
+                        <h4 class="card-title">🧹 O que é limpo</h4>
+                        <ul class="ver-list">
+                            <li>Todo o cache de dados (menu, usuários, notícias, status, logs, cargos…)</li>
+                            <li>Cache visual das páginas e preferências temporárias</li>
+                            <li>URLs de planilhas em cache (são recarregadas da planilha central)</li>
+                        </ul>
+                        <div class="note note-info" style="margin-top:12px;">
+                            <b>Nunca é apagado:</b> login, avatar e o tema claro/escuro.
+                        </div>
+                    </div>
+                    <div class="panel-card" style="margin-bottom:0;">
+                        <h4 class="card-title">📖 Como usar</h4>
+                        <ul class="ver-list">
+                            <li>Fez mudanças em CSS, JS, menu ou numa página? Clique em <b>⚡ Gerar automática</b>.</li>
+                            <li>Depois em <b>💾 Salvar e limpar cache global</b>.</li>
+                            <li>Cada usuário detecta a nova versão em até <b>30 segundos</b> (ou ao abrir o portal), limpa o cache e recarrega sozinho — <b>sem deslogar</b>.</li>
+                        </ul>
+                        <div class="note note-warn" style="margin-top:12px;">
+                            Use com moderação: cada troca de versão faz todos recarregarem e refazerem as consultas na planilha.
+                        </div>
                     </div>
                 </div>
             </div>
 
+            </div><!-- /.admin-body -->
+        </div><!-- /.admin-container -->
+        </div><!-- /#adminWrap -->
+
+        <div id="admin-toast"></div>
+
+        <div id="acessoNegado" style="display:none;">
+            <div class="admin-container" style="max-width:520px; margin:40px auto; text-align:center;">
+                <div class="admin-body">
+                    <div style="font-size:3rem; margin-bottom:10px;">🛑</div>
+                    <h2 style="color:#FF5252; margin:0 0 8px; font-weight:900;">Acesso Restrito</h2>
+                    <p style="color:var(--text-muted); font-size:.92rem; margin:0 0 18px; line-height:1.55;">
+                        Esta área é exclusiva para administradores do portal.<br>Faça login com um usuário de cargo <b>admin</b> para continuar.
+                    </p>
+                    <button class="btn btn-blue" onclick="(window.parent&&window.parent.abrirAuthModal)?window.parent.abrirAuthModal():alert('Abra o portal e faça login.')">🔐 Fazer Login</button>
+                </div>
+            </div>
         </div>
-        
-        <div id="acessoNegado" style="display:none; text-align:center; padding: 50px;"><h2 style="color: #FF5252;">Acesso Negado 🛑</h2><p>Faça login com cargo de 'admin'.</p></div>
     </div>
 
     <script>
-        const FIREBASE_URL = window.PortalDB.baseAtiva(); // 100% planilha Google Sheets
+        // O Admin sempre fala com a planilha CENTRAL do portal (usuários, menus, notícias, config),
+        // nunca com a planilha específica de uma página.
+        const FIREBASE_URL = window.PortalDB.baseCentral();
         const ICONES_LOGISTICA = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑", "↳"];
         
         let adMenuData = { categorias: [] }; 
         let allUsers = [];
         let cargosOptions = []; // catálogo dinâmico de cargos (reconhece cargos novos)
+
+        // ==========================================================
+        // PÁGINAS DO PORTAL (para a aba "Planilhas por Página")
+        // Cada uma pode apontar para uma planilha /exec diferente.
+        // ==========================================================
+        const PAGINAS_PORTAL = [
+            { arquivo: 'pages/aderencia.html',              nome: 'Aderência' },
+            { arquivo: 'pages/aderencia2.html',             nome: 'Aderência 2' },
+            { arquivo: 'pages/aduana.html',                 nome: 'Aduana' },
+            { arquivo: 'pages/aging-devolucao.html',        nome: 'Aging de Devolução' },
+            { arquivo: 'pages/avarias-diario.html',         nome: 'Avarias — Diário' },
+            { arquivo: 'pages/bigquery.html',               nome: 'Biblioteca BigQuery' },
+            { arquivo: 'pages/bpp.html',                    nome: 'BPP' },
+            { arquivo: 'pages/cadastro_celulares.html',     nome: 'Cadastro de Celulares' },
+            { arquivo: 'pages/contagem_insumos.html',       nome: 'Contagem de Insumos' },
+            { arquivo: 'pages/emails_tratativas.html',      nome: 'E-mails / Tratativas' },
+            { arquivo: 'pages/equipamentos.html',           nome: 'Equipamentos' },
+            { arquivo: 'pages/expedir_devolucao.html',      nome: 'Expedir Devolução' },
+            { arquivo: 'pages/home.html',                   nome: 'Home (página inicial)' },
+            { arquivo: 'pages/insumos.html',                nome: 'Insumos' },
+            { arquivo: 'pages/parado_percurso.html',        nome: 'Parado em Percurso' },
+            { arquivo: 'pages/pendencias_cftv.html',        nome: 'Pendências CFTV' },
+            { arquivo: 'pages/pendentes_inventariov2.html', nome: 'Pendentes de Inventário v2' },
+            { arquivo: 'pages/perfil.html',                 nome: 'Perfil do Usuário' },
+            { arquivo: 'pages/poka-avaria.html',            nome: 'Poka Yoke — Avaria' },
+            { arquivo: 'pages/salvados_procurar.html',      nome: 'Salvados — Procurar' },
+            { arquivo: 'pages/salvados_procurarv2.html',    nome: 'Salvados — Procurar v2' },
+            { arquivo: 'pages/salvados_procurarv3.html',    nome: 'Salvados — Procurar v3' },
+            { arquivo: 'pages/salvados_recuperados.html',   nome: 'Salvados — Recuperados' }
+        ];
+
+        // ==========================================================
+        // HELPERS DE CONFIG (nó `config` = aba _Config da planilha)
+        // ==========================================================
+        async function lerConfig(chave) {
+            try {
+                const res = await fetch(`${FIREBASE_URL}config/${encodeURIComponent(chave)}.json?nc=1&_=${Date.now()}`);
+                let v = await res.json();
+                if (v && typeof v === 'object') v = (v.valor !== undefined ? v.valor : '');
+                return (v === null || v === undefined) ? '' : String(v);
+            } catch(e) { return ''; }
+        }
+
+        async function lerConfigTudo() {
+            try {
+                const res = await fetch(`${FIREBASE_URL}config.json?nc=1&_=${Date.now()}`);
+                const data = await res.json();
+                const out = {};
+                if (data && typeof data === 'object') {
+                    Object.keys(data).forEach(k => {
+                        let v = data[k];
+                        if (v && typeof v === 'object') v = (v.valor !== undefined ? v.valor : '');
+                        out[k] = (v === null || v === undefined) ? '' : String(v);
+                    });
+                }
+                return out;
+            } catch(e) { return {}; }
+        }
+
+        // Codifica a chave preservando as barras: o Apps Script trata tudo depois
+        // de "config/" como a chave (ex.: url_pages/insumos.html). Se a barra for
+        // escapada para %2F, a chave é gravada errada e nunca mais é lida de volta.
+        function chaveConfigParaPath(chave) {
+            return String(chave).split('/').map(encodeURIComponent).join('/');
+        }
+
+        async function salvarConfig(chave, valor) {
+            await fetch(`${FIREBASE_URL}config/${chaveConfigParaPath(chave)}.json?nc=1`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(String(valor === null || valor === undefined ? '' : valor))
+            });
+        }
+
+        // ==========================================================
+        // ABA: CONFIGURAÇÕES DO PORTAL
+        // ==========================================================
+        function cfgBool(v) {
+            const s = String(v === null || v === undefined ? '' : v).trim().toLowerCase();
+            return ['1','true','sim','on','ativo','yes','y','x'].indexOf(s) !== -1;
+        }
+
+        async function carregarConfigPortalAdmin() {
+            const log = document.getElementById('portal-cfg-log');
+            if (log) log.textContent = 'Lendo configurações da planilha…';
+            const cfg = await lerConfigTudo();
+            const val = (k, padrao) => (cfg[k] !== undefined && cfg[k] !== '' ? cfg[k] : padrao);
+            const bool = (k, padrao) => (cfg[k] === undefined || cfg[k] === '' ? padrao : cfgBool(cfg[k]));
+
+            document.getElementById('cfg-portal-titulo').value  = val('portal_titulo', '');
+            document.getElementById('cfg-home-banner').value    = val('home_banner', '');
+            document.getElementById('cfg-home-intervalo').value = val('home_intervalo_seg', '30');
+            document.getElementById('cfg-home-maxnews').value   = val('home_max_noticias', '0');
+            document.getElementById('cfg-manutencao-msg').value = val('manutencao_msg', '');
+
+            document.getElementById('cfg-home-radar').checked   = bool('home_mostrar_radar', true);
+            document.getElementById('cfg-home-equipe').checked  = bool('home_mostrar_equipe', true);
+            document.getElementById('cfg-home-tags').checked    = bool('home_mostrar_tags', true);
+            document.getElementById('cfg-notificacoes').checked = bool('notificacoes_ativas', true);
+            document.getElementById('cfg-manutencao').checked   = bool('manutencao_ativa', false);
+
+            if (log) log.textContent = 'Configurações carregadas em ' + new Date().toLocaleTimeString('pt-BR') + '.';
+        }
+
+        async function salvarConfigPortal() {
+            const log = document.getElementById('portal-cfg-log');
+            if (log) log.textContent = 'Salvando…';
+
+            let intervalo = parseInt(document.getElementById('cfg-home-intervalo').value, 10);
+            if (isNaN(intervalo) || intervalo < 10) intervalo = 30;
+            let maxNews = parseInt(document.getElementById('cfg-home-maxnews').value, 10);
+            if (isNaN(maxNews) || maxNews < 0) maxNews = 0;
+
+            const pares = {
+                portal_titulo:       document.getElementById('cfg-portal-titulo').value.trim(),
+                home_banner:         document.getElementById('cfg-home-banner').value.trim(),
+                home_intervalo_seg:  String(intervalo),
+                home_max_noticias:   String(maxNews),
+                home_mostrar_radar:  document.getElementById('cfg-home-radar').checked   ? '1' : '0',
+                home_mostrar_equipe: document.getElementById('cfg-home-equipe').checked  ? '1' : '0',
+                home_mostrar_tags:   document.getElementById('cfg-home-tags').checked    ? '1' : '0',
+                notificacoes_ativas: document.getElementById('cfg-notificacoes').checked ? '1' : '0',
+                manutencao_ativa:    document.getElementById('cfg-manutencao').checked   ? '1' : '0',
+                manutencao_msg:      document.getElementById('cfg-manutencao-msg').value.trim()
+            };
+
+            try {
+                for (const chave of Object.keys(pares)) { await salvarConfig(chave, pares[chave]); }
+                registrarLog('Admin', 'atualizou as configurações do portal');
+                toast('✅ Configurações salvas! A Home aplica na próxima atualização.', 'ok');
+                if (log) log.textContent = 'Salvo em ' + new Date().toLocaleTimeString('pt-BR') + '.';
+            } catch(e) {
+                toast('❌ Erro ao salvar configurações.', 'err');
+                if (log) log.textContent = 'Falha ao salvar: ' + e;
+            }
+        }
+
+        // ==========================================================
+        // ABA: PLANILHAS POR PÁGINA (chaves url_<arquivo> no _Config)
+        // ==========================================================
+        let urlsPaginas = {}; // { 'pages/insumos.html': 'https://.../exec' }
+
+        function urlExecValida(u) {
+            u = String(u || '').trim();
+            if (!u) return true; // vazio = usa a central
+            return /^https:\/\/script\.google\.com\/macros\/s\/[^\/]+\/exec\/?$/i.test(u);
+        }
+
+        async function carregarUrlsPaginas() {
+            const box = document.getElementById('paginas-urls-container');
+            const central = document.getElementById('cfg-url-central');
+            if (central && window.PortalDB) central.value = window.PortalDB.URL || '';
+            if (box) box.innerHTML = '<div class="skeleton" style="height:48px; margin-bottom:8px;"></div><div class="skeleton" style="height:48px; margin-bottom:8px;"></div><div class="skeleton" style="height:48px;"></div>';
+
+            const cfg = await lerConfigTudo();
+            urlsPaginas = {};
+            Object.keys(cfg).forEach(k => {
+                if (k.indexOf('url_') === 0 && cfg[k]) urlsPaginas[k.slice(4)] = cfg[k];
+            });
+            renderPaginasUrls();
+            const log = document.getElementById('urls-log');
+            const qtd = Object.keys(urlsPaginas).length;
+            if (log) log.innerHTML = qtd
+                ? `<b>${qtd}</b> página(s) com planilha própria. As demais usam a planilha central.`
+                : 'Nenhuma página com planilha própria ainda — todas usam a planilha central.';
+        }
+
+        function renderPaginasUrls() {
+            const box = document.getElementById('paginas-urls-container');
+            if (!box) return;
+            const filtro = (document.getElementById('filtro-paginas')?.value || '').toLowerCase().trim();
+            const lista = PAGINAS_PORTAL.filter(p =>
+                !filtro || p.nome.toLowerCase().includes(filtro) || p.arquivo.toLowerCase().includes(filtro)
+            );
+            if (!lista.length) { box.innerHTML = '<div class="note note-info">Nenhuma página encontrada para esse filtro.</div>'; return; }
+
+            box.innerHTML = lista.map(p => {
+                const val = urlsPaginas[p.arquivo] || '';
+                const on = !!val;
+                return `<div class="url-row">
+                    <div class="pg-name"><span class="dot ${on ? 'dot-on' : 'dot-off'}"></span> ${p.nome}<small>${p.arquivo}</small></div>
+                    <input type="text" data-pagina="${p.arquivo}" value="${String(val).replace(/"/g,'&quot;')}" placeholder="https://script.google.com/macros/s/.../exec  (vazio = planilha central)">
+                    <button class="btn btn-ghost" title="Testar conexão" onclick="testarUrlPagina('${p.arquivo}', this)">🔌 Testar</button>
+                </div>`;
+            }).join('');
+        }
+
+        async function testarUrlPagina(arquivo, btn) {
+            const input = document.querySelector(`#paginas-urls-container input[data-pagina="${arquivo}"]`);
+            const url = (input?.value || '').trim().replace(/\/+$/, '');
+            if (!url) { toast('ℹ️ Sem URL: essa página usa a planilha central.', ''); return; }
+            if (!urlExecValida(url)) { toast('❌ URL inválida. Deve terminar em <b>/exec</b>.', 'err'); return; }
+            const txtOriginal = btn.innerHTML; btn.innerHTML = '⏳'; btn.disabled = true;
+            try {
+                const res = await fetch(`${url}?path=health.json&nc=1&_=${Date.now()}`);
+                const data = await res.json().catch(() => null);
+                if (res.ok) { toast('✅ Conexão OK com a planilha de <b>' + arquivo + '</b>.', 'ok'); }
+                else { toast('⚠️ Respondeu com status ' + res.status + '.', 'err'); }
+            } catch(e) {
+                toast('❌ Não consegui acessar essa URL. Verifique se o app está publicado para "Qualquer pessoa".', 'err');
+            }
+            btn.innerHTML = txtOriginal; btn.disabled = false;
+        }
+
+        function limparUrlsVazias() {
+            document.querySelectorAll('#paginas-urls-container input[data-pagina]').forEach(i => i.value = '');
+            toast('🧹 Campos limpos. Clique em <b>Salvar URLs</b> para confirmar.', '');
+        }
+
+        async function salvarUrlsPaginas() {
+            const inputs = Array.from(document.querySelectorAll('#paginas-urls-container input[data-pagina]'));
+            const invalidos = inputs.filter(i => !urlExecValida(i.value));
+            if (invalidos.length) {
+                invalidos.forEach(i => i.style.borderColor = '#FF5252');
+                toast('❌ ' + invalidos.length + ' URL(s) inválida(s). Use o formato .../exec', 'err');
+                return;
+            }
+            inputs.forEach(i => i.style.borderColor = '');
+
+            const log = document.getElementById('urls-log');
+            if (log) log.textContent = 'Salvando URLs…';
+            let salvos = 0;
+            try {
+                for (const input of inputs) {
+                    const pagina = input.dataset.pagina;
+                    const valor = input.value.trim().replace(/\/+$/, '');
+                    const anterior = urlsPaginas[pagina] || '';
+                    if (valor === anterior) continue;          // nada mudou
+                    await salvarConfig('url_' + pagina, valor); // vazio limpa a chave
+                    if (valor) urlsPaginas[pagina] = valor; else delete urlsPaginas[pagina];
+                    salvos++;
+                }
+                if (window.PortalDB && window.PortalDB.setPageUrls) window.PortalDB.setPageUrls(urlsPaginas);
+                registrarLog('Admin', 'atualizou as planilhas por página (' + salvos + ' alteração(ões))');
+                renderPaginasUrls();
+                toast(salvos ? ('✅ ' + salvos + ' URL(s) salva(s).') : 'ℹ️ Nada mudou.', salvos ? 'ok' : '');
+                if (log) log.textContent = 'Salvo em ' + new Date().toLocaleTimeString('pt-BR') + '. Use "Versão / Cache" para propagar na hora.';
+            } catch(e) {
+                toast('❌ Erro ao salvar as URLs.', 'err');
+                if (log) log.textContent = 'Falha: ' + e;
+            }
+        }
 
         // Carrega o catálogo de cargos do cérebro (cacheado) para o select da tabela
         async function carregarCargosAdmin() {
@@ -296,7 +932,7 @@
                 if(data && typeof data === 'object') {
                     Object.keys(data).forEach(k => {
                         const c = data[k] || {};
-                        cargosOptions.push({ id: k, rotulo: c.rotulo || k, nivel: c.nivel });
+                        cargosOptions.push({ id: k, rotulo: c.rotulo || c.nome || k, nivel: c.nivel });
                     });
                 }
                 if(cargosOptions.length === 0) {
@@ -388,10 +1024,45 @@
             } catch(e) {}
         }
 
+        // ==========================================
+        // TOAST (feedback visual)
+        // ==========================================
+        function toast(msg, tipo) {
+            const box = document.getElementById('admin-toast');
+            if (!box) { console.log(msg); return; }
+            const el = document.createElement('div');
+            el.className = 'toast ' + (tipo || '');
+            el.innerHTML = msg;
+            box.appendChild(el);
+            setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320); }, 3200);
+        }
+
+        function atualizarResumo() {
+            const elU = document.getElementById('stat-users');
+            const elP = document.getElementById('stat-pendentes');
+            const elC = document.getElementById('stat-cats');
+            const elPg = document.getElementById('stat-paginas');
+            if (elU) elU.textContent = allUsers.length;
+            if (elP) elP.textContent = allUsers.filter(u => String(u.solicitacao || '').toLowerCase() === 'pendente').length;
+            if (elC) elC.textContent = (adMenuData.categorias || []).length;
+            if (elPg) elPg.textContent = PAGINAS_PORTAL.length;
+        }
+
+        function atualizarHeroInfo() {
+            const u = document.getElementById('hero-user');
+            const v = document.getElementById('hero-versao');
+            const h = document.getElementById('hero-hora');
+            if (u) u.textContent = userName || 'Admin';
+            if (v && window.PortalDB) v.textContent = window.PortalDB.getAppVersion();
+            if (h) h.textContent = new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
         window.onload = async () => {
             if(!currentUser || currentUser.cargo !== 'admin') { document.getElementById('acessoNegado').style.display = 'block'; return; }
-            document.getElementById('adminPanel').style.display = 'block';
-            
+            document.getElementById('adminWrap').style.display = 'block';
+            atualizarHeroInfo();
+            setInterval(atualizarHeroInfo, 60000);
+
             const iconSelect = document.getElementById('status-icon');
             iconSelect.innerHTML = ICONES_LOGISTICA.map(ico => `<option value="${ico}">${ico}</option>`).join('');
 
@@ -399,22 +1070,45 @@
             await fetchUsers();
             await carregarCargosAdmin();
             carregarConfigAprovacao();
+            try { if(window.PortalDB && window.PortalDB.syncPageUrls) await window.PortalDB.syncPageUrls(); } catch(e){}
+            atualizarResumo();
+
+            // Reabre a última aba usada (útil depois de salvar a versão e recarregar)
+            try {
+                const ultima = sessionStorage.getItem('admin_tab');
+                if (ultima && ultima !== 'menus') switchAdminTab(ultima);
+            } catch(e) {}
         };
 
+        const ADMIN_TABS = ['menus','users','news','status','bigquery','portal','planilhas','versao'];
+
         function switchAdminTab(tab, el) {
-            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-            if(el) el.classList.add('active');
-            else if(window.event && window.event.target) window.event.target.classList.add('active');
-            document.getElementById('tab-menus').style.display = tab === 'menus' ? 'block' : 'none';
-            document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
-            document.getElementById('tab-news').style.display = tab === 'news' ? 'block' : 'none';
-            document.getElementById('tab-status').style.display = tab === 'status' ? 'block' : 'none';
-            document.getElementById('tab-bigquery').style.display = tab === 'bigquery' ? 'block' : 'none';
-            var tabVersao = document.getElementById('tab-versao');
-            if(tabVersao) tabVersao.style.display = tab === 'versao' ? 'block' : 'none';
+            tab = String(tab || '').replace(/^tab-/, '');
+            if (ADMIN_TABS.indexOf(tab) === -1) tab = 'menus';
+
+            const botoes = document.querySelectorAll('.admin-tab');
+            botoes.forEach(t => t.classList.remove('active'));
+            if (el) el.classList.add('active');
+            else {
+                botoes.forEach(function (b) {
+                    const oc = b.getAttribute('onclick') || '';
+                    if (oc.indexOf("'" + tab + "'") !== -1) b.classList.add('active');
+                });
+            }
+
+            ADMIN_TABS.forEach(function(t){
+                const box = document.getElementById('tab-' + t);
+                if (box) box.style.display = (t === tab) ? 'block' : 'none';
+            });
+
+            // Guarda a aba aberta para reabrir no mesmo lugar depois de um reload
+            try { sessionStorage.setItem('admin_tab', tab); } catch(e) {}
             if(tab === 'news') carregarNoticiasAdmin();
             if(tab === 'status') carregarStatusAdmin();
             if(tab === 'bigquery') carregarBQAdmin();
+            if(tab === 'portal') carregarConfigPortalAdmin();
+            if(tab === 'planilhas') carregarUrlsPaginas();
+
             if(tab === 'versao') carregarVersaoInfo();
         }
 
@@ -431,7 +1125,7 @@
                     populateDatalist(); 
                 } else {
                     allUsers = [];
-                    document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum usuário cadastrado no banco de dados.</td></tr>';
+                    document.getElementById('users-tbody').innerHTML = '<tr><td colspan="6" style="text-align:center; padding:24px; color:var(--text-muted);">Nenhum usuário cadastrado no banco de dados.</td></tr>';
                 }
             } catch(e) { console.error("Falha ao ler usuarios: ", e); }
         }
@@ -442,28 +1136,31 @@
         async function carregarConfigAprovacao() {
             try {
                 const res = await fetch(`${FIREBASE_URL}config/requer_aprovacao.json?nc=1`);
-                const val = await res.json();
-                requerAprovacao = (val === false) ? false : true;
+                let val = await res.json();
+                if (val && typeof val === 'object') val = val.valor;
+                // A planilha devolve texto ("false"), então não dá para comparar com === false.
+                requerAprovacao = (val === null || val === undefined || val === '')
+                    ? true
+                    : cfgBool(val);
             } catch(e) { requerAprovacao = true; }
             renderToggleAprovacao();
         }
 
         function renderToggleAprovacao() {
-            const btn = document.getElementById('btn-toggle-aprovacao');
+            const chk = document.getElementById('chk-aprovacao');
             const label = document.getElementById('aprovacao-label');
+            if (chk) chk.checked = !!requerAprovacao;
+            if (!label) return;
             if (requerAprovacao) {
-                btn.style.background = '#FF5252'; btn.style.color = '#fff';
-                btn.innerHTML = '🔒 EXIGIR APROVAÇÃO (ATIVO)';
-                label.innerHTML = 'Novos registros ficam <b style="color:#FF5252;">aguardando aprovação</b> de um administrador antes de poderem logar.';
+                label.innerHTML = '<b style="color:#FF5252;">Ativado:</b> novos registros ficam aguardando aprovação de um administrador antes de poderem logar.';
             } else {
-                btn.style.background = 'var(--accent-green)'; btn.style.color = '#fff';
-                btn.innerHTML = '✅ APROVAÇÃO AUTOMÁTICA (DESATIVADO)';
-                label.innerHTML = 'Novos registros são <b style="color:var(--accent-green);">aprovados automaticamente</b> com cargo de visualização (<b>view</b>), sem precisar de administrador.';
+                label.innerHTML = '<b style="color:var(--accent-green);">Desativado:</b> novos registros são aprovados automaticamente com cargo de visualização (<b>view</b>).';
             }
         }
 
         async function toggleAprovacao() {
-            const novo = !requerAprovacao;
+            const chk = document.getElementById('chk-aprovacao');
+            const novo = chk ? !!chk.checked : !requerAprovacao;
             try {
                 await fetch(`${FIREBASE_URL}config/requer_aprovacao.json?nc=1`, {
                     method: 'PUT',
@@ -472,18 +1169,49 @@
                 });
                 requerAprovacao = novo;
                 renderToggleAprovacao();
+                toast(novo ? '🔒 Aprovação manual ativada.' : '✅ Aprovação automática ativada.', 'ok');
                 await registrarLog("Painel Admin", `Alterou a configuração de aprovação de novos registros para: <b>${novo ? 'EXIGIR APROVAÇÃO' : 'APROVAÇÃO AUTOMÁTICA'}</b>`);
-            } catch(e) { alert("Erro ao salvar a configuração."); }
+            } catch(e) { toast('❌ Erro ao salvar a configuração.', 'err'); renderToggleAprovacao(); }
         }
 
         function populateDatalist() { const dl = document.getElementById('lista-usuarios'); dl.innerHTML = ''; allUsers.forEach(u => { dl.innerHTML += `<option value="${u.usuario}">`; }); }
         
         function renderUserTable() {
-            const tbody = document.getElementById('users-tbody'); tbody.innerHTML = '';
-            allUsers.forEach((u, idx) => {
-                tbody.innerHTML += `<tr>
-                    <td><strong>${u.usuario}</strong></td>
-                    <td>${u.email}</td>
+            const tbody = document.getElementById('users-tbody');
+            if (!tbody) return;
+            const busca = (document.getElementById('filtro-usuarios')?.value || '').toLowerCase().trim();
+            const fStatus = document.getElementById('filtro-status-user')?.value || '';
+
+            const lista = allUsers
+                .map((u, idx) => ({ u, idx }))
+                .filter(({ u }) => {
+                    const okBusca = !busca
+                        || String(u.usuario || '').toLowerCase().includes(busca)
+                        || String(u.email || '').toLowerCase().includes(busca);
+                    const okStatus = !fStatus || String(u.solicitacao || '') === fStatus;
+                    return okBusca && okStatus;
+                });
+
+            if (!lista.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:26px; color:var(--text-muted);">Nenhum usuário encontrado.</td></tr>';
+                return;
+            }
+
+            const pills = {
+                aprovado:  '<span class="pill pill-ok">✔ Aprovado</span>',
+                pendente:  '<span class="pill pill-wait">⏳ Pendente</span>',
+                bloqueado: '<span class="pill pill-off">⛔ Bloqueado</span>'
+            };
+
+            tbody.innerHTML = lista.map(({ u, idx }) => {
+                const inicial = String(u.usuario || '?').charAt(0).toUpperCase();
+                const avatar = u.avatar
+                    ? `<img src="${u.avatar}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex:0 0 auto;">`
+                    : `<div style="width:34px;height:34px;border-radius:50%;background:var(--accent-blue);color:#fff;display:grid;place-items:center;font-weight:900;flex:0 0 auto;">${inicial}</div>`;
+                return `<tr>
+                    <td><div style="display:flex;align-items:center;gap:10px;">${avatar}<strong style="color:var(--text-title);">${u.usuario || '—'}</strong></div></td>
+                    <td style="color:var(--text-muted);">${u.email || '—'}</td>
+                    <td>${pills[u.solicitacao] || '<span class="pill pill-off">—</span>'}</td>
                     <td><select id="status-${idx}">
                         <option value="pendente" ${u.solicitacao === 'pendente' ? 'selected' : ''}>Pendente</option>
                         <option value="aprovado" ${u.solicitacao === 'aprovado' ? 'selected' : ''}>Aprovado</option>
@@ -493,40 +1221,41 @@
                         ${cargosOptions.map(c => `<option value="${c.id}" ${u.cargo === c.id ? 'selected' : ''}>${c.rotulo}</option>`).join('')}
                     </select></td>
                     <td>
-                        <div style="display:flex; flex-direction:column; gap:5px;">
-                            <div style="display:flex; gap:5px;">
-                                <button class="btn btn-blue" style="flex:1;" onclick="salvarUsuario(${idx}, '${u.key}', '${u.usuario}')">💾 Salvar Roles</button>
+                        <div style="display:flex; flex-direction:column; gap:6px; min-width:230px;">
+                            <div style="display:flex; gap:6px;">
+                                <button class="btn btn-blue" style="flex:1;" onclick="salvarUsuario(${idx}, '${u.key}', '${u.usuario}')">💾 Salvar</button>
                                 <button class="btn btn-red" onclick="excluirUsuario('${u.key}', '${u.usuario}')" title="Excluir Usuário">🗑️</button>
                             </div>
-                            <div style="display:flex; gap:5px; align-items:center;">
-                                <input type="text" id="reset-pass-${idx}" placeholder="Nova senha" style="padding:4px; font-size:0.75rem; border:1px solid var(--border-card); border-radius:4px; background:var(--bg-body); color:var(--text-main); flex:1;">
-                                <button class="btn btn-warn" onclick="resetarSenha(${idx}, '${u.key}', '${u.usuario}')" title="Mudar Senha sem a antiga">🔑 Reset</button>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <input type="text" id="reset-pass-${idx}" placeholder="Nova senha" style="padding:7px 9px; font-size:0.75rem; border:1px solid var(--border-card); border-radius:8px; background:var(--bg-body); color:var(--text-main); flex:1; outline:none;">
+                                <button class="btn btn-warn" onclick="resetarSenha(${idx}, '${u.key}', '${u.usuario}')" title="Mudar Senha sem a antiga">🔑</button>
                             </div>
                         </div>
                     </td>
                 </tr>`;
-            });
+            }).join('');
+            atualizarResumo();
         }
 
         async function salvarUsuario(idx, key, username) {
             const status = document.getElementById(`status-${idx}`).value; const cargo = document.getElementById(`cargo-${idx}`).value;
             try { 
                 await fetch(`${FIREBASE_URL}users/${key}.json`, { method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ solicitacao: status, cargo: cargo }) }); 
-                alert("Usuário atualizado com sucesso!"); await registrarLog("Painel Admin", `Alterou permissões/cargo do usuário: <b>${username}</b>`);
-            } catch(e) { alert("Erro ao atualizar o usuário."); }
+                toast("Usuário atualizado com sucesso!", 'ok'); await registrarLog("Painel Admin", `Alterou permissões/cargo do usuário: <b>${username}</b>`);
+            } catch(e) { toast("Erro ao atualizar o usuário.", 'err'); }
         }
 
         async function resetarSenha(idx, key, username) {
             const inputNew = document.getElementById(`reset-pass-${idx}`); const pass = inputNew.value.trim();
-            if(!pass) return alert("Digite uma nova senha antes de resetar.");
-            if(pass.length < 8 || pass.length > 16) return alert("A senha deve ter entre 8 e 16 caracteres.");
+            if(!pass) return toast("Digite uma nova senha antes de resetar.", 'warn');
+            if(pass.length < 8 || pass.length > 16) return toast("A senha deve ter entre 8 e 16 caracteres.", 'warn');
             if(!confirm(`Tem certeza que deseja forçar uma nova senha para '${username}'?`)) return;
             try {
                 const hPass = await hashPassword(pass);
                 await fetch(`${FIREBASE_URL}users/${key}.json`, { method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senha: hPass }) }); 
-                alert(`Senha de ${username} atualizada para a nova!`); inputNew.value = "";
+                toast(`Senha de ${username} atualizada para a nova!`, 'ok'); inputNew.value = "";
                 await registrarLog("Painel Admin", `Resetou (forçou) a senha do usuário: <b>${username}</b>`);
-            } catch(e) { alert("Erro ao resetar senha."); }
+            } catch(e) { toast("Erro ao resetar senha.", 'err'); }
         }
 
         async function excluirUsuario(key, username) {
@@ -534,8 +1263,8 @@
             try {
                 await fetch(`${FIREBASE_URL}users/${key}.json`, { method: 'DELETE' });
                 await registrarLog("Painel Admin", `Excluiu o usuário: <b>${username}</b>`);
-                alert("Usuário excluído com sucesso."); fetchUsers();
-            } catch(e) { alert("Erro ao excluir usuário."); }
+                toast("Usuário excluído com sucesso.", 'ok'); fetchUsers();
+            } catch(e) { toast("Erro ao excluir usuário.", 'err'); }
         }
 
         // ==========================================
@@ -557,8 +1286,8 @@
             });
         }
         let draggedItemInfo = null; function dragStart(e, type, catIdx, itemIdx = null, subIdx = null) { draggedItemInfo = { type, catIdx, itemIdx, subIdx }; e.stopPropagation(); } function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); } function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); } function drop(e, targetType, targetCatIdx, targetItemIdx = null, targetSubIdx = null) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('drag-over'); if (!draggedItemInfo) return; const dType = draggedItemInfo.type; if (dType === 'cat' && targetType === 'cat') { const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0]; adMenuData.categorias.splice(targetCatIdx, 0, temp); } else if (dType === 'item') { const sourceCat = adMenuData.categorias[draggedItemInfo.catIdx]; const itemMovido = sourceCat.items.splice(draggedItemInfo.itemIdx, 1)[0]; if (targetType === 'item') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.splice(targetItemIdx, 0, itemMovido); } else if (targetType === 'cat') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.push(itemMovido); } else { sourceCat.items.splice(draggedItemInfo.itemIdx, 0, itemMovido); } } else if (dType === 'subItem') { const sourceItem = adMenuData.categorias[draggedItemInfo.catIdx].items[draggedItemInfo.itemIdx]; const subItemMovido = sourceItem.subItems.splice(draggedItemInfo.subIdx, 1)[0]; if (targetType === 'subItem') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.splice(targetSubIdx, 0, subItemMovido); } else if (targetType === 'item') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.push(subItemMovido); } else { sourceItem.subItems.splice(draggedItemInfo.subIdx, 0, subItemMovido); } } renderizarAdmin(); }
-        function baixarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2)); const d = document.createElement('a'); d.href = dataStr; d.download = "menu_global.json"; document.body.appendChild(d); d.click(); d.remove(); } function subirJSON(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const parsed = JSON.parse(e.target.result); if(parsed.categorias) { adMenuData = parsed; renderizarAdmin(); alert("JSON carregado!"); } else alert("Estrutura inválida."); } catch (err) { alert("Erro ao ler JSON."); } }; reader.readAsText(file); } function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,view2,editor,admin", items: [] }); renderizarAdmin(); } function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); } function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; } function adicionarItem(catIdx) { if(!adMenuData.categorias[catIdx].items) adMenuData.categorias[catIdx].items = []; adMenuData.categorias[catIdx].items.push({ icon: "📋", title: "Novo Link", url: "#", viewRoles: "view,view2,editor,admin", uploadRoles: "editor,admin", allowedUsers: "", subItems: [] }); renderizarAdmin(); } function removerItem(catIdx, itemIdx) { adMenuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); } function updateItem(catIdx, itemIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx][field] = value; } function adicionarSubItem(catIdx, itemIdx) { if(!adMenuData.categorias[catIdx].items[itemIdx].subItems) adMenuData.categorias[catIdx].items[itemIdx].subItems = []; adMenuData.categorias[catIdx].items[itemIdx].subItems.push({ icon: "↳", title: "Sub-link", url: "#", viewRoles: "view,view2,editor,admin", uploadRoles: "editor,admin", allowedUsers: "" }); renderizarAdmin(); } function removerSubItem(catIdx, itemIdx, subIdx) { adMenuData.categorias[catIdx].items[itemIdx].subItems.splice(subIdx, 1); renderizarAdmin(); } function updateSubItem(catIdx, itemIdx, subIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx].subItems[subIdx][field] = value; }
-        async function salvarNaNuvem() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLog("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
+        function baixarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2)); const d = document.createElement('a'); d.href = dataStr; d.download = "menu_global.json"; document.body.appendChild(d); d.click(); d.remove(); } function subirJSON(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const parsed = JSON.parse(e.target.result); if(parsed.categorias) { adMenuData = parsed; renderizarAdmin(); toast("JSON carregado!", 'ok'); } else toast("Estrutura inválida.", 'err'); } catch (err) { toast("Erro ao ler JSON.", 'err'); } }; reader.readAsText(file); } function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,view2,editor,admin", items: [] }); renderizarAdmin(); } function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); } function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; } function adicionarItem(catIdx) { if(!adMenuData.categorias[catIdx].items) adMenuData.categorias[catIdx].items = []; adMenuData.categorias[catIdx].items.push({ icon: "📋", title: "Novo Link", url: "#", viewRoles: "view,view2,editor,admin", uploadRoles: "editor,admin", allowedUsers: "", subItems: [] }); renderizarAdmin(); } function removerItem(catIdx, itemIdx) { adMenuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); } function updateItem(catIdx, itemIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx][field] = value; } function adicionarSubItem(catIdx, itemIdx) { if(!adMenuData.categorias[catIdx].items[itemIdx].subItems) adMenuData.categorias[catIdx].items[itemIdx].subItems = []; adMenuData.categorias[catIdx].items[itemIdx].subItems.push({ icon: "↳", title: "Sub-link", url: "#", viewRoles: "view,view2,editor,admin", uploadRoles: "editor,admin", allowedUsers: "" }); renderizarAdmin(); } function removerSubItem(catIdx, itemIdx, subIdx) { adMenuData.categorias[catIdx].items[itemIdx].subItems.splice(subIdx, 1); renderizarAdmin(); } function updateSubItem(catIdx, itemIdx, subIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx].subItems[subIdx][field] = value; }
+        async function salvarNaNuvem() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLog("Painel Admin", "Atualizou a estrutura de links do Menu Global."); toast("Salvo com sucesso!", 'ok'); } catch(e) { toast("Erro ao salvar.", 'err'); } }
 
         // ==========================================
         // EDITOR RICH TEXT COMPARTILHADO
@@ -566,13 +1295,13 @@
         let isHtmlMode = { 'news-body': false, 'bq-body': false };
         
         function formatText(cmd, editorId) { 
-            if(isHtmlMode[editorId]) return alert("Saia do modo de código (</>) para usar a formatação visual.");
+            if(isHtmlMode[editorId]) return toast("Saia do modo de código (</>) para usar a formatação visual.", 'warn');
             document.execCommand(cmd, false, null); 
             document.getElementById(editorId).focus(); 
         }
 
         function alignText(align, editorId) {
-            if(isHtmlMode[editorId]) return alert("Saia do modo de código (</>) para alinhar.");
+            if(isHtmlMode[editorId]) return toast("Saia do modo de código (</>) para alinhar.", 'warn');
             document.execCommand('justify' + align, false, null);
             document.getElementById(editorId).focus();
         }
@@ -589,7 +1318,7 @@
         function insertImageUpload(input, editorId) {
             if(isHtmlMode[editorId]) return;
             if(input.files && input.files[0]) {
-                if(input.files[0].size > 2000000) { alert("Aviso: Imagens maiores que 2MB podem deixar lento."); }
+                if(input.files[0].size > 2000000) { toast("Aviso: Imagens maiores que 2MB podem deixar lento.", 'warn'); }
                 let reader = new FileReader();
                 reader.onload = function(e) { document.execCommand('insertImage', false, e.target.result); };
                 reader.readAsDataURL(input.files[0]);
@@ -653,13 +1382,13 @@
 
         async function carregarNoticiasAdmin() {
             let container = document.getElementById('news-list-admin');
-            container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando publicações...</div>';
+            container.innerHTML = '<div class="panel-card"><div class="skeleton" style="width:45%;"></div><div class="skeleton" style="width:80%; margin-top:10px;"></div><div class="skeleton" style="width:60%; margin-top:10px;"></div></div>';
             try {
                 let res = await fetch(`${FIREBASE_URL}portal_news.json?_=${Date.now()}`);
                 let data = await res.json();
                 
                 if(!data) { 
-                    container.innerHTML = '<div class="cat-card">Nenhuma notícia publicada ainda no mural.</div>'; 
+                    container.innerHTML = '<div class="empty-box">📭<span>Nenhuma notícia publicada ainda no mural.</span></div>'; 
                     currentNewsData = {}; return; 
                 }
                 
@@ -678,7 +1407,7 @@
                     if(n.tag) {
                         n.tag.split(',').forEach(t => {
                             if(t.trim()) {
-                                tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
+                                tagsHtml += `<span class="chip">${t.trim()}</span>`;
                                 window.newsTagsSet.add(t.trim()); // Coleta a tag
                             }
                         });
@@ -709,7 +1438,7 @@
 
         function editarNoticia(key) {
             let n = currentNewsData[key];
-            if(!n) return alert("Erro ao localizar a notícia para edição.");
+            if(!n) return toast("Erro ao localizar a notícia para edição.", 'err');
 
             document.getElementById('news-title').value = n.titulo || '';
             document.getElementById('news-tag').value = n.tag || '';
@@ -718,9 +1447,9 @@
             document.getElementById('news-body').innerHTML = n.corpo || '';
 
             editingNewsKey = key;
-            document.getElementById('news-editor-title').innerText = "Editando Publicação Existente";
+            document.getElementById('news-editor-title').textContent = "✏️ Editando publicação existente";
             const btnPub = document.getElementById('btn-publicar');
-            btnPub.innerText = "💾 Salvar Alterações";
+            btnPub.textContent = "💾 Salvar alterações";
             btnPub.classList.replace('btn-blue', 'btn-green');
             document.getElementById('btn-cancelar-edicao').style.display = 'inline-flex';
             document.getElementById('news-editor-box').scrollIntoView({ behavior: 'smooth' });
@@ -733,42 +1462,42 @@
             if (isHtmlMode['news-body']) toggleHTML('news-body', 'btn-toggle-html');
             document.getElementById('news-body').innerHTML = '';
 
-            document.getElementById('news-editor-title').innerText = "Criar Nova Publicação";
+            document.getElementById('news-editor-title').textContent = "✍️ Criar nova publicação";
             const btnPub = document.getElementById('btn-publicar');
-            btnPub.innerText = "🚀 Publicar no Mural";
+            btnPub.textContent = "🚀 Publicar no Mural";
             btnPub.classList.replace('btn-green', 'btn-blue');
             document.getElementById('btn-cancelar-edicao').style.display = 'none';
         }
 
         async function publicarNoticia() {
-            if (isHtmlMode['news-body']) { alert("Por favor, saia do Modo Código (Clique em </> Code novamente) antes de publicar!"); return; }
+            if (isHtmlMode['news-body']) { toast("Por favor, saia do Modo Código (Clique em </> Code novamente) antes de publicar!", 'warn'); return; }
 
             let titulo = document.getElementById('news-title').value.trim();
             // Salva as tags formatadas (Primeira letra maiúscula)
             let tag = formatarTagsCategorias(document.getElementById('news-tag').value) || 'Aviso';
             let corpo = document.getElementById('news-body').innerHTML.trim();
             
-            if(!titulo || !corpo || corpo === '<br>') return alert("Preencha o título e o conteúdo da notícia antes de publicar/salvar.");
+            if(!titulo || !corpo || corpo === '<br>') return toast("Preencha o título e o conteúdo da notícia antes de publicar/salvar.", 'ok');
             
             const btnPub = document.getElementById('btn-publicar');
-            const textoOriginal = btnPub.innerText;
-            btnPub.innerText = "⏳ Salvando..."; btnPub.disabled = true;
+            const textoOriginal = btnPub.textContent;
+            btnPub.textContent = "⏳ Salvando…"; btnPub.disabled = true;
 
             try {
                 if (editingNewsKey) {
                     let noticiaEditada = { titulo: titulo, tag: tag, corpo: corpo, data_edit: Date.now() };
                     await fetch(`${FIREBASE_URL}portal_news/${editingNewsKey}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(noticiaEditada) });
                     await registrarLog("Mural", `Editou a notícia: "${titulo}"`);
-                    alert("Notícia atualizada com sucesso!");
+                    toast("Notícia atualizada com sucesso!", 'ok');
                 } else {
                     let idNoticia = "news_" + Date.now();
                     let novaNoticia = { id: idNoticia, autor: userName, data: Date.now(), tag: tag, titulo: titulo, corpo: corpo, likes: 0, likedBy: [] };
                     await fetch(`${FIREBASE_URL}portal_news/${idNoticia}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(novaNoticia) });
                     await registrarLog("Mural", `Publicou uma nova notícia: "${titulo}"`);
-                    alert("Notícia publicada com sucesso!");
+                    toast("Notícia publicada com sucesso!", 'ok');
                 }
                 cancelarEdicao(); carregarNoticiasAdmin(); 
-            } catch(e) { alert("Erro ao publicar a notícia."); } finally { btnPub.innerText = textoOriginal; btnPub.disabled = false; }
+            } catch(e) { toast("Erro ao publicar a notícia.", 'err'); } finally { btnPub.textContent = textoOriginal; btnPub.disabled = false; }
         }
 
         async function excluirNoticia(key) {
@@ -777,7 +1506,7 @@
                 await fetch(`${FIREBASE_URL}portal_news/${key}.json`, { method: 'DELETE' });
                 await registrarLog("Mural", "Excluiu uma publicação do mural de notícias.");
                 carregarNoticiasAdmin();
-            } catch(e) { alert("Erro de comunicação com o servidor ao excluir."); }
+            } catch(e) { toast("Erro de comunicação com o servidor ao excluir.", 'err'); }
         }
 
         // ==========================================
@@ -791,8 +1520,8 @@
             document.getElementById('status-nome').value = '';
             document.getElementById('status-desc').value = '';
             document.getElementById('status-estado').value = 'on';
-            document.getElementById('status-editor-title').innerText = "Novo Reporte (Status)";
-            document.getElementById('btn-salvar-status').innerText = "💾 Salvar Status";
+            document.getElementById('status-editor-title').textContent = "✍️ Novo reporte (status)";
+            document.getElementById('btn-salvar-status').textContent = "💾 Salvar status";
         }
 
         function cancelarEdicaoStatus() {
@@ -810,17 +1539,17 @@
                 for(let ex of exemplos) {
                     await fetch(`${FIREBASE_URL}portal_status.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ex) });
                 }
-                alert("Exemplos criados com sucesso!"); carregarStatusAdmin();
-            } catch (e) { alert("Erro ao criar exemplos."); }
+                toast("Exemplos criados com sucesso!", 'ok'); carregarStatusAdmin();
+            } catch (e) { toast("Erro ao criar exemplos.", 'err'); }
         }
 
         async function carregarStatusAdmin() {
             let container = document.getElementById('status-list-admin');
-            container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando status...</div>';
+            container.innerHTML = '<div class="panel-card"><div class="skeleton" style="width:45%;"></div><div class="skeleton" style="width:80%; margin-top:10px;"></div><div class="skeleton" style="width:60%; margin-top:10px;"></div></div>';
             try {
                 let res = await fetch(`${FIREBASE_URL}portal_status.json?_=${Date.now()}`);
                 let data = await res.json();
-                if(!data) { container.innerHTML = '<div class="cat-card">Nenhum reporte cadastrado ainda.</div>'; currentStatusData = {}; return; }
+                if(!data) { container.innerHTML = '<div class="empty-box">📊<span>Nenhum reporte de status cadastrado ainda.</span></div>'; currentStatusData = {}; return; }
                 
                 currentStatusData = data;
                 let statusList = Object.keys(data).map(k => ({...data[k], key: k}));
@@ -852,15 +1581,15 @@
 
         function editarStatus(key) {
             let s = currentStatusData[key];
-            if(!s) return alert("Erro ao puxar dados.");
+            if(!s) return toast("Erro ao puxar dados.", 'err');
             document.getElementById('status-key').value = key;
             document.getElementById('status-nome').value = s.nome || '';
             document.getElementById('status-icon').value = s.icon || '📄';
             document.getElementById('status-estado').value = s.estado || 'on';
             document.getElementById('status-desc').value = s.descricao || '';
             
-            document.getElementById('status-editor-title').innerText = "Editando Reporte Existente";
-            document.getElementById('btn-salvar-status').innerText = "💾 Salvar Alterações";
+            document.getElementById('status-editor-title').textContent = "✏️ Editando reporte existente";
+            document.getElementById('btn-salvar-status').textContent = "💾 Salvar alterações";
             document.getElementById('status-editor-container').style.display = 'block';
             document.getElementById('status-editor-container').scrollIntoView({ behavior: 'smooth' });
         }
@@ -872,10 +1601,10 @@
             let estado = document.getElementById('status-estado').value;
             let desc = document.getElementById('status-desc').value.trim();
             
-            if(!nome) return alert("Por favor, dê um nome ao reporte.");
+            if(!nome) return toast("Por favor, dê um nome ao reporte.", 'warn');
             
             const btn = document.getElementById('btn-salvar-status');
-            btn.innerText = "⏳ Salvando..."; btn.disabled = true;
+            btn.textContent = "⏳ Salvando…"; btn.disabled = true;
 
             let dataObj = { nome: nome, icon: icon, estado: estado, descricao: desc, lastUpdate: Date.now() };
 
@@ -885,14 +1614,14 @@
                 } else {
                     await fetch(`${FIREBASE_URL}portal_status.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dataObj) });
                 }
-                alert("Status salvo com sucesso!");
+                toast("Status salvo com sucesso!", 'ok');
                 cancelarEdicaoStatus(); carregarStatusAdmin();
-            } catch(e) { alert("Erro ao salvar status."); } finally { btn.innerText = "💾 Salvar Status"; btn.disabled = false; }
+            } catch(e) { toast("Erro ao salvar status.", 'err'); } finally { btn.textContent = "💾 Salvar status"; btn.disabled = false; }
         }
 
         async function excluirStatus(key) {
             if(!confirm("Certeza que deseja remover este reporte da lista de status?")) return;
-            try { await fetch(`${FIREBASE_URL}portal_status/${key}.json`, { method: 'DELETE' }); carregarStatusAdmin(); } catch(e) { alert("Erro ao excluir status."); }
+            try { await fetch(`${FIREBASE_URL}portal_status/${key}.json`, { method: 'DELETE' }); carregarStatusAdmin(); } catch(e) { toast("Erro ao excluir status.", 'err'); }
         }
 
         // ==========================================
@@ -903,13 +1632,13 @@
 
         async function carregarBQAdmin() {
             let container = document.getElementById('bq-list-admin');
-            container.innerHTML = '<div style="padding: 20px; color: var(--text-muted);">Buscando queries...</div>';
+            container.innerHTML = '<div class="panel-card"><div class="skeleton" style="width:45%;"></div><div class="skeleton" style="width:80%; margin-top:10px;"></div><div class="skeleton" style="width:60%; margin-top:10px;"></div></div>';
             try {
                 let res = await fetch(`${FIREBASE_URL}portal_bigquery.json?_=${Date.now()}`);
                 let data = await res.json();
                 
                 if(!data) { 
-                    container.innerHTML = '<div class="cat-card">Nenhuma query salva na biblioteca.</div>'; 
+                    container.innerHTML = '<div class="empty-box">💻<span>Nenhuma query salva na biblioteca.</span></div>'; 
                     currentBqData = {}; return; 
                 }
                 
@@ -926,18 +1655,18 @@
                     if(bq.categoria) {
                         bq.categoria.split(',').forEach(c => {
                             if(c.trim()) {
-                                tagsHtml += `<span style="background: #2d2d2d; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">📁 ${c.trim()}</span>`;
+                                tagsHtml += `<span class="chip chip-dark">📁 ${c.trim()}</span>`;
                                 window.bqCatSet.add(c.trim());
                             }
                         });
                     } else {
-                        tagsHtml += `<span style="background: #2d2d2d; color: #fff; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">📁 Geral</span>`;
+                        tagsHtml += `<span class="chip chip-dark">📁 Geral</span>`;
                     }
                     
                     if(bq.tags) {
                         bq.tags.split(',').forEach(t => {
                             if(t.trim()) {
-                                tagsHtml += `<span style="background: rgba(52,131,250,0.1); color: var(--accent-blue); padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 800; margin-bottom: 5px; display:inline-block; margin-right: 5px;">${t.trim()}</span>`;
+                                tagsHtml += `<span class="chip">${t.trim()}</span>`;
                                 window.bqTagsSet.add(t.trim());
                             }
                         });
@@ -971,7 +1700,7 @@
 
         function editarBQ(key) {
             let bq = currentBqData[key];
-            if(!bq) return alert("Erro ao localizar a query.");
+            if(!bq) return toast("Erro ao localizar a query.", 'err');
 
             document.getElementById('bq-title').value = bq.titulo || '';
             document.getElementById('bq-category').value = bq.categoria || '';
@@ -983,9 +1712,9 @@
             document.getElementById('bq-body').innerHTML = bq.corpo_post || '';
 
             editingBqKey = key;
-            document.getElementById('bq-editor-title').innerText = "Editando Script Existente";
+            document.getElementById('bq-editor-title').textContent = "✏️ Editando script existente";
             const btnPub = document.getElementById('btn-publicar-bq');
-            btnPub.innerText = "💾 Salvar Alterações na Query";
+            btnPub.textContent = "💾 Salvar alterações na query";
             btnPub.classList.replace('btn-blue', 'btn-green');
             document.getElementById('btn-cancelar-edicao-bq').style.display = 'inline-flex';
             document.getElementById('bq-editor-box').scrollIntoView({ behavior: 'smooth' });
@@ -1001,15 +1730,15 @@
             if (isHtmlMode['bq-body']) toggleHTML('bq-body', 'btn-toggle-html-bq');
             document.getElementById('bq-body').innerHTML = '';
 
-            document.getElementById('bq-editor-title').innerText = "Adicionar Script BigQuery";
+            document.getElementById('bq-editor-title').textContent = "✍️ Adicionar script BigQuery";
             const btnPub = document.getElementById('btn-publicar-bq');
-            btnPub.innerText = "💾 Salvar Query na Biblioteca";
+            btnPub.textContent = "💾 Salvar query na biblioteca";
             btnPub.classList.replace('btn-green', 'btn-blue');
             document.getElementById('btn-cancelar-edicao-bq').style.display = 'none';
         }
 
         async function publicarBQ() {
-            if (isHtmlMode['bq-body']) { alert("Saia do Modo Código (</> Code) do campo Documentação antes de salvar."); return; }
+            if (isHtmlMode['bq-body']) { toast("Saia do Modo Código (</> Code) do campo Documentação antes de salvar.", 'ok'); return; }
 
             let titulo = document.getElementById('bq-title').value.trim();
             // Salva categorias e tags formatadas (Primeira letra maiúscula)
@@ -1020,27 +1749,27 @@
             let codigo_sql = document.getElementById('bq-sql-code').value.trim();
             let corpo_post = document.getElementById('bq-body').innerHTML.trim();
             
-            if(!titulo || !codigo_sql) return alert("É obrigatório preencher o Título e colar o Código SQL.");
+            if(!titulo || !codigo_sql) return toast("É obrigatório preencher o Título e colar o Código SQL.", 'warn');
             
             const btnPub = document.getElementById('btn-publicar-bq');
-            const textoOriginal = btnPub.innerText;
-            btnPub.innerText = "⏳ Salvando..."; btnPub.disabled = true;
+            const textoOriginal = btnPub.textContent;
+            btnPub.textContent = "⏳ Salvando…"; btnPub.disabled = true;
 
             try {
                 if (editingBqKey) {
                     let bqEditada = { titulo: titulo, categoria: categoria, tags: tags, descricao: descricao, codigo_sql: codigo_sql, corpo_post: corpo_post, data_edit: Date.now() };
                     await fetch(`${FIREBASE_URL}portal_bigquery/${editingBqKey}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bqEditada) });
                     await registrarLog("BigQuery", `Editou o script: "${titulo}"`);
-                    alert("Query atualizada com sucesso!");
+                    toast("Query atualizada com sucesso!", 'ok');
                 } else {
                     let idBq = "bq_" + Date.now();
                     let novaBq = { id: idBq, autor: userName, data: Date.now(), titulo: titulo, categoria: categoria, tags: tags, descricao: descricao, codigo_sql: codigo_sql, corpo_post: corpo_post };
                     await fetch(`${FIREBASE_URL}portal_bigquery/${idBq}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(novaBq) });
                     await registrarLog("BigQuery", `Adicionou um novo script: "${titulo}"`);
-                    alert("Query salva na biblioteca com sucesso!");
+                    toast("Query salva na biblioteca com sucesso!", 'ok');
                 }
                 cancelarEdicaoBQ(); carregarBQAdmin(); 
-            } catch(e) { alert("Erro ao salvar query."); } finally { btnPub.innerText = textoOriginal; btnPub.disabled = false; }
+            } catch(e) { toast("Erro ao salvar query.", 'err'); } finally { btnPub.textContent = textoOriginal; btnPub.disabled = false; }
         }
 
         async function excluirBQ(key) {
@@ -1049,61 +1778,83 @@
                 await fetch(`${FIREBASE_URL}portal_bigquery/${key}.json`, { method: 'DELETE' });
                 await registrarLog("BigQuery", "Excluiu um script da biblioteca.");
                 carregarBQAdmin();
-            } catch(e) { alert("Erro ao excluir."); }
+            } catch(e) { toast("Erro ao excluir.", 'err'); }
         }
 
         // ==========================================
         // VERSÃO / CACHE GLOBAL (NOVO)
         // ==========================================
         async function carregarVersaoInfo() {
+            const elServ  = document.getElementById('versao-servidor');
+            const elLocal = document.getElementById('versao-local');
+            const elLog   = document.getElementById('versao-log');
+            const local   = localStorage.getItem('portal_app_version') || '(nenhuma)';
+            if (elServ)  elServ.textContent  = 'Carregando…';
+            if (elLocal) elLocal.textContent = local;
             try {
-                var elServ = document.getElementById('versao-servidor');
-                var elLocal = document.getElementById('versao-local');
-                var elLog = document.getElementById('versao-log');
-                if(elServ) elServ.innerText = 'Carregando...';
-                if(elLocal) elLocal.innerText = localStorage.getItem('portal_app_version') || '(nenhuma)';
-                var res = await fetch(`${FIREBASE_URL}config/app_versao.json?nc=1&_=${Date.now()}`);
-                var v = await res.json();
-                if(v===null || v===undefined) v='(não configurada - será 1)';
-                else if(typeof v==='object' && v.valor!==undefined) v=v.valor;
-                if(elServ) elServ.innerText = String(v);
-                if(elLocal) elLocal.innerText = localStorage.getItem('portal_app_version') || '(nenhuma)';
-                if(elLog) elLog.innerHTML = `Última verificação: ${new Date().toLocaleString('pt-BR')}<br>Cache local: ${Object.keys(localStorage).length} chaves<br>Cache dados (pdb_cache_v3): ${Object.keys(JSON.parse(localStorage.getItem('pdb_cache_v3')||'{}')).length} nós`;
+                const res = await fetch(`${FIREBASE_URL}config/app_versao.json?nc=1&_=${Date.now()}`);
+                let v = await res.json();
+                if (v === null || v === undefined || v === '') v = '(não configurada — será 1)';
+                else if (typeof v === 'object' && v.valor !== undefined) v = v.valor;
+                v = String(v);
+                if (elServ) elServ.textContent = v;
+                if (elLocal) {
+                    elLocal.textContent = local;
+                    const igual = String(local) === v;
+                    elLocal.style.color = igual ? 'var(--accent-green)' : 'var(--accent-warn)';
+                    if (elServ) elServ.style.color = 'var(--text-title)';
+                }
+                let nosCache = 0;
+                try { nosCache = Object.keys(JSON.parse(localStorage.getItem('pdb_cache_v3') || '{}')).length; } catch(e) {}
+                if (elLog) {
+                    elLog.innerHTML = `Última leitura: <b>${new Date().toLocaleString('pt-BR')}</b> · `
+                        + `${Object.keys(localStorage).length} chaves no navegador · `
+                        + `${nosCache} nós em cache de dados`;
+                }
             } catch(e) {
-                var elS = document.getElementById('versao-servidor');
-                if(elS) elS.innerText = 'Erro ao ler';
+                if (elServ) { elServ.textContent = 'Erro ao ler'; elServ.style.color = '#FF5252'; }
+                if (elLog)  elLog.innerHTML = 'Não foi possível ler a versão do servidor. Verifique a URL da planilha central.';
             }
         }
 
         async function salvarNovaVersao() {
-            var input = document.getElementById('input-nova-versao');
-            var nova = (input.value || '').trim();
-            if(!nova) return alert('Digite a nova versão. Ex: 2, v12, 2026-08-15');
-            if(!confirm(`Confirma salvar nova versão "${nova}"? Isso vai limpar o cache de TODOS os usuários na próxima visita (mantendo login).`)) return;
+            const input = document.getElementById('input-nova-versao');
+            const nova  = (input.value || '').trim();
+            if (!nova) { toast('⚠️ Digite a nova versão. Ex.: 2, v12, 20260815-1030', 'warn'); input.focus(); return; }
+            if (!confirm(`Confirma publicar a versão "${nova}"?\n\nTodos os usuários terão o cache do portal limpo automaticamente na próxima visita (login e tema são preservados).`)) return;
+
+            const btns = document.querySelectorAll('#tab-versao button');
+            btns.forEach(b => b.disabled = true);
             try {
                 await fetch(`${FIREBASE_URL}config/app_versao.json`, {
                     method: 'PUT',
-                    headers: {'Content-Type':'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(nova)
                 });
-                localStorage.setItem('portal_app_version', nova);
-                localStorage.setItem('portal_app_version_check', '0');
-                if(window.PortalDB && window.PortalDB.clearCache) {
-                    window.PortalDB.clearCache();
+                if (window.PortalDB && window.PortalDB.setAppVersionLocal) {
+                    window.PortalDB.setAppVersionLocal(nova);
                 } else {
-                    // fallback
-                    var keep=['loggedUser','themePreference','portal_app_version'];
-                    var preserve={};
-                    keep.forEach(k=>{ var vv=localStorage.getItem(k); if(vv) preserve[k]=vv; });
-                    var keys=[];
-                    for(var i=0;i<localStorage.length;i++){ var kk=localStorage.key(i); if(kk) keys.push(kk); }
-                    keys.forEach(k=>{ if(keep.indexOf(k)===-1){ try{localStorage.removeItem(k);}catch(e){} } });
-                    Object.keys(preserve).forEach(k=> localStorage.setItem(k, preserve[k]));
+                    localStorage.setItem('portal_app_version', nova);
                 }
-                await registrarLog("Painel Admin", `Alterou <b>versão global do cache</b> para: <b>${nova}</b> (forçou limpeza de cache para todos)`);
-                alert(`Versão "${nova}" salva! Cache global será limpo para todos na próxima visita. Recarregando sua página agora...`);
-                setTimeout(()=> location.reload(), 600);
-            } catch(e){ alert('Erro ao salvar versão: '+e); }
+                localStorage.setItem('portal_app_version_check', '0');
+                if (window.PortalDB && window.PortalDB.forceClearCachePreserveLogin) {
+                    window.PortalDB.forceClearCachePreserveLogin();
+                } else if (window.PortalDB && window.PortalDB.clearCache) {
+                    window.PortalDB.clearCache();
+                }
+                localStorage.setItem('portal_app_version', nova);
+                await registrarLog('Painel Admin', `Publicou a <b>versão global ${nova}</b> — cache limpo para todos os usuários`);
+                toast(`🚀 Versão "${nova}" publicada! Recarregando o portal…`, 'ok');
+                await carregarVersaoInfo();
+                setTimeout(() => {
+                    if (window.PortalDB && window.PortalDB.recarregarPortal) window.PortalDB.recarregarPortal();
+                    else location.reload();
+                }, 1200);
+            } catch(e) {
+                toast('❌ Erro ao publicar a versão: ' + e, 'err');
+            } finally {
+                btns.forEach(b => b.disabled = false);
+            }
         }
 
         function limparMeuCache() {
@@ -1121,9 +1872,9 @@
                     keys.forEach(k=>{ if(keep.indexOf(k)===-1){ try{localStorage.removeItem(k);}catch(e){} } });
                     Object.keys(preserve).forEach(k=> localStorage.setItem(k, preserve[k]));
                 }
-                alert('Cache limpo! Recarregando...');
-                setTimeout(()=> location.reload(), 300);
-            } catch(e){ alert('Erro ao limpar: '+e); }
+                toast('🧹 Cache limpo! Recarregando o portal…', 'ok');
+                setTimeout(()=> { if(window.PortalDB && window.PortalDB.recarregarPortal) window.PortalDB.recarregarPortal(); else location.reload(); }, 700);
+            } catch(e){ toast('❌ Erro ao limpar: '+e, 'err'); }
         }
 
         function incrementarVersaoAuto() {
