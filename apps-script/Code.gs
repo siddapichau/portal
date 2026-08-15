@@ -8,18 +8,24 @@
  *  a ÚNICA conexão com Firebase que existe está AQUI DENTRO, usada apenas
  *  pelas funções de IMPORTAÇÃO dos dados já existentes.
  *
+ *  ⚠️ DEPOIS DE COLAR ESTE ARQUIVO: Implantar → Gerenciar implantações
+ *     → lápis → Nova versão → Implantar. Sem isso o portal continua mudo.
+ *
  *  ┌─ COMO IMPLANTAR ────────────────────────────────────────────────────────
- *  │  1. Crie um Google Sheets novo (ex.: "Portal — Banco de Dados").
+ *  │  1. Crie um Google Sheets novo (ex.: "Portal — Cérebro").
  *  │  2. Extensões → Apps Script → cole este arquivo → Salvar.
  *  │  3. No menu da planilha "⚙️ Portal" → "1️⃣ Preparar planilha" (autorize).
- *  │  4. Importe os dados PARTE A PARTE pelo menu "📥 Importar":
- *  │     primeiro o Núcleo (Usuários, Menu, Logs...), depois cada Página.
- *  │     ➜ Importar tudo de uma vez estoura os limites do Google;
- *  │       por isso cada parte é importada separadamente, EM LOTES,
- *  │       e se o tempo esgotar é só rodar de novo (continua de onde parou).
- *  │  5. Implantar → Nova implantação → Aplicativo da web
+ *  │     Isso cria SÓ as abas do cérebro (Menu, Usuarios, Noticias, Status,
+ *  │     Logs, Config...). NÃO cria mais abas db_* — o DB de cada página
+ *  │     fica na planilha dela e será ligado no futuro.
+ *  │  4. Se a planilha já tiver abas db_*: ⚙️ Portal → 🧹 Remover abas db_*.
+ *  │  5. Importe o NÚCLEO parte a parte (Usuários, Menu, Notícias, Status…).
+ *  │  6. Implantar → Nova implantação (ou Nova versão) → Aplicativo da web
  *  │     → Executar como: EU → Acesso: QUALQUER PESSOA → copie a URL /exec.
- *  │  6. Cole a URL /exec em js/portal-db.js (PortalDB.URL). Pronto.
+ *  │  7. Cole a URL /exec em js/portal-db.js (PortalDB.URL). Pronto.
+ *  │
+ *  │  Teste rápido: abra a URL /exec no navegador. Deve aparecer um JSON
+ *  │  { ok:true, nodes:{ menu_global:{registros:N}, ... } } — não "Rota inválida".
  *  └─────────────────────────────────────────────────────────────────────────
  *
  *  FORMATO DAS ABAS — planilha de verdade (NÃO é mais "key | json"):
@@ -31,14 +37,14 @@
  *     são convertidos de volta para objeto automaticamente na leitura da API.
  *
  *  CONTRATO DA API (o portal não mudou — troca transparente):
- *     GET    /{node}.json            -> { "chave": {registro}, ... }  (ou null)
- *     GET    /{node}/{chave}.json    -> {registro}                    (ou null)
- *     GET    /{node}.json?orderBy="campo"&limitToLast=50  -> filtrado/ordenado
- *     POST   /{node}.json            -> cria registro  (retorna { "name": chave })
- *     PUT    /{node}/{chave}.json    -> substitui o registro na chave
- *     PUT    /{node}.json            -> substitui a coleção inteira (ex.: menu)
- *     PATCH  /{node}/{chave}.json    -> mescla campos no registro
- *     DELETE /{node}/{chave}.json    -> remove o registro
+ *     GET    /exec?path={node}.json            -> coleção (ou null)
+ *     GET    /exec?path={node}/{chave}.json    -> registro (ou null)
+ *     GET    /exec?path={node}.json&orderBy="campo"&limitToLast=50
+ *     POST   /exec  body { __method, __path, __body }  (PUT/PATCH/DELETE/POST)
+ *
+ *  Por que ?path= e não /exec/{node}.json ?
+ *     pathInfo depois de /exec/ exige login Google mesmo com a implantação
+ *     "Qualquer pessoa". Query string é pública e é o que o portal-db.js envia.
  *
  *  Observação: o Apps Script só expõe doGet/doPost. O front (js/portal-db.js)
  *  traduz PUT/PATCH/DELETE para POST com body { __method, __path, __body }.
@@ -49,8 +55,10 @@
 // funções de importação (menu "📥 Importar"). O portal web nunca acessa.
 var FIREBASE_URL_ORIGEM = 'https://reportes-bdb0a-default-rtdb.firebaseio.com/';
 
-// Mapa "nó lógico -> nome da aba" para o núcleo. Nós não mapeados (dados das
-// páginas de reporte) viram automaticamente uma aba "db_<nó>".
+// Mapa "nó lógico -> nome da aba". ESTA PLANILHA É SÓ O CÉREBRO DO PORTAL.
+// Nós de páginas (equipamentos, aderência…) NÃO moram aqui — cada um virá
+// da planilha própria da página, no futuro. Pedidos a nós desconhecidos
+// devolvem null e NÃO criam aba db_*.
 var NODE_TO_SHEET = {
   menu_global: 'Menu',
   users: 'Usuarios',
@@ -73,9 +81,9 @@ var PREFERRED_HEADERS = {
   users: ['id', 'usuario', 'nome', 'sobrenome', 'email', 'telefone', 'cargo', 'solicitacao', 'favorito', 'avatar', 'senha'],
   cargos: ['id', 'rotulo', 'nivel', 'descricao'],
   funcoes: ['id', 'rotulo', 'descricao'],
-  portal_news: ['id', 'titulo', 'texto', 'autor', 'cargo', 'avatar', 'data', 'imagem', 'tags', 'curtidas'],
-  portal_status: ['id', 'nome', 'estado', 'descricao', 'cor', 'icon', 'lastUpdate', 'atualizadoPor'],
-  portal_bigquery: ['id', 'titulo', 'categoria', 'query', 'autor', 'data'],
+  portal_news: ['id', 'titulo', 'corpo', 'autor', 'tag', 'data', 'likes', 'likedBy', 'data_edit'],
+  portal_status: ['id', 'nome', 'estado', 'descricao', 'icon', 'lastUpdate'],
+  portal_bigquery: ['id', 'titulo', 'categoria', 'tags', 'descricao', 'codigo_sql', 'corpo_post', 'autor', 'data', 'data_edit'],
   logs: ['id', 'timestamp', 'usuario', 'avatar', 'modulo', 'acao'],
   presence: ['id', 'lastSeen', 'cargo', 'pagina'],
   user_bookmarks: ['id', 'pagina', 'nome', 'atualizadoEm']
@@ -98,6 +106,8 @@ var IMPORT_NUCLEO = [
   ['user_bookmarks', '⭐ Favoritos (cofre)']
 ];
 
+// Catálogo das páginas — NÃO é importado nesta planilha.
+// Cada página puxará o DB da planilha que já existe dela (fase futura).
 var IMPORT_PAGINAS = [
   ['equipamentos', '🖥️ Equipamentos'],
   ['aderencia', '📈 Aderência'],
@@ -135,10 +145,12 @@ var PROP_TOTAL = 'portal_imp_total_';
 // ---------------------------------------------------------------------------
 
 function doGet(e) {
-  var parsed = parsePath_(e && e.pathInfo);
-  if (!parsed.node) return jsonResponse_({ error: 'Rota inválida' });
+  var parsed = parsePath_(resolvePath_(e));
+  if (!parsed.node) return jsonResponse_(healthPayload_());
+
   var lock = LockService.getScriptLock();
-  lock.waitLock(30000);
+  var locked = false;
+  try { locked = lock.tryLock(8000); } catch (lockErr) { locked = false; }
   try {
     var data;
     if (parsed.key !== null) data = readRecord_(parsed.node, parsed.key);
@@ -148,7 +160,9 @@ function doGet(e) {
   } catch (err) {
     return jsonResponse_({ error: String(err) });
   } finally {
-    lock.releaseLock();
+    if (locked) {
+      try { lock.releaseLock(); } catch (relErr) {}
+    }
   }
 }
 
@@ -211,6 +225,14 @@ function doPost(e) {
 // HELPERS DE ROTA
 // ---------------------------------------------------------------------------
 
+// Aceita pathInfo (legado) OU ?path=menu_global.json (o que o portal realmente envia).
+function resolvePath_(e) {
+  if (e && e.parameter && e.parameter.path) return String(e.parameter.path);
+  if (e && e.parameter && e.parameter.n) return String(e.parameter.n);
+  if (e && e.pathInfo) return String(e.pathInfo);
+  return '';
+}
+
 function parsePath_(pathInfo) {
   var p = String(pathInfo || '').replace(/^\/+/, '').replace(/\.json$/, '');
   var parts = p.split('/').filter(function (x) { return x.length > 0; });
@@ -220,32 +242,73 @@ function parsePath_(pathInfo) {
   };
 }
 
+function isNucleo_(node) {
+  return !!NODE_TO_SHEET[node];
+}
+
+function recusarPagina_(node) {
+  return 'Nó "' + node + '" não pertence ao cérebro desta planilha. ' +
+    'Menu, notícias, usuários e status ficam aqui. ' +
+    'O DB de cada página virá da planilha própria dela (fase futura).';
+}
+
+function listarAbasDb_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var extras = [];
+  ss.getSheets().forEach(function (s) {
+    var name = s.getName();
+    if (name.indexOf('db_') === 0) extras.push(name);
+  });
+  return extras;
+}
+
+function healthPayload_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var nodes = {};
+  Object.keys(NODE_TO_SHEET).forEach(function (node) {
+    var name = NODE_TO_SHEET[node];
+    var sh = ss.getSheetByName(name);
+    if (!sh) {
+      nodes[node] = { aba: name, existe: false, registros: 0 };
+    } else {
+      nodes[node] = { aba: name, existe: true, registros: Math.max(0, sh.getLastRow() - 1) };
+    }
+  });
+  return {
+    ok: true,
+    service: 'portal-cerebro',
+    versao: '2.1-cerebro',
+    planilha: ss.getName(),
+    nodes: nodes,
+    abas_db_sobrando: listarAbasDb_(),
+    uso: 'GET /exec?path=menu_global.json'
+  };
+}
+
 function jsonResponse_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj === undefined ? null : obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function sanitizeSheetName_(name) {
-  var s = String(name).replace(/[^A-Za-z0-9_\-]/g, '_').slice(0, 80);
-  return s.length ? s : 'dados';
-}
-
 function sheetNameForNode_(node) {
-  if (NODE_TO_SHEET[node]) return NODE_TO_SHEET[node];
-  return 'db_' + sanitizeSheetName_(node);
+  return NODE_TO_SHEET[node] || null;
 }
 
 function headersForNode_(node) {
   return (PREFERRED_HEADERS[node] || ['id', 'valor']).slice();
 }
 
-// Cria a aba do nó (se não existir) já com cabeçalho colunar + formatação.
-function getSheetForNode_(node) {
+// Cria a aba do nó do CÉREBRO (se não existir). Nós de página: não cria db_*.
+function getSheetForNode_(node, optCreate) {
+  if (!isNucleo_(node)) return null;
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var name = sheetNameForNode_(node);
   var sheet = ss.getSheetByName(name);
-  if (!sheet) sheet = ss.insertSheet(name);
+  if (!sheet) {
+    if (optCreate === false) return null;
+    sheet = ss.insertSheet(name);
+  }
   if (sheet.getLastRow() === 0) {
     writeHeaderRow_(sheet, headersForNode_(node));
   }
@@ -442,16 +505,20 @@ function unflattenMenu_(rows) {
 // ---------------------------------------------------------------------------
 
 function readNode_(node) {
+  if (!isNucleo_(node)) return null;
+
   if (node === 'menu_global') {
-    var sheetMenu = getSheetForNode_(node);
+    var sheetMenu = getSheetForNode_(node, false);
+    if (!sheetMenu) return { categorias: [] };
     return unflattenMenu_(readDataRows_(sheetMenu));
   }
 
-  var sheet = getSheetForNode_(node);
+  var sheet = getSheetForNode_(node, false);
+  if (!sheet) return null;
   var headers = readHeaders_(sheet);
   var last = sheet.getLastRow();
   var result = {};
-  if (last < 2) return result;
+  if (last < 2) return null;
 
   // Lê em blocos de 1000 linhas — aguenta abas enormes sem estourar memória.
   var CHUNK = 1000;
@@ -463,7 +530,7 @@ function readNode_(node) {
       if (rec.found) result[rec.id] = rec.value;
     }
   }
-  return result;
+  return Object.keys(result).length ? result : null;
 }
 
 function readDataRows_(sheet) {
@@ -481,13 +548,16 @@ function readDataRows_(sheet) {
 }
 
 function readRecord_(node, key) {
+  if (!isNucleo_(node)) return null;
+
   if (node === 'menu_global') {
     var menu = readNode_('menu_global');
     if (key === 'categorias') return menu.categorias;
     return menu[key] !== undefined ? menu[key] : null;
   }
 
-  var sheet = getSheetForNode_(node);
+  var sheet = getSheetForNode_(node, false);
+  if (!sheet) return null;
   var headers = readHeaders_(sheet);
   var rowNum = findRowByKey_(sheet, key);
   if (rowNum === -1) return null;
@@ -546,7 +616,12 @@ function createRecord_(node, record) {
   return key;
 }
 
+function assertNucleo_(node) {
+  if (!isNucleo_(node)) throw new Error(recusarPagina_(node));
+}
+
 function writeRecord_(node, key, record) {
+  assertNucleo_(node);
   if (node === 'menu_global') {
     // Escrita unitária não se aplica ao menu achatado; só coleção inteira.
     if (key === 'categorias') return replaceNode_(node, { categorias: record });
@@ -586,6 +661,7 @@ function patchRecord_(node, key, patch) {
 }
 
 function replaceNode_(node, records) {
+  assertNucleo_(node);
   if (node === 'menu_global') {
     var rows = flattenMenu_(records);
     var sheetMenu = getSheetForNode_(node);
@@ -652,7 +728,9 @@ function rewriteTab_(sheet, headers, rows) {
 
 function deleteRecord_(node, key) {
   if (node === 'menu_global') return; // menu só por coleção inteira
-  var sheet = getSheetForNode_(node);
+  assertNucleo_(node);
+  var sheet = getSheetForNode_(node, false);
+  if (!sheet) return;
   var row = findRowByKey_(sheet, key);
   if (row !== -1) sheet.deleteRow(row);
 }
@@ -681,11 +759,9 @@ function setupPortal() {
   ensureConfig_(ss);
 
   var todosNos = [];
-  var vistos = {};
-  IMPORT_NUCLEO.concat(IMPORT_PAGINAS).forEach(function (par) {
-    var node = par[0];
-    var sheet = getSheetForNode_(node);
-    if (!vistos[sheet.getName()]) { vistos[sheet.getName()] = true; todosNos.push(sheet.getName()); }
+  IMPORT_NUCLEO.forEach(function (par) {
+    var sheet = getSheetForNode_(par[0], true);
+    if (sheet) todosNos.push(sheet.getName());
   });
 
   // Seed de Cargos (catálogo de níveis de acesso)
@@ -705,10 +781,17 @@ function setupPortal() {
   });
 
   SpreadsheetApp.flush();
-  mostrarMensagem_('✅ Planilha preparada!',
-    'Abas prontas (' + todosNos.length + '). Próximos passos:\n\n' +
-    '1) Importe os dados pelo menu ⚙️ Portal → 📥 Importar (UMA PARTE POR VEZ).\n' +
-    '2) Implante como Aplicativo da web (/exec) e cole a URL em js/portal-db.js.');
+  var extras = listarAbasDb_();
+  var msg = 'Abas do CÉREBRO prontas: ' + todosNos.join(', ') + ' + ' + CONFIG_SHEET + '.\n\n' +
+    '1) Importe o núcleo: ⚙️ Portal → 🧠 Importar (Menu, Usuários, Notícias, Status…).\n' +
+    '2) Implante como Aplicativo da web e gere UMA NOVA VERSÃO.\n' +
+    '3) Abra a URL /exec no navegador — deve aparecer { ok:true, ... }.';
+  if (extras.length) {
+    msg += '\n\n⚠️ Encontrei ' + extras.length + ' aba(s) db_* que NÃO deveriam estar aqui:\n' +
+      extras.join(', ') + '\n\nUse ⚙️ Portal → 🧹 Remover abas db_* para limpar.\n' +
+      'O DB de cada página fica na planilha própria dela (fase futura).';
+  }
+  mostrarMensagem_('✅ Cérebro preparado', msg);
 }
 
 function ensureConfig_(ss) {
@@ -717,7 +800,7 @@ function ensureConfig_(ss) {
   if (c.getLastRow() === 0) {
     c.getRange(1, 1, 1, 2).setValues([['chave', 'valor']]).setFontWeight('bold');
   }
-  setConfigValue_(c, 'versao', '2.0-colunar');
+  setConfigValue_(c, 'versao', '2.1-cerebro');
   setConfigValue_(c, 'origem_firebase_importacao', FIREBASE_URL_ORIGEM);
   return c;
 }
@@ -753,7 +836,10 @@ function seedIfEmpty_(node, records) {
 // em bateladas. Se o tempo de execução estiver perto do fim, salva a posição
 // e avisa para rodar de novo (o menu "Continuar importações pendentes" retoma).
 function importarNo_(node, rotulo) {
-  var ui = SpreadsheetApp.getUi();
+  if (!isNucleo_(node)) {
+    mostrarMensagem_('⏭️ Fora desta planilha', recusarPagina_(node));
+    return;
+  }
   var inicio = new Date().getTime();
 
   // Menu é pequeno e estrutural: importa inteiro e grava achatado (3 níveis).
@@ -857,6 +943,10 @@ function rotuloDoNo_(node) {
 
 // Pede confirmação e dispara a importação de UM nó.
 function importarComConfirmacao_(node) {
+  if (!isNucleo_(node)) {
+    mostrarMensagem_('⏭️ Fora desta planilha', recusarPagina_(node));
+    return;
+  }
   var ui = SpreadsheetApp.getUi();
   var cursor = PropertiesService.getScriptProperties().getProperty(PROP_CURSOR + node);
   var texto = 'Nó do Firebase: ' + node + '\nAba de destino: ' + sheetNameForNode_(node) + '\n\n';
@@ -875,13 +965,41 @@ function mostrarMensagem_(titulo, texto) {
 
 function mostrarAjuda() {
   mostrarMensagem_('ℹ️ Como funciona',
-    '1) "Preparar planilha" cria todas as abas com cabeçalhos.\n' +
-    '2) Importe PARTE POR PARTE (núcleo primeiro, depois as páginas).\n' +
-    '   Nunca importe tudo de uma vez — por isso não existe opção "importar tudo".\n' +
-    '3) Se uma importação parar no meio (limite de tempo do Google),\n' +
-    '   rode o mesmo item de novo: ela continua de onde parou.\n' +
-    '4) Ao final, implante como Aplicativo da web e cole a URL /exec\n' +
-    '   em js/portal-db.js (PortalDB.URL).');
+    'Esta planilha é o CÉREBRO do portal (menu, usuários, notícias, status, logs).\n' +
+    'O DB de cada página NÃO entra aqui — fica na planilha dela.\n\n' +
+    '1) "Preparar planilha" cria só as abas do cérebro.\n' +
+    '2) Se existirem abas db_*, use "🧹 Remover abas db_*".\n' +
+    '3) Importe o NÚCLEO parte a parte (Menu, Usuários, Notícias…).\n' +
+    '4) Se uma importação parar no meio, rode o mesmo item de novo.\n' +
+    '5) Implante como Aplicativo da web (NOVA VERSÃO) e cole a URL /exec\n' +
+    '   em js/portal-db.js. Teste abrindo /exec — deve vir { ok:true }.');
+}
+
+function limparAbasDb() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var extras = listarAbasDb_();
+  if (!extras.length) {
+    mostrarMensagem_('🧹 Nada a limpar', 'Não há abas db_* nesta planilha. Ela já está só com o cérebro.');
+    return;
+  }
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.alert(
+    '🧹 Remover abas db_*',
+    'Serão removidas ' + extras.length + ' aba(s):\n' + extras.join(', ') +
+    '\n\nEsta planilha fica só com o cérebro (Menu, Usuarios, Noticias, Status, Logs, _Config...).\n' +
+    'O DB de cada página virá da planilha própria dela, no futuro.\n\nContinuar?',
+    ui.ButtonSet.YES_NO
+  );
+  if (r !== ui.Button.YES) return;
+  var removidas = [];
+  extras.forEach(function (name) {
+    var s = ss.getSheetByName(name);
+    if (s && ss.getSheets().length > 1) {
+      ss.deleteSheet(s);
+      removidas.push(name);
+    }
+  });
+  mostrarMensagem_('✅ Abas removidas', 'Removidas: ' + (removidas.join(', ') || '(nenhuma)'));
 }
 
 // Retoma todas as partes que ficaram pela metade.
@@ -905,8 +1023,8 @@ function continuarImportacoesPendentes() {
 
 function importarNoPersonalizado() {
   var ui = SpreadsheetApp.getUi();
-  var r = ui.prompt('📥 Importar nó personalizado',
-    'Digite o nome EXATO do nó no Firebase (ex.: equipamentos):', ui.ButtonSet.OK_CANCEL);
+  var r = ui.prompt('📥 Importar nó do cérebro',
+    'Digite o nome EXATO do nó do cérebro (users, menu_global, portal_news, portal_status, logs…):', ui.ButtonSet.OK_CANCEL);
   if (r.getSelectedButton() !== ui.Button.OK) return;
   var node = String(r.getResponseText() || '').replace(/^\s+|\s+$/g, '');
   if (!node) return;
@@ -925,17 +1043,12 @@ function onOpen() {
     subNucleo.addItem(par[1], fnImportador_(par[0]));
   });
 
-  var subPaginas = ui.createMenu('📄 Importar — Páginas (reportes)');
-  IMPORT_PAGINAS.forEach(function (par) {
-    subPaginas.addItem(par[1], fnImportador_(par[0]));
-  });
-
   ui.createMenu('⚙️ Portal')
-    .addItem('1️⃣ Preparar planilha (criar abas)', 'setupPortal')
+    .addItem('1️⃣ Preparar planilha (só o cérebro)', 'setupPortal')
+    .addItem('🧹 Remover abas db_*', 'limparAbasDb')
     .addSeparator()
     .addSubMenu(subNucleo)
-    .addSubMenu(subPaginas)
-    .addItem('📥 Importar nó personalizado…', 'importarNoPersonalizado')
+    .addItem('📥 Importar nó do cérebro…', 'importarNoPersonalizado')
     .addSeparator()
     .addItem('🔄 Continuar importações pendentes', 'continuarImportacoesPendentes')
     .addItem('ℹ️ Ajuda', 'mostrarAjuda')
