@@ -9,13 +9,13 @@
     <script>
         if (window === window.top) {
             const paginaAtual = window.location.pathname.split('/').pop() || 'emails_tratativas.html';
-            window.location.replace('index.html?page=' + paginaAtual);
+            window.location.replace('../index.html?page=pages/' + paginaAtual);
         }
     </script>
 
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../style.css">
 
     <style>
         body { padding: 12px; display: flex; flex-direction: column; gap: 12px; height: 100vh; overflow: hidden; background: transparent !important; }

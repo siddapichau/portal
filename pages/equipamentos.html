@@ -13,7 +13,7 @@
     <script>
         if (window === window.top) {
             const paginaAtual = window.location.pathname.split('/').pop() || 'equipamentos.html';
-            window.location.replace('index.html?page=' + paginaAtual);
+            window.location.replace('../index.html?page=pages/' + paginaAtual);
         }
     </script>
 
@@ -23,7 +23,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- CSS GLOBAL -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../style.css">
 
     <style>
         /* Variáveis Exclusivas Desta Tela */

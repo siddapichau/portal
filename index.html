@@ -138,6 +138,8 @@
 </head>
 <body data-theme="light">
 
+    <!-- Camada única de acesso a dados (planilha/Firebase) -->
+    <script src="js/portal-db.js"></script>
     <!-- Carrega o menu principal do sistema -->
     <script src="menu.js"></script>
 
@@ -181,7 +183,7 @@
     </div>
 
     <script>
-        const URL_BD_INDEX = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const URL_BD_INDEX = (window.PortalDB ? window.PortalDB.baseAtiva() : "https://reportes-bdb0a-default-rtdb.firebaseio.com/");
         
         let CURRENT_LOGGED_USER = null;
         try { CURRENT_LOGGED_USER = JSON.parse(localStorage.getItem('loggedUser')); } catch(e) {}

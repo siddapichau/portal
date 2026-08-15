@@ -1,4 +1,4 @@
-const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+const FIREBASE_URL = (window.PortalDB ? window.PortalDB.baseAtiva() : "https://reportes-bdb0a-default-rtdb.firebaseio.com/");
 
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
@@ -116,7 +116,7 @@ async function carregarMenuGlobal() {
                 <div id="cat-list-container" style="flex:1; overflow-y:auto; padding-bottom:10px;"></div>
                 
                 <div class="sidebar-footer" id="sidebarFooterConfig" style="display: none;">
-                    <button class="btn-sidebar-admin" id="btnSidebarAdmin" onclick="abrirPagina('admin.html', 'Admin')" style="display:none;">⚙️ Painel Admin</button>
+                    <button class="btn-sidebar-admin" id="btnSidebarAdmin" onclick="abrirPagina('pages/admin.html', 'Admin')" style="display:none;">⚙️ Painel Admin</button>
                     <button class="btn-sidebar-logout" onclick="fazerLogout()">🚪 Deslogar</button>
                 </div>
             </div>
@@ -174,7 +174,7 @@ async function carregarMenuGlobal() {
                 </div>
 
                 <!-- BOTÃO DE PERFIL COMPLETO -->
-                <button class="btn-auth" style="background: var(--text-main);" onclick="fecharConfigModal(); abrirPagina('perfil.html', 'Meu Perfil');">⚙️ Gerenciar Perfil Completo</button>
+                <button class="btn-auth" style="background: var(--text-main);" onclick="fecharConfigModal(); abrirPagina('pages/perfil.html', 'Meu Perfil');">⚙️ Gerenciar Perfil Completo</button>
             </div>
         </div>
     `;
@@ -278,7 +278,16 @@ function temPermissao(rolesStr, usersStr) {
 
 function toggleMenu() { document.querySelector('.sidebar-wrapper').classList.toggle('open'); document.querySelector('.sidebar-overlay').classList.toggle('active'); }
 
+// Normaliza URLs de páginas para a pasta pages/ (migração)
+function normalizarUrlPagina(url) {
+    if(!url || url === '#' || /^(https?:)?\/\//.test(url)) return url;
+    if(url.startsWith('pages/')) return url;
+    if(/\.html$/i.test(url) && !url.includes('/')) return 'pages/' + url;
+    return url;
+}
+
 function abrirPagina(url, titulo) {
+    url = normalizarUrlPagina(url);
     if(!url || url === '#') return;
     const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
     if (isIndex) {

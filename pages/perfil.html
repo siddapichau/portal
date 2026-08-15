@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Meu Perfil - Mercado Livre</title>
     
-    <link rel="stylesheet" href="style.css">
+    <script src="../js/portal-db.js"></script>
+    <link rel="stylesheet" href="../style.css">
 
     <style>
         body { background: transparent !important; padding: 20px; overflow-y: auto; }
@@ -179,7 +180,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = (window.PortalDB ? window.PortalDB.baseAtiva() : "https://reportes-bdb0a-default-rtdb.firebaseio.com/");
         let loggedUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
         function syncTheme() { 
