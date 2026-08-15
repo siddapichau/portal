@@ -97,7 +97,6 @@
         ::-webkit-scrollbar-track { background: var(--bg-body); }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
-    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -109,7 +108,6 @@
         </div>
         <div class="nav-right" style="display: flex; gap: 8px;">
             <button class="btn-header" id="btn-gerenciar" onclick="abrirModalGerenciador()" style="display:none;">📂 Gerenciar Arquivos</button>
-            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
         </div>
     </div>
 
@@ -373,35 +371,6 @@
         function carregarMaisAproximados() { let container = document.getElementById('scroll-aproximados'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 60) { if ((CUR_PAGE_APROX + 1) * PAGE_SIZE < DADOS_APROXIMADOS.length) { CUR_PAGE_APROX++; renderizarPedaçoAproximados(); } } }
 
         carregarTodosBancos();
-    
-        // ==========================================
-        // EXPORTAÇÃO CSV (usa js/export-csv.js)
-        // Junta resultados exatos e aproximados num único arquivo,
-        // com uma coluna indicando o tipo de correspondência.
-        // ==========================================
-        function exportarCSV() {
-            var linhas = [];
-            function juntar(lista, tipo) {
-                (lista || []).forEach(function (item) {
-                    var copia = { Correspondencia: tipo };
-                    for (var k in item) {
-                        if (Object.prototype.hasOwnProperty.call(item, k)) copia[k] = item[k];
-                    }
-                    linhas.push(copia);
-                });
-            }
-            if (typeof DADOS_EXATOS !== 'undefined') juntar(DADOS_EXATOS, 'Exato');
-            if (typeof DADOS_APROXIMADOS !== 'undefined') juntar(DADOS_APROXIMADOS, 'Aproximado');
-
-            if (!linhas.length && typeof BANCO_GLOBAL !== 'undefined') {
-                PortalCSV.deObjetos(PortalCSV.nomeComData('salvados_base'), BANCO_GLOBAL);
-                return;
-            }
-            PortalCSV.deObjetos(PortalCSV.nomeComData('salvados_resultado'), linhas);
-        }
-
-        </script>
-    <script src="js/export-csv.js"></script>
-    <script src="js/mobile.js"></script>
+    </script>
 </body>
 </html>

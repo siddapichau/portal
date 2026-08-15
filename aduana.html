@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aduanas SSC1 - Dashboard</title>
+    
+    <!-- SISTEMA ANTI-ACESSO DIRETO -->
+    <script>
+        if (window === window.top) {
+            const paginaAtual = window.location.pathname.split('/').pop() || 'aduana.html';
+            window.location.replace('index.html?page=' + paginaAtual);
+        }
+    </script>
+
+    <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        :root {
+            --bg-header: #FFF159;
+            --bg-card: #FFFFFF;
+            --border-card: #E5E7EB;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.05);
+            --brand-yellow: #FFF159; /* Amarelo Padrão ML - Topos */
+            --bar-yellow: #FFB000; /* Laranja/Amarelo Escuro - Velas */
+            --text-on-yellow: #2D3277; /* Azul Padrão ML */
+        }
+        [data-theme="dark"] {
+            --bg-header: #FFF159;
+            --bg-card: #1E293B;
+            --border-card: rgba(255, 255, 255, 0.1);
+            --text-main: #E2E8F0;
+            --text-muted: #94A3B8;
+            --shadow-card: 0 4px 6px rgba(0, 0, 0, 0.3);
+            --brand-yellow: #FFF159;
+            --bar-yellow: #FFB000;
+            --text-on-yellow: #2D3277;
+        }
+
+        /* LAYOUT TRAVADO EM 100% DA TELA PARA FIT PERFEITO */
+        html, body { width: 100%; height: 100vh; background: transparent !important; margin: 0; padding: 0; overflow: hidden; }
+        body { padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; font-family: 'Inter', sans-serif; font-size: 0.95rem; }
+
+        .glass-panel { background-color: var(--bg-card); border: 1px solid var(--border-card); border-radius: 8px; box-shadow: var(--shadow-card); transition: 0.3s; }
+
+        /* CABEÇALHO PRINCIPAL */
+        .header { padding: 6px 20px; flex: 0 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 20px; background-color: var(--bg-header) !important; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-title-wrapper { flex: 1; text-align: center; color: #2D3277 !important; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px; font-size: 1.3rem; margin-left: 20px;}
+        .ml-logo { height: 30px; width: auto; object-fit: contain; }
+
+        .header-controls { display: flex; align-items: center; gap: 12px; }
+        .btn-icon { background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(0, 0, 0, 0.1); color: #2D3277; width: 34px; height: 34px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s ease; }
+        .btn-icon:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+
+        /* FILTROS */
+        .filter-bar { display: flex; gap: 10px; padding: 6px 20px; align-items: center; flex: 0 0 auto; justify-content: flex-end;}
+        .filter-label { font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; margin-right: 5px;}
+        .filter-select { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-card); background: transparent; color: var(--text-main); font-weight: 600; font-size: 0.85rem; outline: none; cursor: pointer; }
+        .btn-limpar { padding: 4px 12px; background: #3483FA; color: #fff; border: none; border-radius: 6px; font-weight: 800; cursor: pointer; transition: 0.3s; font-size: 0.8rem; text-transform: uppercase; }
+
+        /* KPI BAR */
+        .kpi-container { text-align: center; margin-top: 2px; flex: 0 0 auto; display: flex; justify-content: center;}
+        .kpi-row { display: flex; gap: 15px; background-color: var(--brand-yellow); padding: 10px 15px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: max-content;}
+        
+        .kpi-box { padding: 8px 20px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; min-width: 120px; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .kpi-box.black { background-color: #000000; border: 2px solid #333; }
+        .kpi-box.gray { background-color: #607D8B; } 
+        .kpi-box.green { background-color: #5AB065; }
+        .kpi-box.red { background-color: #E74C3C; }
+        .kpi-box.blue { background-color: #4A90E2; }
+        
+        .kpi-title { font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; color: #fff;}
+        .kpi-value { font-size: 2.1rem; font-weight: 900; line-height: 1;}
+
+        /* LAYOUT GERAL (GRÁFICOS) */
+        .dashboard-grid { display: grid; grid-template-columns: 0.95fr 1.05fr 1.35fr; grid-template-rows: 1fr 1fr; gap: 10px; flex: 1; min-height: 0; margin-top: 5px;}
+        .chart-card { display: flex; flex-direction: column; border-radius: 8px; overflow: hidden; min-height: 0; } 
+        
+        .chart-title { background: var(--brand-yellow); color: var(--text-on-yellow); padding: 6px 10px; font-size: 0.8rem; font-weight: 900; text-transform: uppercase; text-align: center; letter-spacing: 0.5px; margin: 0; border-bottom: 1px solid var(--border-card); flex: 0 0 auto;}
+        .chart-wrapper { flex: 1; min-height: 0; width: 100%; position: relative; padding: 5px; box-sizing: border-box; overflow: hidden;}
+        
+        /* TABELA PERFIL */
+        .perfil-table-wrapper { flex: 1; display: flex; flex-direction: column; padding: 10px; align-items: center; justify-content: center; overflow: hidden;}
+        .perfil-table { width: 100%; max-width: 400px; border-collapse: collapse; font-size: 0.8rem; }
+        .perfil-table th, .perfil-table td { padding: 8px; text-align: right; border-bottom: 1px solid var(--border-card); color: var(--text-main); }
+        .perfil-table th:first-child, .perfil-table td:first-child { text-align: left; font-weight: 800; }
+        .perfil-table th { color: #111; font-weight: 900; text-transform: uppercase; font-size: 0.7rem; }
+        .perfil-table .highlight-bg { background: var(--brand-yellow); color: var(--text-on-yellow); font-weight: 900; border-radius: 4px; }
+
+        /* TABELA INFERIOR (DETALHES) */
+        .data-table-wrapper { flex: 1; overflow-y: auto; overflow-x: hidden; background: var(--bg-card); min-height: 0;}
+        table.data-table { width: 100%; border-collapse: collapse; font-size: 0.7rem; text-align: center; }
+        .data-table thead { background: var(--brand-yellow); color: var(--text-on-yellow); position: sticky; top: 0; z-index: 1; font-weight: 900; text-transform: uppercase;}
+        .data-table th, .data-table td { padding: 5px 4px; border-bottom: 1px solid var(--border-card); color: var(--text-main); white-space: nowrap; }
+        .data-table tbody tr:hover { background-color: rgba(255, 241, 89, 0.15); }
+        
+        .data-table .col-correta { color: var(--text-main); font-weight: 600; }
+        .data-table .col-amais { background: #4DD0E1; color: #000; font-weight: 900; border-right: 1px solid var(--bg-card); border-left: 1px solid var(--bg-card);}
+        .data-table .col-faltante { background: #E74C3C; color: #000; font-weight: 900; }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+        [data-theme="dark"] ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); }
+        
+        /* MODAL POP-UP CUSTOMIZADO */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; padding: 25px; width: 90%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); text-align: center; }
+        .modal-box h3 { margin: 0 0 15px 0; color: var(--text-main); font-weight: 900; font-size: 1.3rem; text-transform: uppercase;}
+        .modal-box p { margin: 0 0 20px 0; color: var(--text-muted); font-size: 0.95rem; line-height: 1.4;}
+        .modal-box input { width: 100%; padding: 12px; border: 1px solid var(--border-card); background: transparent; color: var(--text-main); border-radius: 8px; font-size: 1rem; text-align: center; font-weight: bold; margin-bottom: 20px; outline: none; box-sizing: border-box;}
+        .modal-box input:focus { border-color: #3483FA; }
+        .modal-buttons { display: flex; justify-content: center; gap: 15px; }
+        .modal-buttons button { padding: 10px 20px; border: none; border-radius: 8px; font-weight: 800; cursor: pointer; transition: 0.2s; font-size: 0.9rem;}
+        .btn-cancel { background: var(--border-card); color: var(--text-main); }
+        .btn-cancel:hover { opacity: 0.8; }
+        .btn-confirm { background: #3483FA; color: #fff; }
+        .btn-confirm:hover { background: #2968c8; }
+
+        .exporting .header-controls, .exporting .filter-bar { display: none !important; }
+    </style>
+</head>
+<body data-theme="light">
+
+    <!-- CABEÇALHO -->
+    <div class="header glass-panel">
+        <div style="display:flex; align-items:center; gap: 10px;">
+            <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
+        </div>
+        
+        <div class="header-title-wrapper" id="main-title">
+            ADUANAS - SSC1
+        </div>
+
+        <div class="header-controls">
+            <button class="btn-icon" onclick="baixarImagem()" title="Exportar Imagem">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+            </button>
+            <label class="btn-icon" id="btnUpload" style="display:none;" title="Subir Histórico R e/ou Pacotes">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                <input type="file" id="csvFileInput" accept=".csv" multiple style="display: none;" />
+            </label>
+        </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="filter-bar glass-panel">
+        <span class="filter-label">Filtros:</span>
+        <select id="filter-month" class="filter-select" onchange="applyFilter('month')"><option value="">Mês (Todos)</option></select>
+        <select id="filter-week" class="filter-select" onchange="applyFilter('week')"><option value="">Semana (Todas)</option></select>
+        <select id="filter-day" class="filter-select" onchange="applyFilter('day')"><option value="">Dia (Todos)</option></select>
+        <button class="btn-limpar" onclick="resetFilter()">Hoje</button>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-container">
+        <div class="kpi-row">
+            <div class="kpi-box black">
+                <div class="kpi-title">ROTAS</div>
+                <div class="kpi-value" id="kpi-rotas">0</div>
+            </div>
+            <div class="kpi-box green">
+                <div class="kpi-title">CORRETAS</div>
+                <div class="kpi-value" id="kpi-corretas">0</div>
+            </div>
+            <div class="kpi-box red">
+                <div class="kpi-title">FALTANTES</div>
+                <div class="kpi-value" id="kpi-faltantes">0</div>
+            </div>
+            <div class="kpi-box blue">
+                <div class="kpi-title">A MAIS</div>
+                <div class="kpi-value" id="kpi-amais">0</div>
+            </div>
+            <div class="kpi-box gray">
+                <div class="kpi-title">TEMPO MÉDIO</div>
+                <div class="kpi-value" id="kpi-tempo">0<span style="font-size:0.5em">m</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRIDS DE GRÁFICOS -->
+    <div class="dashboard-grid">
+        <!-- Linha 1 -->
+        <div class="chart-card glass-panel">
+            <div class="chart-title">TOTAL x CICLO</div>
+            <div id="chart-ciclo" class="chart-wrapper"></div>
+        </div>
+        <div class="chart-card glass-panel">
+            <div class="chart-title">TOTAL x PERFIL PACOTES</div>
+            <div class="perfil-table-wrapper">
+                <table class="perfil-table">
+                    <thead>
+                        <tr><th colspan="3" class="highlight-bg" style="text-align: right;">ESTADO / TOTAL</th></tr>
+                        <tr><th>PERFIL</th><th>FALTANTE</th><th>A MAIS</th></tr>
+                    </thead>
+                    <tbody id="tbody-perfil">
+                        <tr><td>VOLUMOSO</td><td>0</td><td>0</td></tr>
+                        <tr><td>ESTEIRA</td><td>0</td><td>0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="chart-card glass-panel">
+            <div class="chart-title">TOTAL PERFIL x CICLO</div>
+            <div id="chart-perfil-ciclo" class="chart-wrapper"></div>
+        </div>
+
+        <!-- Linha 2 -->
+        <div class="chart-card glass-panel">
+            <div class="chart-title">REP's x TOTAL ADUANAS</div>
+            <div id="chart-reps" class="chart-wrapper"></div>
+        </div>
+        <div class="chart-card glass-panel">
+            <div class="chart-title">TRANSPORTADORAS</div>
+            <div id="chart-transp" class="chart-wrapper"></div>
+        </div>
+        <div class="chart-card glass-panel" style="padding:0;">
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ROTA</th><th>TRANSP.</th><th>REP'S</th>
+                            <th>CORR.</th><th>A MAIS</th><th>FALTA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-rotas">
+                        <tr><td colspan="6" style="padding: 20px;">Nenhum dado selecionado.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POP-UP CUSTOMIZADO -->
+    <div id="customModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="modalTitle">Título</h3>
+            <p id="modalMessage">Mensagem</p>
+            <div id="modalInputArea" style="display:none;">
+                <input type="text" id="modalInput" placeholder="DD/MM/YYYY">
+            </div>
+            <div class="modal-buttons">
+                <button id="modalBtnCancel" class="btn-cancel">Cancelar</button>
+                <button id="modalBtnConfirm" class="btn-confirm">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const NODE_RESUMO = "poka_aduanas_resumo";
+        const NODE_PACOTES = "poka_aduanas_pacotes";
+        
+        let globalDbResumo = {};
+        let globalDbPacotes = {};
+        let flatResumo = [];
+        let flatPacotes = [];
+        let chartInstances = {};
+
+        // Permissões
+        const canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' 
+            ? window.parent.verificarPermissaoUpload('aduana.html') : true; 
+        if(canEdit) document.getElementById('btnUpload').style.display = 'flex';
+
+        function syncTheme() { 
+            const theme = localStorage.getItem('themePreference') || 'light'; 
+            document.body.setAttribute('data-theme', theme); 
+            if(flatResumo.length > 0 || flatPacotes.length > 0) render();
+        }
+        syncTheme();
+        window.addEventListener('message', (e) => { 
+            if (e.data.type === 'THEME_CHANGED') { syncTheme(); } 
+        });
+
+        // --- SISTEMA DE MODAL ---
+        function showModal(options) {
+            return new Promise((resolve) => {
+                const overlay = document.getElementById('customModal');
+                const title = document.getElementById('modalTitle');
+                const msg = document.getElementById('modalMessage');
+                const inputArea = document.getElementById('modalInputArea');
+                const input = document.getElementById('modalInput');
+                const btnCancel = document.getElementById('modalBtnCancel');
+                const btnConfirm = document.getElementById('modalBtnConfirm');
+
+                title.innerText = options.title || 'Aviso';
+                msg.innerHTML = options.message || '';
+                
+                if(options.type === 'prompt') {
+                    inputArea.style.display = 'block';
+                    input.value = options.defaultValue || '';
+                    btnCancel.style.display = 'block';
+                } else {
+                    inputArea.style.display = 'none';
+                    btnCancel.style.display = options.showCancel ? 'block' : 'none';
+                }
+
+                btnConfirm.innerText = options.confirmText || 'OK';
+                overlay.classList.add('active');
+
+                const cleanup = () => {
+                    overlay.classList.remove('active');
+                    btnConfirm.onclick = null;
+                    btnCancel.onclick = null;
+                };
+
+                btnConfirm.onclick = () => {
+                    cleanup();
+                    resolve(options.type === 'prompt' ? input.value : true);
+                };
+
+                btnCancel.onclick = () => {
+                    cleanup();
+                    resolve(null);
+                };
+            });
+        }
+
+        // --- UTILITÁRIOS ---
+        function padDate(dStr) {
+            let p = (dStr||'').split('/');
+            if(p.length !== 3) return dStr;
+            return `${p[0].padStart(2,'0')}/${p[1].padStart(2,'0')}/${p[2]}`;
+        }
+
+        function formatarDataHoje() {
+            const h = new Date();
+            return `${String(h.getDate()).padStart(2,'0')}/${String(h.getMonth()+1).padStart(2,'0')}/${h.getFullYear()}`;
+        }
+
+        function getISOWeek(d) {
+            let date = new Date(d.getTime());
+            date.setHours(0, 0, 0, 0);
+            date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+            let week1 = new Date(date.getFullYear(), 0, 4);
+            return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+        }
+
+        const parseCSV = (file) => new Promise(resolve => {
+            Papa.parse(file, { header: true, skipEmptyLines: true, complete: resolve });
+        });
+
+        // --- CARREGAMENTO INICIAL ---
+        window.onload = function() { loadDataFromFirebase(); };
+
+        function loadDataFromFirebase() {
+            Promise.all([
+                fetch(`${FIREBASE_URL}${NODE_RESUMO}.json`).then(r => r.json()),
+                fetch(`${FIREBASE_URL}${NODE_PACOTES}.json`).then(r => r.json())
+            ]).then(([dbR, dbP]) => {
+                globalDbResumo = dbR || {};
+                globalDbPacotes = dbP || {};
+                populateFilters();
+                resetFilter();
+            }).catch(e => console.log("Offline / BD Vazio", e));
+        }
+
+        function populateFilters() {
+            let datesSet = new Set([...Object.keys(globalDbResumo), ...Object.keys(globalDbPacotes)]);
+            let dates = Array.from(datesSet).map(k => k.replace(/-/g, '/'));
+            
+            // ORDENAÇÃO CRONOLÓGICA (Mais Atual para o Mais Antigo)
+            dates.sort((a, b) => {
+                let pa = a.split('/'); let pb = b.split('/');
+                return new Date(pb[2], pb[1]-1, pb[0]) - new Date(pa[2], pa[1]-1, pa[0]);
+            });
+
+            let months = new Set(), weeks = new Set(), days = new Set();
+            
+            dates.forEach(d => {
+                let p = d.split('/');
+                if(p.length === 3) {
+                    days.add(d);
+                    let dateObj = new Date(p[2], p[1]-1, p[0]);
+                    months.add(String(dateObj.getMonth()+1).padStart(2,'0') + '/' + dateObj.getFullYear());
+                    weeks.add('Semana ' + String(getISOWeek(dateObj)).padStart(2,'0') + ' (' + dateObj.getFullYear() + ')');
+                }
+            });
+
+            const fillSelect = (id, setVal, defaultText) => {
+                let sel = document.getElementById(id);
+                sel.innerHTML = `<option value="">${defaultText}</option>`;
+                Array.from(setVal).forEach(v => { sel.innerHTML += `<option value="${v}">${v}</option>`; });
+            };
+
+            fillSelect('filter-month', months, 'Mês (Todos)');
+            fillSelect('filter-week', weeks, 'Semana (Todas)');
+            fillSelect('filter-day', days, 'Dia (Todos)');
+        }
+
+        function applyFilter(source) {
+            let mSel = document.getElementById('filter-month');
+            let wSel = document.getElementById('filter-week');
+            let dSel = document.getElementById('filter-day');
+
+            if(source === 'month') { wSel.value = ''; dSel.value = ''; }
+            if(source === 'week') { mSel.value = ''; dSel.value = ''; }
+            if(source === 'day') { mSel.value = ''; wSel.value = ''; }
+
+            let m = mSel.value, w = wSel.value, d = dSel.value;
+            flatResumo = []; flatPacotes = [];
+
+            let allKeys = new Set([...Object.keys(globalDbResumo), ...Object.keys(globalDbPacotes)]);
+
+            allKeys.forEach(key => {
+                let dateStr = key.replace(/-/g, '/');
+                let p = dateStr.split('/');
+                if(p.length !== 3) return;
+
+                let dateObj = new Date(p[2], p[1]-1, p[0]);
+                let mStr = String(dateObj.getMonth()+1).padStart(2,'0') + '/' + dateObj.getFullYear();
+                let wStr = 'Semana ' + String(getISOWeek(dateObj)).padStart(2,'0') + ' (' + dateObj.getFullYear() + ')';
+
+                let match = true;
+                if(m && mStr !== m) match = false;
+                if(w && wStr !== w) match = false;
+                if(d && dateStr !== d) match = false;
+
+                if(match) {
+                    if(globalDbResumo[key]) flatResumo = flatResumo.concat(globalDbResumo[key]);
+                    if(globalDbPacotes[key]) flatPacotes = flatPacotes.concat(globalDbPacotes[key]);
+                }
+            });
+
+            render();
+        }
+
+        function resetFilter() {
+            let dataHoje = formatarDataHoje();
+            document.getElementById('filter-month').value = '';
+            document.getElementById('filter-week').value = '';
+            
+            let dSel = document.getElementById('filter-day');
+            let target = Array.from(dSel.options).find(o => o.value === dataHoje);
+            
+            if(target) {
+                dSel.value = dataHoje;
+            } else if (dSel.options.length > 1) {
+                dSel.value = dSel.options[1].value; // Puxa o dia mais recente da lista
+            }
+            applyFilter('day');
+        }
+
+        // --- SISTEMA DE UPLOAD INTELIGENTE MÚLTIPLO ---
+        document.getElementById('csvFileInput').addEventListener('change', async function(e) {
+            const files = e.target.files;
+            if(!files || files.length === 0) return;
+
+            let resumoRaw = null;
+            let pacotesRaw = null;
+
+            for(let file of files) {
+                let res = await parseCSV(file);
+                if (res.data.length > 0) {
+                    let cols = res.meta.fields.map(c => c.toLowerCase());
+                    if(cols.includes('corretas') || cols.includes("rep's") || cols.includes("rep de aduana") || cols.includes("tempo de aud")) {
+                        resumoRaw = res.data;
+                    } else if((cols.includes('dimensão') || cols.includes('dimensao')) && cols.includes('estado')) {
+                        pacotesRaw = res.data;
+                    }
+                }
+            }
+
+            if(!resumoRaw && !pacotesRaw) {
+                await showModal({ title: 'Aviso', message: "Nenhum arquivo CSV válido reconhecido. Suba 'Histórico R' e/ou 'Histórico de pcts'." });
+                e.target.value = ''; return;
+            }
+
+            let isFirstUploadR = Object.keys(globalDbResumo).length === 0;
+            let isFirstUploadP = Object.keys(globalDbPacotes).length === 0;
+
+            let requiresDate = (resumoRaw && !isFirstUploadR) || (pacotesRaw && !isFirstUploadP);
+            let chosenDate = null;
+            
+            if (requiresDate) {
+                chosenDate = await showModal({
+                    title: 'Sincronizar Dados',
+                    message: `Identificamos planilha(s) válidas.<br>De qual data deseja extrair e atualizar os dados?`,
+                    type: 'prompt',
+                    defaultValue: formatarDataHoje()
+                });
+                if (!chosenDate) { e.target.value = ''; return; }
+            }
+
+            let promises = [];
+
+            if (resumoRaw) {
+                if (isFirstUploadR) {
+                    let newDb = {};
+                    resumoRaw.forEach(row => {
+                        let dKey = Object.keys(row).find(k => k.toLowerCase().includes('data'));
+                        let d = padDate((row[dKey] || '').trim().split(' ')[0]);
+                        if(d) {
+                            let key = d.replace(/\//g, '-');
+                            if(!newDb[key]) newDb[key] = [];
+                            let limpo = {};
+                            for(let k in row) limpo[k.replace(/[\.\#\$\/\[\]]/g,'_')] = row[k];
+                            newDb[key].push(limpo);
+                        }
+                    });
+                    promises.push(fetch(`${FIREBASE_URL}${NODE_RESUMO}.json`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(newDb) }));
+                } else {
+                    let chosenDateKey = padDate(chosenDate).replace(/\//g, '-');
+                    let rowsForDate = [];
+                    resumoRaw.forEach(row => {
+                        let dKey = Object.keys(row).find(k => k.toLowerCase().includes('data'));
+                        let d = padDate((row[dKey] || '').trim().split(' ')[0]);
+                        if(d === chosenDate) {
+                            let limpo = {};
+                            for(let k in row) limpo[k.replace(/[\.\#\$\/\[\]]/g,'_')] = row[k];
+                            rowsForDate.push(limpo);
+                        }
+                    });
+                    if(rowsForDate.length > 0) {
+                        promises.push(fetch(`${FIREBASE_URL}${NODE_RESUMO}/${chosenDateKey}.json`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(rowsForDate) }));
+                    }
+                }
+            }
+
+            if (pacotesRaw) {
+                if (isFirstUploadP) {
+                    let newDb = {};
+                    pacotesRaw.forEach(row => {
+                        let dKey = Object.keys(row).find(k => k.toLowerCase().includes('data'));
+                        let d = padDate((row[dKey] || '').trim().split(' ')[0]);
+                        if(d) {
+                            let key = d.replace(/\//g, '-');
+                            if(!newDb[key]) newDb[key] = [];
+                            let limpo = {};
+                            for(let k in row) limpo[k.replace(/[\.\#\$\/\[\]]/g,'_')] = row[k];
+                            newDb[key].push(limpo);
+                        }
+                    });
+                    promises.push(fetch(`${FIREBASE_URL}${NODE_PACOTES}.json`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(newDb) }));
+                } else {
+                    let chosenDateKey = padDate(chosenDate).replace(/\//g, '-');
+                    let rowsForDate = [];
+                    pacotesRaw.forEach(row => {
+                        let dKey = Object.keys(row).find(k => k.toLowerCase().includes('data'));
+                        let d = padDate((row[dKey] || '').trim().split(' ')[0]);
+                        if(d === chosenDate) {
+                            let limpo = {};
+                            for(let k in row) limpo[k.replace(/[\.\#\$\/\[\]]/g,'_')] = row[k];
+                            rowsForDate.push(limpo);
+                        }
+                    });
+                    if(rowsForDate.length > 0) {
+                        promises.push(fetch(`${FIREBASE_URL}${NODE_PACOTES}/${chosenDateKey}.json`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(rowsForDate) }));
+                    }
+                }
+            }
+
+            if (promises.length > 0) {
+                await Promise.all(promises);
+                let msg = requiresDate ? `Os dados do dia ${chosenDate} foram atualizados com sucesso.` : `O Banco de Dados Histórico foi inicializado e populado com sucesso.`;
+                await showModal({ title: 'Sincronização Concluída!', message: msg });
+                loadDataFromFirebase();
+            } else {
+                await showModal({ title: 'Aviso', message: 'Nenhuma linha compatível com a data escolhida foi encontrada nas planilhas.' });
+            }
+            
+            e.target.value = '';
+        });
+
+        // --- RENDERIZAÇÃO E PROCESSAMENTO GERAL ---
+        function render() {
+            // ================== PROCESSA HISTÓRICO R ==================
+            let rotas = flatResumo.length;
+            let corretas = 0, faltantes = 0, amais = 0;
+            let totalMinutos = 0, qtdTempos = 0;
+            
+            let mapCiclo = {};
+            let mapReps = {};
+            let mapTransp = {};
+
+            flatResumo.forEach(r => {
+                let fKey = Object.keys(r).find(k => k.toLowerCase().includes('faltantes'));
+                let aKey = Object.keys(r).find(k => k.toLowerCase().includes('a mais'));
+                let cKey = Object.keys(r).find(k => k.toLowerCase().includes('corretas'));
+                
+                let f = parseInt(fKey ? r[fKey] : 0) || 0;
+                let a = parseInt(aKey ? r[aKey] : 0) || 0;
+                let c = parseInt(cKey ? r[cKey] : 0) || 0;
+                
+                corretas += c; faltantes += f; amais += a;
+                
+                let tempoKey = Object.keys(r).find(k => k.toLowerCase().includes('tempo de aud') || k.toLowerCase().includes('minutos'));
+                if(tempoKey && r[tempoKey]) {
+                    let match = r[tempoKey].toString().replace(',', '.').match(/\d+(\.\d+)?/);
+                    if(match) {
+                        totalMinutos += parseFloat(match[0]);
+                        qtdTempos++;
+                    }
+                }
+
+                let cicloKey = Object.keys(r).find(k => k.toLowerCase().includes('ciclo'));
+                let ciclo = cicloKey && r[cicloKey] ? r[cicloKey].toString().trim().replace(/[^A-Za-z0-9]/g, '') : '';
+                if(ciclo) {
+                    if(!mapCiclo[ciclo]) mapCiclo[ciclo] = { aduanas: 0, f: 0, a: 0 };
+                    mapCiclo[ciclo].aduanas++;
+                    mapCiclo[ciclo].f += f; mapCiclo[ciclo].a += a;
+                }
+
+                let repKey = Object.keys(r).find(k => k.trim().toLowerCase() === "rep's" || k.trim().toLowerCase() === "rep");
+                if(!repKey) repKey = Object.keys(r).find(k => k.trim().toLowerCase().includes('rep de aduana'));
+                let repRaw = repKey && r[repKey] ? r[repKey] : 'Desconhecido';
+                let rep = repRaw.split('\n')[0].trim();
+                
+                if(!mapReps[rep]) mapReps[rep] = 0;
+                mapReps[rep]++;
+
+                let transpKey = Object.keys(r).find(k => k.toLowerCase().includes('transportadora'));
+                let transp = transpKey && r[transpKey] ? r[transpKey].trim() : 'Outros';
+                if(!mapTransp[transp]) mapTransp[transp] = {f:0, a:0};
+                mapTransp[transp].f += f; mapTransp[transp].a += a;
+            });
+
+            let sortedResumo = [...flatResumo].sort((a,b) => {
+                let fKeyA = Object.keys(a).find(k => k.toLowerCase().includes('faltantes'));
+                let aKeyA = Object.keys(a).find(k => k.toLowerCase().includes('a mais'));
+                let fKeyB = Object.keys(b).find(k => k.toLowerCase().includes('faltantes'));
+                let aKeyB = Object.keys(b).find(k => k.toLowerCase().includes('a mais'));
+                let tA = (parseInt(fKeyA ? a[fKeyA] : 0)||0) + (parseInt(aKeyA ? a[aKeyA] : 0)||0);
+                let tB = (parseInt(fKeyB ? b[fKeyB] : 0)||0) + (parseInt(aKeyB ? b[aKeyB] : 0)||0);
+                return tB - tA;
+            });
+            
+            let tbR = '';
+            sortedResumo.forEach(r => {
+                let rotaKey = Object.keys(r).find(k => k.toLowerCase() === 'rota' || k.toLowerCase().includes('rota e ve'));
+                let transpKey = Object.keys(r).find(k => k.toLowerCase().includes('transportadora'));
+                let repKey = Object.keys(r).find(k => k.trim().toLowerCase() === "rep's" || k.trim().toLowerCase() === "rep");
+                if(!repKey) repKey = Object.keys(r).find(k => k.trim().toLowerCase().includes('rep de aduana'));
+
+                let cKey = Object.keys(r).find(k => k.toLowerCase().includes('corretas'));
+                let aKey = Object.keys(r).find(k => k.toLowerCase().includes('a mais'));
+                let fKey = Object.keys(r).find(k => k.toLowerCase().includes('faltantes'));
+
+                let rota = rotaKey ? r[rotaKey].split('|')[0].trim() : '-';
+                let transp = transpKey && r[transpKey] ? (r[transpKey].length > 15 ? r[transpKey].substring(0,15)+'...' : r[transpKey]) : '-';
+                let repRaw = repKey && r[repKey] ? r[repKey] : '-';
+                let rep = repRaw.split('\n')[0].split(' ').slice(0,2).join(' '); // Apenas 2 nomes para caber
+                let c = parseInt(cKey ? r[cKey] : 0)||0;
+                let a = parseInt(aKey ? r[aKey] : 0)||0;
+                let f = parseInt(fKey ? r[fKey] : 0)||0;
+                
+                let bgAmais = a > 0 ? 'col-amais' : '';
+                let bgFalta = f > 0 ? 'col-faltante' : '';
+                
+                tbR += `<tr>
+                    <td style="font-weight:800; border-right: 1px solid var(--border-card);">${rota}</td>
+                    <td>${transp}</td>
+                    <td style="font-size:0.7rem; color:var(--text-muted);">${rep}</td>
+                    <td class="col-correta" style="border-left: 1px solid var(--border-card);">${c}</td>
+                    <td class="${bgAmais}">${a}</td>
+                    <td class="${bgFalta}">${f}</td>
+                </tr>`;
+            });
+
+            let mediaTempo = qtdTempos > 0 ? Math.round(totalMinutos / qtdTempos) : 0;
+            document.getElementById('kpi-rotas').innerText = rotas;
+            document.getElementById('kpi-tempo').innerHTML = `${mediaTempo}<span style="font-size:0.5em">m</span>`;
+            document.getElementById('kpi-corretas').innerText = corretas.toLocaleString('pt-BR');
+            document.getElementById('kpi-faltantes').innerText = faltantes;
+            document.getElementById('kpi-amais').innerText = amais;
+            document.getElementById('tbody-rotas').innerHTML = tbR || '<tr><td colspan="6" style="padding: 20px;">Nenhum dado selecionado.</td></tr>';
+
+            // ================== PROCESSA HISTÓRICO DE PACOTES ==================
+            let mapPerfil = { 'VOLUMOSO': {f:0, a:0}, 'ESTEIRA': {f:0, a:0} };
+            let mapPerfilCiclo = {};
+
+            flatPacotes.forEach(r => {
+                let perfKey = Object.keys(r).find(k => k.toLowerCase().includes('dimens'));
+                let estKey = Object.keys(r).find(k => k.toLowerCase() === 'estado');
+                let cicloKey = Object.keys(r).find(k => k.toLowerCase().includes('ciclo'));
+
+                let perf = perfKey ? r[perfKey].trim().toUpperCase() : '';
+                let est = estKey ? r[estKey].trim().toLowerCase() : '';
+                let ciclo = cicloKey && r[cicloKey] ? r[cicloKey].toString().trim().replace(/[^A-Za-z0-9]/g, '') : '';
+                
+                if(mapPerfil[perf]) {
+                    if(est.includes('faltante')) mapPerfil[perf].f++;
+                    if(est.includes('a mais')) mapPerfil[perf].a++;
+                }
+
+                if(ciclo && (perf === 'VOLUMOSO' || perf === 'ESTEIRA')) {
+                    if(!mapPerfilCiclo[ciclo]) mapPerfilCiclo[ciclo] = { VOLUMOSO: 0, ESTEIRA: 0 };
+                    mapPerfilCiclo[ciclo][perf]++;
+                }
+            });
+
+            document.getElementById('tbody-perfil').innerHTML = `
+                <tr><td>VOLUMOSO</td><td>${mapPerfil['VOLUMOSO'].f}</td><td>${mapPerfil['VOLUMOSO'].a}</td></tr>
+                <tr><td>ESTEIRA</td><td>${mapPerfil['ESTEIRA'].f}</td><td>${mapPerfil['ESTEIRA'].a}</td></tr>
+            `;
+
+            renderCharts(mapCiclo, mapPerfilCiclo, mapReps, mapTransp);
+        }
+
+        function renderCharts(mapCiclo, mapPerfilCiclo, mapReps, mapTransp) {
+            let textColor = document.body.getAttribute('data-theme') === 'light' ? '#333' : '#e2e8f0';
+            let gridColor = document.body.getAttribute('data-theme') === 'light' ? '#E5E7EB' : '#334155';
+            
+            Object.keys(chartInstances).forEach(k => { if(chartInstances[k]) chartInstances[k].destroy(); });
+
+            // 1. TOTAL x CICLO (Com espaço inferior garantido e eixo X restaurado)
+            let ciclos = Object.keys(mapCiclo);
+            let srAd = ciclos.map(c => mapCiclo[c].aduanas);
+            let srF = ciclos.map(c => mapCiclo[c].f);
+            let srA = ciclos.map(c => mapCiclo[c].a);
+            
+            chartInstances.ciclo = new ApexCharts(document.querySelector("#chart-ciclo"), {
+                series: [{name: 'Aduanas', data: srAd}, {name: 'Faltantes', data: srF}, {name: 'A mais', data: srA}],
+                chart: { type: 'bar', height: '100%', stacked: false, background: 'transparent', toolbar: {show:false} },
+                colors: ['var(--bar-yellow)', '#E74C3C', '#4A90E2'],
+                plotOptions: { bar: { horizontal: false, columnWidth: '60%', dataLabels: {position: 'top'} } },
+                dataLabels: { enabled: true, offsetY: -25, style: { fontSize: '11px', colors: [textColor] }, dropShadow: {enabled:false} },
+                xaxis: { categories: ciclos, labels: { show: true, style: { colors: textColor, fontWeight: 900, fontSize: '11px' } } },
+                yaxis: { 
+                    labels: { style: { colors: textColor } },
+                    max: function(val) { return val * 1.25; } 
+                },
+                legend: { position: 'top', labels: { colors: textColor }, itemMargin: {horizontal: 5, vertical: 0} },
+                grid: { padding: { top: 20, bottom: 25 }, borderColor: gridColor, strokeDashArray: 3 }
+            });
+            chartInstances.ciclo.render();
+
+            // 2. TOTAL PERFIL x CICLO
+            let pcCiclos = Object.keys(mapPerfilCiclo);
+            let dsVol = pcCiclos.map(c => ({x: c, y: mapPerfilCiclo[c].VOLUMOSO}));
+            let dsEst = pcCiclos.map(c => ({x: c, y: mapPerfilCiclo[c].ESTEIRA}));
+            
+            chartInstances.perfil = new ApexCharts(document.querySelector("#chart-perfil-ciclo"), {
+                series: [{name: 'VOLUMOSO', data: dsVol}, {name: 'ESTEIRA', data: dsEst}],
+                chart: { type: 'bar', height: '100%', stacked: false, background: 'transparent', toolbar: {show:false} },
+                colors: ['var(--bar-yellow)', '#000000'],
+                plotOptions: { bar: { horizontal: true, dataLabels: {position: 'top'} } },
+                dataLabels: { enabled: true, textAnchor: 'start', offsetX: 10, style: { fontSize: '11px', colors: [textColor] }, dropShadow: {enabled:false} },
+                xaxis: { 
+                    labels: { style: { colors: textColor, fontSize: '10px' } },
+                    max: function(val) { return val * 1.25; } 
+                },
+                yaxis: { type: 'category', labels: { style: { colors: textColor, fontWeight: 900, fontSize: '11px' } } },
+                legend: { position: 'top', labels: { colors: textColor }, markers: { radius: 0 } },
+                grid: { padding: { top: 30, right: 35, bottom: 25 }, borderColor: gridColor, strokeDashArray: 3 }
+            });
+            chartInstances.perfil.render();
+
+            // 3. REPS (Top 6)
+            let arrReps = Object.keys(mapReps).map(r => ({rep: r, v: mapReps[r]})).sort((a,b) => b.v - a.v).slice(0,6);
+            let dsReps = arrReps.map(x => ({
+                x: x.rep.split(' ').slice(0,2).join('\n'),
+                y: x.v
+            }));
+
+            chartInstances.reps = new ApexCharts(document.querySelector("#chart-reps"), {
+                series: [{name: 'Rota', data: dsReps}],
+                chart: { type: 'bar', height: '100%', background: 'transparent', toolbar: {show:false} },
+                colors: ['var(--bar-yellow)'],
+                plotOptions: { bar: { horizontal: true, dataLabels: {position: 'top'} } },
+                dataLabels: { enabled: true, textAnchor: 'start', offsetX: 10, style: { fontSize: '11px', colors: [textColor] }, dropShadow: {enabled:false} },
+                xaxis: { 
+                    labels: { style: { colors: textColor, fontSize: '10px' } },
+                    max: function(val) { return val * 1.25; } 
+                },
+                yaxis: { type: 'category', labels: { style: { colors: textColor, fontWeight: 800, fontSize:'10px' } } },
+                grid: { padding: { right: 35, bottom: 25 }, borderColor: gridColor, strokeDashArray: 3 }
+            });
+            chartInstances.reps.render();
+
+            // 4. TRANSPORTADORAS (Top 6)
+            let arrT = Object.keys(mapTransp).map(t => ({t:t, f:mapTransp[t].f, a:mapTransp[t].a})).sort((a,b) => (b.f+b.a) - (a.f+a.a)).slice(0,6);
+            let dsTFalt = arrT.map(x => ({x: x.t.length > 15 ? x.t.substring(0,15)+'...' : x.t, y: x.f}));
+            let dsTAmais = arrT.map(x => ({x: x.t.length > 15 ? x.t.substring(0,15)+'...' : x.t, y: x.a}));
+
+            chartInstances.transp = new ApexCharts(document.querySelector("#chart-transp"), {
+                series: [{name: 'Faltantes', data: dsTFalt}, {name: 'A mais', data: dsTAmais}],
+                chart: { type: 'bar', height: '100%', stacked: true, background: 'transparent', toolbar: {show:false} },
+                colors: ['#E74C3C', '#4A90E2'],
+                plotOptions: { bar: { horizontal: true } },
+                dataLabels: { enabled: true, style: { fontSize: '11px', colors: ['#fff'] }, dropShadow: {enabled:false} },
+                xaxis: { 
+                    labels: { style: { colors: textColor, fontSize: '10px' } },
+                    max: function(val) { return val * 1.25; }
+                },
+                yaxis: { type: 'category', labels: { style: { colors: textColor, fontWeight: 800, fontSize:'10px' } } },
+                legend: { position: 'top', labels: { colors: textColor }, markers: { radius: 0 } },
+                grid: { padding: { top: 30, right: 10, bottom: 25 }, borderColor: gridColor, strokeDashArray: 3 }
+            });
+            chartInstances.transp.render();
+        }
+
+        // --- EXPORTAÇÃO ---
+        function baixarImagem() {
+            document.body.classList.add('exporting');
+            
+            // Força o gatilho de redimensionamento pra não piscar errado
+            window.dispatchEvent(new Event('resize'));
+            
+            setTimeout(() => {
+                const bgCor = document.body.getAttribute('data-theme') === 'light' ? '#ffffff' : '#0f172a';
+                html2canvas(document.body, { scale: 2, backgroundColor: bgCor }).then(canvas => {
+                    document.body.classList.remove('exporting');
+                    window.dispatchEvent(new Event('resize')); // Volta ao normal
+                    
+                    const link = document.createElement('a');
+                    link.download = `Aduanas_Resumo_${formatarDataHoje().replace(/\//g,'-')}.png`;
+                    link.href = canvas.toDataURL('image/png'); link.click();
+                });
+            }, 800); // 800ms garante que as animações dos gráficos pararam completamente
+        }
+    </script>
+</body>
+</html>

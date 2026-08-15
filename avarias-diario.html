@@ -113,7 +113,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
     </style>
-    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -132,7 +131,6 @@
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle>
                 </svg>
             </button>
-            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
 
             <label class="btn-icon" id="btnUploadArea" style="display:none;" title="Mesclar Nova Planilha (Arquivo CSV)">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -167,7 +165,7 @@
             <div class="table-wrapper">
                 <table id="tabela-pacotes">
                     <thead><tr><th>ID do pacote</th><th>Data</th><th>Lançado Por</th><th>Descrição</th><th>Valor</th><th>Origem de dano</th><th>Resolução</th><th>Status</th></tr></thead>
-                    <tbody><tr><td colspan="8" style="text-align:center; padding: 15px;">Aguardando dados...</td></tr></tbody>
+                    <tbody><tr><td colspan='8' style='text-align:center; padding: 15px;'>Aguardando dados...</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -504,20 +502,6 @@
                 }).catch(err => { document.body.classList.remove('exporting'); });
             }, 100);
         }
-    
-        // ==========================================
-        // EXPORTAÇÃO CSV (usa js/export-csv.js)
-        // Respeita os filtros de semana/data/solver da tela.
-        // ==========================================
-        function exportarCSV() {
-            var dados = (typeof dadosFiltradosAtuais !== 'undefined' && dadosFiltradosAtuais && dadosFiltradosAtuais.length)
-                ? dadosFiltradosAtuais
-                : (typeof globalData !== 'undefined' ? globalData : []);
-            PortalCSV.deObjetos(PortalCSV.nomeComData('avarias_diario'), dados);
-        }
-
-        </script>
-    <script src="js/export-csv.js"></script>
-    <script src="js/mobile.js"></script>
+    </script>
 </body>
 </html>

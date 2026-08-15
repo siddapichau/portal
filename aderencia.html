@@ -106,7 +106,6 @@
         ::-webkit-scrollbar-track { background: var(--bg-body); }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
-    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
     <div id="toast-container"></div>
@@ -125,7 +124,6 @@
             </svg>
             Exportar 4K
         </button>
-            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
 
         <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Selecione o CSV exportado da aba 'Tabela'">
             <button class="btn-upload">
@@ -519,49 +517,6 @@
             for(let i = 0; i < data.length; i++) { if(data[i] && formatVal(data[i][colIndex]).toLowerCase() === keyword) return i; }
             return -1;
         }
-    
-        // ==========================================
-        // EXPORTAÇÃO CSV (usa js/export-csv.js)
-        // Lê as tabelas já renderizadas, então o arquivo sai idêntico à tela.
-        // ==========================================
-        function exportarCSV() {
-            var blocos = [
-                { titulo: document.getElementById('title-t1') ? document.getElementById('title-t1').innerText : 'Aderencia Geral', tbody: 'tbody-geral' },
-                { titulo: document.getElementById('title-t2') ? document.getElementById('title-t2').innerText : 'Sem Ativos', tbody: 'tbody-sem-ativos' },
-                { titulo: document.getElementById('title-t3') ? document.getElementById('title-t3').innerText : 'Ativos POC/DC', tbody: 'tbody-ativos' }
-            ];
-
-            var colunas = ['Areas', 'Verificados', 'Pendentes', 'Total', '%'];
-            var linhas = [];
-
-            blocos.forEach(function (bloco) {
-                var tbody = document.getElementById(bloco.tbody);
-                if (!tbody) return;
-                var trs = tbody.querySelectorAll('tr');
-                var temDados = false;
-                var buffer = [];
-                for (var i = 0; i < trs.length; i++) {
-                    var tds = trs[i].querySelectorAll('td');
-                    if (tds.length < 2) continue; // pula "Aguardando dados..."
-                    var linha = [];
-                    for (var c = 0; c < tds.length; c++) linha.push(PortalCSV.semHtml(tds[c].textContent));
-                    buffer.push(linha);
-                    temDados = true;
-                }
-                if (temDados) {
-                    if (linhas.length) linhas.push([]); // linha em branco entre blocos
-                    linhas.push([PortalCSV.semHtml(bloco.titulo)]);
-                    linhas = linhas.concat(buffer);
-                }
-            });
-
-            var data = (typeof globalDataBRFormatada !== 'undefined' && globalDataBRFormatada)
-                ? globalDataBRFormatada.replace(/\//g, '-') : '';
-            PortalCSV.baixar(PortalCSV.nomeComData('aderencia_inventario' + (data ? '_' + data : '')), colunas, linhas);
-        }
-
-        </script>
-    <script src="js/export-csv.js"></script>
-    <script src="js/mobile.js"></script>
+    </script>
 </body>
 </html>

@@ -147,7 +147,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
     </style>
-    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -163,7 +162,6 @@
             <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
             </button>
-            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
             <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Substituir e Atualizar Dados CFTV">
                 <button class="btn btn-text btn-blue">
                     <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
@@ -439,20 +437,6 @@
         function fecharModalPacotes() { document.getElementById('modal-pacotes').classList.remove('active'); }
 
         carregarDoFirebase();
-    
-        // ==========================================
-        // EXPORTAÇÃO CSV (usa js/export-csv.js)
-        // Exporta exatamente o que os filtros da tela deixaram visível.
-        // ==========================================
-        function exportarCSV() {
-            var dados = (typeof DADOS_FILTRADOS !== 'undefined' && DADOS_FILTRADOS && DADOS_FILTRADOS.length)
-                ? DADOS_FILTRADOS
-                : (typeof BANCO_GLOBAL !== 'undefined' ? BANCO_GLOBAL : []);
-            PortalCSV.deObjetos(PortalCSV.nomeComData('pendencias_cftv'), dados);
-        }
-
-        </script>
-    <script src="js/export-csv.js"></script>
-    <script src="js/mobile.js"></script>
+    </script>
 </body>
 </html>

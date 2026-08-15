@@ -129,7 +129,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
-    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -140,7 +139,6 @@
             <span class="status-badge" id="data-status">Conectando...</span>
             <button class="btn btn-compare" onclick="toggleCompareMode()" id="btn-toggle-compare">⚖️ Comparar</button>
             <button class="btn btn-camera" onclick="baixarImagemSnapshot()" id="btn-print">📸 Foto 4K</button>
-            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
             
             <button class="btn btn-blue" onclick="prepararEmailModal()" id="btn-email">✉️ E-mail</button>
             
@@ -532,82 +530,12 @@
             }, 600); 
         }
 
-        // ==========================================
-        // DETALHES DO PACOTE (clique na linha da tabela)
-        // ------------------------------------------
-        // CORREÇÃO: as linhas da tabela já chamavam mostrarDetalhesPacote(),
-        // mas a função nunca existiu. Clicar em qualquer linha só gerava
-        // "ReferenceError" no console e nada abria. Implementada aqui
-        // reaproveitando o modal que a própria página já usa.
-        // ==========================================
-        function linhaDetalhe(rotulo, valor, estilo) {
-            if (valor === undefined || valor === null || valor === '') valor = '-';
-            return `<div class="modal-grid-row"><span class="modal-label">${escapeHtml(rotulo)}</span><span class="modal-val-text" style="${estilo || ''}">${escapeHtml(String(valor))}</span></div>`;
-        }
-
-        function mostrarDetalhesPacote(id, modo) {
-            const lista = modo === 'comparacao' ? ITEMS_COMPARE : ITEMS_ATUAIS;
-            const item = (lista || []).find(i => String(i.ID) === String(id));
-
-            if (!item) {
-                abrirModal('Detalhes do Pacote', '<div style="padding:20px; text-align:center; color:var(--accent-red); font-weight:700;">Não foi possível localizar os dados deste pacote.</div>');
-                return;
-            }
-
-            const linkRastreio = `https://envios.adminml.com/logistics/package-management/package/${encodeURIComponent(item.ID)}`;
-            const linkSauron = `https://shipping-bo.adminml.com/sauron/shipments/shipment/${encodeURIComponent(item.ID)}`;
-
-            let html = '';
-            html += linhaDetalhe('ID', item.ID, 'color:var(--accent-blue); font-weight:900;');
-            html += linhaDetalhe('Origem', item.Origem);
-            html += linhaDetalhe('Descrição', item.Descricao);
-            html += linhaDetalhe('Valor', item.Valor, 'color:var(--accent-green); font-weight:900;');
-
-            if (modo === 'comparacao') {
-                html += linhaDetalhe('Dias (Base A)', item.DiasA);
-                html += linhaDetalhe('Dias (Base B)', item.DiasB);
-                html += linhaDetalhe('Status Comparativo', item.StatsText);
-                html += linhaDetalhe('Reclamação', item.Reclamacao);
-            } else {
-                html += linhaDetalhe('Dias Estancados', item.DiasEstancados, item.DiasEstancados > 10 ? 'color:var(--accent-red); font-weight:900;' : '');
-                html += linhaDetalhe('Reclamação', item.Reclamacao);
-                html += linhaDetalhe('Status', item.Status);
-                html += linhaDetalhe('Observação', item.Observacao);
-            }
-
-            html += `<div class="modal-grid-row" style="border-bottom:none; gap:10px; flex-wrap:wrap; justify-content:flex-start; padding-top:12px;">
-                        <a href="${linkRastreio}" target="_blank" rel="noopener" class="btn" style="text-decoration:none;">🔍 Rastrear Pacote</a>
-                        <a href="${linkSauron}" target="_blank" rel="noopener" class="btn" style="text-decoration:none;">📋 Abrir no Sauron</a>
-                     </div>`;
-
-            abrirModal(`Pacote ${item.ID}`, html);
-        }
-
         function abrirModal(titulo, htmlConteudo) { document.getElementById('modal-header-title').innerText = titulo; document.getElementById('modal-header-body').innerHTML = htmlConteudo; document.getElementById('info-modal').classList.add('active'); }
         function fecharModal() { document.getElementById('info-modal').classList.remove('active'); }
         function fecharModalExterno(e) { if (e.target.id === 'info-modal') fecharModal(); }
 
         carregarEmailsDoFirebase();
         carregarDoFirebase();
-    
-        // ==========================================
-        // EXPORTAÇÃO CSV (usa js/export-csv.js)
-        // Exporta a visão atual: comparação ou lista normal.
-        // ==========================================
-        function exportarCSV() {
-            var dados = (typeof DADOS_FILTRADOS !== 'undefined' && DADOS_FILTRADOS && DADOS_FILTRADOS.length)
-                ? DADOS_FILTRADOS
-                : (typeof ITEMS_ATUAIS !== 'undefined' ? ITEMS_ATUAIS : []);
-            var nome = (typeof IS_COMPARE_MODE !== 'undefined' && IS_COMPARE_MODE)
-                ? 'parado_percurso_comparacao' : 'parado_percurso';
-            var colunas = (typeof IS_COMPARE_MODE !== 'undefined' && IS_COMPARE_MODE)
-                ? ['ID', 'Origem', 'Descricao', 'Valor', 'DiasA', 'DiasB', 'StatsText', 'Flag', 'Reclamacao']
-                : ['ID', 'Origem', 'Descricao', 'Valor', 'DiasEstancados', 'Reclamacao', 'Status', 'Observacao'];
-            PortalCSV.deObjetos(PortalCSV.nomeComData(nome), dados, colunas);
-        }
-
-        </script>
-    <script src="js/export-csv.js"></script>
-    <script src="js/mobile.js"></script>
+    </script>
 </body>
 </html>

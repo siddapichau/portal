@@ -84,7 +84,6 @@
         @media (max-width: 1100px) { .middle-section { grid-template-columns: 1fr; } .kpi-column { flex-direction: row; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: var(--bg-body); } ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
-    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -96,7 +95,6 @@
         <div class="header-actions">
             <span class="status-badge" id="data-status">Conectando...</span>
             <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Imagem UHD 4K">Exportar 4K</button>
-            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
             <div class="upload-wrapper" id="btnUploadArea" title="Substituir Base de Dados" style="display:none;">
                 <button class="btn btn-blue">📤 Subir CSV</button>
                 <input type="file" id="csvFileInput" accept=".csv" />
@@ -371,20 +369,6 @@
         function carregarMaisPacotes() { let container = document.getElementById('table-scroll-container'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) { if ((CUR_PAGE + 1) * PAGE_SIZE < DADOS_FILTRADOS.length) { CUR_PAGE++; renderizarPedaçoTabela(); } } }
 
         document.addEventListener('DOMContentLoaded', carregarDoFirebase);
-    
-        // ==========================================
-        // EXPORTAÇÃO CSV (usa js/export-csv.js)
-        // Exporta exatamente o que os filtros da tela deixaram visível.
-        // ==========================================
-        function exportarCSV() {
-            var dados = (typeof DADOS_FILTRADOS !== 'undefined' && DADOS_FILTRADOS && DADOS_FILTRADOS.length)
-                ? DADOS_FILTRADOS
-                : (typeof BANCO_GLOBAL !== 'undefined' ? BANCO_GLOBAL : []);
-            PortalCSV.deObjetos(PortalCSV.nomeComData('salvados_recuperados'), dados);
-        }
-
-        </script>
-    <script src="js/export-csv.js"></script>
-    <script src="js/mobile.js"></script>
+    </script>
 </body>
 </html>

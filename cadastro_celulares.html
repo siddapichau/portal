@@ -53,7 +53,6 @@
             .dashboard-grid { grid-template-columns: 1fr; }
         }
     </style>
-    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -66,7 +65,6 @@
         <div id="dashboard-content" style="display:none;">
             <div class="page-header">
                 <h1 class="page-title">📱 Gestão de Aparelhos</h1>
-            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
                 <p class="page-subtitle">Monitore os equipamentos integrados à operação (Planilha).</p>
             </div>
 
@@ -409,32 +407,6 @@
                 alert("Erro ao excluir o aparelho da Planilha.");
             }
         };
-    
-        // ==========================================
-        // EXPORTAÇÃO CSV (usa js/export-csv.js)
-        // ==========================================
-        function exportarCSV() {
-            var base = (typeof celularesCadastrados !== 'undefined' && celularesCadastrados) ? celularesCadastrados : {};
-            var lista = Object.keys(base).map(function (key) {
-                var item = base[key] || {};
-                var copia = { id: key };
-                for (var k in item) {
-                    if (Object.prototype.hasOwnProperty.call(item, k)) copia[k] = item[k];
-                }
-                return copia;
-            });
-            if (!lista.length) {
-                // fallback: lê a tabela renderizada (#tabela-celulares é o <tbody>)
-                var tbody = document.getElementById('tabela-celulares');
-                PortalCSV.deTabela(PortalCSV.nomeComData('cadastro_celulares'),
-                    tbody ? tbody.parentNode : null);
-                return;
-            }
-            PortalCSV.deObjetos(PortalCSV.nomeComData('cadastro_celulares'), lista);
-        }
-
-        </script>
-    <script src="js/export-csv.js"></script>
-    <script src="js/mobile.js"></script>
+    </script>
 </body>
 </html>

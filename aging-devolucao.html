@@ -107,7 +107,6 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
     </style>
-    <link rel="stylesheet" href="mobile.css">
 </head>
 <body data-theme="light">
 
@@ -126,7 +125,6 @@
             <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
             </button>
-            <button class="btn-csv" onclick="exportarCSV()" title="Baixar os dados exibidos em CSV (abre no Excel)">⬇️ CSV</button>
 
             <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Subir Base de Dados CSV">
                 <button class="btn">
@@ -399,17 +397,6 @@
                 document.getElementById('chart-substatus').innerHTML = 'Nenhum status encontrado.';
             }
         }
-    
-        // ==========================================
-        // EXPORTAÇÃO CSV (usa js/export-csv.js)
-        // ==========================================
-        function exportarCSV() {
-            PortalCSV.deObjetos(PortalCSV.nomeComData('aging_devolucao'),
-                (typeof globalData !== 'undefined' ? globalData : []));
-        }
-
-        </script>
-    <script src="js/export-csv.js"></script>
-    <script src="js/mobile.js"></script>
+    </script>
 </body>
 </html>
