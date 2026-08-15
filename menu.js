@@ -3,6 +3,39 @@ const FIREBASE_URL = window.PortalDB.baseAtiva(); // 100% planilha Google Sheets
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
+// Catálogo de cargos (dinâmico — o site reconhece qualquer cargo novo adicionado)
+let cargosMap = {};  // cargo/id -> rótulo amigável
+let cargosList = []; // [{ id, rotulo, nivel, descricao }]
+
+async function carregarCargos() {
+    try {
+        const res = await fetch(`${FIREBASE_URL}cargos.json`);
+        const data = await res.json();
+        cargosList = []; cargosMap = {};
+        if (data && typeof data === 'object') {
+            Object.keys(data).forEach(k => {
+                const c = data[k] || {};
+                const rotulo = c.rotulo || k;
+                cargosList.push({ id: k, rotulo: rotulo, nivel: c.nivel, descricao: c.descricao });
+                cargosMap[String(k).toLowerCase()] = rotulo;
+            });
+            cargosList.sort((a, b) => (Number(a.nivel) || 99) - (Number(b.nivel) || 99));
+        }
+    } catch (e) { /* catálogo é otimização; falha não quebra o menu */ }
+}
+
+function rotuloCargo(cargo) {
+    if (!cargo) return 'Desconhecido';
+    const m = cargosMap[String(cargo).toLowerCase()];
+    if (m) return m;
+    const r = String(cargo).toLowerCase();
+    if (r === 'view2') return 'View Plus';
+    if (r === 'view') return 'Viewer';
+    if (r === 'editor') return 'Editor';
+    if (r === 'admin') return 'Admin';
+    return cargo;
+}
+
 // ======= AVATARES EXPANDIDOS =======
 const AVATAR_OPTIONS = [
     "https://api.dicebear.com/7.x/bottts/svg?seed=LogiBot&backgroundColor=e2e8f0",
@@ -47,18 +80,25 @@ window.verificarPermissaoUpload = function(urlPagina) {
     const userRole = currentUser.cargo ? currentUser.cargo.toLowerCase() : 'guest';
     const userName = currentUser.usuario ? currentUser.usuario.toLowerCase() : '';
 
+    function podeEditar(upRoles, alUsers) {
+        if (userRole === 'admin') return true; // admin sempre pode editar
+        const marked = String(alUsers || '').split(',').map(u => u.trim().toLowerCase()).filter(Boolean);
+        if (marked.length > 0) {
+            // ⭐ Usuários marcados = APENAS eles podem editar (uploadRoles é ignorado)
+            return marked.includes(userName);
+        }
+        const roles = String(upRoles || 'editor,admin').toLowerCase().split(',').map(r => r.trim());
+        return roles.includes(userRole);
+    }
+
     menuData.categorias.forEach(cat => {
         (cat.items || []).forEach(item => {
             if (item.url && item.url.includes(urlPagina)) {
-                let roles = (item.uploadRoles || 'editor,admin').toLowerCase().split(',').map(r=>r.trim());
-                let users = (item.allowedUsers || '').toLowerCase().split(',').map(u=>u.trim());
-                if (roles.includes(userRole) || users.includes(userName)) permitted = true;
+                if (podeEditar(item.uploadRoles, item.allowedUsers)) permitted = true;
             }
             (item.subItems || []).forEach(sub => {
                 if (sub.url && sub.url.includes(urlPagina)) {
-                    let roles = (sub.uploadRoles || 'editor,admin').toLowerCase().split(',').map(r=>r.trim());
-                    let users = (sub.allowedUsers || '').toLowerCase().split(',').map(u=>u.trim());
-                    if (roles.includes(userRole) || users.includes(userName)) permitted = true;
+                    if (podeEditar(sub.uploadRoles, sub.allowedUsers)) permitted = true;
                 }
             });
         });
@@ -186,10 +226,20 @@ async function carregarMenuGlobal() {
         if(data && data.categorias) menuData = data;
         renderizarMenuEsquerdo();
     } catch (e) { console.error("Erro Menu", e); }
+    carregarCargos(); // catálogo de cargos (cacheado) p/ reconhecer cargos novos
 
     document.getElementById('authModal').addEventListener('click', function(e) { if(e.target === this) fecharAuthModal(); });
     document.getElementById('configModal').addEventListener('click', function(e) { if(e.target === this) fecharConfigModal(); });
     document.getElementById('statusModal').addEventListener('click', function(e) { if(e.target === this) fecharStatusModal(); });
+
+    // ✔️ ENTER confirma login/registro (antes não funcionava)
+    function bindEnter(id, fn) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); fn(); } });
+    }
+    bindEnter('logUser', fazerLogin); bindEnter('logPass', fazerLogin);
+    bindEnter('regUser', fazerRegistro); bindEnter('regEmail', fazerRegistro);
+    bindEnter('regPass1', fazerRegistro); bindEnter('regPass2', fazerRegistro);
 }
 
 function verificarUIAutenticacao() {
@@ -374,12 +424,13 @@ async function hashPassword(str) {
     return btoa(str);
 }
 
-async function fetchAllUsers() {
-    try {
-        const res = await fetch(`${FIREBASE_URL}users.json`);
-        return await res.json() || {};
-    } catch(e) { throw new Error("Falha na requisição ao banco de dados."); }
-}
+    async function fetchAllUsers() {
+        try {
+            // nc=1 → sempre dados frescos (aprovações/bloqueios devem valer na hora)
+            const res = await fetch(`${FIREBASE_URL}users.json?nc=1`);
+            return await res.json() || {};
+        } catch(e) { throw new Error("Falha na requisição ao banco de dados."); }
+    }
 
 async function fazerRegistro() {
     let user = document.getElementById('regUser').value.trim(); 
@@ -416,13 +467,27 @@ async function fazerRegistro() {
         } else if (emailExists) {
             alert("Este E-mail já está cadastrado no sistema!");
         } else {
+            // ✅ Aprovação automática conforme config do Admin (requer_aprovacao)
+            let requerAprovacao = true;
+            try {
+                const resC = await fetch(`${FIREBASE_URL}config/requer_aprovacao.json?nc=1`);
+                const cfgVal = await resC.json();
+                requerAprovacao = (cfgVal === false) ? false : true;
+            } catch(e) { requerAprovacao = true; }
+
             const hashedPass = await hashPassword(p1);
             const newUser = {
                 usuario: user, email: email, senha: hashedPass,
-                cargo: "view", solicitacao: "pendente", favorito: "", avatar: ""
+                cargo: "view",
+                solicitacao: requerAprovacao ? "pendente" : "aprovado",
+                favorito: "", avatar: ""
             };
             await fetch(`${FIREBASE_URL}users.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) });
-            alert("Conta criada com sucesso! Aguarde aprovação de um Administrador para acessar.");
+            if (requerAprovacao) {
+                alert("Conta criada com sucesso! Aguarde aprovação de um Administrador para acessar.");
+            } else {
+                alert("Conta criada e aprovada automaticamente! Você já pode entrar com acesso de visualização.");
+            }
             mudarAuthModo('login');
         }
     } catch(e) { alert("Erro de comunicação com o servidor."); } 
@@ -486,7 +551,7 @@ function abrirConfigModal() {
 function fecharConfigModal() { document.getElementById('configModal').classList.remove('active'); }
 
 function renderizarPainelConfig() {
-    let cargoDisplay = currentUser.cargo.toLowerCase() === 'view2' ? 'View Plus' : currentUser.cargo;
+    const cargoDisplay = rotuloCargo(currentUser.cargo);
     document.getElementById('profileInfo').innerHTML = `${currentUser.usuario} <br><small>${currentUser.email} • <b style="color:var(--accent-blue); text-transform:uppercase;">${cargoDisplay}</b></small>`;
     
     const display = document.getElementById('userCurrentAvatar');

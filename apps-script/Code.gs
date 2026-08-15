@@ -69,7 +69,8 @@ var NODE_TO_SHEET = {
   portal_bigquery: 'BigQuery',
   logs: 'Logs',
   presence: 'Presenca',
-  user_bookmarks: 'Favoritos'
+  user_bookmarks: 'Favoritos',
+  config: '_Config'
 };
 
 var CONFIG_SHEET = '_Config';
@@ -84,9 +85,10 @@ var PREFERRED_HEADERS = {
   portal_news: ['id', 'titulo', 'corpo', 'autor', 'tag', 'data', 'likes', 'likedBy', 'data_edit'],
   portal_status: ['id', 'nome', 'estado', 'descricao', 'icon', 'lastUpdate'],
   portal_bigquery: ['id', 'titulo', 'categoria', 'tags', 'descricao', 'codigo_sql', 'corpo_post', 'autor', 'data', 'data_edit'],
-  logs: ['id', 'timestamp', 'usuario', 'avatar', 'modulo', 'acao'],
+  logs: ['id', 'timestamp', 'usuario', 'avatar', 'modulo', 'acao', 'tipo'],
   presence: ['id', 'lastSeen', 'cargo', 'pagina'],
-  user_bookmarks: ['id', 'pagina', 'nome', 'atualizadoEm']
+  user_bookmarks: ['id', 'pagina', 'nome', 'atualizadoEm'],
+  config: ['chave', 'valor']
 };
 
 // ---------------------------------------------------------------------------
@@ -277,12 +279,60 @@ function healthPayload_() {
   return {
     ok: true,
     service: 'portal-cerebro',
-    versao: '2.1-cerebro',
+    versao: '2.2-cerebro',
     planilha: ss.getName(),
     nodes: nodes,
+    versao_por_no: getVersaoPorNo_(),
     abas_db_sobrando: listarAbasDb_(),
     uso: 'GET /exec?path=menu_global.json'
   };
+}
+
+// ---------------------------------------------------------------------------
+// VERSIONAMENTO POR NÓ (invalidação do cache do navegador)
+// ---------------------------------------------------------------------------
+// Cada vez que um nó do cérebro é ALTERADO, incrementamos o contador "v_<nó>"
+// na aba _Config. O front guarda em localStorage o conteúdo + a versão; se a
+// versão mudar ele descarta o cache daquele nó e busca de novo — mas SEM tocar
+// no login (que fica em outra chave do localStorage).
+
+function readConfigValue_(sheet, chave) {
+  if (!sheet) return '';
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    var keys = sheet.getRange(2, 1, last - 1, 1).getValues();
+    var vals = sheet.getRange(2, 2, last - 1, 1).getValues();
+    for (var i = 0; i < keys.length; i++) {
+      if (String(keys[i][0]) === chave) return String(vals[i][0]);
+    }
+  }
+  return '';
+}
+
+function getVersaoNo_(node) {
+  try {
+    var c = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(CONFIG_SHEET);
+    return parseInt(readConfigValue_(c, 'v_' + node) || '0', 10) || 0;
+  } catch (e) { return 0; }
+}
+
+function getVersaoPorNo_() {
+  var out = {};
+  Object.keys(NODE_TO_SHEET).forEach(function (node) {
+    out[node] = getVersaoNo_(node);
+  });
+  return out;
+}
+
+function bumpVersao_(node) {
+  if (!node || !isNucleo_(node)) return;
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var c = ss.getSheetByName(CONFIG_SHEET);
+    if (!c) c = ensureConfig_(ss); // só cria se ainda não existir
+    var n = parseInt(readConfigValue_(c, 'v_' + node) || '0', 10) || 0;
+    setConfigValue_(c, 'v_' + node, n + 1);
+  } catch (e) { /* versão é otimização; falhar não quebra a escrita */ }
 }
 
 function jsonResponse_(obj) {
@@ -642,6 +692,7 @@ function writeRecord_(node, key, record) {
   } else {
     sheet.getRange(rowNum, 1, 1, headers.length).setValues([row]);
   }
+  bumpVersao_(node);
   return record;
 }
 
@@ -666,6 +717,7 @@ function replaceNode_(node, records) {
     var rows = flattenMenu_(records);
     var sheetMenu = getSheetForNode_(node);
     rewriteTab_(sheetMenu, headersForNode_('menu_global'), rows);
+    bumpVersao_(node);
     return records;
   }
 
@@ -682,6 +734,7 @@ function replaceNode_(node, records) {
   var hasObjects = plainRecords.some(function (r) { return r !== null && typeof r === 'object' && !Array.isArray(r); });
   if (!list.length) {
     rewriteTab_(sheet, headers, []);
+    bumpVersao_(node);
     return records;
   }
   if (!hasObjects) headers = ['id', 'valor'];
@@ -689,6 +742,7 @@ function replaceNode_(node, records) {
 
   var rows = list.map(function (p) { return recordToRow_(headers, p[0], p[1]); });
   rewriteTab_(sheet, headers, rows);
+  bumpVersao_(node);
   return records;
 }
 
@@ -732,7 +786,10 @@ function deleteRecord_(node, key) {
   var sheet = getSheetForNode_(node, false);
   if (!sheet) return;
   var row = findRowByKey_(sheet, key);
-  if (row !== -1) sheet.deleteRow(row);
+  if (row !== -1) {
+    sheet.deleteRow(row);
+    bumpVersao_(node);
+  }
 }
 
 function findRowByKey_(sheet, key) {

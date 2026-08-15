@@ -82,7 +82,7 @@
                     <button class="btn btn-green" onclick="document.getElementById('jsonUpload').click()">⬆️ Subir .json</button>
                 </div>
                 <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">
-                    Dica: Use "view", "view2", "editor" ou "admin" nas caixas abaixo para limitar acessos a submenus.
+                    <b>Ver</b> = quem pode ver a página · <b>Editar</b> = quem pode editar/subir dados · <b>Usuários Marcados</b> = se preencher, <b>APENAS</b> essas pessoas podem editar (ignora o campo Editar). Os cargos podem ser <b>quaisquer</b> (o site reconhece cargos novos automaticamente).
                 </div>
                 <div id="categorias-container"></div>
                 <button class="btn btn-green" onclick="adicionarCategoria()" style="width: 100%; margin-top: 10px; justify-content: center; padding: 12px; font-size: 1rem;">+ Adicionar Nova Categoria (1º Nível)</button>
@@ -91,9 +91,20 @@
             <!-- ABA DE USUÁRIOS -->
             <div id="tab-users" style="display:none;">
                 <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos diretamente na planilha (banco de dados).</p>
-                <div class="header-actions">
-                    <button class="btn btn-warn" id="btn-import-users" onclick="importarUsuariosDaPlanilha()">⬇️ Migrar Usuários da Planilha Antiga</button>
+
+                <!-- ✅ Configuração: necessidade de aprovação de novos registros -->
+                <div class="cat-card" style="padding: 18px; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                        <div style="flex: 1; min-width: 220px;">
+                            <div style="font-weight: 900; color: var(--text-title); font-size: 0.95rem; margin-bottom: 4px;">🛂 Aprovação de novos registros</div>
+                            <div style="font-size: 0.8rem; color: var(--text-muted);">
+                                <span id="aprovacao-label">Carregando…</span>
+                            </div>
+                        </div>
+                        <button class="btn" id="btn-toggle-aprovacao" onclick="toggleAprovacao()" style="font-size: 0.9rem; padding: 10px 18px;">…</button>
+                    </div>
                 </div>
+
                 <div style="overflow-x: auto;">
                     <table class="user-table">
                         <thead><tr><th>Usuário</th><th>E-mail</th><th>Status</th><th>Cargo</th><th>Ação</th></tr></thead>
@@ -226,12 +237,43 @@
     </div>
 
     <script>
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
         const FIREBASE_URL = window.PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const ICONES_LOGISTICA = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑", "↳"];
         
         let adMenuData = { categorias: [] }; 
         let allUsers = [];
+        let cargosOptions = []; // catálogo dinâmico de cargos (reconhece cargos novos)
+
+        // Carrega o catálogo de cargos do cérebro (cacheado) para o select da tabela
+        async function carregarCargosAdmin() {
+            try {
+                const res = await fetch(`${FIREBASE_URL}cargos.json`);
+                const data = await res.json();
+                cargosOptions = [];
+                if(data && typeof data === 'object') {
+                    Object.keys(data).forEach(k => {
+                        const c = data[k] || {};
+                        cargosOptions.push({ id: k, rotulo: c.rotulo || k, nivel: c.nivel });
+                    });
+                }
+                if(cargosOptions.length === 0) {
+                    // Fallback: se o catálogo estiver vazio, mantém os cargos padrão
+                    cargosOptions = [
+                        { id: 'view',   rotulo: 'View',       nivel: 1 },
+                        { id: 'view2',  rotulo: 'View Plus',  nivel: 2 },
+                        { id: 'editor', rotulo: 'Editor',     nivel: 3 },
+                        { id: 'admin',  rotulo: 'Admin',      nivel: 4 }
+                    ];
+                }
+                cargosOptions.sort((a, b) => (Number(a.nivel) || 99) - (Number(b.nivel) || 99));
+                if(allUsers.length > 0) renderUserTable();
+            } catch(e) { console.error("Falha ao carregar cargos: ", e); }
+        }
+
+        function rotuloCargoAdmin(cargo) {
+            const found = cargosOptions.find(c => c.id.toLowerCase() === String(cargo || '').toLowerCase());
+            return found ? found.rotulo : cargo;
+        }
         
         // Sets globais para as tags e categorias auto-completáveis
         window.newsTagsSet = new Set();
@@ -311,7 +353,9 @@
             iconSelect.innerHTML = ICONES_LOGISTICA.map(ico => `<option value="${ico}">${ico}</option>`).join('');
 
             try { const res = await fetch(`${FIREBASE_URL}menu_global.json`); const data = await res.json(); adMenuData = data && data.categorias ? data : { categorias: [] }; renderizarAdmin(); } catch (e) { console.error(e); }
-            fetchUsers();
+            await fetchUsers();
+            await carregarCargosAdmin();
+            carregarConfigAprovacao();
         };
 
         function switchAdminTab(tab) {
@@ -332,7 +376,7 @@
         // ==========================================
         async function fetchUsers() {
             try {
-                const res = await fetch(`${FIREBASE_URL}users.json?_=${Date.now()}`);
+                const res = await fetch(`${FIREBASE_URL}users.json?_=${Date.now()}&nc=1`);
                 const data = await res.json();
                 if(data) { 
                     allUsers = Object.keys(data).map(k => ({...data[k], key: k})); 
@@ -345,47 +389,44 @@
             } catch(e) { console.error("Falha ao ler usuarios: ", e); }
         }
 
-        async function importarUsuariosDaPlanilha() {
-            const btn = document.getElementById('btn-import-users');
-            btn.innerHTML = "⏳ Importando da Planilha (Aguarde...)";
-            btn.disabled = true;
+        // ✅ Toggle de aprovação de novos registros (config no cérebro)
+        let requerAprovacao = true;
 
+        async function carregarConfigAprovacao() {
             try {
-                const resS = await fetch(APP_SCRIPT_URL, { 
-                    method: 'POST', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action: "getUsers" }) 
+                const res = await fetch(`${FIREBASE_URL}config/requer_aprovacao.json?nc=1`);
+                const val = await res.json();
+                requerAprovacao = (val === false) ? false : true;
+            } catch(e) { requerAprovacao = true; }
+            renderToggleAprovacao();
+        }
+
+        function renderToggleAprovacao() {
+            const btn = document.getElementById('btn-toggle-aprovacao');
+            const label = document.getElementById('aprovacao-label');
+            if (requerAprovacao) {
+                btn.style.background = '#FF5252'; btn.style.color = '#fff';
+                btn.innerHTML = '🔒 EXIGIR APROVAÇÃO (ATIVO)';
+                label.innerHTML = 'Novos registros ficam <b style="color:#FF5252;">aguardando aprovação</b> de um administrador antes de poderem logar.';
+            } else {
+                btn.style.background = 'var(--accent-green)'; btn.style.color = '#fff';
+                btn.innerHTML = '✅ APROVAÇÃO AUTOMÁTICA (DESATIVADO)';
+                label.innerHTML = 'Novos registros são <b style="color:var(--accent-green);">aprovados automaticamente</b> com cargo de visualização (<b>view</b>), sem precisar de administrador.';
+            }
+        }
+
+        async function toggleAprovacao() {
+            const novo = !requerAprovacao;
+            try {
+                await fetch(`${FIREBASE_URL}config/requer_aprovacao.json?nc=1`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(novo)
                 });
-                const dataS = await resS.json();
-                
-                if(dataS && dataS.success && dataS.users && dataS.users.length > 0) {
-                    let oldUsers = dataS.users; let count = 0;
-                    const resF = await fetch(`${FIREBASE_URL}users.json`);
-                    const dataF = await resF.json() || {};
-                    const fbUsernames = Object.keys(dataF).map(k => dataF[k].usuario.toLowerCase());
-
-                    for (let u of oldUsers) {
-                        if (!fbUsernames.includes(u.usuario.toLowerCase())) {
-                            const passString = u.senha || '12345678';
-                            let passFormatada = "";
-                            try {
-                                if (window.crypto && window.crypto.subtle) {
-                                    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder("utf-8").encode(passString));
-                                    passFormatada = Array.prototype.map.call(new Uint8Array(buf), x=>(('00'+x.toString(16)).slice(-2))).join('');
-                                } else { passFormatada = btoa(passString); }
-                            } catch(e) { passFormatada = btoa(passString); }
-
-                            const newUser = {
-                                usuario: u.usuario, email: u.email || '', senha: passFormatada,
-                                cargo: u.cargo || 'view', solicitacao: u.solicitacao || 'pendente', favorito: ''
-                            };
-                            await fetch(`${FIREBASE_URL}users.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(newUser) });
-                            count++;
-                        }
-                    }
-                    alert(`Migração concluída! ${count} usuários novos transferidos.`);
-                    fetchUsers();
-                } else { alert("A planilha retornou vazia ou ocorreu erro."); }
-            } catch(e) { alert("Erro ao importar usuários: " + e.message); } 
-            finally { btn.innerHTML = "⬇️ Migrar Usuários da Planilha Antiga"; btn.disabled = false; }
+                requerAprovacao = novo;
+                renderToggleAprovacao();
+                await registrarLog("Painel Admin", `Alterou a configuração de aprovação de novos registros para: <b>${novo ? 'EXIGIR APROVAÇÃO' : 'APROVAÇÃO AUTOMÁTICA'}</b>`);
+            } catch(e) { alert("Erro ao salvar a configuração."); }
         }
 
         function populateDatalist() { const dl = document.getElementById('lista-usuarios'); dl.innerHTML = ''; allUsers.forEach(u => { dl.innerHTML += `<option value="${u.usuario}">`; }); }
@@ -402,10 +443,7 @@
                         <option value="bloqueado" ${u.solicitacao === 'bloqueado' ? 'selected' : ''}>Bloqueado</option>
                     </select></td>
                     <td><select id="cargo-${idx}">
-                        <option value="view" ${u.cargo === 'view' ? 'selected' : ''}>View</option>
-                        <option value="view2" ${u.cargo === 'view2' ? 'selected' : ''}>View Plus</option>
-                        <option value="editor" ${u.cargo === 'editor' ? 'selected' : ''}>Editor</option>
-                        <option value="admin" ${u.cargo === 'admin' ? 'selected' : ''}>Admin</option>
+                        ${cargosOptions.map(c => `<option value="${c.id}" ${u.cargo === c.id ? 'selected' : ''}>${c.rotulo}</option>`).join('')}
                     </select></td>
                     <td>
                         <div style="display:flex; flex-direction:column; gap:5px;">
@@ -464,9 +502,9 @@
                 (cat.items || []).forEach((item, itemIdx) => {
                     let subItemsHtml = '';
                     (item.subItems || []).forEach((sub, subIdx) => {
-                        subItemsHtml += `<div class="sub-subitem-row" draggable="true" ondragstart="dragStart(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})"><span style="color:var(--accent-blue); font-weight:bold; cursor: grab;">↕️ 3º Nível:</span><select onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(sub.icon)}</select><input type="text" placeholder="Nome" value="${sub.title || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'title', this.value)"><input type="text" placeholder="URL (.html)" value="${sub.url || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'url', this.value)"><input type="text" placeholder="Ver (view,view2,editor)" value="${sub.viewRoles || 'view,view2,editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'viewRoles', this.value)"><input type="text" placeholder="Editar (editor,admin)" value="${sub.uploadRoles || 'editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'uploadRoles', this.value)"><input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${sub.allowedUsers || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'allowedUsers', this.value)"><button class="btn btn-red" onclick="removerSubItem(${catIdx}, ${itemIdx}, ${subIdx})">✖</button></div>`;
+                        subItemsHtml += `<div class="sub-subitem-row" draggable="true" ondragstart="dragStart(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'subItem', ${catIdx}, ${itemIdx}, ${subIdx})"><span style="color:var(--accent-blue); font-weight:bold; cursor: grab;">↕️ 3º Nível:</span><select onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(sub.icon)}</select><input type="text" placeholder="Nome" value="${sub.title || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'title', this.value)"><input type="text" placeholder="URL (.html)" value="${sub.url || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'url', this.value)"><input type="text" placeholder="Ver (view,view2,editor)" value="${sub.viewRoles || 'view,view2,editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'viewRoles', this.value)"><input type="text" placeholder="Editar (editor,admin)" value="${sub.uploadRoles || 'editor,admin'}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'uploadRoles', this.value)"><input type="text" list="lista-usuarios" placeholder="Usuários Marcados (apenas estes editam)" value="${sub.allowedUsers || ''}" onchange="updateSubItem(${catIdx}, ${itemIdx}, ${subIdx}, 'allowedUsers', this.value)"><button class="btn btn-red" onclick="removerSubItem(${catIdx}, ${itemIdx}, ${subIdx})">✖</button></div>`;
                     });
-                    itemsHtml += `<div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})"><span style="color:#888; font-weight:bold; cursor: grab; font-size:1.2rem;">↕️ 2º Nível</span><select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(item.icon)}</select><input type="text" placeholder="Nome do Menu" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)"><input type="text" placeholder="URL da Página" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)"><div style="flex-basis: 100%; height: 0; margin: 0;"></div><input type="text" placeholder="Ver (view,view2,editor,admin)" value="${item.viewRoles || 'view,view2,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)"><input type="text" placeholder="Editar (editor,admin)" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)"><input type="text" list="lista-usuarios" placeholder="Usuários Específicos" value="${item.allowedUsers || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'allowedUsers', this.value)"><button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu</button><button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖ Remover</button><div style="width: 100%;">${subItemsHtml}</div></div>`;
+                    itemsHtml += `<div class="subitem-row" draggable="true" ondragstart="dragStart(event, 'item', ${catIdx}, ${itemIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'item', ${catIdx}, ${itemIdx})"><span style="color:#888; font-weight:bold; cursor: grab; font-size:1.2rem;">↕️ 2º Nível</span><select onchange="updateItem(${catIdx}, ${itemIdx}, 'icon', this.value)" style="flex: 0 1 50px;">${getIconOptions(item.icon)}</select><input type="text" placeholder="Nome do Menu" value="${item.title || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'title', this.value)"><input type="text" placeholder="URL da Página" value="${item.url || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'url', this.value)"><div style="flex-basis: 100%; height: 0; margin: 0;"></div><input type="text" placeholder="Ver (view,view2,editor,admin)" value="${item.viewRoles || 'view,view2,editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'viewRoles', this.value)"><input type="text" placeholder="Editar (editor,admin)" value="${item.uploadRoles || 'editor,admin'}" onchange="updateItem(${catIdx}, ${itemIdx}, 'uploadRoles', this.value)"><input type="text" list="lista-usuarios" placeholder="Usuários Marcados (apenas estes editam)" value="${item.allowedUsers || ''}" onchange="updateItem(${catIdx}, ${itemIdx}, 'allowedUsers', this.value)"><button class="btn btn-dark" onclick="adicionarSubItem(${catIdx}, ${itemIdx})">+ Sub-submenu</button><button class="btn btn-red" onclick="removerItem(${catIdx}, ${itemIdx})">✖ Remover</button><div style="width: 100%;">${subItemsHtml}</div></div>`;
                 });
                 container.innerHTML += `<div class="cat-card" draggable="true" ondragstart="dragStart(event, 'cat', ${catIdx})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, 'cat', ${catIdx})"><div style="display:flex; gap:10px; margin-bottom:15px; align-items:center; flex-wrap:wrap; border-bottom: 2px solid var(--border-card); padding-bottom: 15px;"><span style="font-weight:900; color:var(--text-title); font-size:1.1rem; cursor: grab;">↕️ 1º Nível:</span><select onchange="updateCat(${catIdx}, 'icon', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);">${getIconOptions(cat.icon)}</select><input type="text" placeholder="Nome" value="${cat.category || ''}" onchange="updateCat(${catIdx}, 'category', this.value)" style="flex:1; min-width: 150px; padding:8px; font-weight:bold; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);"><input type="text" placeholder="Ver (view,view2,editor,admin)" value="${cat.viewRoles || 'view,view2,editor,admin'}" onchange="updateCat(${catIdx}, 'viewRoles', this.value)" style="padding:8px; border-radius:4px; border: 1px solid var(--border-card); background: var(--bg-body); color: var(--text-main);"><button class="btn btn-red" onclick="removerCategoria(${catIdx})">Excluir Categoria</button></div><div style="margin-bottom:10px; font-weight:bold; font-size:0.85rem; color: var(--text-muted);">Submenus associados a esta categoria:</div>${itemsHtml}<button class="btn btn-blue" style="margin-top:10px;" onclick="adicionarItem(${catIdx})">+ Adicionar Menu (2º Nível)</button></div>`;
             });

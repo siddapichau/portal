@@ -193,6 +193,7 @@
         let globalNewsList = [];
         let currentNewsFilter = 'Todas';
         let userAvatarMap = {};
+        let cargosMap = {}; // catálogo dinâmico de cargos (reconhece cargos novos)
 
         // --- Variáveis para controle de Notificações ---
         let lastNewsTimestamp = localStorage.getItem('lastNewsTime') ? parseInt(localStorage.getItem('lastNewsTime')) : Date.now();
@@ -279,10 +280,24 @@
             } catch(e) { console.log("Aviso: Mapa de avatares não carregou."); }
         }
 
+        // Só mostra no radar as atividades de ATUALIZAÇÃO DE REPORTES.
+        // Esconde logs de dados pessoais/administrativos (login, cargo, senha, permissão…).
+        function isReportLog(log) {
+            if(!log || !log.acao) return false;
+            const m = String(log.modulo || '').toLowerCase();
+            const a = String(log.acao || '').toLowerCase();
+            const modsPessoais = ['painel admin','sistema','auth','login','registro','perfil','presença','conta'];
+            for(let i = 0; i < modsPessoais.length; i++) if(m.includes(modsPessoais[i])) return false;
+            const acoesPessoais = ['logou','log in','login','registrou','registro','alterou permiss','cargo','senha','avatar','favorito','bloqueou','aprovou','criou conta','migrou','presença'];
+            for(let j = 0; j < acoesPessoais.length; j++) if(a.includes(acoesPessoais[j])) return false;
+            return true;
+        }
+
         async function carregarFeedAtualizacoes() {
             const listEl = document.getElementById('feed-list');
             try {
-                const res = await fetch(`${URL_BD_INDEX}logs.json?_=${Date.now()}`); 
+                // Pede só os 40 mais recentes (menos bytes no radar)
+                const res = await fetch(`${URL_BD_INDEX}logs.json?orderBy="timestamp"&limitToLast=40`); 
                 const data = await res.json();
                 
                 if(!data) { listEl.innerHTML = '<div class="muted-msg">Nenhuma atividade recente.</div>'; return; }
@@ -290,6 +305,8 @@
                 let logs = [];
                 if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
                 
+                // 🔍 Radar só com atualizações de reportes (nada de dados pessoais)
+                logs = logs.filter(isReportLog);
                 logs.sort((a, b) => b.timestamp - a.timestamp); logs = logs.slice(0, 15); 
                 listEl.innerHTML = '';
                 
@@ -490,11 +507,27 @@
         function formatRoleName(role) {
             if(!role) return 'Desconhecido';
             const r = role.toLowerCase();
+            const mapped = cargosMap[r];
+            if(mapped) return mapped;
             if(r === 'view2') return 'View Plus';
             if(r === 'view') return 'Viewer';
             if(r === 'editor') return 'Editor';
             if(r === 'admin') return 'Admin';
             return role;
+        }
+
+        async function carregarCargos() {
+            try {
+                const res = await fetch(`${URL_BD_INDEX}cargos.json`);
+                const data = await res.json();
+                cargosMap = {};
+                if(data && typeof data === 'object') {
+                    Object.keys(data).forEach(k => {
+                        const c = data[k] || {};
+                        cargosMap[String(k).toLowerCase()] = c.rotulo || k;
+                    });
+                }
+            } catch(e) { console.log("Aviso: catálogo de cargos não carregou."); }
         }
 
         function registrarPresenca() {
@@ -615,6 +648,7 @@
             registrarPresenca();
             
             await prepararMapaDeAvatares();
+            carregarCargos(); // cargos dinâmicos (labels) — cacheado
             
             carregarFeedAtualizacoes(); 
             carregarNoticias();
