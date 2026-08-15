@@ -97,6 +97,7 @@
         ::-webkit-scrollbar-track { background: var(--bg-body); }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -166,7 +167,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const DB_NODES = { 'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata', 'q10': 'salvados_q10', 'q15': 'salvados_q15', 'qonhub': 'salvados_qonhub', 'cftv': 'salvados_cftv', 'parado': 'salvados_parado' };
 
         let BANCO_GLOBAL = []; let DADOS_EXATOS = []; let DADOS_APROXIMADOS = []; 
@@ -209,7 +210,7 @@
         let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
         if(canEdit) { document.getElementById('btn-gerenciar').style.display = 'inline-flex'; }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -268,7 +269,7 @@
                     try {
                         const payload = { atualizadoEm: new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }), lista: dadosLimpos };
                         await fetch(`${FIREBASE_URL}${DB_NODES[dbKey]}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                        await registrarLogFirebase("Buscador Global", `Atualizou a base <b>${dbKey.toUpperCase()}</b> via CSV (${dadosLimpos.length} itens).`);
+                        await registrarLog("Buscador Global", `Atualizou a base <b>${dbKey.toUpperCase()}</b> via CSV (${dadosLimpos.length} itens).`);
                         carregarTodosBancos(); fecharModalGerenciador(); inputElement.value = ""; 
                     } catch (e) { alert('Erro na nuvem.'); document.getElementById(`lbl-${dbKey}`).innerText = 'Erro Nuvem ❌'; }
                 }

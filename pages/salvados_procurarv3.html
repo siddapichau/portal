@@ -128,6 +128,7 @@
             .col-id { font-size: 0.7rem; }
         }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 
 <body data-theme="light">
@@ -218,7 +219,7 @@
                 <div class="modal-title" style="color:#8b5cf6;">⚙️ Gerenciar IAs Customizadas</div>
                 <button class="close-modal" onclick="fecharModalGerenciarIA()">×</button>
             </div>
-            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:5px;">Adicione qualquer IA compatível com OpenAI (ChatGPT, Claude, Mistral, etc). A chave ficará salva no Firebase.</div>
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:5px;">Adicione qualquer IA compatível com OpenAI (ChatGPT, Claude, Mistral, etc). A chave ficará salva na planilha.</div>
             
             <div class="modal-grid" id="lista-ias-custom" style="max-height: 40vh; overflow-y: auto; border:1px solid var(--border-card); padding:10px; border-radius:8px;">
                 <div style="text-align:center; color:var(--text-muted);">Carregando IAs cadastradas...</div>
@@ -331,7 +332,7 @@
     // ============================================================
     //  FIREBASE
     // ============================================================
-    const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+    const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
     const DB_NODES = {
         'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata',
         'q10': 'salvados_q10', 'q15': 'salvados_q15',
@@ -415,7 +416,7 @@
         document.getElementById('btn-gerenciar-ia').style.display = 'inline-flex';
     }
 
-    async function registrarLogFirebase(modulo, acao) {
+    async function registrarLog(modulo, acao) {
         try { await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ modulo, acao, usuario: userName, timestamp: Date.now() }) }); } catch(e) {}
     }
 
@@ -531,13 +532,13 @@
 
         try {
             await fetch(`${FIREBASE_URL}salvados_ia_config/${id}.json`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(novaIA) });
-            await registrarLogFirebase("Buscador Global", `Cadastrou nova IA customizada: <b>${nome}</b>`);
+            await registrarLog("Buscador Global", `Cadastrou nova IA customizada: <b>${nome}</b>`);
             document.getElementById('ia-custom-nome').value = '';
             document.getElementById('ia-custom-key').value = '';
             document.getElementById('ia-custom-url').value = '';
             document.getElementById('ia-custom-model').value = '';
             await carregarIAsCustomizadas();
-        } catch(e) { alert("Erro ao salvar no Firebase."); }
+        } catch(e) { alert("Erro ao salvar na planilha."); }
     }
 
     async function removerIACustom(id) {
@@ -641,7 +642,7 @@
             // Marcar como encontrado
             await fetch(`${FIREBASE_URL}salvados_encontrados/${idLimpo}.json`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ data: Date.now(), user: userName }) });
             ITENS_ENCONTRADOS.add(idLimpo);
-            await registrarLogFirebase("Buscador Global", `Marcou item <b>${id}</b> como ENCONTRADO. Termo: "${termoAtual}"`);
+            await registrarLog("Buscador Global", `Marcou item <b>${id}</b> como ENCONTRADO. Termo: "${termoAtual}"`);
             
             await atualizarIndicadorMemoria();
             executarSmartSearch();
@@ -1043,7 +1044,7 @@ Retorne APENAS um JSON válido:
     }
 
     // ============================================================
-    //  V4: IA CUSTOMIZÁVEL (Dinâmica salva no Firebase)
+    //  V4: IA CUSTOMIZÁVEL (Dinâmica salva na planilha)
     // ============================================================
     async function chamarAPI_Custom(iaConfig, prompt, file) {
         if (!iaConfig || !iaConfig.api_key) throw new Error("Configuração da IA customizada inválida.");
@@ -1291,7 +1292,7 @@ Retorne APENAS um JSON válido:
                 try {
                     const payload = { atualizadoEm: new Date().toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'}), lista: dadosLimpos };
                     await fetch(`${FIREBASE_URL}${DB_NODES[dbKey]}.json`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-                    await registrarLogFirebase("Buscador Global", `Atualizou a base <b>${dbKey.toUpperCase()}</b> (${dadosLimpos.length} itens).`);
+                    await registrarLog("Buscador Global", `Atualizou a base <b>${dbKey.toUpperCase()}</b> (${dadosLimpos.length} itens).`);
                     carregarTodosBancos(); fecharModalGerenciador(); inputElement.value = "";
                 } catch(e) { alert('Erro na nuvem.'); document.getElementById(`lbl-${dbKey}`).innerText = 'Erro ❌'; }
             }

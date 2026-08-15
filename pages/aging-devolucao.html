@@ -107,6 +107,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -182,7 +183,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
 
         let globalData = [];
         let chartInst = null;
@@ -206,7 +207,7 @@
         
         if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -265,7 +266,7 @@
                 
                 if(dbData && dbData.lista) {
                     iniciarDashboard(dbData.lista);
-                    statusBadge.innerText = "Online (Firebase Nuvem)";
+                    statusBadge.innerText = "Online (Planilha Google)";
                 } else {
                     definirEstadoVazio("Banco Vazio. Faça Upload.");
                 }
@@ -295,7 +296,7 @@
                         const dadosFiltrados = results.data.filter(row => Object.values(row).some(val => val !== null && val.trim() !== ''));
                         iniciarDashboard(dadosFiltrados);
 
-                        const dadosFirebase = dadosFiltrados.map(row => {
+                        const dadosLimpos = dadosFiltrados.map(row => {
                             let obj = {};
                             for(let k in row) {
                                 let safeKey = String(k).replace(/[\.\#\$\/\[\]]/g, '_').trim();
@@ -306,8 +307,8 @@
                         });
 
                         try {
-                            const response = await fetch(`${FIREBASE_URL}devolucao.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lista: dadosFirebase }) });
-                            await registrarLogFirebase("Aging Devolução", `Atualizou a base de dados via CSV (${dadosFirebase.length} pacotes).`);
+                            const response = await fetch(`${FIREBASE_URL}devolucao.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lista: dadosLimpos }) });
+                            await registrarLog("Aging Devolução", `Atualizou a base de dados via CSV (${dadosLimpos.length} pacotes).`);
                             if(response.ok) { statusBadge.innerText = 'Salvo com sucesso (Nuvem)!'; } 
                         } catch(err) { statusBadge.innerText = 'Arquivo Carregado (Local)'; }
                     }

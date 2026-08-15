@@ -105,6 +105,7 @@
             .total-info { margin-left: 0; text-align: right; }
         }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 
 <body data-theme="light">
@@ -119,7 +120,7 @@
             <span class="status-badge" id="data-status">Conectando ao banco...</span>
             <button class="btn-action btn-dark" onclick="baixarDashboardComoImagem()" title="Exportar Tabela em Imagem UHD 4K">Exportar 4K</button>
             <a href="contagem_insumos.html" class="btn-action btn-blue">Contagem</a>
-            <button class="btn-action btn-dark" onclick="carregarDoFirebase()">Atualizar</button>
+            <button class="btn-action btn-dark" onclick="carregarDoBanco()">Atualizar</button>
         </div>
     </div>
 
@@ -147,7 +148,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "insumos";
         const $ = (s) => document.querySelector(s);
         let ALL_ITEMS = [];
@@ -239,7 +240,7 @@
             $('#tbody-insumos').innerHTML = html;
         }
 
-        async function carregarDoFirebase() {
+        async function carregarDoBanco() {
             setStatus('Conectando ao banco...', '#3483FA');
             try {
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
@@ -256,7 +257,7 @@
                     $('#tbody-insumos').innerHTML = `<tr><td class="muted" colspan="5">Banco vazio. Atualize os itens pela página Contagem de Insumos.</td></tr>`;
                     setStatus('Banco vazio.', '#FF7733');
                 }
-            } catch (error) { $('#tbody-insumos').innerHTML = `<tr><td class="muted" colspan="5">Não foi possível conectar ao Firebase.</td></tr>`; setStatus('Erro ao conectar.', '#FF5252'); }
+            } catch (error) { $('#tbody-insumos').innerHTML = `<tr><td class="muted" colspan="5">Não foi possível conectar ao banco de dados.</td></tr>`; setStatus('Erro ao conectar.', '#FF5252'); }
         }
 
         function baixarDashboardComoImagem() {
@@ -280,7 +281,7 @@
 
         $('#filter-categoria').addEventListener('change', () => { renderTabela(ALL_ITEMS); });
         document.getElementById('main-title').innerText = `Estoque de Insumos Operacional Crítico - ${obterDataHojeFormatada()}`;
-        carregarDoFirebase();
+        carregarDoBanco();
     </script>
 </body>
 </html>

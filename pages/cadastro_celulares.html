@@ -53,6 +53,7 @@
             .dashboard-grid { grid-template-columns: 1fr; }
         }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -114,7 +115,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const SCRIPT_URL = "SUA_URL_DO_APP_SCRIPT_AQUI"; // <--- MANTENHA A URL AQUI
         
         let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
@@ -152,7 +153,7 @@
                         });
                     });
                 }
-            } catch(e) { console.error("Aviso: Falha ao carregar as permissões do Firebase."); }
+            } catch(e) { console.error("Aviso: Falha ao carregar as permissões do banco de dados."); }
         }
 
         function verificaCargo(rolesStr, usersStr) {
@@ -213,7 +214,7 @@
             return await res.json();
         }
 
-        async function registrarLogFirebase(acao) {
+        async function registrarLog(acao) {
             try {
                 const logData = { modulo: "Equipamentos", acao: acao, usuario: currentUser.usuario || 'Desconhecido', timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -308,10 +309,10 @@
                 });
 
                 if(modoEdicao) {
-                    await registrarLogFirebase(`Editou o cadastro do aparelho <b>${idCelular}</b>.`);
+                    await registrarLog(`Editou o cadastro do aparelho <b>${idCelular}</b>.`);
                     alert('Cadastro atualizado com sucesso na Planilha!');
                 } else {
-                    await registrarLogFirebase(`Registrou a saída do aparelho <b>${idCelular}</b> para <b>${nomePessoa}</b>.`);
+                    await registrarLog(`Registrou a saída do aparelho <b>${idCelular}</b> para <b>${nomePessoa}</b>.`);
                     alert('Aparelho cadastrado com sucesso na Planilha!');
                 }
                 
@@ -384,7 +385,7 @@
                 };
 
                 await fetchPlanilha({ action: "salvarCelular", celular: celularAtualizado });
-                await registrarLogFirebase(`Marcou o aparelho <b>${id}</b> como ${acaoTexto.toLowerCase()}.`);
+                await registrarLog(`Marcou o aparelho <b>${id}</b> como ${acaoTexto.toLowerCase()}.`);
                 await carregarAparelhos();
             } catch(e) {
                 alert("Erro ao alterar status na Planilha.");
@@ -397,7 +398,7 @@
 
             try {
                 await fetchPlanilha({ action: "excluirCelular", id: id });
-                await registrarLogFirebase(`Excluiu o registro do aparelho <b>${id}</b> do sistema.`);
+                await registrarLog(`Excluiu o registro do aparelho <b>${id}</b> do sistema.`);
                 
                 if (modoEdicao && document.getElementById('idCelular').value === id) {
                     cancelarEdicao();

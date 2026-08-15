@@ -141,6 +141,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="dark">
 
@@ -280,7 +281,7 @@
     <script>
         Chart.register(ChartDataLabels);
 
-        const FIREBASE_URL_BASE = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL_BASE = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "inventario_dhs_separado_v1";
         const NODE_ADERENCIA = "aderencia_historico";
         
@@ -311,7 +312,7 @@
             document.getElementById('upload-excel-wrapper').style.display = 'inline-flex'; 
         }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL_BASE}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -394,7 +395,7 @@
             
             try {
                 const req = await fetch(`${FIREBASE_URL_BASE}${FIREBASE_NODE}/${dChave}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadDia) });
-                await registrarLogFirebase("Análise Ofensores", `Atualizou a planilha de Ofensores do inventário do dia: <b>${dChave.split('-').reverse().join('/')}</b>`);
+                await registrarLog("Análise Ofensores", `Atualizou a planilha de Ofensores do inventário do dia: <b>${dChave.split('-').reverse().join('/')}</b>`);
                 if(req.ok) { showModernToast(false, "Ofensores Importados!", `Data ${dChave.split('-').reverse().join('/')} salva com sucesso.`); }
             } catch(e) { console.warn("Erro ao sincronizar com a Nuvem."); }
             
@@ -439,7 +440,7 @@
                     try {
                         const response = await fetch(`${FIREBASE_URL_BASE}${NODE_ADERENCIA}/${dbDateKey}.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
                         await fetch(`${FIREBASE_URL_BASE}aderencia.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
-                        await registrarLogFirebase("Análise Ofensores", `Atualizou o CSV de Aderência do inventário do dia: <b>${dataBRFormatada}</b>`);
+                        await registrarLog("Análise Ofensores", `Atualizou o CSV de Aderência do inventário do dia: <b>${dataBRFormatada}</b>`);
 
                         if(response.ok) {
                             showModernToast(globalHasXPT, "Aderência Salva!", globalHasXPT ? "Com XPT Calculado" : "Tabela Padrão (Sem XPT)");
@@ -452,7 +453,7 @@
             });
         }
 
-        async function carregarDoFirebase() {
+        async function carregarDoBanco() {
             try {
                 const resPendentes = await fetch(`${FIREBASE_URL_BASE}${FIREBASE_NODE}.json`);
                 if (resPendentes.ok) { const dbP = await resPendentes.json(); if(dbP) DB_LOCAL = dbP; }
@@ -589,7 +590,7 @@
             }, 500); 
         }
 
-        carregarDoFirebase();
+        carregarDoBanco();
 
     </script>
 </body>

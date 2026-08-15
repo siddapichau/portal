@@ -84,6 +84,7 @@
             .kpi-card { flex: 1; min-width: 220px; }
         }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -178,7 +179,7 @@
     <script>
         Chart.register(ChartDataLabels);
 
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "envios_diarios_v8"; 
         
         let chartInstances = {};
@@ -200,7 +201,7 @@
         let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
         if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -234,7 +235,7 @@
             return dataStr;
         }
 
-        async function carregarDoFirebase() {
+        async function carregarDoBanco() {
             try {
                 const url = `${FIREBASE_URL}${FIREBASE_NODE}.json?cb=${Date.now()}`;
                 const response = await fetch(url);
@@ -247,7 +248,7 @@
                 }
             } catch(e) { console.error("Erro ao carregar banco", e); }
         }
-        document.addEventListener('DOMContentLoaded', carregarDoFirebase);
+        document.addEventListener('DOMContentLoaded', carregarDoBanco);
 
         document.getElementById('excelFileInput').addEventListener('change', function(event) {
             if(!canEdit) return;
@@ -331,7 +332,7 @@
                     await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, {
                         method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ultimaAtualizacao: timestamp, dados: BANCO_GLOBAL })
                     });
-                    await registrarLogFirebase("Expedir Devolução", `Atualizou a base de expedição do dia: <b>${BANCO_GLOBAL.data}</b>`);
+                    await registrarLog("Expedir Devolução", `Atualizou a base de expedição do dia: <b>${BANCO_GLOBAL.data}</b>`);
                 } catch(e) { console.error(e); }
             };
             

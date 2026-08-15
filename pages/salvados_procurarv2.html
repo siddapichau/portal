@@ -104,6 +104,7 @@
         input:checked + .slider { background-color: #059669; }
         input:checked + .slider:before { transform: translateX(16px); }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 
 <body data-theme="light">
@@ -280,7 +281,7 @@
     </div>
 
     <script>
-    const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+    const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
     const DB_NODES = {
         'devolucao': 'salvados_devolucao', 'iddata': 'salvados_iddata',
         'q10': 'salvados_q10', 'q15': 'salvados_q15',

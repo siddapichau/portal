@@ -1,20 +1,19 @@
 /* ============================================================================
    portal-db.js — Camada única de acesso a dados do Portal ("cérebro")
    ----------------------------------------------------------------------------
-   Substitui o acesso direto ao Firebase por UM ponto de configuração.
-   O portal pode usar:
-     • Google Sheets (via Apps Script)  -> PortalDB.URL configurada
-     • Firebase Realtime Database       -> fallback automático
+   O portal é 100% PLANILHA (Google Sheets via Apps Script).
+   Não existe mais nenhuma conexão com Firebase aqui — a única referência ao
+   Firebase no projeto fica no Apps Script, só para a importação dos dados.
 
-   COMO USAR:
-     1) Cole aqui a URL `/exec` do seu Apps Script (Implantar -> Web app).
-     2) Todas as páginas que hoje usam `const FIREBASE_URL = "..."` passam a
-        usar `PortalDB.baseAtiva()` (veja menu.js / index.html / admin.html).
+   COMO ATIVAR:
+     1) Publique o Apps Script da planilha (Implantar → Aplicativo da web).
+     2) Cole aqui a URL `/exec` gerada. Pronto: todas as páginas usam a
+        planilha automaticamente (contrato idêntico ao que o portal já usava).
 
    O que este arquivo faz:
-     - Expõe PortalDB.URL / PortalDB.FIREBASE_FALLBACK / PortalDB.baseAtiva()
+     - Expõe PortalDB.URL / PortalDB.urlConfigurada() / PortalDB.baseAtiva()
      - Traduz PUT/PATCH/DELETE (não suportados nativamente pelo Apps Script)
-       para POST, mantendo o mesmo contrato do Firebase (troca transparente).
+       para POST, mantendo o mesmo contrato REST (troca transparente).
    ============================================================================ */
 
 (function (global) {
@@ -24,14 +23,8 @@
 
     var PortalDB = {
         // ====== CONFIGURAÇÃO =================================================
-        // 👇 COLE AQUI a URL /exec do seu Apps Script (terminando em "/")
-        URL: 'https://script.google.com/macros/s/COLE_SUA_URL_DEPLOY/exec/',
-
-        // Fallback enquanto a planilha não estiver configurada
-        FIREBASE_FALLBACK: 'https://reportes-bdb0a-default-rtdb.firebaseio.com/',
-
-        // 'sheets' usa a planilha; 'firebase' força o Firebase
-        MODE: 'sheets'
+        // 👇 COLE AQUI a URL /exec do seu Apps Script (terminando em "/exec/")
+        URL: 'https://script.google.com/macros/s/COLE_SUA_URL_DEPLOY/exec/'
     };
 
     /* True se a URL da planilha está configurada (não é placeholder). */
@@ -39,10 +32,17 @@
         return !!/exec/i.test(PortalDB.URL) && !/COLE_SUA_URL/i.test(PortalDB.URL);
     };
 
-    /* Base ativa: retorna a URL (com "/" final) que deve ser usada. */
+    /* Base ativa: SEMPRE a planilha. Avisa no console se ainda não configurada. */
     PortalDB.baseAtiva = function () {
-        if (PortalDB.MODE === 'sheets' && PortalDB.urlConfigurada()) return PortalDB.URL;
-        return PortalDB.FIREBASE_FALLBACK;
+        if (!PortalDB.urlConfigurada()) {
+            console.error(
+                '[PortalDB] ⚠️ URL da planilha NÃO configurada.\n' +
+                '1) Publique o Apps Script (Implantar → Aplicativo da web).\n' +
+                '2) Cole a URL /exec em js/portal-db.js → PortalDB.URL.\n' +
+                'Sem isso o portal não carrega dados.'
+            );
+        }
+        return PortalDB.URL;
     };
 
     /* ========================================================================
@@ -61,7 +61,7 @@
             var url = (typeof input === 'string') ? input : (input && input.url);
 
             // Só interceptamos chamadas destinadas à planilha (Apps Script)
-            if (!url || !PortalDB.urlConfigurada() || url.indexOf(PortalDB.URL) !== 0) {
+            if (!url || url.indexOf(PortalDB.URL) !== 0) {
                 return realFetch(input, init);
             }
             if (method === 'GET') {
