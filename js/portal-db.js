@@ -5,20 +5,20 @@
    Não existe mais nenhuma conexão com Firebase aqui — a única referência ao
    Firebase no projeto fica no Apps Script, só para a importação dos dados.
 
+   ⚡ CACHE INTELIGENTE (novo nesta versão):
+     - Os nós do cérebro (menu, usuários, cargos, notícias, status, logs…)
+       ficam salvos em localStorage do navegador.
+     - Cada nó guarda junto a SUA versão (o Apps Script incrementa "v_<nó>"
+       sempre que algo é alterado). Ao carregar, o script pergunta a versão
+       atual; se mudou, apaga o cache DAQUELE nó e busca de novo.
+     - O login NÃO é perdido: ele fica em outra chave do localStorage
+       ('loggedUser') que o cache nunca toca.
+     - Para forçar leitura fresca numa chamada, use `&nc=1` na URL.
+
    COMO ATIVAR:
      1) Publique o Apps Script da planilha (Implantar → Aplicativo da web).
      2) Cole aqui a URL `/exec` gerada. Pronto: todas as páginas usam a
         planilha automaticamente (contrato idêntico ao que o portal já usava).
-
-   POR QUE OS DADOS NÃO CARREGAVAM (corrigido nesta versão):
-     - As páginas montam `${base}menu_global.json` (contrato Firebase).
-     - Sem a barra final, isso virava `.../execmenu_global.json` (URL inválida).
-     - COM a barra, `.../exec/menu_global.json` cai no login do Google
-       (limitação do Apps Script: pathInfo em web app "Qualquer pessoa"
-       não é público).
-     - Solução: este arquivo reescreve GET para
-       `.../exec?path=menu_global.json` (query string, pública) e o
-       Code.gs lê `e.parameter.path`.
 
    O que este arquivo faz:
      - Expõe PortalDB.URL / PortalDB.urlConfigurada() / PortalDB.baseAtiva()
@@ -35,8 +35,36 @@
     var PortalDB = {
         // ====== CONFIGURAÇÃO =================================================
         // Cole a URL /exec do Apps Script (com ou sem barra no final — tanto faz)
-        URL: 'https://script.google.com/macros/s/AKfycbw3vDT2-dwTBnXP0NDZztLA8YzIxbb7i6TAZLvg7t5Q1j646XEl6BKeCkUdAdqLjhbDJw/exec'
+        URL: 'https://script.google.com/macros/s/AKfycbw3vDT2-dwTBnXP0NDZztLA8YzIxbb7i6TAZLvg7t5Q1j646XEl6BKeCkUdAdqLjhbDJw/exec',
+
+        // ====== CACHE ========================================================
+        // Quantos ms entre checagens da versão no servidor (para não espancar
+        // a API a cada fetch). Reduza para detectar mudanças mais rápido.
+        versionTtlMs: 8000
     };
+
+    // Nós do CÉREBRO que podem ser cacheados. Nós de páginas (equipamentos,
+    // aderência…) NÃO entram aqui — cada um tem a planilha própria e não deve
+    // ser cacheado por este módulo.
+    var CACHE_NODES = [
+        'menu_global', 'users', 'cargos', 'funcoes', 'portal_news',
+        'portal_status', 'portal_bigquery', 'logs', 'presence',
+        'user_bookmarks', 'config'
+    ];
+
+    var LS_CACHE = 'pdb_cache_v2';   // { nó: { v: versão, data: ... } }
+    var LS_META = 'pdb_meta_v2';     // { v: { nó: versão, ... }, t: carimbo }
+
+    function lsGet_(key, fb) {
+        try { var raw = global.localStorage.getItem(key); return raw ? JSON.parse(raw) : fb; }
+        catch (e) { return fb; }
+    }
+    function lsSet_(key, val) {
+        try { global.localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+    }
+
+    var cache = { nodes: lsGet_(LS_CACHE, {}), meta: lsGet_(LS_META, null) };
+    var inflightVersion = null;
 
     function execBase() {
         return String(PortalDB.URL || '').replace(/\/+$/, '');
@@ -61,6 +89,130 @@
         }
         return execBase() + '/';
     };
+
+    // ========================================================================
+    // CACHE — leitura da versão por nó (via endpoint de saúde) + invalidação
+    // ========================================================================
+
+    function getVersionMap_() {
+        if (inflightVersion) return inflightVersion;
+        inflightVersion = realFetch(execBase() + '?__v=' + Date.now(), {})
+            .then(function (res) { return res.json(); })
+            .then(function (h) {
+                return (h && typeof h.versao_por_no === 'object') ? h.versao_por_no : null;
+            })
+            .catch(function () { return null; })
+            .then(function (vm) {
+                inflightVersion = null;
+                return vm;
+            });
+        return inflightVersion;
+    }
+
+    // Checa a versão do servidor (limitado a versionTtlMs). Se um nó mudou,
+    // descarta o cache só daquele nó. Nunca mexe no 'loggedUser'.
+    function ensureVersion_() {
+        var now = Date.now();
+        if (cache.meta && (now - (cache.meta.t || 0)) < PortalDB.versionTtlMs) {
+            return Promise.resolve(cache.meta.v || {});
+        }
+        return getVersionMap_().then(function (vm) {
+            if (!vm) return cache.meta ? (cache.meta.v || {}) : {};
+            if (cache.meta && cache.meta.v) {
+                var cur = cache.meta.v;
+                for (var node in cache.nodes) {
+                    if (!Object.prototype.hasOwnProperty.call(cache.nodes, node)) continue;
+                    var newV = vm[node], oldV = cur[node];
+                    if (newV != null && oldV != null && String(newV) !== String(oldV)) {
+                        delete cache.nodes[node];
+                    }
+                }
+            }
+            cache.meta = { v: vm, t: now };
+            lsSet_(LS_META, cache.meta);
+            lsSet_(LS_CACHE, cache.nodes);
+            return vm;
+        });
+    }
+
+    function makeCachedResponse_(jsonData) {
+        var text = JSON.stringify(jsonData === undefined ? null : jsonData);
+        return {
+            ok: true,
+            status: 200,
+            url: '',
+            json: function () { return Promise.resolve(jsonData); },
+            text: function () { return Promise.resolve(text); },
+            clone: function () { return makeCachedResponse_(jsonData); }
+        };
+    }
+
+    // Faz a leitura de rede de verdade e, se for nó cacheável, guarda no cache.
+    // Busca a versão em paralelo na 1ª leitura, para o cache já nascer com a
+    // versão correta (evita re-busca na próxima visita).
+    function fetchNode_(base, params, path, node) {
+        if (path) params.path = path;
+        delete params.nc; // flag interna de "não cachear" não vai ao servidor
+        var qs = buildQuery_(params);
+        // Só busca a versão quando vamos guardar no cache (nó do cérebro).
+        var versionPromise = (node && cache.meta && cache.meta.v)
+            ? Promise.resolve(cache.meta.v)
+            : (node ? getVersionMap_() : Promise.resolve(null));
+        return Promise.all([realFetch(base + (qs ? '?' + qs : ''), {}), versionPromise])
+            .then(function (rs) {
+                var res = rs[0], vm = rs[1];
+                if (vm && !(cache.meta && cache.meta.v)) {
+                    cache.meta = { v: vm, t: Date.now() };
+                    lsSet_(LS_META, cache.meta);
+                }
+                try {
+                    res.clone().json().then(function (data) {
+                        if (data && data.error === 'Rota inválida') {
+                            console.error(
+                                '[PortalDB] A implantação do Apps Script ainda é a versão antiga.\n' +
+                                'Cole apps-script/Code.gs e faça Implantar → Gerenciar implantações → Nova versão.\n' +
+                                'Teste: abra a URL /exec — tem que vir { ok:true, ... }, não "Rota inválida".\n' +
+                                'Passo a passo: apps-script/COMO_IMPLANTAR.md'
+                            );
+                        }
+                        if (node) {
+                            cache.nodes[node] = {
+                                v: cache.meta && cache.meta.v ? cache.meta.v[node] : undefined,
+                                data: data
+                            };
+                            lsSet_(LS_CACHE, cache.nodes);
+                        }
+                    }).catch(function () {});
+                } catch (e) {}
+                return res;
+            });
+    }
+
+    // Serve do cache se a versão estiver ok; senão busca na rede.
+    function serveOrFetch_(node, base, params, path) {
+        if (cache.nodes[node] && cache.nodes[node].data !== undefined) {
+            return ensureVersion_().then(function (vm) {
+                var cached = cache.nodes[node];
+                if (cached && String(cached.v) === String(vm[node] || '')) {
+                    return makeCachedResponse_(cached.data);
+                }
+                delete cache.nodes[node];
+                return fetchNode_(base, params, path, node);
+            });
+        }
+        return fetchNode_(base, params, path, node);
+    }
+
+    /* Limpa todo o cache (útil após trocar a URL da planilha). */
+    PortalDB.clearCache = function () {
+        cache.nodes = {};
+        cache.meta = null;
+        lsSet_(LS_CACHE, {});
+        try { global.localStorage.removeItem(LS_META); } catch (e) {}
+    };
+
+    /* Força a próxima checagem de versão (descarta a janela de TTL). */
+    PortalDB.bumpVersionCheck = function () { cache.meta = null; };
 
     function parseQuery_(qs) {
         var out = {};
@@ -126,23 +278,12 @@
             var params = split.params || {};
 
             if (method === 'GET') {
-                if (path) params.path = path;
-                var qs = buildQuery_(params);
-                return realFetch(base + (qs ? '?' + qs : ''), init).then(function (res) {
-                    try {
-                        res.clone().json().then(function (data) {
-                            if (data && data.error === 'Rota inválida') {
-                                console.error(
-                                    '[PortalDB] A implantação do Apps Script ainda é a versão antiga.\n' +
-                                    'Cole apps-script/Code.gs e faça Implantar → Gerenciar implantações → Nova versão.\n' +
-                                    'Teste: abra a URL /exec — tem que vir { ok:true, ... }, não "Rota inválida".\n' +
-                                    'Passo a passo: apps-script/COMO_IMPLANTAR.md'
-                                );
-                            }
-                        }).catch(function () {});
-                    } catch (e) {}
-                    return res;
-                });
+                var node = String(path).replace(/\.json$/, '').split('/')[0];
+                var isCacheable = CACHE_NODES.indexOf(node) !== -1 && !params.nc;
+                if (isCacheable) {
+                    return serveOrFetch_(node, base, params, path);
+                }
+                return fetchNode_(base, params, path, isCacheable ? node : null);
             }
 
             var parsed = null;

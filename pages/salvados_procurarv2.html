@@ -325,7 +325,10 @@
     const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
     let userName = currentUser?.usuario || 'Sistema';
     const isAdmin = currentUser?.cargo === 'admin';
-    const canEdit = currentUser?.cargo === 'admin' || currentUser?.cargo === 'editor';
+    // Permissão de edição delegada ao helper central (reconhece cargos novos e usuários marcados no menu)
+    const canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function'
+        ? window.parent.verificarPermissaoUpload('salvados_procurarv2.html')
+        : (currentUser?.cargo === 'admin' || currentUser?.cargo === 'editor');
 
     if (canEdit) document.getElementById('btn-gerenciar').style.display = 'inline-flex';
     if (isAdmin) { 
