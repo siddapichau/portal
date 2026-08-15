@@ -24,7 +24,7 @@
     var PortalDB = {
         // ====== CONFIGURAÇÃO =================================================
         // 👇 COLE AQUI a URL /exec do seu Apps Script (terminando em "/exec/")
-        URL: 'https://script.google.com/macros/s/COLE_SUA_URL_DEPLOY/exec/'
+        URL: 'https://script.google.com/macros/s/AKfycbw3vDT2-dwTBnXP0NDZztLA8YzIxbb7i6TAZLvg7t5Q1j646XEl6BKeCkUdAdqLjhbDJw/exec'
     };
 
     /* True se a URL da planilha está configurada (não é placeholder). */
