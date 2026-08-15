@@ -645,23 +645,26 @@
 
         window.onload = async function() {
             pedirPermissaoNotificacao();
-            registrarPresenca();
+            try { registrarPresenca(); } catch(e){}
             
-            await prepararMapaDeAvatares();
-            carregarCargos(); // cargos dinâmicos (labels) — cacheado
+            try { await prepararMapaDeAvatares(); } catch(e){ console.warn('avatar map falhou', e); }
+            try { await carregarCargos(); } catch(e){ console.warn('cargos falhou', e); }
             
-            carregarFeedAtualizacoes(); 
-            carregarNoticias();
-            carregarPresencaUsuarios();
+            carregarFeedAtualizacoes().catch(function(e){ console.warn('feed', e); }); 
+            carregarNoticias().catch(function(e){ console.warn('noticias', e); });
+            carregarPresencaUsuarios().catch(function(e){ console.warn('presenca', e); });
 
             setInterval(() => { 
-                registrarPresenca();
-                checkNotifications();
+                try { registrarPresenca(); } catch(e){}
+                try { checkNotifications(); } catch(e){}
                 prepararMapaDeAvatares().then(() => {
-                    carregarFeedAtualizacoes(); 
-                    carregarNoticias();
-                    carregarPresencaUsuarios();
-                });
+                    carregarFeedAtualizacoes().catch(function(){});
+                    carregarNoticias().catch(function(){});
+                    carregarPresencaUsuarios().catch(function(){});
+                }).catch(function(){});
+                if(window.PortalDB && window.PortalDB.checkAppVersionSilently){
+                    window.PortalDB.checkAppVersionSilently();
+                }
             }, 30000); 
         };
 

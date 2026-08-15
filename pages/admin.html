@@ -66,11 +66,12 @@
             <h2 style="margin-bottom: 20px; color: var(--text-title);">⚙️ Painel de Administração</h2>
             
             <div class="admin-tabs">
-                <div class="admin-tab active" onclick="switchAdminTab('menus')">Gestão de Menus</div>
-                <div class="admin-tab" onclick="switchAdminTab('users')">Gestão de Usuários</div>
-                <div class="admin-tab" onclick="switchAdminTab('news')">Mural de Notícias</div>
-                <div class="admin-tab" onclick="switchAdminTab('status')">Gestão de Status</div>
-                <div class="admin-tab" onclick="switchAdminTab('bigquery')">Biblioteca BigQuery</div>
+                <div class="admin-tab active" onclick="switchAdminTab('menus', this)">Gestão de Menus</div>
+                <div class="admin-tab" onclick="switchAdminTab('users', this)">Gestão de Usuários</div>
+                <div class="admin-tab" onclick="switchAdminTab('news', this)">Mural de Notícias</div>
+                <div class="admin-tab" onclick="switchAdminTab('status', this)">Gestão de Status</div>
+                <div class="admin-tab" onclick="switchAdminTab('bigquery', this)">Biblioteca BigQuery</div>
+                <div class="admin-tab" onclick="switchAdminTab('versao', this)">🔄 Versão / Cache</div>
             </div>
 
             <!-- ABA DE MENUS -->
@@ -231,6 +232,48 @@
                 <div id="bq-list-admin" style="display: flex; flex-direction: column; gap: 10px;"></div>
             </div>
 
+            <!-- ABA DE VERSÃO / CACHE GLOBAL -->
+            <div id="tab-versao" style="display:none;">
+                <div class="cat-card" style="padding: 25px;">
+                    <h3 style="color:var(--text-title); margin-bottom:15px;">🔄 Controle de Versão e Cache Global</h3>
+                    <p style="color:var(--text-muted); font-size:0.9rem; margin-bottom:15px;">
+                        Mude a versão abaixo para forçar todos os navegadores a limparem o cache (visual e dados). Só o login, avatar e tema são mantidos. Use isso quando mudar algo visual que não aparece para os outros.
+                    </p>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:15px;">
+                        <div style="background:var(--bg-body); padding:12px; border-radius:8px; border:1px solid var(--border-card);">
+                            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Versão no Servidor (planilha)</div>
+                            <div id="versao-servidor" style="font-size:1.2rem; font-weight:900; color:var(--text-title); margin-top:5px;">Carregando…</div>
+                        </div>
+                        <div style="background:var(--bg-body); padding:12px; border-radius:8px; border:1px solid var(--border-card);">
+                            <div style="font-size:0.8rem; color:var(--text-muted); font-weight:800; text-transform:uppercase;">Versão Local (seu navegador)</div>
+                            <div id="versao-local" style="font-size:1.2rem; font-weight:900; color:var(--text-title); margin-top:5px;">Carregando…</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:15px;">
+                        <input type="text" id="input-nova-versao" placeholder="Ex: 12, v2, 2026-08-15-01" style="flex:1; min-width:200px; padding:12px; border-radius:8px; border:1px solid var(--border-card); background:var(--bg-input); color:var(--text-main); font-size:1rem; outline:none;">
+                        <button class="btn btn-blue" onclick="salvarNovaVersao()">💾 Salvar Nova Versão e Limpar Cache Global</button>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn btn-dark" onclick="carregarVersaoInfo()">🔄 Atualizar leitura</button>
+                        <button class="btn btn-warn" onclick="limparMeuCache()">🧹 Limpar Meu Cache (manter login)</button>
+                        <button class="btn btn-dark" onclick="incrementarVersaoAuto()">⚡ Gerar versão automática (timestamp)</button>
+                    </div>
+                    <div id="versao-log" style="margin-top:15px; font-size:0.85rem; color:var(--text-muted);"></div>
+                </div>
+                <div class="cat-card" style="padding:20px;">
+                    <h4 style="margin-bottom:10px;">O que é limpo?</h4>
+                    <ul style="font-size:0.85rem; color:var(--text-main); line-height:1.5; margin-left:20px;">
+                        <li>Todo o cache de dados (menu, usuários, notícias, status, logs, cargos…)</li>
+                        <li>Cache visual de páginas e preferências temporárias</li>
+                        <li><b>NÃO limpa:</b> login, avatar, tema (claro/escuro)</li>
+                        <li>Ao mudar a versão, na próxima visita de cada usuário o navegador detecta e limpa sozinho, depois recarrega.</li>
+                    </ul>
+                    <div style="margin-top:15px; padding:12px; background:rgba(52,131,250,0.08); border:1px dashed var(--accent-blue); border-radius:8px; font-size:0.85rem;">
+                        <b>Como usar:</b> Depois de fazer alterações visuais grandes (CSS, JS, menu), gere uma nova versão em <b>⚡ Gerar versão automática</b> e clique em <b>Salvar Nova Versão</b>. Todos os usuários terão o cache limpo na próxima vez que abrirem o portal, sem precisar deslogar.
+                    </div>
+                </div>
+            </div>
+
         </div>
         
         <div id="acessoNegado" style="display:none; text-align:center; padding: 50px;"><h2 style="color: #FF5252;">Acesso Negado 🛑</h2><p>Faça login com cargo de 'admin'.</p></div>
@@ -358,17 +401,21 @@
             carregarConfigAprovacao();
         };
 
-        function switchAdminTab(tab) {
+        function switchAdminTab(tab, el) {
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            if(el) el.classList.add('active');
+            else if(window.event && window.event.target) window.event.target.classList.add('active');
             document.getElementById('tab-menus').style.display = tab === 'menus' ? 'block' : 'none';
             document.getElementById('tab-users').style.display = tab === 'users' ? 'block' : 'none';
             document.getElementById('tab-news').style.display = tab === 'news' ? 'block' : 'none';
             document.getElementById('tab-status').style.display = tab === 'status' ? 'block' : 'none';
             document.getElementById('tab-bigquery').style.display = tab === 'bigquery' ? 'block' : 'none';
-            event.target.classList.add('active');
+            var tabVersao = document.getElementById('tab-versao');
+            if(tabVersao) tabVersao.style.display = tab === 'versao' ? 'block' : 'none';
             if(tab === 'news') carregarNoticiasAdmin();
             if(tab === 'status') carregarStatusAdmin();
             if(tab === 'bigquery') carregarBQAdmin();
+            if(tab === 'versao') carregarVersaoInfo();
         }
 
         // ==========================================
@@ -1003,6 +1050,88 @@
                 await registrarLog("BigQuery", "Excluiu um script da biblioteca.");
                 carregarBQAdmin();
             } catch(e) { alert("Erro ao excluir."); }
+        }
+
+        // ==========================================
+        // VERSÃO / CACHE GLOBAL (NOVO)
+        // ==========================================
+        async function carregarVersaoInfo() {
+            try {
+                var elServ = document.getElementById('versao-servidor');
+                var elLocal = document.getElementById('versao-local');
+                var elLog = document.getElementById('versao-log');
+                if(elServ) elServ.innerText = 'Carregando...';
+                if(elLocal) elLocal.innerText = localStorage.getItem('portal_app_version') || '(nenhuma)';
+                var res = await fetch(`${FIREBASE_URL}config/app_versao.json?nc=1&_=${Date.now()}`);
+                var v = await res.json();
+                if(v===null || v===undefined) v='(não configurada - será 1)';
+                else if(typeof v==='object' && v.valor!==undefined) v=v.valor;
+                if(elServ) elServ.innerText = String(v);
+                if(elLocal) elLocal.innerText = localStorage.getItem('portal_app_version') || '(nenhuma)';
+                if(elLog) elLog.innerHTML = `Última verificação: ${new Date().toLocaleString('pt-BR')}<br>Cache local: ${Object.keys(localStorage).length} chaves<br>Cache dados (pdb_cache_v3): ${Object.keys(JSON.parse(localStorage.getItem('pdb_cache_v3')||'{}')).length} nós`;
+            } catch(e) {
+                var elS = document.getElementById('versao-servidor');
+                if(elS) elS.innerText = 'Erro ao ler';
+            }
+        }
+
+        async function salvarNovaVersao() {
+            var input = document.getElementById('input-nova-versao');
+            var nova = (input.value || '').trim();
+            if(!nova) return alert('Digite a nova versão. Ex: 2, v12, 2026-08-15');
+            if(!confirm(`Confirma salvar nova versão "${nova}"? Isso vai limpar o cache de TODOS os usuários na próxima visita (mantendo login).`)) return;
+            try {
+                await fetch(`${FIREBASE_URL}config/app_versao.json`, {
+                    method: 'PUT',
+                    headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify(nova)
+                });
+                localStorage.setItem('portal_app_version', nova);
+                localStorage.setItem('portal_app_version_check', '0');
+                if(window.PortalDB && window.PortalDB.clearCache) {
+                    window.PortalDB.clearCache();
+                } else {
+                    // fallback
+                    var keep=['loggedUser','themePreference','portal_app_version'];
+                    var preserve={};
+                    keep.forEach(k=>{ var vv=localStorage.getItem(k); if(vv) preserve[k]=vv; });
+                    var keys=[];
+                    for(var i=0;i<localStorage.length;i++){ var kk=localStorage.key(i); if(kk) keys.push(kk); }
+                    keys.forEach(k=>{ if(keep.indexOf(k)===-1){ try{localStorage.removeItem(k);}catch(e){} } });
+                    Object.keys(preserve).forEach(k=> localStorage.setItem(k, preserve[k]));
+                }
+                await registrarLog("Painel Admin", `Alterou <b>versão global do cache</b> para: <b>${nova}</b> (forçou limpeza de cache para todos)`);
+                alert(`Versão "${nova}" salva! Cache global será limpo para todos na próxima visita. Recarregando sua página agora...`);
+                setTimeout(()=> location.reload(), 600);
+            } catch(e){ alert('Erro ao salvar versão: '+e); }
+        }
+
+        function limparMeuCache() {
+            if(!confirm('Limpar todo o cache local mantendo login e tema? A página vai recarregar.')) return;
+            try {
+                if(window.PortalDB && window.PortalDB.clearCache){
+                    window.PortalDB.clearCache();
+                    localStorage.setItem('portal_app_version_check','0');
+                } else {
+                    var keep=['loggedUser','themePreference','portal_app_version'];
+                    var preserve={};
+                    keep.forEach(k=>{ var v=localStorage.getItem(k); if(v) preserve[k]=v; });
+                    var keys=[];
+                    for(var i=0;i<localStorage.length;i++){ var kk=localStorage.key(i); if(kk) keys.push(kk); }
+                    keys.forEach(k=>{ if(keep.indexOf(k)===-1){ try{localStorage.removeItem(k);}catch(e){} } });
+                    Object.keys(preserve).forEach(k=> localStorage.setItem(k, preserve[k]));
+                }
+                alert('Cache limpo! Recarregando...');
+                setTimeout(()=> location.reload(), 300);
+            } catch(e){ alert('Erro ao limpar: '+e); }
+        }
+
+        function incrementarVersaoAuto() {
+            var d=new Date();
+            var pad=n=>String(n).padStart(2,'0');
+            var nova = `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+            var input=document.getElementById('input-nova-versao');
+            if(input) input.value = nova;
         }
 
     </script>

@@ -1,219 +1,97 @@
 /* ============================================================================
-   portal-db.js — Camada única de acesso a dados do Portal ("cérebro")
+   portal-db.js — Camada única de acesso a dados do Portal (cérebro)
    ----------------------------------------------------------------------------
-   O portal é 100% PLANILHA (Google Sheets via Apps Script).
-   Não existe mais nenhuma conexão com Firebase aqui — a única referência ao
-   Firebase no projeto fica no Apps Script, só para a importação dos dados.
+   REFEITO v3 — corrige travamento da tela inicial e adiciona controle
+   MANUAL de versão global via Admin.
 
-   ⚡ CACHE INTELIGENTE (novo nesta versão):
-     - Os nós do cérebro (menu, usuários, cargos, notícias, status, logs…)
-       ficam salvos em localStorage do navegador.
-     - Cada nó guarda junto a SUA versão (o Apps Script incrementa "v_<nó>"
-       sempre que algo é alterado). Ao carregar, o script pergunta a versão
-       atual; se mudou, apaga o cache DAQUELE nó e busca de novo.
-     - O login NÃO é perdido: ele fica em outra chave do localStorage
-       ('loggedUser') que o cache nunca toca.
-     - Para forçar leitura fresca numa chamada, use `&nc=1` na URL.
+   O QUE MUDOU:
+   - Nenhuma requisição de dados depende da checagem de versão. A versão é
+     checada EM PARALELO e só limpa o cache quando muda.
+   - Cache simples por tempo (TTL 2 min). Se a rede falhar, devolve cache
+     velho (stale) para não deixar a tela em branco.
+   - Nova chave de cache: pdb_cache_v3 (antigas v2 são apagadas automaticamente)
+   - Preservação garantida: loggedUser, themePreference e portal_app_version
+     NUNCA são apagados pelo limpador de cache.
+   - Versão global: config/app_versao na planilha. Admin muda esse valor e
+     todo navegador detecta e limpa cache (mantendo login).
 
-   COMO ATIVAR:
-     1) Publique o Apps Script da planilha (Implantar → Aplicativo da web).
-     2) Cole aqui a URL `/exec` gerada. Pronto: todas as páginas usam a
-        planilha automaticamente (contrato idêntico ao que o portal já usava).
+   USO ADMIN (nova aba Versão / Cache):
+   - Ler config/app_versao.json
+   - PUT nova versão -> todos que entrarem limpam cache e recarregam
+   - Botão limpar meu cache local
 
-   O que este arquivo faz:
-     - Expõe PortalDB.URL / PortalDB.urlConfigurada() / PortalDB.baseAtiva()
-     - Traduz GET  → `?path=...` (evita o muro de login do pathInfo)
-     - Traduz PUT/PATCH/DELETE (não suportados nativamente pelo Apps Script)
-       para POST, mantendo o mesmo contrato REST (troca transparente).
+   Contrato idêntico ao anterior (REST Firebase-like):
+     GET  ?path=users.json  e  ?path=users/abc.json
+     PUT/PATCH/DELETE/POST via envelope __method
    ============================================================================ */
 
 (function (global) {
     'use strict';
 
-    if (global.PortalDB) return; // idempotente
+    // Evita duplicar se já carregou a v3
+    if (global.PortalDB && global.PortalDB.__v3) return;
 
     var PortalDB = {
-        // ====== CONFIGURAÇÃO =================================================
-        // Cole a URL /exec do Apps Script (com ou sem barra no final — tanto faz)
+        // Cole aqui a URL /exec do Apps Script (com ou sem barra)
         URL: 'https://script.google.com/macros/s/AKfycbw3vDT2-dwTBnXP0NDZztLA8YzIxbb7i6TAZLvg7t5Q1j646XEl6BKeCkUdAdqLjhbDJw/exec',
-
-        // ====== CACHE ========================================================
-        // Quantos ms entre checagens da versão no servidor (para não espancar
-        // a API a cada fetch). Reduza para detectar mudanças mais rápido.
-        versionTtlMs: 8000
+        versionTtlMs: 15000, // intervalo mínimo entre checagens de versão no servidor
+        CACHE_TTL: 2 * 60 * 1000, // 2 min de cache por nó
+        PRESERVE_KEYS: ['loggedUser', 'themePreference', 'portal_app_version', 'portal_app_version_check', 'lastNewsTime', 'lastStatusTime'],
+        __v3: true
     };
 
-    // Nós do CÉREBRO que podem ser cacheados. Nós de páginas (equipamentos,
-    // aderência…) NÃO entram aqui — cada um tem a planilha própria e não deve
-    // ser cacheado por este módulo.
+    // Nós que podem ser cacheados (cérebro). Páginas usam planilhas próprias, não cacheamos aqui.
     var CACHE_NODES = [
         'menu_global', 'users', 'cargos', 'funcoes', 'portal_news',
         'portal_status', 'portal_bigquery', 'logs', 'presence',
         'user_bookmarks', 'config'
     ];
 
-    var LS_CACHE = 'pdb_cache_v2';   // { nó: { v: versão, data: ... } }
-    var LS_META = 'pdb_meta_v2';     // { v: { nó: versão, ... }, t: carimbo }
+    var LS_CACHE = 'pdb_cache_v3';
+    var LS_VERSION = 'portal_app_version';
+    var LS_LAST_CHECK = 'portal_app_version_check';
 
     function lsGet_(key, fb) {
         try { var raw = global.localStorage.getItem(key); return raw ? JSON.parse(raw) : fb; }
         catch (e) { return fb; }
     }
     function lsSet_(key, val) {
-        try { global.localStorage.setItem(key, JSON.stringify(val)); } catch (e) {}
+        try { global.localStorage.setItem(key, JSON.stringify(val)); } catch (e) { }
+    }
+    function lsGetStr_(key) {
+        try { return global.localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function lsSetStr_(key, val) {
+        try { global.localStorage.setItem(key, val); } catch (e) { }
     }
 
-    var cache = { nodes: lsGet_(LS_CACHE, {}), meta: lsGet_(LS_META, null) };
-    var inflightVersion = null;
+    var cacheStore = lsGet_(LS_CACHE, {});
+    // limpa resíduos da versão antiga que causava travamento
+    try { global.localStorage.removeItem('pdb_cache_v2'); } catch(e){}
+    try { global.localStorage.removeItem('pdb_meta_v2'); } catch(e){}
+    var realFetch = (global.fetch && global.fetch.bind(global)) || null;
 
     function execBase() {
         return String(PortalDB.URL || '').replace(/\/+$/, '');
     }
 
-    /* True se a URL da planilha está configurada (não é placeholder). */
     PortalDB.urlConfigurada = function () {
         var u = execBase();
         return /\/macros\/s\/.+\/exec$/i.test(u) && !/COLE_SUA_URL/i.test(u);
     };
 
-    /* Base ativa: SEMPRE a planilha, com barra final.
-       Assim `${base}menu_global.json` continua válido em todas as páginas. */
     PortalDB.baseAtiva = function () {
         if (!PortalDB.urlConfigurada()) {
             console.error(
                 '[PortalDB] ⚠️ URL da planilha NÃO configurada.\n' +
                 '1) Publique o Apps Script (Implantar → Aplicativo da web).\n' +
-                '2) Cole a URL /exec em js/portal-db.js → PortalDB.URL.\n' +
-                'Sem isso o portal não carrega dados.'
+                '2) Cole a URL /exec em js/portal-db.js → PortalDB.URL.'
             );
         }
         return execBase() + '/';
     };
 
-    // ========================================================================
-    // CACHE — leitura da versão por nó (via endpoint de saúde) + invalidação
-    // ========================================================================
-
-    function getVersionMap_() {
-        if (inflightVersion) return inflightVersion;
-        inflightVersion = realFetch(execBase() + '?__v=' + Date.now(), {})
-            .then(function (res) { return res.json(); })
-            .then(function (h) {
-                return (h && typeof h.versao_por_no === 'object') ? h.versao_por_no : null;
-            })
-            .catch(function () { return null; })
-            .then(function (vm) {
-                inflightVersion = null;
-                return vm;
-            });
-        return inflightVersion;
-    }
-
-    // Checa a versão do servidor (limitado a versionTtlMs). Se um nó mudou,
-    // descarta o cache só daquele nó. Nunca mexe no 'loggedUser'.
-    function ensureVersion_() {
-        var now = Date.now();
-        if (cache.meta && (now - (cache.meta.t || 0)) < PortalDB.versionTtlMs) {
-            return Promise.resolve(cache.meta.v || {});
-        }
-        return getVersionMap_().then(function (vm) {
-            if (!vm) return cache.meta ? (cache.meta.v || {}) : {};
-            if (cache.meta && cache.meta.v) {
-                var cur = cache.meta.v;
-                for (var node in cache.nodes) {
-                    if (!Object.prototype.hasOwnProperty.call(cache.nodes, node)) continue;
-                    var newV = vm[node], oldV = cur[node];
-                    if (newV != null && oldV != null && String(newV) !== String(oldV)) {
-                        delete cache.nodes[node];
-                    }
-                }
-            }
-            cache.meta = { v: vm, t: now };
-            lsSet_(LS_META, cache.meta);
-            lsSet_(LS_CACHE, cache.nodes);
-            return vm;
-        });
-    }
-
-    function makeCachedResponse_(jsonData) {
-        var text = JSON.stringify(jsonData === undefined ? null : jsonData);
-        return {
-            ok: true,
-            status: 200,
-            url: '',
-            json: function () { return Promise.resolve(jsonData); },
-            text: function () { return Promise.resolve(text); },
-            clone: function () { return makeCachedResponse_(jsonData); }
-        };
-    }
-
-    // Faz a leitura de rede de verdade e, se for nó cacheável, guarda no cache.
-    // Busca a versão em paralelo na 1ª leitura, para o cache já nascer com a
-    // versão correta (evita re-busca na próxima visita).
-    function fetchNode_(base, params, path, node) {
-        if (path) params.path = path;
-        delete params.nc; // flag interna de "não cachear" não vai ao servidor
-        var qs = buildQuery_(params);
-        // Só busca a versão quando vamos guardar no cache (nó do cérebro).
-        var versionPromise = (node && cache.meta && cache.meta.v)
-            ? Promise.resolve(cache.meta.v)
-            : (node ? getVersionMap_() : Promise.resolve(null));
-        return Promise.all([realFetch(base + (qs ? '?' + qs : ''), {}), versionPromise])
-            .then(function (rs) {
-                var res = rs[0], vm = rs[1];
-                if (vm && !(cache.meta && cache.meta.v)) {
-                    cache.meta = { v: vm, t: Date.now() };
-                    lsSet_(LS_META, cache.meta);
-                }
-                try {
-                    res.clone().json().then(function (data) {
-                        if (data && data.error === 'Rota inválida') {
-                            console.error(
-                                '[PortalDB] A implantação do Apps Script ainda é a versão antiga.\n' +
-                                'Cole apps-script/Code.gs e faça Implantar → Gerenciar implantações → Nova versão.\n' +
-                                'Teste: abra a URL /exec — tem que vir { ok:true, ... }, não "Rota inválida".\n' +
-                                'Passo a passo: apps-script/COMO_IMPLANTAR.md'
-                            );
-                        }
-                        if (node) {
-                            cache.nodes[node] = {
-                                v: cache.meta && cache.meta.v ? cache.meta.v[node] : undefined,
-                                data: data
-                            };
-                            lsSet_(LS_CACHE, cache.nodes);
-                        }
-                    }).catch(function () {});
-                } catch (e) {}
-                return res;
-            });
-    }
-
-    // Serve do cache se a versão estiver ok; senão busca na rede.
-    function serveOrFetch_(node, base, params, path) {
-        if (cache.nodes[node] && cache.nodes[node].data !== undefined) {
-            return ensureVersion_().then(function (vm) {
-                var cached = cache.nodes[node];
-                if (cached && String(cached.v) === String(vm[node] || '')) {
-                    return makeCachedResponse_(cached.data);
-                }
-                delete cache.nodes[node];
-                return fetchNode_(base, params, path, node);
-            });
-        }
-        return fetchNode_(base, params, path, node);
-    }
-
-    /* Limpa todo o cache (útil após trocar a URL da planilha). */
-    PortalDB.clearCache = function () {
-        cache.nodes = {};
-        cache.meta = null;
-        lsSet_(LS_CACHE, {});
-        try { global.localStorage.removeItem(LS_META); } catch (e) {}
-    };
-
-    /* Força a próxima checagem de versão (descarta a janela de TTL). */
-    PortalDB.bumpVersionCheck = function () { cache.meta = null; };
-
+    // --------- helpers querystring ----------
     function parseQuery_(qs) {
         var out = {};
         if (!qs) return out;
@@ -228,7 +106,6 @@
         }
         return out;
     }
-
     function buildQuery_(obj) {
         var parts = [];
         for (var k in obj) {
@@ -238,11 +115,6 @@
         }
         return parts.join('&');
     }
-
-    /* Extrai o pedaço depois de /exec e devolve { path, query }.
-       Aceita os dois jeitos que o portal já monta:
-         .../exec/menu_global.json?_=1
-         .../execmenu_global.json?_=1   (URL antiga, sem barra) */
     function splitExecUrl_(url, base) {
         var rest = url.slice(base.length);
         var qPos = rest.indexOf('?');
@@ -253,63 +125,237 @@
         return { path: pathPart, params: params };
     }
 
-    /* ========================================================================
-       Tradutor de métodos.
-       O Apps Script só expõe GET (doGet) e POST (doPost). Então:
-         GET  → GET  /exec?path=users/abc.json&orderBy=...
-         PUT/PATCH/DELETE/POST → POST /exec com envelope { __method, __path, __body }
-       text/plain no POST evita preflight CORS.
-       ======================================================================== */
-    if (global.fetch) {
-        var realFetch = global.fetch.bind(global);
+    function makeCachedResponse_(jsonData) {
+        var text = JSON.stringify(jsonData === undefined ? null : jsonData);
+        return {
+            ok: true,
+            status: 200,
+            url: '',
+            json: function () { return Promise.resolve(jsonData); },
+            text: function () { return Promise.resolve(text); },
+            clone: function () { return makeCachedResponse_(jsonData); }
+        };
+    }
+
+    // --------- limpeza de cache preservando login ----------
+    function clearCachePreserveLogin_() {
+        try {
+            var preserve = {};
+            PortalDB.PRESERVE_KEYS.forEach(function (k) {
+                var v = lsGetStr_(k);
+                if (v !== null) preserve[k] = v;
+            });
+            var allKeys = [];
+            try {
+                for (var i = 0; i < global.localStorage.length; i++) {
+                    var kk = global.localStorage.key(i);
+                    if (kk) allKeys.push(kk);
+                }
+            } catch (e) { }
+            // remove tudo que não está na lista de preservação
+            allKeys.forEach(function (k) {
+                if (PortalDB.PRESERVE_KEYS.indexOf(k) === -1) {
+                    // mantém chaves que parecem ser de avatar/tema antigo? não, só preserve list
+                    try { global.localStorage.removeItem(k); } catch (e) { }
+                }
+            });
+            // restaura preservadas (caso tenham sido removidas por iteração)
+            Object.keys(preserve).forEach(function (k) {
+                try { global.localStorage.setItem(k, preserve[k]); } catch (e) { }
+            });
+            cacheStore = {};
+            lsSet_(LS_CACHE, {});
+            // limpa chaves antigas
+            try { global.localStorage.removeItem('pdb_cache_v2'); } catch (e) { }
+            try { global.localStorage.removeItem('pdb_meta_v2'); } catch (e) { }
+            try { global.localStorage.removeItem('pdb_meta_v3'); } catch (e) { }
+            console.log('[PortalDB] cache limpo, login preservado');
+        } catch (e) {
+            console.warn('[PortalDB] falha ao limpar cache', e);
+        }
+    }
+
+    PortalDB.clearCache = clearCachePreserveLogin_;
+    PortalDB.forceClearCachePreserveLogin = function () {
+        clearCachePreserveLogin_();
+        lsSetStr_(LS_LAST_CHECK, '0');
+        try { location.reload(); } catch (e) { }
+    };
+    // compatibilidade com código antigo
+    PortalDB.bumpVersionCheck = function () { lsSetStr_(LS_LAST_CHECK, '0'); };
+    PortalDB.getAppVersion = function () { return lsGetStr_(LS_VERSION) || '1'; };
+    PortalDB.setAppVersionLocal = function (v) { lsSetStr_(LS_VERSION, String(v)); };
+
+    // --------- versão global ----------
+    function getServerAppVersion_() {
+        var base = execBase();
+        if (!PortalDB.urlConfigurada() || !realFetch) return Promise.resolve(null);
+        var url = base + '?path=config/app_versao.json&nc=1&_=' + Date.now();
+        return realFetch(url, {}).then(function (res) {
+            return res.json();
+        }).then(function (v) {
+            if (v === null || v === undefined) return null;
+            if (typeof v === 'object') {
+                if (v.valor !== undefined) return String(v.valor);
+                if (v.app_versao !== undefined) return String(v.app_versao);
+                // se vier objeto completo de config (caso leitura coleção), tenta pegar app_versao
+                if (v.app_versao && typeof v.app_versao === 'object' && v.app_versao.valor) return String(v.app_versao.valor);
+            }
+            return String(v);
+        }).catch(function () { return null; });
+    }
+
+    function checkAndClearIfVersionChanged_(forceReload) {
+        var now = Date.now();
+        var last = parseInt(lsGetStr_(LS_LAST_CHECK) || '0', 10);
+        if (forceReload !== true && last && (now - last) < PortalDB.versionTtlMs) {
+            return Promise.resolve(false);
+        }
+        lsSetStr_(LS_LAST_CHECK, String(now));
+        return getServerAppVersion_().then(function (serverV) {
+            if (serverV === null) return false;
+            var localV = lsGetStr_(LS_VERSION);
+            if (localV === null) {
+                lsSetStr_(LS_VERSION, serverV);
+                return false;
+            }
+            if (String(localV) !== String(serverV)) {
+                console.log('[PortalDB] versão global mudou', localV, '->', serverV, 'limpando cache');
+                clearCachePreserveLogin_();
+                lsSetStr_(LS_VERSION, serverV);
+                if (forceReload !== false) {
+                    try {
+                        var flagKey = 'portal_reload_' + serverV;
+                        if (!global.sessionStorage.getItem(flagKey)) {
+                            global.sessionStorage.setItem(flagKey, '1');
+                            setTimeout(function () { try { location.reload(); } catch (e) { } }, 200);
+                        }
+                    } catch (e) {
+                        setTimeout(function () { try { location.reload(); } catch (e2) { } }, 200);
+                    }
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+
+    PortalDB.checkAppVersion = function () { return checkAndClearIfVersionChanged_(true); };
+    PortalDB.checkAppVersionSilently = function () { return checkAndClearIfVersionChanged_(false); };
+
+    // checagem imediata e periódica, sem travar a página
+    try {
+        setTimeout(function () { checkAndClearIfVersionChanged_(true); }, 350);
+    } catch (e) { }
+    try {
+        setInterval(function () { checkAndClearIfVersionChanged_(true); }, 30000);
+    } catch (e) { }
+
+    // --------- override do fetch (seguro, nunca trava) ----------
+    if (realFetch) {
+        var originalFetch = realFetch;
 
         global.fetch = function (input, init) {
             init = init || {};
             var method = (init.method || 'GET').toUpperCase();
-            var url = (typeof input === 'string') ? input : (input && input.url);
+            var url = typeof input === 'string' ? input : (input && input.url);
             var base = execBase();
 
             if (!url || !base || url.indexOf(base) !== 0) {
-                return realFetch(input, init);
+                return originalFetch(input, init);
             }
 
             var split = splitExecUrl_(url, base);
             var path = split.path || '';
             var params = split.params || {};
+            var node = String(path).replace(/\.json$/, '').split('/')[0];
 
-            if (method === 'GET') {
-                var node = String(path).replace(/\.json$/, '').split('/')[0];
-                var isCacheable = CACHE_NODES.indexOf(node) !== -1 && !params.nc;
-                if (isCacheable) {
-                    return serveOrFetch_(node, base, params, path);
+            var isCacheable = CACHE_NODES.indexOf(node) !== -1 && method === 'GET' && !params.nc;
+
+            function doRealFetch() {
+                var sendParams = {};
+                for (var k in params) {
+                    if (Object.prototype.hasOwnProperty.call(params, k)) sendParams[k] = params[k];
                 }
-                return fetchNode_(base, params, path, isCacheable ? node : null);
-            }
+                if (path) sendParams.path = path;
+                delete sendParams.nc;
+                // __v e outros internos não vão pro servidor
+                delete sendParams.__v;
+                var qs = buildQuery_(sendParams);
+                var finalUrl = base + (qs ? '?' + qs : '');
 
-            var parsed = null;
-            if (init.body) {
-                try { parsed = JSON.parse(init.body); } catch (e) { parsed = init.body; }
-            }
-
-            // Já veio envelopado (não envelopa de novo)
-            if (parsed && typeof parsed === 'object' && parsed.__method) {
-                return realFetch(base, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                    body: JSON.stringify(parsed)
+                return originalFetch(finalUrl, {}).then(function (res) {
+                    if (isCacheable) {
+                        try {
+                            var clone = res.clone();
+                            clone.json().then(function (data) {
+                                cacheStore[node] = { t: Date.now(), data: data };
+                                lsSet_(LS_CACHE, cacheStore);
+                            }).catch(function () { });
+                        } catch (e) { }
+                    } else {
+                        if (CACHE_NODES.indexOf(node) !== -1 && method !== 'GET') {
+                            try { delete cacheStore[node]; lsSet_(LS_CACHE, cacheStore); } catch (e) { }
+                        }
+                    }
+                    return res;
+                }).catch(function (err) {
+                    if (isCacheable && cacheStore[node]) {
+                        console.warn('[PortalDB] rede falhou, usando cache stale para', node);
+                        return makeCachedResponse_(cacheStore[node].data);
+                    }
+                    throw err;
                 });
             }
 
-            var payload = {
-                __method: method,
-                __path: path,
-                __body: parsed
-            };
-            return realFetch(base, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
-            });
+            // GET cacheável: serve do cache se dentro do TTL
+            if (isCacheable) {
+                var cached = cacheStore[node];
+                if (cached && (Date.now() - cached.t) < PortalDB.CACHE_TTL) {
+                    return Promise.resolve(makeCachedResponse_(cached.data));
+                }
+                // se tem cache velho, tenta rede mas fallback usa velho (já tratado no catch)
+                return doRealFetch();
+            }
+
+            // bypass de cache (nc=1) → limpa entrada daquele nó
+            if (params.nc && CACHE_NODES.indexOf(node) !== -1) {
+                try { delete cacheStore[node]; lsSet_(LS_CACHE, cacheStore); } catch (e) { }
+            }
+
+            // Escritas: traduz PUT/PATCH/DELETE para POST + envelope (Apps Script só tem doPost)
+            if (method !== 'GET') {
+                var parsed = null;
+                if (init.body) {
+                    try { parsed = JSON.parse(init.body); } catch (e) { parsed = init.body; }
+                }
+                // já envelopado?
+                if (parsed && typeof parsed === 'object' && parsed.__method) {
+                    return originalFetch(base, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify(parsed)
+                    }).then(function (r) {
+                        if (CACHE_NODES.indexOf(node) !== -1) {
+                            try { delete cacheStore[node]; lsSet_(LS_CACHE, cacheStore); } catch (e2) { }
+                        }
+                        return r;
+                    });
+                }
+                var payload = { __method: method, __path: path, __body: parsed };
+                return originalFetch(base, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                }).then(function (r) {
+                    if (CACHE_NODES.indexOf(node) !== -1) {
+                        try { delete cacheStore[node]; lsSet_(LS_CACHE, cacheStore); } catch (e) { }
+                    }
+                    return r;
+                });
+            }
+
+            return doRealFetch();
         };
     }
 

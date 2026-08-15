@@ -276,10 +276,16 @@ function healthPayload_() {
       nodes[node] = { aba: name, existe: true, registros: Math.max(0, sh.getLastRow() - 1) };
     }
   });
+  var appV = '1';
+  try {
+    var cfg = ss.getSheetByName(CONFIG_SHEET);
+    if (cfg) appV = readConfigValue_(cfg, 'app_versao') || '1';
+  } catch(e2) { appV='1'; }
   return {
     ok: true,
     service: 'portal-cerebro',
-    versao: '2.2-cerebro',
+    versao: '2.3-cerebro-global-cache',
+    app_versao: appV,
     planilha: ss.getName(),
     nodes: nodes,
     versao_por_no: getVersaoPorNo_(),
@@ -857,8 +863,21 @@ function ensureConfig_(ss) {
   if (c.getLastRow() === 0) {
     c.getRange(1, 1, 1, 2).setValues([['chave', 'valor']]).setFontWeight('bold');
   }
-  setConfigValue_(c, 'versao', '2.1-cerebro');
+  setConfigValue_(c, 'versao', '2.3-cerebro-global-cache');
   setConfigValue_(c, 'origem_firebase_importacao', FIREBASE_URL_ORIGEM);
+  // versão global manual controlada pelo Admin (limpa cache de todos)
+  try {
+    if (!readConfigValue_(c, 'app_versao')) setConfigValue_(c, 'app_versao', '1');
+    if (!readConfigValue_(c, 'requer_aprovacao')) setConfigValue_(c, 'requer_aprovacao', 'true');
+    // inicializa contadores de versão por nó se ainda não existem
+    Object.keys(NODE_TO_SHEET).forEach(function(node){
+      var k='v_'+node;
+      if (!readConfigValue_(c, k)) setConfigValue_(c, k, '0');
+    });
+  } catch(e0) {
+    // se falhar, tenta ao menos garantir app_versao
+    try { setConfigValue_(c, 'app_versao', '1'); } catch(e1){}
+  }
   return c;
 }
 
