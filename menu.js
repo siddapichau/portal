@@ -219,14 +219,14 @@ async function carregarMenuGlobal() {
         </div>
     `;
     document.body.insertAdjacentHTML('afterbegin', baseHTML);
-    verificarUIAutenticacao();
+    try { verificarUIAutenticacao(); } catch(e){}
     try {
         const res = await fetch(`${FIREBASE_URL}menu_global.json`);
         const data = await res.json();
         if(data && data.categorias) menuData = data;
-        renderizarMenuEsquerdo();
     } catch (e) { console.error("Erro Menu", e); }
-    carregarCargos(); // catálogo de cargos (cacheado) p/ reconhecer cargos novos
+    try { renderizarMenuEsquerdo(); } catch(e){}
+    try { await carregarCargos(); } catch(e){} // catálogo de cargos (cacheado) p/ reconhecer cargos novos
 
     document.getElementById('authModal').addEventListener('click', function(e) { if(e.target === this) fecharAuthModal(); });
     document.getElementById('configModal').addEventListener('click', function(e) { if(e.target === this) fecharConfigModal(); });
