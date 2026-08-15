@@ -110,6 +110,7 @@
     /* Exportação */
     .exporting .top-bar { display: none !important; }
   </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 
 <body data-theme="light">
@@ -168,7 +169,7 @@
   const $ = (s) => document.querySelector(s);
   function norm(s){ return String(s ?? '').trim().toLowerCase(); }
 
-  const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+  const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
 
   // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
   function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
@@ -184,7 +185,7 @@
   
   if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
 
-  async function registrarLogFirebase(modulo, acao) {
+  async function registrarLog(modulo, acao) {
       try {
           const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
           await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -203,7 +204,7 @@
               if(dbData.ultimaAtualizacao) {
                   statusBadge.innerText = `Atualizado: ${dbData.ultimaAtualizacao}`;
               } else {
-                  statusBadge.innerText = "Online (Firebase Nuvem)";
+                  statusBadge.innerText = "Online (Planilha Google)";
               }
               statusBadge.style.color = "#00A650";
           } else {
@@ -474,7 +475,7 @@
                 body: JSON.stringify({ titulo: tituloCalculado, matriz: matrizData, ultimaAtualizacao: strAtualizacao })
             });
             
-            await registrarLogFirebase("Aderência Ofensores", "Atualizou a base de dados via CSV.");
+            await registrarLog("Aderência Ofensores", "Atualizou a base de dados via CSV.");
 
             if(response.ok) {
                 statusBadge.innerText = `Atualizado: ${strAtualizacao}`;

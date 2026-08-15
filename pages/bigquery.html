@@ -67,6 +67,7 @@
             .filter-section { width: 100%; }
         }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -138,7 +139,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         let globalBqList = [];
         let currentDisplayedBqList = []; 
         

@@ -123,6 +123,7 @@
 
         @media (max-width: 900px) { .header-center { font-size: 0.9rem; } .modal-header { flex-direction: column; align-items: flex-start; } .modal-search { width: 100%; } }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -211,7 +212,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         // NOVO NÓ V3 PARA INICIAR LIMPO E SEM SUJEIRA
         const FIREBASE_NODE = "poka_avarias_consolidado_v3";
         
@@ -238,7 +239,7 @@
         let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
         if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -316,7 +317,7 @@
             } catch (err) { setStatus('Erro ao carregar', '#FF5252'); }
         };
 
-        async function mesclarESalvarFirebase(novosDados) {
+        async function mesclarESalvar(novosDados) {
             setStatus('Sincronizando IDs (Atualizando existentes e inserindo novos)...', '#3483FA');
             let mapExistentes = new Map();
             BANCO_GLOBAL.forEach(row => { let id = extrairID(row); if(id) mapExistentes.set(id, row); });
@@ -340,7 +341,7 @@
                     lista: bancoAtualizado
                 };
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                await registrarLogFirebase("Avarias Mensal", "Sincronizou a base de dados consolidada via CSV.");
+                await registrarLog("Avarias Mensal", "Sincronizou a base de dados consolidada via CSV.");
                 
                 BANCO_GLOBAL = bancoAtualizado; preencherDropdowns(); aplicarFiltros();
                 alert(`Sucesso! ${qtdNovos} pacotes novos adicionados e ${qtdAtualizados} pacotes existentes atualizados.`);
@@ -359,7 +360,7 @@
                         let cols = Object.keys(data[0]);
                         colSemanaNome = cols.find(k => k.toLowerCase().trim() === 'semana do ano' || k.toLowerCase().trim() === 'semana') || 'Semana do ano';
                     }
-                    mesclarESalvarFirebase(data); event.target.value = ''; 
+                    mesclarESalvar(data); event.target.value = ''; 
                 }
             });
         });
@@ -572,7 +573,7 @@
             }, 100);
         }
 
-        carregarDoFirebase();
+        carregarDoBanco();
     </script>
 </body>
 </html>

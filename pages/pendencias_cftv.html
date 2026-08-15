@@ -147,6 +147,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -230,7 +231,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "pendencias_cftv_consolidado";
         
         let BANCO_GLOBAL = []; let DADOS_FILTRADOS = []; let chartInstances = {};
@@ -254,7 +255,7 @@
         let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
         if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -279,7 +280,7 @@
         function formatCurrency(valNum) { return valNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
         function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
 
-        async function carregarDoFirebase() {
+        async function carregarDoBanco() {
             try {
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
                 if (!response.ok) throw new Error("Erro de rede");
@@ -289,10 +290,10 @@
             } catch (err) { console.error(err); }
         }
 
-        async function sobrescreverFirebase(dados) {
+        async function sobrescreverDados(dados) {
             try {
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dados) });
-                await registrarLogFirebase("CFTV Dashboard", `Substituiu a base consolidada de CFTV via CSV (${dados.length} itens).`);
+                await registrarLog("CFTV Dashboard", `Substituiu a base consolidada de CFTV via CSV (${dados.length} itens).`);
                 BANCO_GLOBAL = dados; preencherDropdowns(); aplicarFiltros(); alert(`Sucesso! Banco CFTV atualizado com ${dados.length} pacotes.`);
             } catch (err) { alert("Erro ao salvar na nuvem."); }
         }
@@ -307,7 +308,7 @@
                         return { ID: extrairID(row), Descricao: getVal(row, ['descrição', 'descricao']), StatusPacote: getVal(row, ['status do pacote']), Aging: parseInt(getVal(row, ['agin ult', 'aging'])) || 0, Valor: getVal(row, ['valor']), DataRecebido: getVal(row, ['data recebido da analise', 'data recebido']), DataFim: getVal(row, ['data finalização da analise', 'data finalizacao', 'data finalização']), StatusAnalise: getVal(row, ['status']), FinalAnalise: getVal(row, ['final analise', 'final']), Observacao: getVal(row, ['observação da analise', 'observacao']) };
                     }).filter(i => i.ID && i.ID.toLowerCase() !== 'nan');
                     if(dadosLimpos.length === 0) { alert("Arquivo CSV vazio ou sem ID."); return; }
-                    sobrescreverFirebase(dadosLimpos); event.target.value = ''; 
+                    sobrescreverDados(dadosLimpos); event.target.value = ''; 
                 }
             });
         });
@@ -436,7 +437,7 @@
         function carregarMaisPacotes() { let container = document.getElementById('modal-body-scroll'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) { if ((CUR_PAGE + 1) * PAGE_SIZE < DADOS_MODAL_FILTRADOS.length) { CUR_PAGE++; renderizarPedaçoTabela(); } } }
         function fecharModalPacotes() { document.getElementById('modal-pacotes').classList.remove('active'); }
 
-        carregarDoFirebase();
+        carregarDoBanco();
     </script>
 </body>
 </html>

@@ -1,37 +1,56 @@
 /**
  * ============================================================================
- *  PORTAL DE REPORTES — Backend Google Sheets (substituto do Firebase)
+ *  PORTAL DE REPORTES — Backend 100% Google Sheets ("cérebro" do portal)
  * ============================================================================
- *  Este script transforma um Google Sheets em banco de dados do portal,
- *  expondo uma API REST **compatível com o formato que o portal já usa**.
+ *  Este Apps Script transforma uma planilha Google Sheets no banco de dados
+ *  do portal, expondo uma API REST compatível com o formato que o portal
+ *  já usava (contrato Firebase REST). O portal NÃO fala mais com Firebase —
+ *  a ÚNICA conexão com Firebase que existe está AQUI DENTRO, usada apenas
+ *  pelas funções de IMPORTAÇÃO dos dados já existentes.
  *
- *  COMO IMPLANTAR:
- *   1. Crie um Google Sheets novo.
- *   2. Extensões -> Apps Script -> cole este arquivo -> Salvar.
- *   3. Rode `setupPortal()` UMA vez (autorize) — cria as abas + dados iniciais.
- *   4. (Opcional) rode `importarDoFirebase()` para migrar os dados atuais.
- *   5. Implantar -> Nova implantação -> Aplicativo da web
- *      - Executar como: Eu
- *      - Quem tem acesso: Qualquer pessoa
- *   6. Copie a URL `/exec` e cole em `js/portal-db.js` (PortalDB.URL).
+ *  ┌─ COMO IMPLANTAR ────────────────────────────────────────────────────────
+ *  │  1. Crie um Google Sheets novo (ex.: "Portal — Banco de Dados").
+ *  │  2. Extensões → Apps Script → cole este arquivo → Salvar.
+ *  │  3. No menu da planilha "⚙️ Portal" → "1️⃣ Preparar planilha" (autorize).
+ *  │  4. Importe os dados PARTE A PARTE pelo menu "📥 Importar":
+ *  │     primeiro o Núcleo (Usuários, Menu, Logs...), depois cada Página.
+ *  │     ➜ Importar tudo de uma vez estoura os limites do Google;
+ *  │       por isso cada parte é importada separadamente, EM LOTES,
+ *  │       e se o tempo esgotar é só rodar de novo (continua de onde parou).
+ *  │  5. Implantar → Nova implantação → Aplicativo da web
+ *  │     → Executar como: EU → Acesso: QUALQUER PESSOA → copie a URL /exec.
+ *  │  6. Cole a URL /exec em js/portal-db.js (PortalDB.URL). Pronto.
+ *  └─────────────────────────────────────────────────────────────────────────
  *
- *  CONTRATO DA API (idêntico ao Firebase REST, para troca transparente):
+ *  FORMATO DAS ABAS — planilha de verdade (NÃO é mais "key | json"):
+ *     linha 1  = cabeçalho com os NOMES DOS CAMPOS (coluna A sempre "id")
+ *     linha 2+ = um registro por linha, um campo por coluna
+ *        Usuarios:  id | usuario | nome | sobrenome | email | telefone | cargo | ...
+ *        Menu:      id | tipo | categoria | pai | ordem | titulo | url | icone | ...
+ *     Campos compostos (objetos/arrays) ficam como texto JSON na célula e
+ *     são convertidos de volta para objeto automaticamente na leitura da API.
+ *
+ *  CONTRATO DA API (o portal não mudou — troca transparente):
  *     GET    /{node}.json            -> { "chave": {registro}, ... }  (ou null)
  *     GET    /{node}/{chave}.json    -> {registro}                    (ou null)
+ *     GET    /{node}.json?orderBy="campo"&limitToLast=50  -> filtrado/ordenado
  *     POST   /{node}.json            -> cria registro  (retorna { "name": chave })
  *     PUT    /{node}/{chave}.json    -> substitui o registro na chave
+ *     PUT    /{node}.json            -> substitui a coleção inteira (ex.: menu)
  *     PATCH  /{node}/{chave}.json    -> mescla campos no registro
  *     DELETE /{node}/{chave}.json    -> remove o registro
  *
- *  Observação: o App Script só expõe doGet/doPost. O front (js/portal-db.js)
+ *  Observação: o Apps Script só expõe doGet/doPost. O front (js/portal-db.js)
  *  traduz PUT/PATCH/DELETE para POST com body { __method, __path, __body }.
  * ============================================================================
  */
 
+// ⚠️ ÚNICA referência ao Firebase em todo o projeto — usada SOMENTE pelas
+// funções de importação (menu "📥 Importar"). O portal web nunca acessa.
 var FIREBASE_URL_ORIGEM = 'https://reportes-bdb0a-default-rtdb.firebaseio.com/';
 
-// Mapa "nó lógico -> nome da aba" (abas amigáveis). Nós não mapeados viram
-// uma aba "db_<nó>" automaticamente (usado pelas páginas de reporte).
+// Mapa "nó lógico -> nome da aba" para o núcleo. Nós não mapeados (dados das
+// páginas de reporte) viram automaticamente uma aba "db_<nó>".
 var NODE_TO_SHEET = {
   menu_global: 'Menu',
   users: 'Usuarios',
@@ -47,6 +66,70 @@ var NODE_TO_SHEET = {
 
 var CONFIG_SHEET = '_Config';
 
+// Cabeçalhos preferidos por aba (ordem amigável p/ quem edita na mão).
+// A coluna "id" é SEMPRE a primeira (guarda a chave única do registro).
+var PREFERRED_HEADERS = {
+  menu_global: ['id', 'tipo', 'categoria', 'pai', 'ordem', 'titulo', 'url', 'icone', 'viewRoles', 'uploadRoles', 'allowedUsers'],
+  users: ['id', 'usuario', 'nome', 'sobrenome', 'email', 'telefone', 'cargo', 'solicitacao', 'favorito', 'avatar', 'senha'],
+  cargos: ['id', 'rotulo', 'nivel', 'descricao'],
+  funcoes: ['id', 'rotulo', 'descricao'],
+  portal_news: ['id', 'titulo', 'texto', 'autor', 'cargo', 'avatar', 'data', 'imagem', 'tags', 'curtidas'],
+  portal_status: ['id', 'nome', 'estado', 'descricao', 'cor', 'icon', 'lastUpdate', 'atualizadoPor'],
+  portal_bigquery: ['id', 'titulo', 'categoria', 'query', 'autor', 'data'],
+  logs: ['id', 'timestamp', 'usuario', 'avatar', 'modulo', 'acao'],
+  presence: ['id', 'lastSeen', 'cargo', 'pagina'],
+  user_bookmarks: ['id', 'pagina', 'nome', 'atualizadoEm']
+};
+
+// ---------------------------------------------------------------------------
+// LISTAS DE IMPORTAÇÃO (um item de menu para cada parte — nunca tudo junto)
+// ---------------------------------------------------------------------------
+
+var IMPORT_NUCLEO = [
+  ['users', '🔑 Usuários'],
+  ['menu_global', '🧭 Menu'],
+  ['cargos', '🏷️ Cargos'],
+  ['funcoes', '💼 Funções'],
+  ['portal_news', '📰 Notícias'],
+  ['portal_status', '📊 Status dos reportes'],
+  ['portal_bigquery', '🗄️ BigQuery'],
+  ['logs', '📜 Logs (radar de atividades)'],
+  ['presence', '🟢 Presença (quem está online)'],
+  ['user_bookmarks', '⭐ Favoritos (cofre)']
+];
+
+var IMPORT_PAGINAS = [
+  ['equipamentos', '🖥️ Equipamentos'],
+  ['aderencia', '📈 Aderência'],
+  ['aderencia_historico', '📈 Aderência — histórico'],
+  ['ofensores', '📉 Ofensores (aderência 2)'],
+  ['devolucao', '↩️ Devolução (aging)'],
+  ['envios_diarios_v8', '📦 Expedir devolução (envios diários)'],
+  ['salvados_aprendizado', '🧠 Salvados — aprendizado'],
+  ['salvados_encontrados', '🔎 Salvados — encontrados'],
+  ['salvados_ia_config', '⚙️ Salvados — config IA'],
+  ['salvados_ia_keys', '🗝️ Salvados — chaves IA'],
+  ['salvados_recuperados', '♻️ Salvados — recuperados'],
+  ['emails_tratativas', '✉️ E-mails tratativas'],
+  ['insumos', '🧾 Insumos / contagem'],
+  ['parado_percurso', '🚚 Parado em percurso'],
+  ['parado_percurso_emails', '✉️ Parado em percurso — e-mails'],
+  ['pendencias_cftv_consolidado', '🎥 Pendências CFTV'],
+  ['poka_avarias_diario', '📋 Poka avarias — diário'],
+  ['poka_avarias_consolidado_v3', '📊 Poka avarias — consolidado'],
+  ['poka_aduanas_pacotes', '🛃 Aduana — pacotes'],
+  ['poka_aduanas_resumo', '🛃 Aduana — resumo'],
+  ['bpp_inventariado_v2', '📝 BPP — inventariado'],
+  ['inventario_dhs_separado_v1', '🗃️ Inventário DHS']
+];
+
+// Parâmetros da importação em lotes (para não estourar os limites do Google):
+var IMPORT_PAGE = 200;               // registros por requisição ao Firebase
+var IMPORT_MAX_MS = 4.5 * 60 * 1000; // para antes do limite de 6 min/execução
+var IMPORT_CHUNK = 500;              // linhas gravadas por batelada na planilha
+var PROP_CURSOR = 'portal_imp_cursor_'; // prefixo da propriedade de "continuação"
+var PROP_TOTAL = 'portal_imp_total_';
+
 // ---------------------------------------------------------------------------
 // ENTRY POINTS (REST)
 // ---------------------------------------------------------------------------
@@ -57,10 +140,11 @@ function doGet(e) {
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
-    if (parsed.key !== null) {
-      return jsonResponse_(readRecord_(parsed.node, parsed.key));
-    }
-    return jsonResponse_(readNode_(parsed.node));
+    var data;
+    if (parsed.key !== null) data = readRecord_(parsed.node, parsed.key);
+    else data = readNode_(parsed.node);
+    data = applyQueryParams_(data, e && e.parameter);
+    return jsonResponse_(data);
   } catch (err) {
     return jsonResponse_({ error: String(err) });
   } finally {
@@ -152,15 +236,205 @@ function sheetNameForNode_(node) {
   return 'db_' + sanitizeSheetName_(node);
 }
 
+function headersForNode_(node) {
+  return (PREFERRED_HEADERS[node] || ['id', 'valor']).slice();
+}
+
+// Cria a aba do nó (se não existir) já com cabeçalho colunar + formatação.
 function getSheetForNode_(node) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var name = sheetNameForNode_(node);
   var sheet = ss.getSheetByName(name);
-  if (!sheet) {
-    sheet = ss.insertSheet(name);
-    sheet.appendRow(['key', 'json']);
+  if (!sheet) sheet = ss.insertSheet(name);
+  if (sheet.getLastRow() === 0) {
+    writeHeaderRow_(sheet, headersForNode_(node));
   }
   return sheet;
+}
+
+function writeHeaderRow_(sheet, headers) {
+  ensureCapacity_(sheet, 2, headers.length);
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.getRange(1, 1, 1, headers.length)
+    .setFontWeight('bold')
+    .setBackground('#1e3c72')
+    .setFontColor('#ffffff');
+  sheet.setFrozenRows(1);
+  sheet.setColumnWidth(1, 190);
+}
+
+function ensureCapacity_(sheet, minRows, minCols) {
+  if (sheet.getMaxColumns() < minCols) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), minCols - sheet.getMaxColumns());
+  }
+  if (sheet.getMaxRows() < minRows) {
+    sheet.insertRowsAfter(sheet.getMaxRows(), minRows - sheet.getMaxRows());
+  }
+}
+
+// Lê o cabeçalho (linha 1) de uma aba. Garante coluna "id" em A1.
+function readHeaders_(sheet) {
+  var nCols = Math.max(1, sheet.getLastColumn());
+  var headers = sheet.getRange(1, 1, 1, nCols).getValues()[0]
+    .map(function (h) { return String(h).trim(); });
+  if (!headers[0]) { headers[0] = 'id'; sheet.getRange(1, 1).setValue('id'); }
+  // corta colunas vazias no fim
+  while (headers.length > 1 && headers[headers.length - 1] === '') headers.pop();
+  return headers;
+}
+
+// ---------------------------------------------------------------------------
+// CODEC — planilha colunar  ⇄  JSON (o coração da Fase 2)
+// ---------------------------------------------------------------------------
+
+// Célula -> valor JS. Texto que "parece JSON" ( {…} ou […] ) vira objeto/array.
+function cellToValue_(v) {
+  if (typeof v !== 'string') return v;
+  var t = v.replace(/^\s+|\s+$/g, '');
+  var first = t.charAt(0), last = t.charAt(t.length - 1);
+  if ((first === '{' && last === '}') || (first === '[' && last === ']')) {
+    try { return JSON.parse(t); } catch (e) { /* não era JSON de verdade */ }
+  }
+  return v;
+}
+
+// Valor JS -> conteúdo da célula (objetos/arrays viram texto JSON).
+function valueToCell_(v) {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'object') return JSON.stringify(v);
+  return v;
+}
+
+// Linha da planilha -> registro. Retorna { found, id, value }.
+function rowToRecord_(headers, row) {
+  var id = String(row[0]).replace(/^\s+|\s+$/g, '');
+  if (!id) return { found: false };
+  // Aba "chave | valor" simples (registros primitivos, ex.: chaves de IA)
+  if (headers.length === 2 && headers[1] === 'valor') {
+    return { found: true, id: id, value: cellToValue_(row[1]) };
+  }
+  var obj = {};
+  for (var c = 1; c < headers.length; c++) {
+    var v = row[c];
+    if (v === '' || v === null || v === undefined) continue;
+    obj[headers[c]] = cellToValue_(v);
+  }
+  return { found: true, id: id, value: obj };
+}
+
+// Registro -> linha da planilha (array alinhado aos cabeçalhos).
+function recordToRow_(headers, id, record) {
+  var row = new Array(headers.length);
+  row[0] = id;
+  if (record === null || typeof record !== 'object') {
+    // primitivo: usa a coluna "valor" quando existir
+    for (var c = 1; c < headers.length; c++) row[c] = (headers[c] === 'valor') ? valueToCell_(record) : '';
+    return row;
+  }
+  for (var i = 1; i < headers.length; i++) {
+    row[i] = valueToCell_(record[headers[i]]);
+  }
+  return row;
+}
+
+// Garante que todos os campos do registro existam como colunas na aba.
+// Acrescenta colunas novas ao final do cabeçalho quando surgir campo novo.
+function ensureFields_(sheet, headers, records) {
+  var missing = [];
+  for (var r = 0; r < records.length; r++) {
+    var rec = records[r];
+    if (!rec || typeof rec !== 'object' || Array.isArray(rec)) continue;
+    for (var field in rec) {
+      if (Object.prototype.hasOwnProperty.call(rec, field) && headers.indexOf(field) === -1 && missing.indexOf(field) === -1) {
+        missing.push(field);
+      }
+    }
+  }
+  if (!missing.length) return headers;
+  var startCol = headers.length + 1;
+  ensureCapacity_(sheet, 1, headers.length + missing.length);
+  sheet.getRange(1, startCol, 1, missing.length).setValues([missing]);
+  sheet.getRange(1, startCol, 1, missing.length)
+    .setFontWeight('bold').setBackground('#1e3c72').setFontColor('#ffffff');
+  return headers.concat(missing);
+}
+
+// ---------------------------------------------------------------------------
+// CODEC ESPECIAL — Menu (menu_global  ⇄  aba "Menu" achatada em 3 níveis)
+// ---------------------------------------------------------------------------
+// Aba Menu: id | tipo | categoria | pai | ordem | titulo | url | icone |
+//           viewRoles | uploadRoles | allowedUsers
+//   tipo = categoria (1º nível) | item (2º nível) | subitem (3º nível)
+//   id   = cat0  |  cat0/item2  |  cat0/item2/sub1
+
+function flattenMenu_(menu) {
+  var rows = [];
+  if (!menu || !menu.categorias) return rows;
+  for (var ci = 0; ci < menu.categorias.length; ci++) {
+    var cat = menu.categorias[ci] || {};
+    var catId = 'cat' + ci;
+    rows.push([catId, 'categoria', '', '', ci,
+      cat.category || '', '', cat.icon || '', cat.viewRoles || '', '', '']);
+    var items = cat.items || [];
+    for (var ii = 0; ii < items.length; ii++) {
+      var item = items[ii] || {};
+      var itemId = catId + '/item' + ii;
+      rows.push([itemId, 'item', cat.category || '', catId, ii,
+        item.title || '', item.url || '', item.icon || '',
+        item.viewRoles || '', item.uploadRoles || '', item.allowedUsers || '']);
+      var subs = item.subItems || [];
+      for (var si = 0; si < subs.length; si++) {
+        var sub = subs[si] || {};
+        rows.push([itemId + '/sub' + si, 'subitem', cat.category || '', itemId, si,
+          sub.title || '', sub.url || '', sub.icon || '',
+          sub.viewRoles || '', sub.uploadRoles || '', sub.allowedUsers || '']);
+      }
+    }
+  }
+  return rows;
+}
+
+function unflattenMenu_(rows) {
+  var menu = { categorias: [] };
+  var catById = {}, itemById = {};
+  var semCategoria = null;
+  function getSemCategoria() {
+    if (!semCategoria) {
+      semCategoria = { category: 'Sem categoria', icon: '📦', viewRoles: 'view,view2,editor,admin', items: [] };
+      menu.categorias.push(semCategoria);
+    }
+    return semCategoria;
+  }
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    var id = String(r[0] || '');
+    var tipo = String(r[1] || '').toLowerCase();
+    var pai = String(r[3] || '');
+    if (!id || !tipo) continue;
+
+    if (tipo === 'categoria') {
+      var cat = { category: r[5] || '', icon: r[7] || '', viewRoles: r[8] || '', items: [] };
+      menu.categorias.push(cat);
+      catById[id] = cat;
+    } else if (tipo === 'item') {
+      var parentCat = catById[pai] || getSemCategoria();
+      var item = {
+        icon: r[7] || '', title: r[5] || '', url: r[6] || '',
+        viewRoles: r[8] || '', uploadRoles: r[9] || '', allowedUsers: r[10] || '',
+        subItems: []
+      };
+      parentCat.items.push(item);
+      itemById[id] = item;
+    } else if (tipo === 'subitem') {
+      var parentItem = itemById[pai];
+      if (!parentItem) continue; // órfão: ignora com segurança
+      parentItem.subItems.push({
+        icon: r[7] || '', title: r[5] || '', url: r[6] || '',
+        viewRoles: r[8] || '', uploadRoles: r[9] || '', allowedUsers: r[10] || ''
+      });
+    }
+  }
+  return menu;
 }
 
 // ---------------------------------------------------------------------------
@@ -168,36 +442,88 @@ function getSheetForNode_(node) {
 // ---------------------------------------------------------------------------
 
 function readNode_(node) {
+  if (node === 'menu_global') {
+    var sheetMenu = getSheetForNode_(node);
+    return unflattenMenu_(readDataRows_(sheetMenu));
+  }
+
   var sheet = getSheetForNode_(node);
+  var headers = readHeaders_(sheet);
   var last = sheet.getLastRow();
   var result = {};
-  if (last < 2) return result; // só cabeçalho
+  if (last < 2) return result;
 
-  var rows = sheet.getRange(2, 1, last - 1, 2).getValues();
-  for (var i = 0; i < rows.length; i++) {
-    var key = String(rows[i][0]).trim();
-    if (!key) continue;
-    result[key] = parseJsonCell_(rows[i][1]);
+  // Lê em blocos de 1000 linhas — aguenta abas enormes sem estourar memória.
+  var CHUNK = 1000;
+  for (var start = 2; start <= last; start += CHUNK) {
+    var n = Math.min(CHUNK, last - start + 1);
+    var rows = sheet.getRange(start, 1, n, headers.length).getValues();
+    for (var i = 0; i < rows.length; i++) {
+      var rec = rowToRecord_(headers, rows[i]);
+      if (rec.found) result[rec.id] = rec.value;
+    }
   }
   return result;
 }
 
-function readRecord_(node, key) {
-  var sheet = getSheetForNode_(node);
+function readDataRows_(sheet) {
   var last = sheet.getLastRow();
-  if (last < 2) return null;
-  var keys = sheet.getRange(2, 1, last - 1, 1).getValues();
-  for (var i = 0; i < keys.length; i++) {
-    if (String(keys[i][0]) === String(key)) {
-      return parseJsonCell_(sheet.getRange(i + 2, 2).getValue());
-    }
+  if (last < 2) return [];
+  var nCols = Math.max(1, sheet.getLastColumn());
+  var out = [];
+  var CHUNK = 1000;
+  for (var start = 2; start <= last; start += CHUNK) {
+    var n = Math.min(CHUNK, last - start + 1);
+    var rows = sheet.getRange(start, 1, n, nCols).getValues();
+    for (var i = 0; i < rows.length; i++) out.push(rows[i]);
   }
-  return null;
+  return out;
 }
 
-function parseJsonCell_(value) {
-  if (value === null || value === undefined || value === '') return {};
-  try { return JSON.parse(String(value)); } catch (e) { return {}; }
+function readRecord_(node, key) {
+  if (node === 'menu_global') {
+    var menu = readNode_('menu_global');
+    if (key === 'categorias') return menu.categorias;
+    return menu[key] !== undefined ? menu[key] : null;
+  }
+
+  var sheet = getSheetForNode_(node);
+  var headers = readHeaders_(sheet);
+  var rowNum = findRowByKey_(sheet, key);
+  if (rowNum === -1) return null;
+  var row = sheet.getRange(rowNum, 1, 1, headers.length).getValues()[0];
+  var rec = rowToRecord_(headers, row);
+  return rec.found ? rec.value : null;
+}
+
+// Simula os parâmetros do Firebase REST (?orderBy="campo"&limitToLast=50)
+function applyQueryParams_(data, params) {
+  if (!data || typeof data !== 'object' || Array.isArray(data) || !params) return data;
+  var orderBy = params.orderBy;
+  var limitFirst = parseInt(params.limitToFirst, 10);
+  var limitLast = parseInt(params.limitToLast, 10);
+  if (!orderBy && isNaN(limitFirst) && isNaN(limitLast)) return data;
+
+  var entries = [];
+  for (var k in data) {
+    if (Object.prototype.hasOwnProperty.call(data, k)) entries.push([k, data[k]]);
+  }
+  if (orderBy) {
+    var field = String(orderBy).replace(/^["']+|["']+$/g, '');
+    entries.sort(function (a, b) {
+      var va = (field === '$key') ? a[0] : (a[1] != null && typeof a[1] === 'object') ? a[1][field] : a[1];
+      var vb = (field === '$key') ? b[0] : (b[1] != null && typeof b[1] === 'object') ? b[1][field] : b[1];
+      if (va === vb) return 0;
+      if (va === undefined || va === null) return -1;
+      if (vb === undefined || vb === null) return 1;
+      return va < vb ? -1 : 1;
+    });
+  }
+  if (!isNaN(limitFirst)) entries = entries.slice(0, limitFirst);
+  if (!isNaN(limitLast)) entries = entries.slice(-limitLast);
+  var out = {};
+  for (var i = 0; i < entries.length; i++) out[entries[i][0]] = entries[i][1];
+  return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -215,43 +541,117 @@ function generateKey_() {
 }
 
 function createRecord_(node, record) {
-  var sheet = getSheetForNode_(node);
   var key = generateKey_();
-  sheet.appendRow([key, JSON.stringify(record)]);
+  writeRecord_(node, key, record);
   return key;
 }
 
 function writeRecord_(node, key, record) {
+  if (node === 'menu_global') {
+    // Escrita unitária não se aplica ao menu achatado; só coleção inteira.
+    if (key === 'categorias') return replaceNode_(node, { categorias: record });
+    var menu = readNode_('menu_global');
+    menu[key] = record;
+    return replaceNode_(node, menu);
+  }
+
   var sheet = getSheetForNode_(node);
-  var row = findRowByKey_(sheet, key);
-  if (row === -1) sheet.appendRow([key, JSON.stringify(record)]);
-  else {
-    sheet.getRange(row, 2).setValue(JSON.stringify(record));
+  var headers = readHeaders_(sheet);
+  headers = ensureFields_(sheet, headers, [record]);
+  var row = recordToRow_(headers, key, record);
+  var rowNum = findRowByKey_(sheet, key);
+  if (rowNum === -1) {
+    var target = sheet.getLastRow() + 1;
+    ensureCapacity_(sheet, target, headers.length);
+    sheet.getRange(target, 1, 1, headers.length).setValues([row]);
+  } else {
+    sheet.getRange(rowNum, 1, 1, headers.length).setValues([row]);
   }
   return record;
 }
 
 function patchRecord_(node, key, patch) {
-  var current = readRecord_(node, key) || {};
-  var merged = Object.assign({}, current, patch);
+  if (node === 'menu_global') {
+    var menu = readNode_('menu_global');
+    if (key === 'categorias' && Array.isArray(patch)) menu.categorias = patch;
+    else menu[key] = Object.assign({}, menu[key] || {}, patch);
+    return replaceNode_(node, menu);
+  }
+  var current = readRecord_(node, key);
+  var isObj = current !== null && typeof current === 'object' && !Array.isArray(current);
+  var patchObj = patch !== null && typeof patch === 'object' && !Array.isArray(patch);
+  var merged = (isObj && patchObj) ? Object.assign({}, current, patch) : patch;
   writeRecord_(node, key, merged);
   return merged;
 }
 
 function replaceNode_(node, records) {
+  if (node === 'menu_global') {
+    var rows = flattenMenu_(records);
+    var sheetMenu = getSheetForNode_(node);
+    rewriteTab_(sheetMenu, headersForNode_('menu_global'), rows);
+    return records;
+  }
+
   var sheet = getSheetForNode_(node);
-  sheet.getRange(2, 1, Math.max(sheet.getLastRow() - 1, 1), 2).clearContent();
-  var rows = [];
+  var headers = headersForNode_(node);
+  var list = [];
   if (records && typeof records === 'object') {
     for (var k in records) {
-      if (Object.prototype.hasOwnProperty.call(records, k)) rows.push([k, JSON.stringify(records[k])]);
+      if (Object.prototype.hasOwnProperty.call(records, k)) list.push([k, records[k]]);
     }
   }
-  if (rows.length) sheet.getRange(2, 1, rows.length, 2).setValues(rows);
+  // Cabeçalho final: preferidos + união dos campos presentes nos registros
+  var plainRecords = list.map(function (p) { return p[1]; });
+  var hasObjects = plainRecords.some(function (r) { return r !== null && typeof r === 'object' && !Array.isArray(r); });
+  if (!list.length) {
+    rewriteTab_(sheet, headers, []);
+    return records;
+  }
+  if (!hasObjects) headers = ['id', 'valor'];
+  headers = ensureFieldsNoWrite_(headers, plainRecords);
+
+  var rows = list.map(function (p) { return recordToRow_(headers, p[0], p[1]); });
+  rewriteTab_(sheet, headers, rows);
   return records;
 }
 
+// União de campos sem tocar na planilha (usado na reescrita completa).
+function ensureFieldsNoWrite_(headers, records) {
+  var out = headers.slice();
+  for (var r = 0; r < records.length; r++) {
+    var rec = records[r];
+    if (!rec || typeof rec !== 'object' || Array.isArray(rec)) continue;
+    for (var field in rec) {
+      if (Object.prototype.hasOwnProperty.call(rec, field) && out.indexOf(field) === -1) out.push(field);
+    }
+  }
+  return out;
+}
+
+// Regrava a aba inteira (cabeçalho + linhas), em bateladas de IMPORT_CHUNK.
+function rewriteTab_(sheet, headers, rows) {
+  sheet.clearContents();
+  writeHeaderRow_(sheet, headers);
+  var offset = 0;
+  while (offset < rows.length) {
+    var part = rows.slice(offset, offset + IMPORT_CHUNK);
+    var startRow = 2 + offset;
+    ensureCapacity_(sheet, startRow + part.length - 1, headers.length);
+    sheet.getRange(startRow, 1, part.length, headers.length).setValues(part);
+    offset += part.length;
+  }
+  // limpa cauda antiga (se a reescrita ficou menor que o conteúdo anterior)
+  var last = sheet.getLastRow();
+  var expected = rows.length + 1;
+  if (last > expected) {
+    sheet.getRange(expected + 1, 1, last - expected, headers.length).clearContent();
+  }
+  SpreadsheetApp.flush();
+}
+
 function deleteRecord_(node, key) {
+  if (node === 'menu_global') return; // menu só por coleção inteira
   var sheet = getSheetForNode_(node);
   var row = findRowByKey_(sheet, key);
   if (row !== -1) sheet.deleteRow(row);
@@ -260,130 +660,327 @@ function deleteRecord_(node, key) {
 function findRowByKey_(sheet, key) {
   var last = sheet.getLastRow();
   if (last < 2) return -1;
-  var keys = sheet.getRange(2, 1, last - 1, 1).getValues();
-  for (var i = 0; i < keys.length; i++) {
-    if (String(keys[i][0]) === String(key)) return i + 2;
+  var target = String(key);
+  var CHUNK = 1000;
+  for (var start = 2; start <= last; start += CHUNK) {
+    var n = Math.min(CHUNK, last - start + 1);
+    var keys = sheet.getRange(start, 1, n, 1).getValues();
+    for (var i = 0; i < keys.length; i++) {
+      if (String(keys[i][0]) === target) return start + i;
+    }
   }
   return -1;
 }
 
 // ---------------------------------------------------------------------------
-// SETUP — cria a planilha com todas as abas + dados de exemplo
+// SETUP — cria a planilha com todas as abas + dados iniciais (menu da planilha)
 // ---------------------------------------------------------------------------
 
 function setupPortal() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   ensureConfig_(ss);
-  ensureSheetWithHeader_(ss, 'Usuarios');
-  ensureSheetWithHeader_(ss, 'Cargos');
-  ensureSheetWithHeader_(ss, 'Funcoes');
-  ensureSheetWithHeader_(ss, 'Menu');
-  ensureSheetWithHeader_(ss, 'Noticias');
-  ensureSheetWithHeader_(ss, 'Status');
-  ensureSheetWithHeader_(ss, 'BigQuery');
-  ensureSheetWithHeader_(ss, 'Logs');
-  ensureSheetWithHeader_(ss, 'Presenca');
-  ensureSheetWithHeader_(ss, 'Favoritos');
+
+  var todosNos = [];
+  var vistos = {};
+  IMPORT_NUCLEO.concat(IMPORT_PAGINAS).forEach(function (par) {
+    var node = par[0];
+    var sheet = getSheetForNode_(node);
+    if (!vistos[sheet.getName()]) { vistos[sheet.getName()] = true; todosNos.push(sheet.getName()); }
+  });
 
   // Seed de Cargos (catálogo de níveis de acesso)
-  var cargos = {
-    view:   { rotulo: 'Viewer',      nivel: 1, descricao: 'Somente visualização básica' },
-    view2:  { rotulo: 'View Plus',   nivel: 2, descricao: 'Visualização ampliada' },
-    editor: { rotulo: 'Editor',      nivel: 3, descricao: 'Pode subir/editar dados' },
-    admin:  { rotulo: 'Admin',       nivel: 4, descricao: 'Acesso total ao painel' }
-  };
-  seedIfEmpty_('cargos', cargos);
+  seedIfEmpty_('cargos', {
+    view:   { rotulo: 'Viewer',    nivel: 1, descricao: 'Somente visualização básica' },
+    view2:  { rotulo: 'View Plus', nivel: 2, descricao: 'Visualização ampliada' },
+    editor: { rotulo: 'Editor',    nivel: 3, descricao: 'Pode subir/editar dados' },
+    admin:  { rotulo: 'Admin',     nivel: 4, descricao: 'Acesso total ao painel' }
+  });
 
   // Seed de Funcoes (catálogo de funções/áreas)
-  var funcoes = {
-    inventario:  { rotulo: 'Inventário',    descricao: 'Controle de equipamentos e insumos' },
-    aduana:      { rotulo: 'Aduana',        descricao: 'Processos de aduana' },
-    tratativas:  { rotulo: 'Tratativas',    descricao: 'E-mails e tratativas' },
-    logistica:   { rotulo: 'Logística',     descricao: 'Operações de percurso e avarias' }
-  };
-  seedIfEmpty_('funcoes', funcoes);
+  seedIfEmpty_('funcoes', {
+    inventario: { rotulo: 'Inventário', descricao: 'Controle de equipamentos e insumos' },
+    aduana:     { rotulo: 'Aduana',     descricao: 'Processos de aduana' },
+    tratativas: { rotulo: 'Tratativas', descricao: 'E-mails e tratativas' },
+    logistica:  { rotulo: 'Logística',  descricao: 'Operações de percurso e avarias' }
+  });
 
-  Logger.log('Setup concluído! Abas criadas em: ' + ss.getUrl());
+  SpreadsheetApp.flush();
+  mostrarMensagem_('✅ Planilha preparada!',
+    'Abas prontas (' + todosNos.length + '). Próximos passos:\n\n' +
+    '1) Importe os dados pelo menu ⚙️ Portal → 📥 Importar (UMA PARTE POR VEZ).\n' +
+    '2) Implante como Aplicativo da web (/exec) e cole a URL em js/portal-db.js.');
 }
 
 function ensureConfig_(ss) {
   var c = ss.getSheetByName(CONFIG_SHEET);
-  if (!c) {
-    c = ss.insertSheet(CONFIG_SHEET);
-    c.appendRow(['chave', 'valor']);
-    c.appendRow(['versao', '1.0']);
-    c.appendRow(['origem_firebase', FIREBASE_URL_ORIGEM]);
-    c.appendRow(['migrado', 'nao']);
+  if (!c) c = ss.insertSheet(CONFIG_SHEET);
+  if (c.getLastRow() === 0) {
+    c.getRange(1, 1, 1, 2).setValues([['chave', 'valor']]).setFontWeight('bold');
   }
+  setConfigValue_(c, 'versao', '2.0-colunar');
+  setConfigValue_(c, 'origem_firebase_importacao', FIREBASE_URL_ORIGEM);
+  return c;
 }
 
-function ensureSheetWithHeader_(ss, name) {
-  if (!ss.getSheetByName(name)) {
-    var s = ss.insertSheet(name);
-    s.appendRow(['key', 'json']);
+function setConfigValue_(sheet, chave, valor) {
+  var last = sheet.getLastRow();
+  if (last >= 2) {
+    var keys = sheet.getRange(2, 1, last - 1, 1).getValues();
+    for (var i = 0; i < keys.length; i++) {
+      if (String(keys[i][0]) === chave) {
+        sheet.getRange(i + 2, 2).setValue(valor);
+        return;
+      }
+    }
   }
+  sheet.getRange(sheet.getLastRow() + 1, 1, 1, 2).setValues([[chave, valor]]);
 }
 
 function seedIfEmpty_(node, records) {
   var sheet = getSheetForNode_(node);
   if (sheet.getLastRow() > 1) return; // já tem dados, não sobrescreve
-  for (var k in records) {
-    if (Object.prototype.hasOwnProperty.call(records, k)) {
-      sheet.appendRow([k, JSON.stringify(records[k])]);
-    }
-  }
+  var headers = readHeaders_(sheet);
+  headers = ensureFields_(sheet, headers, Object.keys(records).map(function (k) { return records[k]; }));
+  var rows = Object.keys(records).map(function (k) { return recordToRow_(headers, k, records[k]); });
+  sheet.getRange(2, 1, rows.length, headers.length).setValues(rows);
 }
 
 // ---------------------------------------------------------------------------
-// MIGRAÇÃO — copia os dados atuais do Firebase para a planilha
+// IMPORTAÇÃO DO FIREBASE — parte por parte, em lotes, com continuação
 // ---------------------------------------------------------------------------
 
-var NODES_PARA_MIGRAR = [
-  'menu_global', 'users', 'portal_news', 'portal_status', 'portal_bigquery',
-  'logs', 'presence', 'user_bookmarks',
-  // páginas de reporte (Fase 2) — descomente conforme migrar:
-  // 'equipamentos', 'aderencia', 'devolucao', 'ofensores',
-  // 'salvados_aprendizado', 'salvados_encontrados', 'salvados_ia_config',
-  // 'salvados_ia_keys', 'emails_tratativas', 'insumos',
-  // 'parado_percurso', 'parado_percurso_emails', 'pendencias_cftv_consolidado',
-  // 'poka_avarias_diario', 'salvados_recuperados'
-];
+// Motor genérico: importa UM nó em lotes (orderBy=$key + startAt), gravando
+// em bateladas. Se o tempo de execução estiver perto do fim, salva a posição
+// e avisa para rodar de novo (o menu "Continuar importações pendentes" retoma).
+function importarNo_(node, rotulo) {
+  var ui = SpreadsheetApp.getUi();
+  var inicio = new Date().getTime();
 
-function importarDoFirebase() {
-  var total = 0;
-  for (var i = 0; i < NODES_PARA_MIGRAR.length; i++) {
-    var node = NODES_PARA_MIGRAR[i];
-    try {
-      var resp = UrlFetchApp.fetch(FIREBASE_URL_ORIGEM + node + '.json', { muteHttpExceptions: true });
-      var data = JSON.parse(resp.getContentText());
-      if (!data) continue;
+  // Menu é pequeno e estrutural: importa inteiro e grava achatado (3 níveis).
+  if (node === 'menu_global') {
+    var respMenu = UrlFetchApp.fetch(FIREBASE_URL_ORIGEM + 'menu_global.json', { muteHttpExceptions: true });
+    if (respMenu.getResponseCode() !== 200) {
+      mostrarMensagem_('❌ Erro ao importar Menu', 'HTTP ' + respMenu.getResponseCode() + '\n' + respMenu.getContentText().slice(0, 300));
+      return;
+    }
+    var menuData = JSON.parse(respMenu.getContentText() || 'null') || {};
+    replaceNode_('menu_global', menuData);
+    var linhas = Math.max(0, getSheetForNode_('menu_global').getLastRow() - 1);
+    mostrarMensagem_('✅ Menu importado', 'Itens gravados na aba Menu: ' + linhas);
+    return;
+  }
 
-      var records = Array.isArray(data) ? data : (typeof data === 'object' ? data : {});
-      if (Array.isArray(records)) {
-        records = records.filter(Boolean).reduce(function (acc, v, idx) { acc['arr_' + idx] = v; return acc; }, {});
-      }
-      var sheet = getSheetForNode_(node);
-      var rows = [];
-      for (var k in records) {
-        if (Object.prototype.hasOwnProperty.call(records, k)) rows.push([k, JSON.stringify(records[k])]);
-      }
-      if (rows.length) {
-        sheet.getRange(2, 1, Math.max(sheet.getLastRow() - 1, 1), 2).clearContent();
-        sheet.getRange(2, 1, rows.length, 2).setValues(rows);
-      }
-      total += rows.length;
-    } catch (err) {
-      Logger.log('Falha ao migrar ' + node + ': ' + err);
+  var sheet = getSheetForNode_(node);
+  var props = PropertiesService.getScriptProperties();
+  var cursor = props.getProperty(PROP_CURSOR + node) || '';
+  var total = parseInt(props.getProperty(PROP_TOTAL + node) || '0', 10) || 0;
+
+  // Primeira execução do nó: recomeça a aba do zero (cabeçalho preferido).
+  if (!cursor) {
+    rewriteTab_(sheet, headersForNode_(node), []);
+  }
+  var headers = readHeaders_(sheet);
+  var houveColunaNova = false;
+
+  while (true) {
+    var url = FIREBASE_URL_ORIGEM + node + '.json?orderBy=%22%24key%22&limitToFirst=' + (IMPORT_PAGE + 1);
+    if (cursor) url += '&startAt=%22' + encodeURIComponent(cursor) + '%22';
+
+    var resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+    if (resp.getResponseCode() !== 200) {
+      mostrarMensagem_('❌ Erro ao importar ' + (rotulo || node),
+        'Nó: ' + node + '\nHTTP ' + resp.getResponseCode() + '\n' + resp.getContentText().slice(0, 300));
+      return;
+    }
+    var data = JSON.parse(resp.getContentText() || 'null');
+    if (!data || typeof data !== 'object') data = {};
+
+    var keys = Object.keys(data);
+    if (cursor && keys.length && keys[0] === cursor) keys.shift(); // startAt é inclusivo
+    if (!keys.length) break; // não há mais registros: importação concluída
+
+    // Descobre colunas novas antes de escrever (mantém uma coluna por campo).
+    var batchRecords = keys.map(function (k) { return data[k]; });
+    var antes = headers.length;
+    headers = ensureFields_(sheet, headers, batchRecords);
+    if (headers.length !== antes) houveColunaNova = true;
+
+    var rows = keys.map(function (k) { return recordToRow_(headers, k, data[k]); });
+    appendRows_(sheet, headers, rows);
+
+    total += rows.length;
+    cursor = keys[keys.length - 1];
+    props.setProperty(PROP_CURSOR + node, cursor);
+    props.setProperty(PROP_TOTAL + node, String(total));
+
+    if (keys.length < IMPORT_PAGE) break; // última página
+
+    // Guarda de tempo: para antes do limite do Google e avisa como continuar.
+    if (new Date().getTime() - inicio > IMPORT_MAX_MS) {
+      SpreadsheetApp.flush();
+      mostrarMensagem_('⏸️ Importação parcial — ' + (rotulo || node),
+        'Foram importados ' + total + ' registros até agora.\n\n' +
+        'O tempo de execução do Google estava acabando, então parei num ponto seguro.\n' +
+        '👉 Rode o MESMO item de menu de novo (ou "🔄 Continuar importações pendentes") para retomar de onde parou.');
+      return;
     }
   }
-  Logger.log('Migração concluída. Registros importados: ' + total);
+
+  // Concluído: limpa marcadores e registra na aba _Config.
+  props.deleteProperty(PROP_CURSOR + node);
+  props.deleteProperty(PROP_TOTAL + node);
+  setConfigValue_(ensureConfig_(SpreadsheetApp.getActiveSpreadsheet()),
+    'migrado_' + node, new Date().toISOString() + ' (' + total + ' registros)');
+  SpreadsheetApp.flush();
+  mostrarMensagem_('✅ ' + (rotulo || node) + ' importado',
+    'Registros importados para a aba "' + sheet.getName() + '": ' + total +
+    (houveColunaNova ? '\n\nℹ️ Colunas novas foram criadas ao final do cabeçalho para campos encontrados no meio do caminho.' : ''));
 }
 
-// Atalho no menu da planilha
+function appendRows_(sheet, headers, rows) {
+  var offset = 0;
+  while (offset < rows.length) {
+    var part = rows.slice(offset, offset + IMPORT_CHUNK);
+    var startRow = sheet.getLastRow() + 1;
+    ensureCapacity_(sheet, startRow + part.length - 1, headers.length);
+    sheet.getRange(startRow, 1, part.length, headers.length).setValues(part);
+    offset += part.length;
+  }
+}
+
+// Rótulos amigáveis para as caixas de diálogo
+function rotuloDoNo_(node) {
+  var todas = IMPORT_NUCLEO.concat(IMPORT_PAGINAS);
+  for (var i = 0; i < todas.length; i++) if (todas[i][0] === node) return todas[i][1];
+  return node;
+}
+
+// Pede confirmação e dispara a importação de UM nó.
+function importarComConfirmacao_(node) {
+  var ui = SpreadsheetApp.getUi();
+  var cursor = PropertiesService.getScriptProperties().getProperty(PROP_CURSOR + node);
+  var texto = 'Nó do Firebase: ' + node + '\nAba de destino: ' + sheetNameForNode_(node) + '\n\n';
+  texto += cursor
+    ? '⚠️ Existe uma importação PARCIAL desta parte. Ela vai CONTINUAR de onde parou.\n\nContinuar?'
+    : 'A aba será RECRIADA do zero e preenchida com os dados do Firebase, em lotes.\n\nComeçar agora?';
+  var r = ui.alert('📥 Importar — ' + rotuloDoNo_(node), texto, ui.ButtonSet.YES_NO);
+  if (r !== ui.Button.YES) return;
+  importarNo_(node, rotuloDoNo_(node));
+}
+
+function mostrarMensagem_(titulo, texto) {
+  try { SpreadsheetApp.getUi().alert(titulo, texto, SpreadsheetApp.getUi().ButtonSet.OK); }
+  catch (e) { Logger.log(titulo + '\n' + texto); }
+}
+
+function mostrarAjuda() {
+  mostrarMensagem_('ℹ️ Como funciona',
+    '1) "Preparar planilha" cria todas as abas com cabeçalhos.\n' +
+    '2) Importe PARTE POR PARTE (núcleo primeiro, depois as páginas).\n' +
+    '   Nunca importe tudo de uma vez — por isso não existe opção "importar tudo".\n' +
+    '3) Se uma importação parar no meio (limite de tempo do Google),\n' +
+    '   rode o mesmo item de novo: ela continua de onde parou.\n' +
+    '4) Ao final, implante como Aplicativo da web e cole a URL /exec\n' +
+    '   em js/portal-db.js (PortalDB.URL).');
+}
+
+// Retoma todas as partes que ficaram pela metade.
+function continuarImportacoesPendentes() {
+  var props = PropertiesService.getScriptProperties();
+  var todas = props.getProperties();
+  var pendentes = [];
+  for (var k in todas) {
+    if (k.indexOf(PROP_CURSOR) === 0) pendentes.push(k.slice(PROP_CURSOR.length));
+  }
+  if (!pendentes.length) {
+    mostrarMensagem_('🔄 Nada pendente', 'Não há importações parciais. Tudo certo! ✅');
+    return;
+  }
+  for (var i = 0; i < pendentes.length; i++) {
+    importarNo_(pendentes[i], rotuloDoNo_(pendentes[i]));
+    // se ainda restar cursor (tempo esgotou de novo), para por aqui
+    if (props.getProperty(PROP_CURSOR + pendentes[i])) return;
+  }
+}
+
+function importarNoPersonalizado() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.prompt('📥 Importar nó personalizado',
+    'Digite o nome EXATO do nó no Firebase (ex.: equipamentos):', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var node = String(r.getResponseText() || '').replace(/^\s+|\s+$/g, '');
+  if (!node) return;
+  importarComConfirmacao_(node);
+}
+
+// ---------------------------------------------------------------------------
+// MENU DA PLANILHA — "⚙️ Portal"
+// ---------------------------------------------------------------------------
+
 function onOpen() {
-  SpreadsheetApp.getUi()
-    .createMenu('Portal')
-    .addItem('1. Configurar abas (setup)', 'setupPortal')
-    .addItem('2. Importar do Firebase', 'importarDoFirebase')
+  var ui = SpreadsheetApp.getUi();
+
+  var subNucleo = ui.createMenu('🧠 Importar — Núcleo do portal');
+  IMPORT_NUCLEO.forEach(function (par) {
+    subNucleo.addItem(par[1], fnImportador_(par[0]));
+  });
+
+  var subPaginas = ui.createMenu('📄 Importar — Páginas (reportes)');
+  IMPORT_PAGINAS.forEach(function (par) {
+    subPaginas.addItem(par[1], fnImportador_(par[0]));
+  });
+
+  ui.createMenu('⚙️ Portal')
+    .addItem('1️⃣ Preparar planilha (criar abas)', 'setupPortal')
+    .addSeparator()
+    .addSubMenu(subNucleo)
+    .addSubMenu(subPaginas)
+    .addItem('📥 Importar nó personalizado…', 'importarNoPersonalizado')
+    .addSeparator()
+    .addItem('🔄 Continuar importações pendentes', 'continuarImportacoesPendentes')
+    .addItem('ℹ️ Ajuda', 'mostrarAjuda')
     .addToUi();
 }
+
+// Itens de menu só chamam funções GLOBAIS sem argumentos: criamos um wrapper
+// global por nó (ex.: importar_users, importar_equipamentos, ...) apontando
+// para a função de importação correspondente.
+function fnImportador_(node) {
+  return 'importar__' + node;
+}
+
+// --- Wrappers Núcleo ---
+function importar__users() { importarComConfirmacao_('users'); }
+function importar__menu_global() { importarComConfirmacao_('menu_global'); }
+function importar__cargos() { importarComConfirmacao_('cargos'); }
+function importar__funcoes() { importarComConfirmacao_('funcoes'); }
+function importar__portal_news() { importarComConfirmacao_('portal_news'); }
+function importar__portal_status() { importarComConfirmacao_('portal_status'); }
+function importar__portal_bigquery() { importarComConfirmacao_('portal_bigquery'); }
+function importar__logs() { importarComConfirmacao_('logs'); }
+function importar__presence() { importarComConfirmacao_('presence'); }
+function importar__user_bookmarks() { importarComConfirmacao_('user_bookmarks'); }
+
+// --- Wrappers Páginas ---
+function importar__equipamentos() { importarComConfirmacao_('equipamentos'); }
+function importar__aderencia() { importarComConfirmacao_('aderencia'); }
+function importar__aderencia_historico() { importarComConfirmacao_('aderencia_historico'); }
+function importar__ofensores() { importarComConfirmacao_('ofensores'); }
+function importar__devolucao() { importarComConfirmacao_('devolucao'); }
+function importar__envios_diarios_v8() { importarComConfirmacao_('envios_diarios_v8'); }
+function importar__salvados_aprendizado() { importarComConfirmacao_('salvados_aprendizado'); }
+function importar__salvados_encontrados() { importarComConfirmacao_('salvados_encontrados'); }
+function importar__salvados_ia_config() { importarComConfirmacao_('salvados_ia_config'); }
+function importar__salvados_ia_keys() { importarComConfirmacao_('salvados_ia_keys'); }
+function importar__salvados_recuperados() { importarComConfirmacao_('salvados_recuperados'); }
+function importar__emails_tratativas() { importarComConfirmacao_('emails_tratativas'); }
+function importar__insumos() { importarComConfirmacao_('insumos'); }
+function importar__parado_percurso() { importarComConfirmacao_('parado_percurso'); }
+function importar__parado_percurso_emails() { importarComConfirmacao_('parado_percurso_emails'); }
+function importar__pendencias_cftv_consolidado() { importarComConfirmacao_('pendencias_cftv_consolidado'); }
+function importar__poka_avarias_diario() { importarComConfirmacao_('poka_avarias_diario'); }
+function importar__poka_avarias_consolidado_v3() { importarComConfirmacao_('poka_avarias_consolidado_v3'); }
+function importar__poka_aduanas_pacotes() { importarComConfirmacao_('poka_aduanas_pacotes'); }
+function importar__poka_aduanas_resumo() { importarComConfirmacao_('poka_aduanas_resumo'); }
+function importar__bpp_inventariado_v2() { importarComConfirmacao_('bpp_inventariado_v2'); }
+function importar__inventario_dhs_separado_v1() { importarComConfirmacao_('inventario_dhs_separado_v1'); }

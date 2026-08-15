@@ -76,7 +76,7 @@
     function iniciar() {
         try { envolverTabelas(); } catch (e) { }
 
-        // Tabelas criadas depois (render assíncrono do Firebase, filtros, etc.)
+        // Tabelas criadas depois (render assíncrono do banco de dados, filtros, etc.)
         try {
             if (global.MutationObserver && document.body) {
                 var obs = new MutationObserver(function (mutacoes) {

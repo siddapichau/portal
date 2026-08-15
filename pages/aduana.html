@@ -128,6 +128,7 @@
 
         .exporting .header-controls, .exporting .filter-bar { display: none !important; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -256,7 +257,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const NODE_RESUMO = "poka_aduanas_resumo";
         const NODE_PACOTES = "poka_aduanas_pacotes";
         
@@ -350,9 +351,9 @@
         });
 
         // --- CARREGAMENTO INICIAL ---
-        window.onload = function() { loadDataFromFirebase(); };
+        window.onload = function() { carregarDados(); };
 
-        function loadDataFromFirebase() {
+        function carregarDados() {
             Promise.all([
                 fetch(`${FIREBASE_URL}${NODE_RESUMO}.json`).then(r => r.json()),
                 fetch(`${FIREBASE_URL}${NODE_PACOTES}.json`).then(r => r.json())
@@ -563,7 +564,7 @@
                 await Promise.all(promises);
                 let msg = requiresDate ? `Os dados do dia ${chosenDate} foram atualizados com sucesso.` : `O Banco de Dados Histórico foi inicializado e populado com sucesso.`;
                 await showModal({ title: 'Sincronização Concluída!', message: msg });
-                loadDataFromFirebase();
+                carregarDados();
             } else {
                 await showModal({ title: 'Aviso', message: 'Nenhuma linha compatível com a data escolhida foi encontrada nas planilhas.' });
             }

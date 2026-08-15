@@ -133,6 +133,7 @@
 
         @media (max-width: 1100px) { .summary { grid-template-columns: 1fr 1fr; } }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -209,7 +210,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "equipamentos";
         
         let HISTORICO_COMPLETO = {}; let ITEMS_ATUAIS = []; 
@@ -231,7 +232,7 @@
             document.getElementById('btn-delete-hist').style.display = 'flex'; 
         }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -259,7 +260,7 @@
         function normalizeArea(area) { let s = normalizeText(area); if (!s) return 'Sem área'; if (removerAcentos(s).toUpperCase() === 'OPERACAO') return 'OPERAÇÃO'; return s; }
         function normalizeInventariado(value) { const s = removerAcentos(normalizeText(value)).toUpperCase(); if (s === 'SIM') return 'SIM'; if (s === 'NAO' || s === 'NÃO') return 'NÃO'; return s || 'NÃO INFORMADO'; }
         function getIconForDesc(desc) { const d = String(desc || '').toLowerCase(); if (d.includes('handheld') || d.includes('coletor') || d.includes('pda') || d.includes('tc52') || d.includes('eda')) return '📱'; if (d.includes('impressora') || d.includes('zebra') || d.includes('hp') || d.includes('printer')) return '🖨️'; if (d.includes('monitor') || d.includes('tela') || d.includes('display')) return '🖥️'; if (d.includes('notebook') || d.includes('laptop') || d.includes('pc') || d.includes('computador') || d.includes('desktop') || d.includes('thinkpad')) return '💻'; if (d.includes('leitor') || d.includes('scanner') || d.includes('gun') || d.includes('ring')) return '📟'; if (d.includes('nobreak') || d.includes('ups') || d.includes('bateria')) return '🔋'; if (d.includes('tv') || d.includes('televisao')) return '📺'; return '📦'; }
-        function sanitizeForFirebase(items) { return items.map(item => ({ ID: String(item.ID ?? ''), Descricao: String(item.Descricao ?? ''), Modelo: String(item.Modelo ?? ''), AREA: String(item.AREA ?? ''), observacao: String(item.observacao ?? ''), Inventariado: String(item.Inventariado ?? ''), Data_ultimo_inventario: String(item.Data_ultimo_inventario ?? '') })); }
+        function sanitizeForDb(items) { return items.map(item => ({ ID: String(item.ID ?? ''), Descricao: String(item.Descricao ?? ''), Modelo: String(item.Modelo ?? ''), AREA: String(item.AREA ?? ''), observacao: String(item.observacao ?? ''), Inventariado: String(item.Inventariado ?? ''), Data_ultimo_inventario: String(item.Data_ultimo_inventario ?? '') })); }
         function badgeInventariado(value) { const v = normalizeInventariado(value); if (v === 'SIM') return `<span class="badge badge-sim">SIM</span>`; if (v === 'NÃO') return `<span class="badge badge-nao">NÃO</span>`; return `<span class="badge" style="background:#64748b; color:#fff;">${escapeHtml(v)}</span>`; }
 
         function extrairLista(dado) { if (!dado) return []; if (Array.isArray(dado)) return dado; if (dado.lista) return Array.isArray(dado.lista) ? dado.lista : Object.values(dado.lista); let vals = Object.values(dado); if (vals.length > 0 && typeof vals[0] === 'object' && (vals[0].ID || vals[0].Descricao)) return vals; return []; }
@@ -320,7 +321,7 @@
 
         function limparFiltros() { document.getElementById('filter-area').value = 'Todos'; document.getElementById('filter-descricao').value = 'Todos'; document.getElementById('filter-inventariado').value = 'Todos'; document.getElementById('filter-modelo').value = 'Todos'; document.getElementById('search-input').value = ''; renderTabela(); }
 
-        async function carregarDoFirebase() {
+        async function carregarDoBanco() {
             try {
                 const timestampParaQuebrarCache = new Date().getTime();
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json?_=${timestampParaQuebrarCache}`, { method: 'GET', cache: 'no-store', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } });
@@ -336,12 +337,12 @@
             } catch (err) {}
         }
 
-        async function salvarNoFirebase(items) {
+        async function salvarNaNuvem(items) {
             const hoje = new Date(); const chaveData = formatarDataChaveDiaria(hoje);
-            const payload = { atualizadoEm: hoje.toLocaleString('pt-BR'), totalRegistros: items.length, lista: sanitizeForFirebase(items) };
+            const payload = { atualizadoEm: hoje.toLocaleString('pt-BR'), totalRegistros: items.length, lista: sanitizeForDb(items) };
             try {
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/${chaveData}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                await registrarLogFirebase("Equipamentos", `Realizou o backup diário dos equipamentos (${items.length} ITs)`);
+                await registrarLog("Equipamentos", `Realizou o backup diário dos equipamentos (${items.length} ITs)`);
                 HISTORICO_COMPLETO[chaveData] = payload; atualizarDropdownsDeDatas(); document.getElementById('filter-data-historico').value = chaveData; carregarDadosDaDataSelecionada();
             } catch (error) { alert("Falha ao salvar no banco de dados."); }
         }
@@ -355,7 +356,7 @@
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/${chaveSelecionada}.json`, { method: 'DELETE' });
                 if (!response.ok) throw new Error("Falha ao deletar.");
                 
-                await registrarLogFirebase("Equipamentos", `Excluiu da nuvem o histórico do dia ${formatarDataBr(chaveSelecionada)}.`);
+                await registrarLog("Equipamentos", `Excluiu da nuvem o histórico do dia ${formatarDataBr(chaveSelecionada)}.`);
                 delete HISTORICO_COMPLETO[chaveSelecionada]; atualizarDropdownsDeDatas();
                 
                 const chaves = Object.keys(HISTORICO_COMPLETO).sort().reverse();
@@ -373,7 +374,7 @@
                     const getVal = (possibleKeys) => { for(let key in row) { if(possibleKeys.includes(key.trim().toLowerCase())) return row[key]; } return ''; };
                     return { ID: normalizeText(getVal(['id'])), Descricao: normalizeText(getVal(['descrição', 'descricao'])), Modelo: normalizeText(getVal(['modelo']) || 'Não informado'), AREA: normalizeArea(getVal(['area', 'área'])), observacao: normalizeText(getVal(['observação', 'observacao'])), Inventariado: normalizeInventariado(getVal(['inventariado'])), Data_ultimo_inventario: normalizeText(getVal(['data ultimo inventário', 'data ultimo inventario', 'data_ultimo_inventario'])) };
                 }).filter(item => item.ID || item.Descricao);
-                await salvarNoFirebase(novosItens); e.target.value = ''; 
+                await salvarNaNuvem(novosItens); e.target.value = ''; 
             }});
         });
 
@@ -424,7 +425,7 @@
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        carregarDoFirebase();
+        carregarDoBanco();
     </script>
 </body>
 </html>

@@ -106,6 +106,7 @@
         ::-webkit-scrollbar-track { background: var(--bg-body); }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
     <div id="toast-container"></div>
@@ -187,7 +188,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const NODE_HISTORICO = "aderencia_historico";
 
         let DB_LOCAL = {}; 
@@ -208,7 +209,7 @@
         
         if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -395,7 +396,7 @@
                         });
                         
                         await fetch(`${FIREBASE_URL}aderencia.json`, { method: 'PUT', body: JSON.stringify(payloadData) });
-                        await registrarLogFirebase("Aderência Tabela", `Substituiu os dados consolidados do dia: <b>${globalDataBRFormatada}</b>`);
+                        await registrarLog("Aderência Tabela", `Substituiu os dados consolidados do dia: <b>${globalDataBRFormatada}</b>`);
                         
                         if(response.ok) {
                             statusBadge.innerText = "Online (Histórico Ativo)";

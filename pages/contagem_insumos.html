@@ -108,6 +108,7 @@
 
         @media (max-width: 900px) { .top-header { flex-direction: column; align-items: center; } .header-center { white-space: normal; } .filters-card { grid-template-columns: 1fr; } .summary { grid-template-columns: 1fr; } .items-list { grid-template-columns: 1fr; } }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
     <div class="top-header">
@@ -116,7 +117,7 @@
         <div class="header-right">
             <span class="status-badge" id="data-status">Conectando...</span>
             <button class="btn btn-dark" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">Exportar 4K</button>
-            <button class="btn btn-dark" onclick="carregarDoFirebase()">Sync</button>
+            <button class="btn btn-dark" onclick="carregarDoBanco()">Sync</button>
             <button class="btn btn-green" id="btn-novo-item" onclick="abrirModalAdicionar()">+ Novo Item</button>
         </div>
     </div>
@@ -186,7 +187,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "insumos";
         const placeholderImg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMzAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2VlZWVlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIyMCIgZmlsbD0iIzc3Nzc3NyI+U2VtIEZvdG88L3RleHQ+PC9zdmc+";
         const $ = (s) => document.querySelector(s);
@@ -203,7 +204,7 @@
         if(!canEdit) $('#btn-novo-item').style.display = 'none';
 
         // Manda o log para o feed do index!
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -236,7 +237,7 @@
             };
         }
 
-        async function carregarDoFirebase() {
+        async function carregarDoBanco() {
             setStatus('Conectando...', '#3483FA');
             try {
                 const res = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`); const dbData = await res.json();
@@ -298,8 +299,8 @@
         async function salvarEdicaoRapida() {
             if (!canEdit || editingIndex === null) return;
             const up = { ...ALL_ITEMS[editingIndex], Foto: $('#modal-foto').value.trim(), Estoque_atual: $('#modal-estoque').value, "Ultima contagem": dataHoraAgora() };
-            await commitarEdicaoFirebase(up);
-            await registrarLogFirebase("Contagem de Insumos", `Fez um ajuste rápido no estoque de: <b>${up.nome_material}</b>`);
+            await commitarEdicao(up);
+            await registrarLog("Contagem de Insumos", `Fez um ajuste rápido no estoque de: <b>${up.nome_material}</b>`);
             fecharModal('edit-modal');
         }
 
@@ -328,17 +329,17 @@
                 try {
                     await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/lista.json`, { method: 'POST', body: JSON.stringify(obj) });
                     await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PATCH', body: JSON.stringify({ atualizadoEm: obj["Ultima contagem"] }) });
-                    await registrarLogFirebase("Contagem de Insumos", `Adicionou o novo item: <b>${obj.nome_material}</b> no banco de dados.`);
-                    fecharModal('full-edit-modal'); await carregarDoFirebase();
-                } catch(e) { alert('Erro no Firebase.'); }
+                    await registrarLog("Contagem de Insumos", `Adicionou o novo item: <b>${obj.nome_material}</b> no banco de dados.`);
+                    fecharModal('full-edit-modal'); await carregarDoBanco();
+                } catch(e) { alert('Erro ao gravar no banco de dados.'); }
             } else { 
-                await commitarEdicaoFirebase(obj); 
-                await registrarLogFirebase("Contagem de Insumos", `Editou todas as informações do item: <b>${obj.nome_material}</b>`);
+                await commitarEdicao(obj); 
+                await registrarLog("Contagem de Insumos", `Editou todas as informações do item: <b>${obj.nome_material}</b>`);
                 fecharModal('full-edit-modal'); 
             }
         }
 
-        async function commitarEdicaoFirebase(item) {
+        async function commitarEdicao(item) {
             setStatus('Salvando...', '#3483FA');
             try {
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/lista/${editingKey}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) });
@@ -354,7 +355,7 @@
             setStatus('Excluindo...', '#FF5252');
             try {
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}/lista/${editingKey}.json`, { method: 'DELETE' });
-                await registrarLogFirebase("Contagem de Insumos", `Removeu o item: <b>${name}</b> do sistema.`);
+                await registrarLog("Contagem de Insumos", `Removeu o item: <b>${name}</b> do sistema.`);
                 ALL_ITEMS.splice(editingIndex, 1); ITEM_KEYS.splice(editingIndex, 1);
                 fecharModal('edit-modal'); fecharModal('full-edit-modal'); renderLista(); setStatus(dataHoraAgora(), '#00A650');
             } catch (error) { setStatus('Erro.', '#FF5252'); }
@@ -377,7 +378,7 @@
                 }).catch(e => { document.head.removeChild(style); s.innerText = 'Erro captura'; s.style.color = '#FF5252'; });
             }, 300);
         }
-        carregarDoFirebase();
+        carregarDoBanco();
     </script>
 </body>
 </html>

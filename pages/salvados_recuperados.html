@@ -84,6 +84,7 @@
         @media (max-width: 1100px) { .middle-section { grid-template-columns: 1fr; } .kpi-column { flex-direction: row; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: var(--bg-body); } ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -139,7 +140,7 @@
     <script>
         Chart.register(ChartDataLabels);
 
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "salvados_recuperados";
         
         let BANCO_GLOBAL = [];       
@@ -175,7 +176,7 @@
 
         function setStatus(texto, cor = "#00A650") { const el = document.getElementById('data-status'); if (el) { el.innerText = texto; el.style.color = cor; } }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -208,7 +209,7 @@
             return `Semana ${String(week).padStart(2, '0')} (${d.getFullYear()})`;
         }
 
-        async function carregarDoFirebase() {
+        async function carregarDoBanco() {
             setStatus('Conectando...', '#3483FA');
             try {
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
@@ -226,11 +227,11 @@
             } catch (err) { setStatus('Erro ao carregar', '#FF5252'); }
         }
 
-        async function sobrescreverFirebase(dados) {
+        async function sobrescreverDados(dados) {
             setStatus(`Salvando ${dados.length} pacotes...`, '#3483FA');
             try {
                 await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({lista: dados, atualizadoEm: new Date().toLocaleString()}) });
-                await registrarLogFirebase("Salvados Recuperados", `Atualizou a base de dados via CSV (${dados.length} pacotes).`);
+                await registrarLog("Salvados Recuperados", `Atualizou a base de dados via CSV (${dados.length} pacotes).`);
                 BANCO_GLOBAL = dados; preencherDropdowns(); aplicarFiltros();
                 alert(`Sucesso! Banco atualizado com ${dados.length} pacotes.`); setStatus(`Base Atualizada: ${BANCO_GLOBAL.length} registros`, '#00A650');
             } catch (err) { alert("Erro ao salvar."); setStatus('Erro', '#FF5252'); }
@@ -249,7 +250,7 @@
                     }).filter(i => i.ID && i.ID.toLowerCase() !== 'nan');
                     dadosLimpos = dadosLimpos.filter(i => i.Status.toUpperCase().includes('RECUPERADO'));
                     if(dadosLimpos.length === 0) { alert("Arquivo sem pacotes 'RECUPERADO'."); return; }
-                    sobrescreverFirebase(dadosLimpos); event.target.value = ''; 
+                    sobrescreverDados(dadosLimpos); event.target.value = ''; 
                 }
             });
         });
@@ -368,7 +369,7 @@
 
         function carregarMaisPacotes() { let container = document.getElementById('table-scroll-container'); if (container.scrollTop + container.clientHeight >= container.scrollHeight - 100) { if ((CUR_PAGE + 1) * PAGE_SIZE < DADOS_FILTRADOS.length) { CUR_PAGE++; renderizarPedaçoTabela(); } } }
 
-        document.addEventListener('DOMContentLoaded', carregarDoFirebase);
+        document.addEventListener('DOMContentLoaded', carregarDoBanco);
     </script>
 </body>
 </html>

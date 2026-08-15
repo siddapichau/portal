@@ -134,6 +134,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -284,7 +285,7 @@
     </div>
 
     <script>
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "emails_tratativas";
         
         let BANCO_EMAILS = {};
@@ -304,7 +305,7 @@
         
         if(!canEdit) { document.getElementById('btn-add-novo').style.display = 'none'; }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modulo, acao, usuario: userName, timestamp: Date.now() }) });
             } catch(e) {}
@@ -312,10 +313,10 @@
 
         // ============ INICIALIZAÇÃO ============
         window.onload = async () => {
-            await carregarDoFirebase();
+            await carregarDoBanco();
         };
 
-        async function carregarDoFirebase() {
+        async function carregarDoBanco() {
             try {
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json?_=${Date.now()}`);
                 const data = await response.json();
@@ -554,7 +555,7 @@
                     })
                 });
                 
-                await registrarLogFirebase("Tratativas E-mail", `Moveu ID: ${item.pacote_id || 'N/A'} para ${novoStatus} no Kanban.`);
+                await registrarLog("Tratativas E-mail", `Moveu ID: ${item.pacote_id || 'N/A'} para ${novoStatus} no Kanban.`);
             } catch (err) {
                 alert("Erro ao sincronizar movimento com o banco.");
                 // Reverte local
@@ -692,7 +693,7 @@
                 });
 
                 BANCO_EMAILS[key] = item;
-                await registrarLogFirebase("Tratativas E-mail", isNew ? `Cadastrou tratativa: ${pacote_id || 'Sem ID'}` : `Atualizou tratativa: ${pacote_id || 'Sem ID'} para ${status}`);
+                await registrarLog("Tratativas E-mail", isNew ? `Cadastrou tratativa: ${pacote_id || 'Sem ID'}` : `Atualizou tratativa: ${pacote_id || 'Sem ID'} para ${status}`);
                 
                 fecharModal();
                 renderizarInterface();
@@ -710,7 +711,7 @@
                 let deletedItem = BANCO_EMAILS[currentKey];
                 delete BANCO_EMAILS[currentKey];
                 
-                await registrarLogFirebase("Tratativas E-mail", `Excluiu a tratativa ID: ${deletedItem.pacote_id || 'Desconhecido'}`);
+                await registrarLog("Tratativas E-mail", `Excluiu a tratativa ID: ${deletedItem.pacote_id || 'Desconhecido'}`);
                 
                 fecharModal();
                 renderizarInterface();

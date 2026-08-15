@@ -138,6 +138,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 3px; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light" id="dashboard-body">
 
@@ -230,7 +231,7 @@
         Chart.register(ChartDataLabels);
 
         // NOVA Base de Dados V2 para evitar a sujeira anterior.
-        const FIREBASE_URL_BASE = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL_BASE = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "bpp_inventariado_v2";
 
         let BD_COMPLETO = {};
@@ -348,13 +349,13 @@
                     }
 
                     alert(`Sucesso! ${countPendentes} pacotes pendentes atualizados (V2).`);
-                    e.target.value = ''; carregarDoFirebase();
+                    e.target.value = ''; carregarDoBanco();
                 }
             });
         });
 
         // --- FIREBASE READ ---
-        async function carregarDoFirebase() {
+        async function carregarDoBanco() {
             setStatus('Sincronizando...');
             try {
                 const res = await fetch(`${FIREBASE_URL_BASE}${FIREBASE_NODE}.json`);
@@ -577,7 +578,7 @@
         function fecharModal() { document.getElementById('detalhesModal').classList.remove('active'); }
         function fecharModalExterno(e) { if(e.target.id === 'detalhesModal') fecharModal(); }
 
-        window.onload = carregarDoFirebase;
+        window.onload = carregarDoBanco;
     </script>
 </body>
 </html>

@@ -113,6 +113,7 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
     </style>
+    <script src="../js/portal-db.js"></script>
 </head>
 <body data-theme="light">
 
@@ -200,7 +201,7 @@
         let globalData = []; let dadosFiltradosAtuais = []; let chartInstances = {};
         let colDataNome, colLancadoPorNome, colDescricao, colValor, colOrigem, colResolucao, colStatusResolucao;
 
-        const FIREBASE_URL = "https://reportes-bdb0a-default-rtdb.firebaseio.com/";
+        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const FIREBASE_NODE = "poka_avarias_diario";
         
         // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
@@ -222,7 +223,7 @@
         
         if(canEdit) { document.getElementById('btnUploadArea').style.display = 'flex'; }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -262,7 +263,7 @@
             document.getElementById('tabela-pacotes').querySelector('tbody').innerHTML = "<tr><td colspan='8' style='text-align:center; padding: 15px;'>Nenhum dado ativo.</td></tr>";
         }
 
-        async function mesclarESalvarFirebase(novosDados) {
+        async function mesclarESalvar(novosDados) {
             let mapExistentes = new Map();
             globalData.forEach(row => { let id = extrairID(row); if(id) mapExistentes.set(id, row); });
 
@@ -285,7 +286,7 @@
                 const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bancoAtualizado) });
                 if(response.ok) {
                     globalData = bancoAtualizado; preencherOpcoesDeFiltros(); resetarFiltrosHoje();
-                    await registrarLogFirebase("Avaria Diário", "Sincronizou a base de dados via CSV.");
+                    await registrarLog("Avaria Diário", "Sincronizou a base de dados via CSV.");
                     alert("Dados salvos e sincronizados com a nuvem.");
                 }
             } catch (err) { alert("Erro ao salvar na nuvem."); }
@@ -297,7 +298,7 @@
             Papa.parse(file, { header: true, skipEmptyLines: true, complete: function(results) {
                 if (results.data && results.data.length > 0) {
                     const dadosFiltrados = results.data.filter(row => Object.values(row).some(val => val !== null && val.trim() !== ''));
-                    mesclarESalvarFirebase(dadosFiltrados);
+                    mesclarESalvar(dadosFiltrados);
                 } else { alert("Arquivo Vazio"); }
             }});
             event.target.value = ''; 

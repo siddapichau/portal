@@ -76,7 +76,7 @@
             <!-- ABA DE MENUS -->
             <div id="tab-menus">
                 <div class="header-actions">
-                    <button class="btn btn-blue" onclick="salvarNoFirebase()">💾 Salvar na Nuvem</button>
+                    <button class="btn btn-blue" onclick="salvarNaNuvem()">💾 Salvar na Nuvem</button>
                     <button class="btn btn-dark" onclick="baixarJSON()">⬇️ Baixar .json</button>
                     <input type="file" id="jsonUpload" accept=".json" style="display:none" onchange="subirJSON(event)">
                     <button class="btn btn-green" onclick="document.getElementById('jsonUpload').click()">⬆️ Subir .json</button>
@@ -90,7 +90,7 @@
 
             <!-- ABA DE USUÁRIOS -->
             <div id="tab-users" style="display:none;">
-                <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos diretamente no banco Firebase.</p>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Aprove acessos e altere cargos diretamente na planilha (banco de dados).</p>
                 <div class="header-actions">
                     <button class="btn btn-warn" id="btn-import-users" onclick="importarUsuariosDaPlanilha()">⬇️ Migrar Usuários da Planilha Antiga</button>
                 </div>
@@ -227,7 +227,7 @@
 
     <script>
         const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwATV05zjehqTqkXjCRWCaQ9Kp7Y6gN19IJ7IdHtcEK9vflhWAkhSyMdEBG_uB8BN0SYA/exec";
-        const FIREBASE_URL = (window.PortalDB ? window.PortalDB.baseAtiva() : "https://reportes-bdb0a-default-rtdb.firebaseio.com/");
+        const FIREBASE_URL = window.PortalDB.baseAtiva(); // 100% planilha Google Sheets
         const ICONES_LOGISTICA = ["📦", "🚚", "🚛", "✈️", "🚢", "🛒", "🏭", "🏗️", "📋", "📊", "📈", "📉", "🛠️", "⚙️", "🧑‍💻", "🔐", "📁", "📂", "🗄️", "📅", "📆", "⏱️", "⏲️", "💰", "💳", "🧾", "⚖️", "🛡️", "🔔", "📌", "📍", "🗺️", "🌐", "📱", "💻", "🖨️", "🏷️", "🏢", "👥", "🚨", "✅", "❌", "🔄", "🔍", "📝", "🚀", "🛑", "📹", "📤", "📥", "👷", "🚧", "🚒", "🚑", "↳"];
         
         let adMenuData = { categorias: [] }; 
@@ -296,7 +296,7 @@
             return btoa(str);
         }
 
-        async function registrarLogFirebase(modulo, acao) {
+        async function registrarLog(modulo, acao) {
             try {
                 const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
                 await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
@@ -311,7 +311,7 @@
             iconSelect.innerHTML = ICONES_LOGISTICA.map(ico => `<option value="${ico}">${ico}</option>`).join('');
 
             try { const res = await fetch(`${FIREBASE_URL}menu_global.json`); const data = await res.json(); adMenuData = data && data.categorias ? data : { categorias: [] }; renderizarAdmin(); } catch (e) { console.error(e); }
-            fetchUsersFromFirebase();
+            fetchUsers();
         };
 
         function switchAdminTab(tab) {
@@ -330,7 +330,7 @@
         // ==========================================
         // GESTÃO DE USUÁRIOS
         // ==========================================
-        async function fetchUsersFromFirebase() {
+        async function fetchUsers() {
             try {
                 const res = await fetch(`${FIREBASE_URL}users.json?_=${Date.now()}`);
                 const data = await res.json();
@@ -340,7 +340,7 @@
                     populateDatalist(); 
                 } else {
                     allUsers = [];
-                    document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum usuário cadastrado no banco Firebase.</td></tr>';
+                    document.getElementById('users-tbody').innerHTML = '<tr><td colspan="5" style="text-align:center;">Nenhum usuário cadastrado no banco de dados.</td></tr>';
                 }
             } catch(e) { console.error("Falha ao ler usuarios: ", e); }
         }
@@ -382,7 +382,7 @@
                         }
                     }
                     alert(`Migração concluída! ${count} usuários novos transferidos.`);
-                    fetchUsersFromFirebase();
+                    fetchUsers();
                 } else { alert("A planilha retornou vazia ou ocorreu erro."); }
             } catch(e) { alert("Erro ao importar usuários: " + e.message); } 
             finally { btn.innerHTML = "⬇️ Migrar Usuários da Planilha Antiga"; btn.disabled = false; }
@@ -427,7 +427,7 @@
             const status = document.getElementById(`status-${idx}`).value; const cargo = document.getElementById(`cargo-${idx}`).value;
             try { 
                 await fetch(`${FIREBASE_URL}users/${key}.json`, { method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ solicitacao: status, cargo: cargo }) }); 
-                alert("Usuário atualizado com sucesso!"); await registrarLogFirebase("Painel Admin", `Alterou permissões/cargo do usuário: <b>${username}</b>`);
+                alert("Usuário atualizado com sucesso!"); await registrarLog("Painel Admin", `Alterou permissões/cargo do usuário: <b>${username}</b>`);
             } catch(e) { alert("Erro ao atualizar o usuário."); }
         }
 
@@ -440,7 +440,7 @@
                 const hPass = await hashPassword(pass);
                 await fetch(`${FIREBASE_URL}users/${key}.json`, { method: 'PATCH', headers: { "Content-Type": "application/json" }, body: JSON.stringify({ senha: hPass }) }); 
                 alert(`Senha de ${username} atualizada para a nova!`); inputNew.value = "";
-                await registrarLogFirebase("Painel Admin", `Resetou (forçou) a senha do usuário: <b>${username}</b>`);
+                await registrarLog("Painel Admin", `Resetou (forçou) a senha do usuário: <b>${username}</b>`);
             } catch(e) { alert("Erro ao resetar senha."); }
         }
 
@@ -448,8 +448,8 @@
             if(!confirm(`ATENÇÃO: Tem certeza que deseja excluir permanentemente o usuário '${username}' do sistema?`)) return;
             try {
                 await fetch(`${FIREBASE_URL}users/${key}.json`, { method: 'DELETE' });
-                await registrarLogFirebase("Painel Admin", `Excluiu o usuário: <b>${username}</b>`);
-                alert("Usuário excluído com sucesso."); fetchUsersFromFirebase();
+                await registrarLog("Painel Admin", `Excluiu o usuário: <b>${username}</b>`);
+                alert("Usuário excluído com sucesso."); fetchUsers();
             } catch(e) { alert("Erro ao excluir usuário."); }
         }
 
@@ -473,7 +473,7 @@
         }
         let draggedItemInfo = null; function dragStart(e, type, catIdx, itemIdx = null, subIdx = null) { draggedItemInfo = { type, catIdx, itemIdx, subIdx }; e.stopPropagation(); } function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); } function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); } function drop(e, targetType, targetCatIdx, targetItemIdx = null, targetSubIdx = null) { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove('drag-over'); if (!draggedItemInfo) return; const dType = draggedItemInfo.type; if (dType === 'cat' && targetType === 'cat') { const temp = adMenuData.categorias.splice(draggedItemInfo.catIdx, 1)[0]; adMenuData.categorias.splice(targetCatIdx, 0, temp); } else if (dType === 'item') { const sourceCat = adMenuData.categorias[draggedItemInfo.catIdx]; const itemMovido = sourceCat.items.splice(draggedItemInfo.itemIdx, 1)[0]; if (targetType === 'item') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.splice(targetItemIdx, 0, itemMovido); } else if (targetType === 'cat') { const targetCat = adMenuData.categorias[targetCatIdx]; if (!targetCat.items) targetCat.items = []; targetCat.items.push(itemMovido); } else { sourceCat.items.splice(draggedItemInfo.itemIdx, 0, itemMovido); } } else if (dType === 'subItem') { const sourceItem = adMenuData.categorias[draggedItemInfo.catIdx].items[draggedItemInfo.itemIdx]; const subItemMovido = sourceItem.subItems.splice(draggedItemInfo.subIdx, 1)[0]; if (targetType === 'subItem') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.splice(targetSubIdx, 0, subItemMovido); } else if (targetType === 'item') { const targetItem = adMenuData.categorias[targetCatIdx].items[targetItemIdx]; if (!targetItem.subItems) targetItem.subItems = []; targetItem.subItems.push(subItemMovido); } else { sourceItem.subItems.splice(draggedItemInfo.subIdx, 0, subItemMovido); } } renderizarAdmin(); }
         function baixarJSON() { const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(adMenuData, null, 2)); const d = document.createElement('a'); d.href = dataStr; d.download = "menu_global.json"; document.body.appendChild(d); d.click(); d.remove(); } function subirJSON(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = function(e) { try { const parsed = JSON.parse(e.target.result); if(parsed.categorias) { adMenuData = parsed; renderizarAdmin(); alert("JSON carregado!"); } else alert("Estrutura inválida."); } catch (err) { alert("Erro ao ler JSON."); } }; reader.readAsText(file); } function adicionarCategoria() { adMenuData.categorias.push({ category: "Nova Categoria", icon: "📦", viewRoles: "view,view2,editor,admin", items: [] }); renderizarAdmin(); } function removerCategoria(idx) { adMenuData.categorias.splice(idx, 1); renderizarAdmin(); } function updateCat(idx, field, value) { adMenuData.categorias[idx][field] = value; } function adicionarItem(catIdx) { if(!adMenuData.categorias[catIdx].items) adMenuData.categorias[catIdx].items = []; adMenuData.categorias[catIdx].items.push({ icon: "📋", title: "Novo Link", url: "#", viewRoles: "view,view2,editor,admin", uploadRoles: "editor,admin", allowedUsers: "", subItems: [] }); renderizarAdmin(); } function removerItem(catIdx, itemIdx) { adMenuData.categorias[catIdx].items.splice(itemIdx, 1); renderizarAdmin(); } function updateItem(catIdx, itemIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx][field] = value; } function adicionarSubItem(catIdx, itemIdx) { if(!adMenuData.categorias[catIdx].items[itemIdx].subItems) adMenuData.categorias[catIdx].items[itemIdx].subItems = []; adMenuData.categorias[catIdx].items[itemIdx].subItems.push({ icon: "↳", title: "Sub-link", url: "#", viewRoles: "view,view2,editor,admin", uploadRoles: "editor,admin", allowedUsers: "" }); renderizarAdmin(); } function removerSubItem(catIdx, itemIdx, subIdx) { adMenuData.categorias[catIdx].items[itemIdx].subItems.splice(subIdx, 1); renderizarAdmin(); } function updateSubItem(catIdx, itemIdx, subIdx, field, value) { adMenuData.categorias[catIdx].items[itemIdx].subItems[subIdx][field] = value; }
-        async function salvarNoFirebase() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLogFirebase("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
+        async function salvarNaNuvem() { try { await fetch(`${FIREBASE_URL}menu_global.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(adMenuData) }); await registrarLog("Painel Admin", "Atualizou a estrutura de links do Menu Global."); alert("Salvo com sucesso!"); } catch(e) { alert("Erro ao salvar."); } }
 
         // ==========================================
         // EDITOR RICH TEXT COMPARTILHADO
@@ -673,13 +673,13 @@
                 if (editingNewsKey) {
                     let noticiaEditada = { titulo: titulo, tag: tag, corpo: corpo, data_edit: Date.now() };
                     await fetch(`${FIREBASE_URL}portal_news/${editingNewsKey}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(noticiaEditada) });
-                    await registrarLogFirebase("Mural", `Editou a notícia: "${titulo}"`);
+                    await registrarLog("Mural", `Editou a notícia: "${titulo}"`);
                     alert("Notícia atualizada com sucesso!");
                 } else {
                     let idNoticia = "news_" + Date.now();
                     let novaNoticia = { id: idNoticia, autor: userName, data: Date.now(), tag: tag, titulo: titulo, corpo: corpo, likes: 0, likedBy: [] };
                     await fetch(`${FIREBASE_URL}portal_news/${idNoticia}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(novaNoticia) });
-                    await registrarLogFirebase("Mural", `Publicou uma nova notícia: "${titulo}"`);
+                    await registrarLog("Mural", `Publicou uma nova notícia: "${titulo}"`);
                     alert("Notícia publicada com sucesso!");
                 }
                 cancelarEdicao(); carregarNoticiasAdmin(); 
@@ -690,7 +690,7 @@
             if(!confirm("Atenção: A notícia será apagada permanentemente. Confirma a exclusão?")) return;
             try {
                 await fetch(`${FIREBASE_URL}portal_news/${key}.json`, { method: 'DELETE' });
-                await registrarLogFirebase("Mural", "Excluiu uma publicação do mural de notícias.");
+                await registrarLog("Mural", "Excluiu uma publicação do mural de notícias.");
                 carregarNoticiasAdmin();
             } catch(e) { alert("Erro de comunicação com o servidor ao excluir."); }
         }
@@ -945,13 +945,13 @@
                 if (editingBqKey) {
                     let bqEditada = { titulo: titulo, categoria: categoria, tags: tags, descricao: descricao, codigo_sql: codigo_sql, corpo_post: corpo_post, data_edit: Date.now() };
                     await fetch(`${FIREBASE_URL}portal_bigquery/${editingBqKey}.json`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bqEditada) });
-                    await registrarLogFirebase("BigQuery", `Editou o script: "${titulo}"`);
+                    await registrarLog("BigQuery", `Editou o script: "${titulo}"`);
                     alert("Query atualizada com sucesso!");
                 } else {
                     let idBq = "bq_" + Date.now();
                     let novaBq = { id: idBq, autor: userName, data: Date.now(), titulo: titulo, categoria: categoria, tags: tags, descricao: descricao, codigo_sql: codigo_sql, corpo_post: corpo_post };
                     await fetch(`${FIREBASE_URL}portal_bigquery/${idBq}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(novaBq) });
-                    await registrarLogFirebase("BigQuery", `Adicionou um novo script: "${titulo}"`);
+                    await registrarLog("BigQuery", `Adicionou um novo script: "${titulo}"`);
                     alert("Query salva na biblioteca com sucesso!");
                 }
                 cancelarEdicaoBQ(); carregarBQAdmin(); 
@@ -962,7 +962,7 @@
             if(!confirm("Atenção: Este script será removido permanentemente da Biblioteca. Confirma?")) return;
             try {
                 await fetch(`${FIREBASE_URL}portal_bigquery/${key}.json`, { method: 'DELETE' });
-                await registrarLogFirebase("BigQuery", "Excluiu um script da biblioteca.");
+                await registrarLog("BigQuery", "Excluiu um script da biblioteca.");
                 carregarBQAdmin();
             } catch(e) { alert("Erro ao excluir."); }
         }

@@ -1,4 +1,4 @@
-const FIREBASE_URL = (window.PortalDB ? window.PortalDB.baseAtiva() : "https://reportes-bdb0a-default-rtdb.firebaseio.com/");
+const FIREBASE_URL = window.PortalDB.baseAtiva(); // 100% planilha Google Sheets
 
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
@@ -378,7 +378,7 @@ async function fetchAllUsers() {
     try {
         const res = await fetch(`${FIREBASE_URL}users.json`);
         return await res.json() || {};
-    } catch(e) { throw new Error("Falha na requisição ao Firebase."); }
+    } catch(e) { throw new Error("Falha na requisição ao banco de dados."); }
 }
 
 async function fazerRegistro() {
@@ -474,7 +474,7 @@ async function fazerLogin() {
                 fecharAuthModal(); verificarUIAutenticacao(); renderizarMenuEsquerdo(); switchTab('todos'); location.reload(); 
             }
         }
-    } catch(e) { alert(`Erro ao validar dados no Firebase.`); } 
+    } catch(e) { alert(`Erro ao validar dados no banco de dados.`); } 
     finally { btn.innerText = "Entrar"; btn.disabled = false; }
 }
 

@@ -8,13 +8,13 @@
 
 ## 1. Diagnóstico da arquitetura atual
 
-O portal hoje é um SPA estático (`index.html` + `menu.js` como "corpo") que carrega páginas de reporte dentro de um `<iframe>`. Todo dado vem do **Firebase Realtime Database** via `fetch` REST (`https://reportes-bdb0a-default-rtdb.firebaseio.com/...`).
+O portal hoje é um SPA estático (`index.html` + `menu.js` como "corpo") que carrega páginas de reporte dentro de um `<iframe>`. Todo dado vem do **Firebase Realtime Database** via `fetch` REST.
 
 ### 1.1 "Cérebro" e "corpo" (o núcleo que todas as páginas usam)
 
-| Nó (Firebase) | Conteúdo | Quem usa |
+| Nó | Conteúdo | Quem usa |
 |---|---|---|
-| `menu_global` | Estrutura do menu (categorias → itens → subitens, com permissões `viewRoles`/`uploadRoles`/`allowedUsers`) | `menu.js`, `admin.html` |
+| `menu_global` | Estrutura do menu (categorias → itens → subitens, com permissões `viewRoles`/`uploadRoles`/`allowedUsers`) | `menu.js`, `admin.html`, `cadastro_celulares.html` |
 | `users` | Usuários (`usuario`, `email`, `senha`, `cargo`, `solicitacao`, `favorito`, `avatar`, `nome`, `sobrenome`, `telefone`) | `menu.js` (login/registro), `index.html`, `admin.html`, `perfil.html` |
 | `logs` | Radar de atividades (auditoria) | `index.html`, `admin.html`, `perfil.html`, todas as páginas |
 | `portal_news` | Mural de notícias | `index.html`, `admin.html`, `perfil.html` |
@@ -22,82 +22,111 @@ O portal hoje é um SPA estático (`index.html` + `menu.js` como "corpo") que ca
 | `portal_bigquery` | Biblioteca de queries | `admin.html`, `perfil.html`, `bigquery.html` |
 | `presence` | Quem está online agora | `index.html` |
 | `user_bookmarks` | Cofre de favoritos (backup `.html`) | `perfil.html` |
-| **`cargos`** 🆕 | Níveis de acesso (view / view2 / editor / admin) | *novo — ver §5* |
-| **`funcoes`** 🆕 | Funções de trabalho (Inventário, Aduana, Tratativas…) | *novo — ver §5* |
+| `cargos` 🆕 | Níveis de acesso (view / view2 / editor / admin) | catálogo da planilha |
+| `funcoes` 🆕 | Funções de trabalho (Inventário, Aduana, Tratativas…) | catálogo da planilha |
 
-### 1.2 Páginas de reporte (convertidas na Fase 2, página a página)
+### 1.2 Páginas de reporte (dados dos gráficos)
 
-Cada página de reporte tem o mesmo padrão: lê o seu "nó" do Firebase, permite **subir CSV/XLSX** (parsing via PapaParse), salva no Firebase e baixa CSV. Os nós são, por exemplo:
+Cada página lê o seu "nó" de dados (que vira uma aba `db_<nó>` na planilha) e grava nele os uploads de CSV/XLSX. Mapa completo:
 
-`equipamentos`, `aderencia`, `devolucao`, `ofensores`, `salvados_aprendizado`, `salvados_encontrados`, `salvados_ia_config`, `salvados_ia_keys`, `emails_tratativas`, `insumos`, `parado_percurso`, `parado_percurso_emails`, `pendencias_cftv_consolidado`, `poka_avarias_diario`, `salvados_recuperados`, e demais.
-
-> 📌 **Ponto-chave:** todas as páginas hoje **mandam CSV/XLSX para o Firebase**. A migração da Fase 2 troca o *destino* desses dados: em vez de "mandar CSV", a página passa a **ler e gravar direto na aba correspondente da planilha**.
+| Página | Nó(s) de dados |
+|---|---|
+| `equipamentos.html` | `equipamentos` |
+| `aderencia.html` | `aderencia`, `aderencia_historico` |
+| `aderencia2.html` | `ofensores` |
+| `aging-devolucao.html` | `devolucao` |
+| `expedir_devolucao.html` | `envios_diarios_v8` |
+| `salvados_procurar/v2/v3.html` | `salvados_aprendizado`, `salvados_encontrados`, `salvados_ia_config`, `salvados_ia_keys` |
+| `salvados_recuperados.html` | `salvados_recuperados` |
+| `emails_tratativas.html` | `emails_tratativas` |
+| `insumos.html`, `contagem_insumos.html` | `insumos` |
+| `parado_percurso.html` | `parado_percurso`, `parado_percurso_emails` |
+| `pendencias_cftv.html` | `pendencias_cftv_consolidado` |
+| `avarias-diario.html` | `poka_avarias_diario` |
+| `poka-avaria.html` | `poka_avarias_consolidado_v3` |
+| `aduana.html` | `poka_aduanas_pacotes`, `poka_aduanas_resumo` |
+| `bpp.html` | `bpp_inventariado_v2` |
+| `pendentes_inventariov2.html` | `inventario_dhs_separado_v1`, `aderencia_historico` |
+| `bigquery.html` | `portal_bigquery` (núcleo) |
 
 ---
 
-## 2. Arquitetura alvo (planilha como banco)
+## 2. Arquitetura alvo (planilha como banco) ✅ IMPLEMENTADA
 
 ```
 ┌──────────────┐   fetch/JSON   ┌───────────────────────────┐   lê/escreve   ┌──────────────────┐
-│  Portal Web   │ ─────────────▶ │ Google Apps Script (API)  │ ─────────────▶ │ Google Sheets     │
-│  (HTML/JS)    │ ◀───────────── │  /exec  (REST compatível) │ ◀───────────── │  (planilha = BD)  │
+│  Portal Web  │ ─────────────▶ │ Google Apps Script (API)  │ ─────────────▶ │ Google Sheets    │
+│  (HTML/JS)   │ ◀───────────── │  /exec  (REST compatível) │ ◀───────────── │  (planilha = BD) │
 └──────────────┘                └───────────────────────────┘                └──────────────────┘
 ```
 
-- **Google Sheets** = banco de dados. Cada "nó" do Firebase vira uma **aba** da planilha.
-- **Google Apps Script** = a API (middleware) que o portal chama. Ela é **compatível com o formato que o portal já usa** (`users.json`, `users/abc.json`, etc.), então a troca é quase transparente para o código.
-- **`js/portal-db.js`** = camada de acesso no front-end ("cérebro centralizado"). Hoje cada arquivo tem o seu `const FIREBASE_URL` duplicado; passamos a ter **um único ponto de configuração**.
+- **Google Sheets** = banco de dados. Cada "nó" vira uma **aba** da planilha.
+- **Google Apps Script** (`apps-script/Code.gs`) = a API. Contrato **idêntico** ao Firebase REST, então nenhuma página precisou mudar de lógica — só a URL base.
+- **`js/portal-db.js`** = ponto único de configuração (URL da API + tradutor de métodos).
+- **Firebase: 0% no portal.** Não existe fallback nem URL do Firebase em nenhum `.html`/`.js` do front. A **única** referência ao Firebase no repositório está dentro do Apps Script (`FIREBASE_URL_ORIGEM`), usada **exclusivamente** pelas funções de importação para copiar os dados já existentes.
 
-### 2.1 Modelo da planilha (abas)
+### 2.1 Formato das abas — planilha de verdade (colunar) ✅
 
-| Aba | Nó equivalente | Conteúdo |
-|---|---|---|
-| `_Config` | — | Parâmetros (versão, mapa nó→aba, flag de migração) |
-| `Usuarios` | `users` | Contas de acesso |
-| `Cargos` 🆕 | `cargos` | Níveis de acesso e permissões |
-| `Funcoes` 🆕 | `funcoes` | Funções/departamentos |
-| `Menu` | `menu_global` | Estrutura completa do menu |
-| `Noticias` | `portal_news` | Mural |
-| `Status` | `portal_status` | Central de status |
-| `BigQuery` | `portal_bigquery` | Biblioteca de queries |
-| `Logs` | `logs` | Auditoria/radar |
-| `Presenca` | `presence` | Usuários online |
-| `Favoritos` | `user_bookmarks` | Cofre de favoritos |
-| `db_equipamentos`, `db_aderencia`, … | nós das páginas | Dados de cada reporte (Fase 2) |
+Cada aba é uma planilha normal, **uma coluna por campo e uma linha por registro** (coluna A sempre `id`, com a chave única do registro):
 
-> Cada aba usa o layout **`[key | json]`** — coluna A com a chave do registro e coluna B com o objeto JSON completo. Isso **preserva exatamente** a estrutura atual ("tudo funcionando exatamente como é") e é genérico o suficiente para qualquer página sem reescrever o backend. As abas `Usuarios`, `Cargos` e `Funcoes` também ganham colunas legíveis para edição humana (ver §5 — melhoria).
+```
+Aba Usuarios:
+  id            | usuario  | nome | sobrenome | email          | telefone | cargo  | solicitacao | favorito        | avatar | senha
+  -Nxyz123...   | ana.s    | Ana  | Silva     | ana@ml.com     | 11999... | editor | aprovado   |Equip.,Aderência | https… | <hash>
+
+Aba Menu (menu achatado em 3 níveis):
+  id                | tipo      | categoria   | pai        | ordem | titulo       | url               | icone | viewRoles              | uploadRoles  | allowedUsers
+  cat0              | categoria |             |            | 0     | Operacional  |                   | 📦    | view,view2,editor,admin|              |
+  cat0/item0        | item      | Operacional | cat0       | 0     | Equipamentos | equipamentos.html | 📋    | view,view2,editor,admin| editor,admin |
+  cat0/item0/sub0   | subitem   | Operacional | cat0/item0 | 0     | Cadastros    | cadastro.html     | ↳     | admin                  | admin        | wesleyclp
+```
+
+Regras do codec (implementadas no `Code.gs`):
+- Valores simples ficam naturais (texto, número, booleano).
+- Valores compostos (objeto/array) ficam como texto JSON na célula e são **convertidos de volta para objeto** automaticamente na leitura da API.
+- Campos novos aparecem como **colunas novas ao final do cabeçalho**, automaticamente.
+- A aba `Menu` é especial: a API achata/remonta o JSON de 3 níveis (categoria → item → subitem) de forma transparente — o portal continua recebendo `menu_global` no formato original.
+- Registros primitivos (ex.: chaves de API em `salvados_ia_keys`) usam a aba `id | valor`.
+
+### 2.2 Importação — parte por parte, em lotes ✅
+
+Importar tudo de uma vez estourava os limites do Google (tempo de execução). Por isso o script agora tem **menu próprio na planilha** (`⚙️ Portal`), com **um item para cada parte**:
+
+- **🧠 Importar — Núcleo do portal:** Usuários, Menu, Cargos, Funções, Notícias, Status, BigQuery, Logs, Presença, Favoritos.
+- **📄 Importar — Páginas (reportes):** equipamentos, aderência, devolução, salvados (4 partes), e-mails, insumos, parado em percurso, CFTV, avarias, aduana, BPP, inventário… (22 itens).
+- **📥 Importar nó personalizado…** para qualquer nó não listado.
+- **🔄 Continuar importações pendentes:** se uma parte for grande demais e o tempo do Google esgotar, o script para num ponto seguro e **continua de onde parou** na próxima execução (cursor salvo em `PropertiesService`).
+
+Como funciona por dentro: leitura do Firebase **paginada** (`orderBy="$key"`, lotes de 200), gravação na planilha **em bateladas** de 500 linhas, guarda de tempo de 4,5 min por execução. Não existe opção "importar tudo" de propósito.
 
 ---
 
 ## 3. Fases do projeto
 
-### ✅ FASE 0 — Preparação (esta PR já inclui os artefatos)
+### ✅ FASE 0 — Preparação
 - [x] Documento deste plano.
-- [x] Backend `apps-script/Code.gs` (API REST sobre a planilha + `setup()` que cria as abas + `importarDoFirebase()` para migrar dados).
+- [x] Backend `apps-script/Code.gs` (API REST sobre a planilha + `setupPortal()` que cria as abas).
 - [x] Camada `js/portal-db.js` (configuração única + tradutor de métodos).
 - [x] Páginas movidas para `pages/` com caminhos corrigidos.
 
-### ✅ FASE 1 — Cérebro e corpo principal (esta PR)
-Converte **o núcleo** (o que a página admin e o menu usam) para a planilha:
+### ✅ FASE 1 — Cérebro e corpo principal
+- [x] `menu.js`, `index.html`, `admin.html`, `perfil.html` via `portal-db.js`.
+- [x] `pages/` — páginas movidas (caminhos corrigidos).
 
-- [x] `menu.js` — menu, login, registro, favoritos, avatar → via `portal-db.js`.
-- [x] `index.html` — radar, mural, equipe, presença, notificações → via `portal-db.js`.
-- [x] `admin.html` — gestão de menus, usuários, notícias, status e BigQuery → via `portal-db.js`.
-- [x] `perfil.html` — dados, senha, cofre, radar, publicações → via `portal-db.js`.
-- [x] `js/portal-db.js` — ponto único de configuração da URL da API.
-- [x] `pages/` — todas as páginas movidas (caminhos `style.css`, redirecionamento anti-acesso-direto e links corrigidos).
-
-> **Comportamento:** o portal continua funcionando **idêntico**. A única diferença é *onde* os dados moram (planilha em vez de Firebase). Enquanto a URL da API não for configurada, cai automaticamente no Firebase (fallback) — zero downtime.
+### ✅ FASE 1.5 — Planilha colunar + adeus Firebase + importador por partes (esta PR)
+- [x] **Formato colunar real** em todas as abas (acabou o `key | json` numa linha só). Ex.: `Usuarios` = `id | usuario | nome | sobrenome | email | telefone | cargo | …`.
+- [x] **Codec do Menu**: aba `Menu` editável em colunas (`tipo`, `categoria`, `pai`, `ordem`, `titulo`, `url`, `icone`, permissões…), com remontagem transparente para o JSON que o portal espera.
+- [x] **Menu de importação na planilha** (`⚙️ Portal`): cada parte importada separadamente, em lotes, com retomada automática se o tempo esgotar.
+- [x] **Portal 100% planilha**: removida toda e qualquer conexão Firebase do front-end (`portal-db.js` sem fallback; 21 páginas de reporte apontadas para a camada única; `js/firebase.config.js` removido; textos da UI atualizados).
+- [x] `salvados_procurarv3.html`: suporte no backend a `?orderBy="campo"&limitToLast=N` (usado pela página).
 
 ### 🔜 FASE 2 — Página a página (1 PR por página)
-Para **cada** página de reporte, a mudança é pequena e padronizada:
+A base (a "torneira" dos dados) já está ligada em todas as páginas. Nesta fase, refinamos cada uma:
+1. Validar leitura/gravação da página na sua aba `db_<nó>` (gráficos alimentados direto da planilha).
+2. Opcional: substituir "subir CSV → regravar nó inteiro" por "ler/gravar direto na aba" com escrita incremental.
+3. Testar upload, backup diário e exportação da página.
 
-1. Incluir `<script src="../js/portal-db.js"></script>`.
-2. Trocar o `const FIREBASE_URL = "…firebaseio…"` por `const FIREBASE_URL = PortalDB.baseAtiva();` (1 linha).
-3. Opcional: substituir o "subir CSV → salvar no Firebase" por "ler/gravar direto na aba da planilha" (mantendo o upload de CSV como **opcional**).
-4. Testar leitura, upload, backup diário e exportação.
-
-**Ordem sugerida** (começar pelas mais críticas): `equipamentos.html` → `salvados_procurarv3.html` → `parado_percurso.html` → `pendencias_cftv.html` → `avarias-diario.html` → … até cobrir todas.
+**Ordem sugerida:** `equipamentos.html` → `salvados_procurarv3.html` → `parado_percurso.html` → `pendencias_cftv.html` → `avarias-diario.html` → … até cobrir todas.
 
 ### 🔜 FASE 3 — Melhorias (opcionais, escolha do usuário)
 Ver §5.
@@ -110,48 +139,52 @@ Ver §5.
 1. Crie um Google Sheets novo (ex.: "Portal — Banco de Dados").
 2. Menu **Extensões → Apps Script**.
 3. Cole o conteúdo de `apps-script/Code.gs` e **Salve**.
-4. Execute a função `setupPortal()` **uma vez** (autorize). Isso cria as abas e dados de exemplo.
-5. Se quiser migrar o que já existe no Firebase, edite `FIREBASE_URL_ORIGEM` e execute `importarDoFirebase()`.
-6. **Implantar → Nova implantação → Aplicativo da web** → executar como **Eu** → acesso **Qualquer pessoa**.
-7. Copie a URL `/exec` gerada.
+4. Volte à planilha e recarregue: aparece o menu **⚙️ Portal**.
+5. Clique **⚙️ Portal → 1️⃣ Preparar planilha** (autorize o script na 1ª vez). Isso cria todas as abas colunares.
+6. Importe os dados existentes **parte por parte**:
+   - **⚙️ Portal → 🧠 Importar — Núcleo do portal → 🔑 Usuários**, depois **🧭 Menu**, **📜 Logs**, etc.
+   - Depois **📄 Importar — Páginas (reportes)**, um item por página, conforme a Fase 2 for avançando.
+   - Se uma importação parar no meio (ex.: muitos registros), rode o **mesmo item** de novo — ele continua de onde parou.
+7. **Implantar → Nova implantação → Aplicativo da web** → executar como **Eu** → acesso **Qualquer pessoa**.
+8. Copie a URL `/exec` gerada.
 
 ### 4.2 Ligar o portal
 1. Abra `js/portal-db.js`.
 2. Troque `PortalDB.URL` pela sua URL `/exec` copiada acima.
-3. Pronto. (Onde não houver URL, o portal usa o Firebase automaticamente — dá para migrar em paralelo.)
+3. Pronto — o portal inteiro já nasce apontado para a planilha (não há mais Firebase para cair).
 
 ---
 
 ## 5. 💡 Ideias de melhoria (avaliar quais usar)
 
-1. **Edição colunar das abas** — além da coluna `json`, gerar colunas legíveis (ex.: `Usuarios` com `usuario | email | cargo | status`), para editar usuários direto na planilha sem tocar em JSON. *(recomendado para `Usuarios`, `Cargos`, `Funcoes` e `Menu`)*
-2. **Cargos e Funções como catálogos** — hoje os cargos são strings fixas (`view`, `view2`, `editor`, `admin`). Migrar para tabelas `Cargos` (nível de acesso) e `Funcoes` (área/função), permitindo criar novos cargos/funções sem mexer em código. Os campos `viewRoles`/`uploadRoles` passam a referenciar os catálogos.
+1. ~~**Edição colunar das abas**~~ ✅ **Feito** (todas as abas são colunares; campos novos viram colunas automaticamente).
+2. **Cargos e Funções como catálogos** — hoje os cargos são strings fixas (`view`, `view2`, `editor`, `admin`). Migrar para as abas `Cargos`/`Funcoes`, criadas no setup, permitindo novos cargos sem mexer em código.
 3. **Autenticação no Apps Script** — validar um token/senha-mestra por requisição para não expor a API a terceiros.
 4. **Auditoria de quem editou** — gravar `ultimaEdicao` (usuário + data) em cada registro alterado.
-5. **Histórico/versionamento** — aba `_Historico` com cópia das versões anteriores (desfazer alterações).
-6. **Cotas e throttling** — limitar tamanho de payload e frequência (Apps Script tem cotas; páginas com muitos dados devem paginar).
-7. **Menu editável por planilha** — representação tabular do menu (linha = item, colunas = categoria/nível/roles) em vez de JSON.
-8. **Remover dependências órfãs** — `js/firebase.config.js`, `js/export-csv.js`, `js/mobile.js` e `mobile.css` existem mas não estão sendo usados por nenhuma página; consolidar em `portal-db.js` ou remover.
+5. **Histórico/versionamento** — aba `_Historico` com cópia de versões anteriores (desfazer alterações).
+6. **Cotas e throttling** — limitar tamanho de payload e frequência (páginas com muitos dados devem paginar).
+7. ~~**Menu editável por planilha**~~ ✅ **Feito** (aba `Menu` em formato tabular de 3 níveis).
+8. ~~**Remover dependências órfãs**~~ ✅ **Parcial** (`js/firebase.config.js` removido; `js/export-csv.js`, `js/mobile.js` e `mobile.css` seguem disponíveis, mas nenhuma página os usa).
 
 ---
 
 ## 6. Segurança (mantida como hoje)
 
-- Senhas **nunca** em texto puro: hash **SHA-256** no navegador antes de gravar (igual ao comportamento atual).
+- Senhas **nunca** em texto puro: hash **SHA-256** no navegador antes de gravar.
 - O cargo `admin` continua sendo o único que vê o `admin.html`.
 - Permissões por página continuam vindo do menu (`viewRoles`, `uploadRoles`, `allowedUsers`).
 
 ---
 
-## 7. Critérios de aceite (Fase 1)
+## 7. Critérios de aceite (Fase 1.5 — esta PR)
 
-- [ ] Portal abre, login/registro funcionam.
-- [ ] Menu carrega e respeita cargos/permissões.
-- [ ] Painel admin (menus, usuários, notícias, status, BigQuery) funciona gravando na planilha.
-- [ ] Perfil (dados, senha, cofre, radar, publicações) funciona.
-- [ ] Todas as páginas abrem dentro de `pages/` (sem 404 de CSS/redirecionamento).
-- [ ] Sem regressão visual ou de fluxo em relação ao estado atual.
+- [x] Nenhuma URL/strings Firebase no front-end (somente `FIREBASE_URL_ORIGEM` dentro do Apps Script, exclusiva da importação).
+- [x] Backend grava cada aba em formato colunar (1 linha = 1 registro, 1 coluna = 1 campo).
+- [x] Codec de `menu_global` ida-e-volta testado (aba `Menu` ⇄ JSON de 3 níveis).
+- [x] Menu da planilha com importação parte por parte + continuação automática.
+- [ ] Portal abre, login/registro funcionam (após implantar o Apps Script e configurar `PortalDB.URL`).
+- [ ] Painel admin e perfil funcionam gravando na planilha.
 
 ## 8. Rollback
 
-Como a camada `portal-db.js` tem **fallback automático para o Firebase**, reverter é só apagar a URL em `js/portal-db.js` (ou trocar `MODE` para `firebase`). Nenhuma página quebra.
+O front não tem mais fallback para Firebase. Para reverter, restore a versão anterior do repositório (o Firebase de origem **não é alterado** pelas importações — elas só leem). A planilha pode ser reconstruída a qualquer momento refazendo o setup + importações.
