@@ -1,5 +1,8 @@
 const FIREBASE_URL = window.PortalDB.baseAtiva(); // 100% planilha Google Sheets
 
+// Página exibida por padrão ao entrar no portal (o index é só a casca/shell).
+const PAGINA_INICIAL = 'pages/home.html';
+
 let menuData = { categorias: [] };
 let currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
 
@@ -137,7 +140,7 @@ async function carregarMenuGlobal() {
         <div class="top-bar-wrapper">
             <div class="nav-left">
                 <button class="btn-hamb" onclick="toggleMenu()" title="Menu"><span></span><span></span><span></span></button>
-                <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo" onclick="window.location.href='index.html'">
+                <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo" title="Voltar para a Home" onclick="irParaHome()">
             </div>
             <div class="nav-right">
                 <button class="btn-minimal" onclick="abrirStatusModal()" title="Status dos Reportes">📊</button>
@@ -336,23 +339,61 @@ function normalizarUrlPagina(url) {
     return url;
 }
 
+// O shell é o index.html: é ele quem tem o iframe #app-frame.
+function estaNoShell() { return !!document.getElementById('app-frame'); }
+
+function fecharSidebar() {
+    const sb = document.querySelector('.sidebar-wrapper'); if (sb) sb.classList.remove('open');
+    const ov = document.querySelector('.sidebar-overlay'); if (ov) ov.classList.remove('active');
+}
+
+// Carrega uma página dentro do iframe do shell (sem recarregar o portal inteiro)
+function carregarNoFrame(url, push) {
+    const frame = document.getElementById('app-frame');
+    if (!frame) return false;
+    frame.style.display = 'block';
+    frame.src = url;
+    if (push) {
+        const query = (url === PAGINA_INICIAL) ? window.location.pathname : `?page=${url}`;
+        window.history.pushState({ path: url }, '', query);
+    }
+    return true;
+}
+
 function abrirPagina(url, titulo) {
     url = normalizarUrlPagina(url);
     if(!url || url === '#') return;
-    const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
-    if (isIndex) {
-        const homeView = document.getElementById('home-view');
-        if (homeView) homeView.style.display = 'none';
-        const frame = document.getElementById('app-frame');
-        if (frame) { frame.style.display = 'block'; frame.src = url; window.history.pushState({ path: url }, '', `?page=${url}`); }
-        document.querySelector('.sidebar-wrapper').classList.remove('open'); document.querySelector('.sidebar-overlay').classList.remove('active');
-    } else { window.location.href = `index.html?page=${url}`; }
+    if (estaNoShell()) {
+        carregarNoFrame(url, true);
+        fecharSidebar();
+    } else {
+        // Estamos dentro de um iframe/página solta: pede para o shell trocar a página
+        if (window.parent && window.parent !== window && typeof window.parent.abrirPagina === 'function') {
+            window.parent.abrirPagina(url, titulo);
+        } else {
+            window.location.href = `index.html?page=${url}`;
+        }
+    }
+}
+
+// Volta para a home sem recarregar o portal inteiro
+function irParaHome() {
+    if (estaNoShell()) {
+        carregarNoFrame(PAGINA_INICIAL, true);
+        fecharSidebar();
+    } else if (window.parent && window.parent !== window && typeof window.parent.irParaHome === 'function') {
+        window.parent.irParaHome();
+    } else {
+        window.location.href = 'index.html';
+    }
 }
 
 window.addEventListener('popstate', (event) => {
+    if (!estaNoShell()) return;
     const urlParams = new URLSearchParams(window.location.search);
     const pageToLoad = urlParams.get('page');
-    if (pageToLoad) { const frame = document.getElementById('app-frame'); if (frame) frame.src = pageToLoad; } else { window.location.reload(); }
+    // Sem ?page= => voltou para a home. Nunca recarregamos a página inteira.
+    carregarNoFrame(pageToLoad || PAGINA_INICIAL, false);
 });
 
 function renderizarMenuEsquerdo() {
@@ -471,8 +512,12 @@ async function fazerRegistro() {
             let requerAprovacao = true;
             try {
                 const resC = await fetch(`${FIREBASE_URL}config/requer_aprovacao.json?nc=1`);
-                const cfgVal = await resC.json();
-                requerAprovacao = (cfgVal === false) ? false : true;
+                let cfgVal = await resC.json();
+                if (cfgVal && typeof cfgVal === 'object') cfgVal = cfgVal.valor;
+                // A planilha devolve texto ("false"/"0"), não booleano.
+                const negativos = ['false', '0', 'nao', 'n\u00e3o', 'off', 'no'];
+                requerAprovacao = !(cfgVal === false ||
+                    negativos.indexOf(String(cfgVal).trim().toLowerCase()) !== -1);
             } catch(e) { requerAprovacao = true; }
 
             const hashedPass = await hashPassword(p1);
@@ -596,7 +641,9 @@ async function toggleFavorito(itemTitle, iconElement, reloadFavs = false) {
 window.fazerLogout = function() {
     if(confirm("Tem certeza que deseja sair do sistema?")) {
         currentUser = null; localStorage.removeItem('loggedUser'); 
-        fecharConfigModal(); verificarUIAutenticacao(); renderizarMenuEsquerdo(); switchTab('todos'); window.location.href = 'index.html';
+        fecharConfigModal(); verificarUIAutenticacao(); renderizarMenuEsquerdo(); switchTab('todos');
+        if (estaNoShell()) { window.history.replaceState({}, '', window.location.pathname); carregarNoFrame(PAGINA_INICIAL, false); }
+        else { window.location.href = 'index.html'; }
     }
 }
 
@@ -624,11 +671,17 @@ document.addEventListener('keydown', function(e) {
 
 document.addEventListener("DOMContentLoaded", () => { 
     if (localStorage.getItem('themePreference') === 'dark') document.body.setAttribute('data-theme', 'dark'); 
-    carregarMenuGlobal().then(() => {
-        const isIndex = window.location.pathname.endsWith('index.html') || window.location.pathname === '/';
-        if (isIndex) {
-            const urlParams = new URLSearchParams(window.location.search); const pageToLoad = urlParams.get('page');
-            if (pageToLoad) { setTimeout(() => { abrirPagina(pageToLoad, 'Portal'); }, 100); }
-        }
-    });
+
+    // O shell carrega IMEDIATAMENTE a página inicial (ou a página do ?page=),
+    // sem esperar o menu — assim a home aparece rápido.
+    if (estaNoShell()) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const pageToLoad = normalizarUrlPagina(urlParams.get('page')) || PAGINA_INICIAL;
+        carregarNoFrame(pageToLoad, false);
+    }
+
+    // Checagem global de versão do app (limpa cache preservando login)
+    try { if (window.PortalDB && window.PortalDB.checkAppVersionSilently) window.PortalDB.checkAppVersionSilently(); } catch(e) {}
+
+    carregarMenuGlobal();
 });

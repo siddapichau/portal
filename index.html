@@ -4,670 +4,81 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Portal de Reportes - Mercado Livre</title>
-    
+
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
+
+    <!-- ===== CSS GLOBAL DO PORTAL ===== -->
     <link rel="stylesheet" href="style.css">
 
     <style>
+        /* =========================================================
+           INDEX = SHELL (casca) DO PORTAL
+           ---------------------------------------------------------
+           O index NÃO tem conteúdo próprio. Ele carrega apenas:
+             1) o CSS global
+             2) os .js do sistema (portal-db.js + menu.js + helpers)
+             3) o iframe #app-frame onde TODAS as páginas abrem
+           A página inicial padrão é pages/home.html (PAGINA_INICIAL).
+           ========================================================= */
         :root { --bg-gradient: radial-gradient(circle at top right, #1e3c72 0%, #0f172a 40%, #050505 100%); }
         [data-theme="light"] { --bg-gradient: #ffffff; }
-        
+
         body { background: var(--bg-gradient); background-attachment: fixed; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-y: hidden; }
-        
-        #main-content { margin-top: 80px; width: 100%; max-width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0 15px; flex: 1; transition: 0.3s; }
 
-        #home-view { width: 100%; max-width: 1500px; display: grid; grid-template-columns: 320px 1fr 300px; gap: 20px; height: calc(100vh - 120px); margin-bottom: 20px; }
+        #main-content { margin-top: 70px; width: 100%; max-width: 100%; display: flex; flex-direction: column; align-items: center; padding: 0; flex: 1; transition: 0.3s; }
 
-        .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden; }
-        
-        .panel-header { background: rgba(52, 131, 250, 0.05); padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; }
-        .panel-header h2 { font-size: 1rem; color: var(--text-title); display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 900;}
-        
-        .panel-content { flex: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column;}
-        .panel-content::-webkit-scrollbar { width: 6px; }
-        .panel-content::-webkit-scrollbar-track { background: transparent; }
-        .panel-content::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 4px; }
-        
-        .muted-msg { text-align: center; padding: 40px 20px; color: var(--text-muted); font-weight: 600; }
-        .error-msg { text-align: center; padding: 40px 20px; color: #FF5252; font-weight: 600; }
+        #app-frame { display: block; width: 100%; height: calc(100vh - 70px); border: none; background: transparent; }
 
-        /* --- COLUNA 1: LOGS --- */
-        .live-indicator { width: 8px; height: 8px; background-color: var(--accent-green); border-radius: 50%; box-shadow: 0 0 8px var(--accent-green); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
-
-        .feed-list { list-style: none; padding: 0; margin: 0; }
-        .feed-item { padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; transition: background 0.2s; }
-        .feed-item:hover { background: rgba(52, 131, 250, 0.05); }
-        .feed-item:last-child { border-bottom: none; }
-        
-        .feed-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; overflow: hidden; background: var(--bg-body); border: 1px solid var(--border-card);}
-        .feed-icon img { width: 100%; height: 100%; object-fit: cover; }
-        .feed-details { display: flex; flex-direction: column; gap: 3px; margin-top: -2px;}
-        .feed-module { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .feed-action { font-size: 0.85rem; color: var(--text-main); font-weight: 600; line-height: 1.3;}
-        .feed-meta { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 5px; margin-top: 4px;}
-        .feed-meta strong { color: var(--accent-blue); font-weight: 800; }
-
-        /* --- COLUNA 2: NOTÍCIAS --- */
-        .news-header-banner { background: #FFF159; color: #2D3277; padding: 10px; text-align: center; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: center; align-items: center; gap: 8px;}
-        .post-card { padding: 20px; border-bottom: 4px solid var(--border-card); display: flex; flex-direction: column; gap: 12px; position: relative;}
-        .post-card:last-child { border-bottom: none; }
-        .post-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .post-author-box { display: flex; align-items: center; gap: 10px; }
-        .author-avatar { width: 40px; height: 40px; background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; overflow: hidden;}
-        .author-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .author-info { display: flex; flex-direction: column; }
-        .author-name { font-weight: 900; color: var(--text-title); font-size: 0.95rem; }
-        .post-date { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
-        .post-tag { background: rgba(52, 131, 250, 0.15); color: var(--accent-blue); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; border: 1px solid rgba(52, 131, 250, 0.3);}
-        
-        .post-title { font-size: 1.1rem; font-weight: 900; color: var(--text-title); line-height: 1.3;}
-        .post-body { font-size: 0.9rem; color: var(--text-main); line-height: 1.5; white-space: pre-wrap; word-break: break-word;}
-        .post-body img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
-        .post-body a { color: var(--accent-blue); font-weight: bold; text-decoration: underline; }
-        
-        .post-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 15px; border-top: 1px solid var(--border-card); }
-        .ml-signature { font-size: 0.75rem; color: var(--text-muted); font-weight: 800; display: flex; align-items: center; gap: 6px; font-style: italic;}
-        .ml-signature img { height: 14px; opacity: 0.7;}
-        
-        .btn-like { background: transparent; border: 1px solid var(--border-card); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.85rem; transition: 0.3s; position: relative; overflow: hidden;}
-        .btn-like:hover { background: rgba(52, 131, 250, 0.1); border-color: var(--accent-blue); color: var(--accent-blue); }
-        .btn-like.liked { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
-        
-        .like-anim-text { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font-weight: 900; color: var(--accent-blue); font-size: 0.8rem; opacity: 0; pointer-events: none; white-space: nowrap; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10;}
-        @keyframes flyUp { 0% { bottom: 50%; opacity: 0; transform: translate(-50%, 0) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -10px) scale(1.2); } 100% { bottom: 200%; opacity: 0; transform: translate(-50%, -40px) scale(1); } }
-        .like-anim-text.animate { animation: flyUp 0.8s ease-out forwards; }
-
-        /* --- COLUNA 3: USUÁRIOS E TAGS --- */
-        .user-group-title { background: rgba(0,0,0,0.2); padding: 8px 15px; font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-card); border-top: 1px solid var(--border-card);}
-        [data-theme="light"] .user-group-title { background: rgba(0,0,0,0.03); }
-        .user-group-title:first-child { border-top: none; }
-        
-        .user-list { list-style: none; padding: 0; margin: 0; }
-        .user-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-card); }
-        .user-item:last-child { border-bottom: none; }
-        .user-avatar { width: 32px; height: 32px; background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; overflow: hidden; }
-        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .user-info { display: flex; flex-direction: column; gap: 2px;}
-        .user-name { font-weight: 800; font-size: 0.85rem; color: var(--text-title); display: flex; align-items: center; gap: 6px;}
-        .user-role { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;}
-        
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block;}
-        .dot-online { background-color: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
-        .dot-offline { background-color: var(--text-muted); }
-        .dot-new { background-color: var(--accent-warn); }
-
-        .tag-btn { background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap;}
-        .tag-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
-        .tag-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
-
-        #app-frame { display: none; width: 100%; height: calc(100vh - 90px); border: none; border-radius: 12px; background: var(--bg-body); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-
-        /* ==========================================
-           RESPONSIVIDADE PARA MOBILE
-           ========================================== */
-        @media (max-width: 1100px) { 
-            #home-view { grid-template-columns: 1fr 300px; height: auto; } 
-            .col-news { grid-column: 1 / -1; order: -1; max-height: 600px;} 
+        /* Tela de carregamento do shell (aparece só até a home responder) */
+        #shell-loader {
+            position: fixed; inset: 70px 0 0 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 14px; z-index: 5;
+            background: var(--bg-gradient); transition: opacity .35s ease;
         }
-        @media (max-width: 768px) { 
-            #home-view { 
-                grid-template-columns: 1fr; 
-                height: auto;
-                gap: 15px;
-            } 
-            .col-news, .panel-box { max-height: 500px; }
-            .panel-box { max-height: 400px; }
-            #main-content { padding: 0 10px; margin-top: 70px; }
-            #app-frame { height: calc(100vh - 80px); }
-            .post-card { padding: 15px; }
+        #shell-loader.hidden { opacity: 0; pointer-events: none; }
+        .shell-spinner {
+            width: 42px; height: 42px; border-radius: 50%;
+            border: 4px solid rgba(52,131,250,.2); border-top-color: var(--accent-blue);
+            animation: shellSpin .8s linear infinite;
         }
-        @media (max-width: 480px) {
-            .feed-item { padding: 12px 15px; grid-template-columns: 30px 1fr; gap: 8px; }
-            .feed-icon { width: 30px; height: 30px; font-size: 0.9rem; }
-            .feed-action { font-size: 0.75rem; }
-            .post-title { font-size: 0.95rem; }
-            .post-body { font-size: 0.8rem; }
-            .panel-header { padding: 10px 15px; }
-            .panel-header h2 { font-size: 0.85rem; }
-            .user-item { padding: 10px 12px; }
-            .tag-btn { font-size: 0.65rem; padding: 4px 8px; }
+        @keyframes shellSpin { to { transform: rotate(360deg); } }
+        .shell-loader-txt { font-size: .85rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        @media (max-width: 768px) {
+            #main-content { margin-top: 60px; }
+            #app-frame { height: calc(100vh - 60px); }
+            #shell-loader { inset: 60px 0 0 0; }
         }
     </style>
 </head>
 <body data-theme="light">
 
-    <!-- Camada única de acesso a dados (100% planilha Google Sheets) -->
+    <!-- ===== 1. CAMADA DE DADOS (planilha Google Sheets) + versão/cache global ===== -->
     <script src="js/portal-db.js"></script>
-    <!-- Carrega o menu principal do sistema -->
+
+    <!-- ===== 2. MENU GLOBAL / NAVEGAÇÃO / LOGIN (depende do portal-db.js) ===== -->
     <script src="menu.js"></script>
 
+    <!-- ===== 3. CONTEÚDO: todas as páginas (inclusive a home) abrem aqui ===== -->
     <div id="main-content">
-        <div id="home-view">
-            <!-- COLUNA 1: LOGS -->
-            <div class="panel-box col-logs">
-                <div class="panel-header"><h2><div class="live-indicator" title="Monitorando ao vivo"></div> Radar de Atividades</h2></div>
-                <div class="panel-content"><ul class="feed-list" id="feed-list"><div class="muted-msg">Conectando à Central...</div></ul></div>
-            </div>
+        <iframe id="app-frame" src="" title="Conteúdo do Portal"></iframe>
+    </div>
 
-            <!-- COLUNA 2: NOTÍCIAS -->
-            <div class="panel-box col-news">
-                <h1 style="text-align: center; font-size: 1.6rem; font-weight: 900; color: var(--text-title); margin: 15px 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Portal de Controles Internos</h1>
-                <div class="news-header-banner">📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS</div>
-                
-                <div class="panel-content" id="news-feed-container"><div class="muted-msg">Carregando mural...</div></div>
-            </div>
-
-            <!-- COLUNA 3: USUÁRIOS E TAGS -->
-            <div class="panel-box col-users">
-                <div class="panel-header"><h2>👥 Equipe no Portal</h2></div>
-                <div class="panel-content" id="users-feed-container" style="flex: 1 1 auto;">
-                    <div class="muted-msg">Mapeando presenças...</div>
-                </div>
-                
-                <div class="panel-header" style="border-top: 1px solid var(--border-card);"><h2>🏷️ Explorar Temas</h2></div>
-                <div class="panel-content" style="flex: 0 0 auto; padding: 15px; overflow-y: visible;">
-                    <div id="tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;"></div>
-                    <div style="background: rgba(52, 131, 250, 0.1); border: 1px solid rgba(52, 131, 250, 0.2); border-radius: 8px; padding: 15px; text-align: center;">
-                        <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 900; text-transform: uppercase; margin-bottom: 5px;">Reconhecimento da Equipe</div>
-                        <div style="font-size: 1.5rem; font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                            🚀 <span id="total-likes-counter">0</span> Curtidas
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <iframe id="app-frame" src=""></iframe>
+    <div id="shell-loader">
+        <div class="shell-spinner"></div>
+        <div class="shell-loader-txt">Carregando portal…</div>
     </div>
 
     <script>
-        const URL_BD_INDEX = window.PortalDB.baseAtiva(); // 100% planilha
-        
-        let CURRENT_LOGGED_USER = null;
-        try { CURRENT_LOGGED_USER = JSON.parse(localStorage.getItem('loggedUser')); } catch(e) {}
-        let currentUserStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.usuario) ? CURRENT_LOGGED_USER.usuario : 'Você';
-        let currentRoleStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.cargo) ? CURRENT_LOGGED_USER.cargo : 'Acesso Local';
-
-        let globalNewsList = [];
-        let currentNewsFilter = 'Todas';
-        let userAvatarMap = {};
-        let cargosMap = {}; // catálogo dinâmico de cargos (reconhece cargos novos)
-
-        // --- Variáveis para controle de Notificações ---
-        let lastNewsTimestamp = localStorage.getItem('lastNewsTime') ? parseInt(localStorage.getItem('lastNewsTime')) : Date.now();
-        let lastStatusTimestamp = localStorage.getItem('lastStatusTime') ? parseInt(localStorage.getItem('lastStatusTime')) : Date.now();
-
-        // Pede a permissão de notificação para o usuário
-        function pedirPermissaoNotificacao() {
-            if ("Notification" in window) {
-                if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-                    Notification.requestPermission();
-                }
-            }
-        }
-
-        // Função que escuta ativamente o banco de dados (planilha) a cada 30 segundos
-        async function checkNotifications() {
-            if (!("Notification" in window) || Notification.permission !== "granted") return;
-            
-            try {
-                // Checa Notícias
-                const resNews = await fetch(`${URL_BD_INDEX}portal_news.json?_=${Date.now()}`);
-                const newsData = await resNews.json();
-                if(newsData) {
-                    let latestTime = lastNewsTimestamp;
-                    let newestNews = null;
-                    Object.values(newsData).forEach(n => {
-                        if(n.data > latestTime) {
-                            latestTime = n.data;
-                            newestNews = n;
-                        }
-                    });
-                    if(newestNews) {
-                        new Notification("📢 Nova Publicação no Portal!", {
-                            body: newestNews.titulo,
-                            icon: "https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png"
-                        });
-                        lastNewsTimestamp = latestTime;
-                        localStorage.setItem('lastNewsTime', lastNewsTimestamp);
-                    }
-                }
-
-                // Checa Status
-                const resStatus = await fetch(`${URL_BD_INDEX}portal_status.json?_=${Date.now()}`);
-                const statusData = await resStatus.json();
-                if(statusData) {
-                    let latestStatusTime = lastStatusTimestamp;
-                    let newestStatus = null;
-                    Object.values(statusData).forEach(s => {
-                        if(s.lastUpdate > latestStatusTime) {
-                            latestStatusTime = s.lastUpdate;
-                            newestStatus = s;
-                        }
-                    });
-                    if (newestStatus) {
-                        new Notification(`📊 Status Atualizado: ${newestStatus.nome}`, {
-                            body: `Novo Estado: ${newestStatus.estado.toUpperCase()} - ${newestStatus.descricao}`,
-                            icon: "https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png"
-                        });
-                        lastStatusTimestamp = latestStatusTime;
-                        localStorage.setItem('lastStatusTime', lastStatusTimestamp);
-                    }
-                }
-            } catch(e) { console.log("Aviso: Notificação não enviada.", e); }
-        }
-
-        // Recuperador universal de Avatares
-        function getAvatarHTML(username) {
-            let u = username ? username.toLowerCase() : '';
-            let url = userAvatarMap[u];
-            if (url) return `<img src="${url}">`;
-            let inicial = u ? u.charAt(0).toUpperCase() : '👤';
-            return `${inicial}`;
-        }
-
-        async function prepararMapaDeAvatares() {
-            try {
-                const res = await fetch(`${URL_BD_INDEX}users.json?_=${Date.now()}`);
-                const data = await res.json();
-                if(data) {
-                    Object.values(data).forEach(u => {
-                        if(u.usuario) userAvatarMap[u.usuario.toLowerCase()] = u.avatar || null;
-                    });
-                }
-            } catch(e) { console.log("Aviso: Mapa de avatares não carregou."); }
-        }
-
-        // Só mostra no radar as atividades de ATUALIZAÇÃO DE REPORTES.
-        // Esconde logs de dados pessoais/administrativos (login, cargo, senha, permissão…).
-        function isReportLog(log) {
-            if(!log || !log.acao) return false;
-            const m = String(log.modulo || '').toLowerCase();
-            const a = String(log.acao || '').toLowerCase();
-            const modsPessoais = ['painel admin','sistema','auth','login','registro','perfil','presença','conta'];
-            for(let i = 0; i < modsPessoais.length; i++) if(m.includes(modsPessoais[i])) return false;
-            const acoesPessoais = ['logou','log in','login','registrou','registro','alterou permiss','cargo','senha','avatar','favorito','bloqueou','aprovou','criou conta','migrou','presença'];
-            for(let j = 0; j < acoesPessoais.length; j++) if(a.includes(acoesPessoais[j])) return false;
-            return true;
-        }
-
-        async function carregarFeedAtualizacoes() {
-            const listEl = document.getElementById('feed-list');
-            try {
-                // Pede só os 40 mais recentes (menos bytes no radar)
-                const res = await fetch(`${URL_BD_INDEX}logs.json?orderBy="timestamp"&limitToLast=40`); 
-                const data = await res.json();
-                
-                if(!data) { listEl.innerHTML = '<div class="muted-msg">Nenhuma atividade recente.</div>'; return; }
-                
-                let logs = [];
-                if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
-                
-                // 🔍 Radar só com atualizações de reportes (nada de dados pessoais)
-                logs = logs.filter(isReportLog);
-                logs.sort((a, b) => b.timestamp - a.timestamp); logs = logs.slice(0, 15); 
-                listEl.innerHTML = '';
-                
-                logs.forEach(log => {
-                    const dataFormatada = new Date(log.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                    let bgStyle = 'rgba(52, 131, 250, 0.1)'; let colorStyle = 'var(--accent-blue)';
-                    const actionTxt = String(log.acao || '').toLowerCase();
-                    
-                    if (actionTxt.includes('adicionou') || actionTxt.includes('criou') || actionTxt.includes('publicou')) { bgStyle = 'rgba(0, 166, 80, 0.1)'; colorStyle = 'var(--accent-green)'; } 
-                    else if (actionTxt.includes('removeu') || actionTxt.includes('excluiu') || actionTxt.includes('apagou')) { bgStyle = 'rgba(255, 82, 82, 0.1)'; colorStyle = 'var(--accent-red)'; }
-                    else if (actionTxt.includes('sincronizou')) { bgStyle = 'rgba(255, 176, 0, 0.1)'; colorStyle = 'var(--accent-warn)'; }
-
-                    let uName = log.usuario || 'Desconhecido';
-                    
-                    listEl.innerHTML += `
-                        <li class="feed-item">
-                            <div class="feed-icon" style="background: ${bgStyle}; color: ${colorStyle}; border-color: ${colorStyle};">
-                                ${getAvatarHTML(uName)}
-                            </div>
-                            <div class="feed-details">
-                                <span class="feed-module">${log.modulo || 'Sistema'}</span>
-                                <span class="feed-action">${log.acao}</span>
-                                <span class="feed-meta">Por <strong>${uName}</strong> • ${dataFormatada}</span>
-                            </div>
-                        </li>
-                    `;
-                });
-            } catch (e) { 
-                if(listEl.innerHTML.includes('Conectando')) listEl.innerHTML = '<div class="error-msg">Erro ao carregar o radar de atividades.</div>'; 
-            } 
-        }
-
-        async function carregarNoticias() {
-            const container = document.getElementById('news-feed-container');
-            try {
-                const res = await fetch(`${URL_BD_INDEX}portal_news.json?_=${Date.now()}`);
-                let data = await res.json();
-                
-                if(!data) {
-                    container.innerHTML = '<div class="muted-msg">Ainda não há publicações no mural.</div>';
-                    document.getElementById('total-likes-counter').innerText = '0';
-                    return;
-                }
-
-                if (Array.isArray(data)) { globalNewsList = data.map((v, i) => ({...v, key: i})).filter(v => v && v.id); } 
-                else { globalNewsList = Object.keys(data).map(k => ({...data[k], key: k})); }
-                
-                globalNewsList.sort((a,b) => b.data - a.data);
-                
-                renderTags(globalNewsList);
-                renderNoticias();
-
-            } catch (e) {
-                if(container.innerHTML.includes('Carregando')) container.innerHTML = '<div class="error-msg">Falha ao obter mural de notícias.</div>';
-            }
-        }
-
-        // LÓGICA DE TAGS ATUALIZADA (SEPARA POR VÍRGULA)
-        function renderTags(newsList) {
-            const container = document.getElementById('tags-container');
-            if(!container) return;
-            
-            let tags = new Set();
-            let totalLikes = 0;
-            
-            newsList.forEach(n => { 
-                if(n.tag) {
-                    n.tag.split(',').forEach(t => {
-                        if(t.trim()) tags.add(t.trim());
-                    });
-                }
-                totalLikes += (parseInt(n.likes) || 0);
-            });
-            
-            let tagsArray = Array.from(tags).sort();
-            
-            let html = `<button class="tag-btn ${currentNewsFilter === 'Todas' ? 'active' : ''}" onclick="filtrarNoticias('Todas')">Todas</button>`;
-            tagsArray.forEach(t => {
-                html += `<button class="tag-btn ${currentNewsFilter === t ? 'active' : ''}" onclick="filtrarNoticias('${t}')">${t}</button>`;
-            });
-            container.innerHTML = html;
-            
-            const totalEl = document.getElementById('total-likes-counter');
-            if(totalEl) totalEl.innerText = totalLikes;
-        }
-
-        window.filtrarNoticias = function(tag) {
-            currentNewsFilter = tag;
-            renderTags(globalNewsList); 
-            renderNoticias();
-        }
-
-        function renderNoticias() {
-            const container = document.getElementById('news-feed-container');
-            container.innerHTML = '';
-            
-            let filtradas = globalNewsList;
-            if(currentNewsFilter !== 'Todas') {
-                filtradas = globalNewsList.filter(n => n.tag && n.tag.split(',').map(t=>t.trim()).includes(currentNewsFilter));
-            }
-            
-            if(filtradas.length === 0) {
-                container.innerHTML = `<div class="muted-msg">Nenhuma notícia encontrada com o tema "${currentNewsFilter}".</div>`;
-                return;
-            }
-
-            filtradas.forEach(news => {
-                const dataFormatada = new Date(news.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                let authorName = news.autor || 'Admin';
-                
-                let userHasLiked = false;
-                if(news.likedBy && Array.isArray(news.likedBy) && news.likedBy.includes(currentUserStr)) {
-                    userHasLiked = true;
-                }
-
-                const btnClass = userHasLiked ? 'btn-like liked' : 'btn-like';
-                
-                // RENDERIZAÇÃO DE MULTIPLAS TAGS
-                let tagsHtml = '';
-                if(news.tag) {
-                    news.tag.split(',').forEach(t => {
-                        if(t.trim()) tagsHtml += `<span class="post-tag">${t.trim()}</span>`;
-                    });
-                } else {
-                    tagsHtml = `<span class="post-tag">Aviso</span>`;
-                }
-                
-                container.innerHTML += `
-                    <div class="post-card">
-                        <div class="post-header">
-                            <div class="post-author-box">
-                                <div class="author-avatar">${getAvatarHTML(authorName)}</div>
-                                <div class="author-info">
-                                    <span class="author-name">${authorName}</span>
-                                    <span class="post-date">${dataFormatada}</span>
-                                </div>
-                            </div>
-                            <div style="display:flex; gap:5px; flex-wrap:wrap; justify-content:flex-end;">${tagsHtml}</div>
-                        </div>
-                        
-                        <div class="post-title">${news.titulo || ''}</div>
-                        <div class="post-body">${news.corpo || ''}</div>
-                        
-                        <div class="post-footer">
-                            <div class="ml-signature">
-                                <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="ML"> Equipe Inventário
-                            </div>
-                            <button class="${btnClass}" id="btn-like-${news.key}" onclick="darLikeNews('${news.key}')">
-                                🚀 <span id="like-count-${news.key}">${news.likes || 0}</span>
-                                <span class="like-anim-text" id="like-anim-${news.key}">Para Cima!</span>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        window.darLikeNews = async function(newsKey) {            
-            const btn = document.getElementById(`btn-like-${newsKey}`);
-            const countSpan = document.getElementById(`like-count-${newsKey}`);
-            const animSpan = document.getElementById(`like-anim-${newsKey}`);
-            
-            try {
-                const res = await fetch(`${URL_BD_INDEX}portal_news/${newsKey}.json`);
-                const news = await res.json();
-                if(!news) return;
-
-                let likedBy = news.likedBy || [];
-                let currentLikes = parseInt(news.likes) || 0;
-
-                if (likedBy.includes(currentUserStr)) {
-                    likedBy = likedBy.filter(u => u !== currentUserStr);
-                    currentLikes--;
-                    btn.classList.remove('liked');
-                } else {
-                    likedBy.push(currentUserStr);
-                    currentLikes++;
-                    btn.classList.add('liked');
-                    
-                    animSpan.classList.remove('animate');
-                    void animSpan.offsetWidth; 
-                    animSpan.classList.add('animate');
-                }
-
-                countSpan.innerText = currentLikes;
-
-                await fetch(`${URL_BD_INDEX}portal_news/${newsKey}.json`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ likes: currentLikes, likedBy: likedBy })
-                });
-                
-                carregarNoticias();
-
-            } catch(e) { console.error("Erro ao computar like."); }
-        };
-
-        function formatRoleName(role) {
-            if(!role) return 'Desconhecido';
-            const r = role.toLowerCase();
-            const mapped = cargosMap[r];
-            if(mapped) return mapped;
-            if(r === 'view2') return 'View Plus';
-            if(r === 'view') return 'Viewer';
-            if(r === 'editor') return 'Editor';
-            if(r === 'admin') return 'Admin';
-            return role;
-        }
-
-        async function carregarCargos() {
-            try {
-                const res = await fetch(`${URL_BD_INDEX}cargos.json`);
-                const data = await res.json();
-                cargosMap = {};
-                if(data && typeof data === 'object') {
-                    Object.keys(data).forEach(k => {
-                        const c = data[k] || {};
-                        cargosMap[String(k).toLowerCase()] = c.rotulo || k;
-                    });
-                }
-            } catch(e) { console.log("Aviso: catálogo de cargos não carregou."); }
-        }
-
-        function registrarPresenca() {
-            if(currentUserStr !== 'Você' && currentUserStr !== 'Sistema') {
-                fetch(`${URL_BD_INDEX}presence/${currentUserStr}.json`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ cargo: currentRoleStr, lastSeen: Date.now() })
-                }).catch(e => console.log(e));
-            }
-        }
-
-        async function carregarPresencaUsuarios() {
-            const container = document.getElementById('users-feed-container');
-            
-            try {
-                let presenceData = {};
-                try {
-                    const resP = await fetch(`${URL_BD_INDEX}presence.json?_=${Date.now()}`);
-                    presenceData = await resP.json() || {};
-                } catch(errP) {}
-                
-                const now = Date.now();
-                const onlineUsers = Object.keys(presenceData).filter(u => now - presenceData[u].lastSeen < 120000).map(u => ({ nome: u, cargo: formatRoleName(presenceData[u].cargo) }));
-
-                let allUsers = [];
-                try {
-                    const resU = await fetch(`${URL_BD_INDEX}users.json?_=${Date.now()}`);
-                    const dataU = await resU.json();
-                    if(dataU) { allUsers = Object.keys(dataU).map(k => dataU[k]); }
-                } catch (errU) { console.error("Falha ao puxar usuários", errU); }
-                
-                let pendentes = allUsers.filter(u => u.solicitacao === 'pendente').slice(0, 2);
-                let ultimosLogados = allUsers.filter(u => u.solicitacao === 'aprovado' && u.usuario !== currentUserStr && !onlineUsers.some(ou => ou.nome === u.usuario)).slice(0, 5);
-
-                let html = '';
-                html += `<div class="user-group-title">🟢 Agora no Portal</div><ul class="user-list">`;
-                
-                if(currentUserStr !== 'Você') {
-                    html += `
-                        <li class="user-item">
-                            <div class="user-avatar" style="border-color: var(--accent-green);">
-                                ${getAvatarHTML(currentUserStr)}
-                            </div>
-                            <div class="user-info">
-                                <span class="user-name">${currentUserStr} (Você) <div class="status-dot dot-online"></div></span>
-                                <span class="user-role">${formatRoleName(currentRoleStr)}</span>
-                            </div>
-                        </li>
-                    `;
-                }
-
-                onlineUsers.forEach(ou => {
-                    if(ou.nome !== currentUserStr) {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar" style="border-color: var(--accent-blue);">
-                                    ${getAvatarHTML(ou.nome)}
-                                </div>
-                                <div class="user-info">
-                                    <span class="user-name">${ou.nome} <div class="status-dot dot-online"></div></span>
-                                    <span class="user-role">${ou.cargo}</span>
-                                </div>
-                            </li>
-                        `;
-                    }
-                });
-                
-                if (onlineUsers.length === 0 && currentUserStr === 'Você') {
-                    html += `<li class="user-item"><div class="user-info"><span class="user-role" style="text-transform: none;">Ninguém online no momento.</span></div></li>`;
-                }
-                html += `</ul>`;
-
-                if(ultimosLogados.length > 0) {
-                    html += `<div class="user-group-title">⏱️ Acessos Recentes</div><ul class="user-list">`;
-                    ultimosLogados.forEach(u => {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar">
-                                    ${getAvatarHTML(u.usuario)}
-                                </div>
-                                <div class="user-info">
-                                    <span class="user-name">${u.usuario} <div class="status-dot dot-offline"></div></span>
-                                    <span class="user-role">${formatRoleName(u.cargo)}</span>
-                                </div>
-                            </li>
-                        `;
-                    });
-                    html += `</ul>`;
-                }
-
-                if(pendentes.length > 0) {
-                    html += `<div class="user-group-title">🆕 Novos Cadastros</div><ul class="user-list">`;
-                    pendentes.forEach(u => {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar" style="border-color: var(--accent-warn);">
-                                    ${getAvatarHTML(u.usuario)}
-                                </div>
-                                <div class="user-info">
-                                    <span class="user-name">${u.usuario} <div class="status-dot dot-new"></div></span>
-                                    <span class="user-role" style="color: var(--accent-warn);">Aguardando Aprovação</span>
-                                </div>
-                            </li>
-                        `;
-                    });
-                    html += `</ul>`;
-                }
-
-                container.innerHTML = html;
-
-            } catch (e) {
-                if(container.innerHTML.includes('Mapeando')) container.innerHTML = '<div class="error-msg">Falha ao sincronizar usuários.</div>';
-            }
-        }
-
-        window.onload = async function() {
-            pedirPermissaoNotificacao();
-            try { registrarPresenca(); } catch(e){}
-            
-            try { await prepararMapaDeAvatares(); } catch(e){ console.warn('avatar map falhou', e); }
-            try { await carregarCargos(); } catch(e){ console.warn('cargos falhou', e); }
-            
-            carregarFeedAtualizacoes().catch(function(e){ console.warn('feed', e); }); 
-            carregarNoticias().catch(function(e){ console.warn('noticias', e); });
-            carregarPresencaUsuarios().catch(function(e){ console.warn('presenca', e); });
-
-            setInterval(() => { 
-                try { registrarPresenca(); } catch(e){}
-                try { checkNotifications(); } catch(e){}
-                prepararMapaDeAvatares().then(() => {
-                    carregarFeedAtualizacoes().catch(function(){});
-                    carregarNoticias().catch(function(){});
-                    carregarPresencaUsuarios().catch(function(){});
-                }).catch(function(){});
-                if(window.PortalDB && window.PortalDB.checkAppVersionSilently){
-                    window.PortalDB.checkAppVersionSilently();
-                }
-            }, 30000); 
-        };
-
+        // Esconde o loader assim que a página dentro do iframe terminar de carregar.
+        (function () {
+            var frame = document.getElementById('app-frame');
+            var loader = document.getElementById('shell-loader');
+            function esconder() { if (loader) loader.classList.add('hidden'); }
+            if (frame) frame.addEventListener('load', esconder);
+            setTimeout(esconder, 6000); // rede lenta: nunca deixa o loader travado
+        })();
     </script>
+
 </body>
 </html>
