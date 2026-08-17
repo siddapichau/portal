@@ -876,8 +876,13 @@
             try {
                 const res = await fetch(`${url}?path=health.json&nc=1&_=${Date.now()}`);
                 const data = await res.json().catch(() => null);
-                if (res.ok) { toast('✅ Conexão OK com a planilha de <b>' + arquivo + '</b>.', 'ok'); }
-                else { toast('⚠️ Respondeu com status ' + res.status + '.', 'err'); }
+                if (res.ok && data && data.ok === true) {
+                    const total = Number.isFinite(Number(data.registros)) ? ` — ${Number(data.registros).toLocaleString('pt-BR')} registro(s)` : '';
+                    toast('✅ Conexão OK com a planilha de <b>' + arquivo + '</b>' + total + '.', 'ok');
+                } else {
+                    console.error('[Admin] Health check inválido para', arquivo, data || res.status);
+                    toast('❌ A API respondeu, mas a planilha não está pronta. Abra o /exec para conferir o erro.', 'err');
+                }
             } catch(e) {
                 toast('❌ Não consegui acessar essa URL. Verifique se o app está publicado para "Qualquer pessoa".', 'err');
             }
