@@ -6,9 +6,9 @@
 
 ---
 
-## 1. Diagnóstico da arquitetura atual
+## 1. Arquitetura atual
 
-O portal hoje é um SPA estático (`index.html` + `menu.js` como "corpo") que carrega páginas de reporte dentro de um `<iframe>`. Todo dado vem do **Firebase Realtime Database** via `fetch` REST.
+O portal é um SPA estático (`index.html` + `menu.js` como "corpo") que carrega páginas de reporte dentro de um `<iframe>`. O cérebro já usa uma planilha Google central via Apps Script; as páginas estão sendo migradas, uma por vez, para ler diretamente suas próprias planilhas. O Firebase não é usado pelo front-end.
 
 ### 1.1 "Cérebro" e "corpo" (o núcleo que todas as páginas usam)
 
@@ -61,8 +61,9 @@ Cada página lê o seu "nó" de dados **na planilha que já existe dela** (não 
 ```
 
 - **Google Sheets (cérebro)** = banco do portal. Só abas de menu, usuários, notícias, status, logs e `_Config`. Cada página de reporte continua com a **planilha dela**.
-- **Google Apps Script** (`apps-script/Code.gs`) = a API. Contrato **idêntico** ao Firebase REST, então nenhuma página precisou mudar de lógica — só a URL base.
-- **`js/portal-db.js`** = ponto único de configuração (URL da API + tradutor de métodos).
+- **Google Apps Script central** (`apps-script/Code.gs`) = API editável do cérebro, com contrato compatível com o REST usado pelo portal.
+- **Google Apps Script por reporte** (`apps-script/<pagina>/Code.gs`) = adaptador somente leitura sobre a planilha existente daquela página; não copia, importa nem grava dados.
+- **`js/portal-db.js`** = ponto único de configuração (URL central, seleção da URL por página e tradutor de métodos).
 - **Firebase: 0% no portal.** Não existe fallback nem URL do Firebase em nenhum `.html`/`.js` do front. A **única** referência ao Firebase no repositório está dentro do Apps Script (`FIREBASE_URL_ORIGEM`), usada **exclusivamente** pelas funções de importação para copiar os dados já existentes.
 
 ### 2.1 Formato das abas — planilha de verdade (colunar) ✅
@@ -136,10 +137,16 @@ O que esta PR entrega:
 - [ ] **Você:** colar o `Code.gs` novo + **Nova versão** da implantação (sem isso o `/exec` continua o código velho).
 - [ ] Importar o núcleo (Menu, Usuários, Notícias, Status, Logs).
 
-### 🔜 FASE 2.1 — Páginas (planilhas próprias, futuro)
-Cada página puxa o DB da planilha que **já existe** dela. Não entra nesta planilha do portal.
+### 🔧 FASE 2.1 — Páginas (planilhas próprias, em andamento)
+Cada página lê diretamente a planilha que **já existe** dela. Os dados não entram na planilha central nem em banco intermediário.
 
-**Ordem sugerida quando formos ligar:** `equipamentos.html` → `salvados_procurarv3.html` → `parado_percurso.html` → `pendencias_cftv.html` → `avarias-diario.html` → … até cobrir todas.
+- [x] **`avarias-diario.html` — primeira integração:** lê a planilha `1gpWUaprT7Av1eamHljBB8gfsdawYKoGA0wpmPOtZzbE` (gid `0`) pelo node `poka_avarias_diario`.
+- [x] Adaptador somente leitura em `apps-script/avarias-diario/Code.gs`, com health check e preservação da exibição de datas/moedas.
+- [x] Upload CSV, PapaParse e escrita da página removidos; carga inicial e botão de atualização leem a fonte oficial mantendo filtros, KPIs, gráficos, tabela, links e exportação.
+- [ ] **Implantação externa:** colar o script na planilha, publicar para “Qualquer pessoa” e cadastrar o `/exec` em Admin → Planilhas por Página → Avarias — Diário.
+- [ ] Migrar os demais reportes um por vez seguindo a regra de ouro registrada em `AGENTS.md`.
+
+**Próximas páginas:** definir com o responsável conforme prioridade operacional.
 
 ### 🔜 FASE 3 — Melhorias (opcionais, escolha do usuário)
 Ver §5.
@@ -154,17 +161,26 @@ Ver §5.
 3. Cole o conteúdo de `apps-script/Code.gs` e **Salve**.
 4. Volte à planilha e recarregue: aparece o menu **⚙️ Portal**.
 5. Clique **⚙️ Portal → 1️⃣ Preparar planilha** (autorize o script na 1ª vez). Isso cria todas as abas colunares.
-6. Importe os dados existentes **parte por parte**:
+6. Importe os dados existentes do cérebro **parte por parte**:
    - **⚙️ Portal → 🧠 Importar — Núcleo do portal → 🔑 Usuários**, depois **🧭 Menu**, **📜 Logs**, etc.
-   - Depois **📄 Importar — Páginas (reportes)**, um item por página, conforme a Fase 2 for avançando.
-   - Se uma importação parar no meio (ex.: muitos registros), rode o **mesmo item** de novo — ele continua de onde parou.
+   - Não importe reportes para a planilha central; cada página lê a planilha própria pelo adaptador somente leitura.
+   - Se uma importação do núcleo parar no meio (ex.: muitos registros), rode o **mesmo item** de novo — ele continua de onde parou.
 7. **Implantar → Nova implantação → Aplicativo da web** → executar como **Eu** → acesso **Qualquer pessoa**.
 8. Copie a URL `/exec` gerada.
 
-### 4.2 Ligar o portal
+### 4.2 Ligar o cérebro do portal
 1. Abra `js/portal-db.js`.
-2. Troque `PortalDB.URL` pela sua URL `/exec` copiada acima.
-3. Pronto — o portal inteiro já nasce apontado para a planilha (não há mais Firebase para cair).
+2. Troque `PortalDB.URL` pela URL `/exec` da planilha central.
+3. O menu, login, Admin, notícias, status e logs passam a usar o cérebro central.
+
+### 4.3 Ligar uma página de reporte
+1. Na planilha da página, cole o adaptador `apps-script/<pagina>/Code.gs` em **Extensões → Apps Script**.
+2. Publique como **Aplicativo da Web**, executando como **Eu**, com acesso para **Qualquer pessoa**.
+3. Teste a URL `/exec`: o JSON de saúde deve conter `ok:true`.
+4. No portal, abra **Admin → Planilhas por Página**, cole o `/exec` no campo daquela página, teste e salve.
+5. Use **Versão / Cache** para propagar a URL aos usuários.
+
+Para Avarias — Diário, siga `apps-script/avarias-diario/COMO_IMPLANTAR.md`.
 
 ---
 
@@ -198,6 +214,14 @@ Ver §5.
 - [ ] Após **Nova versão** da implantação, abrir `/exec` mostra `{ok:true,…}`.
 - [ ] Depois de importar o núcleo: menu, notícias, status, login e radar carregam no portal.
 
+### Critérios de aceite — Avarias Diário
+
+- [x] `avarias-diario.html` não oferece nem processa upload CSV.
+- [x] A página usa `PortalDB.baseAtiva('pages/avarias-diario.html')` e mantém o node `poka_avarias_diario`.
+- [x] O Apps Script dedicado lê a aba `gid=0` sem escrever na planilha e preserva valores exibidos.
+- [x] O endpoint oferece health check validável pelo Admin.
+- [ ] Após a implantação pelo responsável, filtros, KPIs, tabela, gráficos, links e exportação devem ser homologados com dados reais.
+
 ## 8. Rollback
 
-O front não tem mais fallback para Firebase. Para reverter, restore a versão anterior do repositório (o Firebase de origem **não é alterado** pelas importações — elas só leem). A planilha pode ser reconstruída a qualquer momento refazendo o setup + importações.
+O front não tem mais fallback para Firebase. Para reverter código, restaure a versão anterior do repositório. A planilha original não é alterada pelo adaptador de Avarias, pois ele é somente leitura.

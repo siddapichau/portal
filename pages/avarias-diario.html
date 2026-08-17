@@ -16,7 +16,6 @@
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- CSS GLOBAL -->
@@ -133,12 +132,12 @@
                 </svg>
             </button>
 
-            <label class="btn-icon" id="btnUploadArea" style="display:none;" title="Mesclar Nova Planilha (Arquivo CSV)">
+            <button class="btn-icon" id="btnAtualizar" onclick="carregarDadosDaPlanilha()" title="Atualizar dados da planilha">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>
+                    <polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                 </svg>
-                <input type="file" id="csvFileInput" accept=".csv" style="display: none;" />
-            </label>
+            </button>
         </div>
     </div>
 
@@ -201,8 +200,10 @@
         let globalData = []; let dadosFiltradosAtuais = []; let chartInstances = {};
         let colDataNome, colLancadoPorNome, colDescricao, colValor, colOrigem, colResolucao, colStatusResolucao;
 
-        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
-        const FIREBASE_NODE = "poka_avarias_diario";
+        // A URL /exec desta página é configurada no Admin → Planilhas por Página.
+        // O endpoint é somente leitura: a planilha é a fonte única dos dados.
+        const DADOS_API_URL = PortalDB.baseAtiva('pages/avarias-diario.html');
+        const DADOS_NODE = "poka_avarias_diario";
         
         // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
@@ -213,22 +214,6 @@
                 if(globalData.length > 0) renderizarDashboard();
             } 
         });
-
-        // ============ PERMISSÕES GLOBAIS E LOGS ============
-        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
-        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
-        
-        const paginaNome = window.location.pathname.split('/').pop() || 'avarias-diario.html';
-        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
-        
-        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'flex'; }
-
-        async function registrarLog(modulo, acao) {
-            try {
-                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
-                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
-            } catch(e) {}
-        }
 
         // ============ UTILITÁRIOS ============
         function getVal(row, possibleKeys) {
@@ -246,63 +231,52 @@
         function escapeHtml(v) { return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;'); }
         function obterDataHojeFormatada() { const hoje = new Date(); const dia = String(hoje.getDate()).padStart(2, '0'); const mes = String(hoje.getMonth() + 1).padStart(2, '0'); const ano = hoje.getFullYear(); return `${dia}/${mes}/${ano}`; }
 
-        window.onload = async function() {
+        async function carregarDadosDaPlanilha() {
+            const botao = document.getElementById('btnAtualizar');
+            if (botao) botao.disabled = true;
+            const tinhaDados = globalData.length > 0;
+
+            if (!tinhaDados) document.getElementById('main-title').innerText = 'CARREGANDO DADOS DA PLANILHA…';
+
             try {
-                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`);
-                const dbData = await response.json();
-                if(dbData) {
-                    globalData = Array.isArray(dbData) ? dbData : (dbData.lista || []);
-                    if(globalData.length > 0) { preencherOpcoesDeFiltros(); resetarFiltrosHoje(); } 
-                    else { definirEstadoVazio("Banco Vazio. Faça Upload."); }
-                } else { definirEstadoVazio("Banco Vazio. Faça Upload."); }
-            } catch(e) { definirEstadoVazio("Offline (Aguardando CSV)"); }
-        };
+                const response = await fetch(`${DADOS_API_URL}${DADOS_NODE}.json?nc=1&_=${Date.now()}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const payload = await response.json();
+                if (payload && payload.error) throw new Error(payload.error);
+
+                const lista = Array.isArray(payload)
+                    ? payload
+                    : (payload && Array.isArray(payload.lista) ? payload.lista : []);
+
+                globalData = lista.filter(row => row && typeof row === 'object' && !Array.isArray(row));
+                if (globalData.length > 0) {
+                    preencherOpcoesDeFiltros();
+                    resetarFiltrosHoje();
+                } else {
+                    definirEstadoVazio('PLANILHA SEM DADOS');
+                }
+            } catch (erro) {
+                console.error('[Avarias Diário] Falha ao ler a planilha:', erro);
+                if (!tinhaDados) definirEstadoVazio('NÃO FOI POSSÍVEL LER A PLANILHA');
+            } finally {
+                if (botao) botao.disabled = false;
+            }
+        }
+
+        window.addEventListener('load', carregarDadosDaPlanilha);
 
         function definirEstadoVazio(mensagem) {
+            globalData = [];
+            dadosFiltradosAtuais = [];
             document.getElementById('main-title').innerText = mensagem;
+            document.getElementById('kpi-valor').innerText = 'R$ 0,00';
+            document.getElementById('kpi-qtd').innerText = '0';
             document.getElementById('tabela-pacotes').querySelector('tbody').innerHTML = "<tr><td colspan='8' style='text-align:center; padding: 15px;'>Nenhum dado ativo.</td></tr>";
+            document.getElementById('chart-resolucao').innerHTML = 'Sem dados.';
+            document.getElementById('chart-origem').innerHTML = 'Sem dados.';
+            document.getElementById('chart-semana').innerHTML = 'Sem dados.';
         }
-
-        async function mesclarESalvar(novosDados) {
-            let mapExistentes = new Map();
-            globalData.forEach(row => { let id = extrairID(row); if(id) mapExistentes.set(id, row); });
-
-            novosDados.forEach(row => {
-                let id = extrairID(row);
-                if (id) {
-                    let objSanitizado = {};
-                    for(let k in row) {
-                        let safeKey = String(k).replace(/[\.\#\$\/\[\]]/g, '_').trim();
-                        if(!safeKey) safeKey = "coluna_vazia"; 
-                        objSanitizado[safeKey] = (row[k] === null || row[k] === undefined) ? "" : String(row[k]);
-                    }
-                    mapExistentes.set(id, objSanitizado); 
-                }
-            });
-
-            let bancoAtualizado = Array.from(mapExistentes.values());
-            
-            try {
-                const response = await fetch(`${FIREBASE_URL}${FIREBASE_NODE}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bancoAtualizado) });
-                if(response.ok) {
-                    globalData = bancoAtualizado; preencherOpcoesDeFiltros(); resetarFiltrosHoje();
-                    await registrarLog("Avaria Diário", "Sincronizou a base de dados via CSV.");
-                    alert("Dados salvos e sincronizados com a nuvem.");
-                }
-            } catch (err) { alert("Erro ao salvar na nuvem."); }
-        }
-
-        document.getElementById('csvFileInput').addEventListener('change', function(event) {
-            if(!canEdit) return;
-            const file = event.target.files[0]; if (!file) return;
-            Papa.parse(file, { header: true, skipEmptyLines: true, complete: function(results) {
-                if (results.data && results.data.length > 0) {
-                    const dadosFiltrados = results.data.filter(row => Object.values(row).some(val => val !== null && val.trim() !== ''));
-                    mesclarESalvar(dadosFiltrados);
-                } else { alert("Arquivo Vazio"); }
-            }});
-            event.target.value = ''; 
-        });
 
         function limparValor(valStr) { if(!valStr) return 0; return parseFloat(valStr.toString().replace('R$', '').replace(/\./g, '').replace(',', '.').trim()) || 0; }
 
