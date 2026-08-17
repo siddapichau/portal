@@ -143,7 +143,10 @@ Cada página lê diretamente a planilha que **já existe** dela. Os dados não e
 - [x] **`avarias-diario.html` — primeira integração:** lê a planilha `1gpWUaprT7Av1eamHljBB8gfsdawYKoGA0wpmPOtZzbE` (gid `0`) pelo node `poka_avarias_diario`.
 - [x] Adaptador somente leitura em `apps-script/avarias-diario/Code.gs`, com health check e preservação da exibição de datas/moedas.
 - [x] Upload CSV, PapaParse e escrita da página removidos; carga inicial e botão de atualização leem a fonte oficial mantendo filtros, KPIs, gráficos, tabela, links e exportação.
-- [ ] **Implantação externa:** colar o script na planilha, publicar para “Qualquer pessoa” e cadastrar o `/exec` em Admin → Planilhas por Página → Avarias — Diário.
+- [x] **`aging-devolucao.html` — segunda integração:** lê a planilha própria de Aging Devolução pelo node `devolucao`.
+- [x] Adaptador somente leitura em `apps-script/aging-devolucao/Code.gs`, com health check e preservação da exibição de formatações.
+- [x] Upload CSV, PapaParse e escrita da página removidos; carga inicial e botão de atualização leem a fonte oficial mantendo o dashboard, Diário de Bordo, KPIs, gráficos, tabela, links e exportação.
+- [ ] **Implantação externa:** colar os scripts nas planilhas, publicar para “Qualquer pessoa” e cadastrar os `/exec` em Admin → Planilhas por Página.
 - [ ] Migrar os demais reportes um por vez seguindo a regra de ouro registrada em `AGENTS.md`.
 
 **Próximas páginas:** definir com o responsável conforme prioridade operacional.
@@ -224,6 +227,16 @@ Para Avarias — Diário, siga `apps-script/avarias-diario/COMO_IMPLANTAR.md`.
 - [x] A estrutura da aba (cabeçalho da linha 1) está documentada em `apps-script/avarias-diario/COMO_IMPLANTAR.md`.
 - [ ] **Pendência do usuário:** criar a aba de dados na planilha de Avarias com o cabeçalho documentado.
 - [ ] Após a implantação pelo responsável, filtros, KPIs, tabela, gráficos, links e exportação devem ser homologados com dados reais.
+
+### Critérios de aceite — Aging Devolução
+
+- [x] `aging-devolucao.html` não oferece nem processa upload CSV.
+- [x] A página usa `PortalDB.baseAtiva('pages/aging-devolucao.html')` e mantém o node `devolucao`.
+- [x] O Apps Script dedicado lê a aba de dados (gid=0 → nome `Aging Devolucao` → primeira aba) sem escrever na planilha e preserva valores exibidos.
+- [x] O endpoint oferece health check validável pelo Admin.
+- [x] A estrutura da aba (cabeçalho da linha 1) está documentada em `apps-script/aging-devolucao/COMO_IMPLANTAR.md`.
+- [ ] **Pendência do usuário:** criar a aba de dados na planilha de Aging Devolução com o cabeçalho documentado.
+- [ ] Após a implantação pelo responsável, filtros, KPIs, Diário de Bordo, tabela, gráficos, links e exportação devem ser homologados com dados reais.
 
 ### Critérios de aceite — Home modernizada
 

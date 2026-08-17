@@ -96,6 +96,16 @@ Cada planilha de reporte recebe um Apps Script pequeno e **somente leitura**. Co
 - Situação do código: migrada para somente leitura; CSV/PapaParse/gravação removidos; carga ao abrir e botão de atualização mantêm o mesmo dashboard.
 - Pendência externa: o responsável deve (1) criar a aba de dados na planilha de Avarias com o cabeçalho acima, (2) colar o script na planilha, (3) publicar como Aplicativo da Web para “Qualquer pessoa” e (4) cadastrar o `/exec` em **Admin → Planilhas por Página → Avarias — Diário**.
 
+### Aging Devolução (`pages/aging-devolucao.html`)
+
+- Página: `pages/aging-devolucao.html`.
+- Node: `devolucao`.
+- Backend: `apps-script/aging-devolucao/Code.gs`.
+- Instruções: `apps-script/aging-devolucao/COMO_IMPLANTAR.md`.
+- **Aba necessária na planilha (criar manualmente):** a aba de dados deve existir na planilha de Aging Devolução — o script procura `gid=0` (primeira aba), depois a aba `Aging Devolucao`, depois a primeira aba existente. Linha 1 = cabeçalho: `ID do envio | Substatus do envio | Aging Sorting | Aging Devolução | Valor declarado | Preparação | Suporte | Análise` (detalhes no COMO_IMPLANTAR).
+- Situação do código: migrada para somente leitura; CSV/PapaParse/gravação removidos; carga ao abrir e botão de atualização mantêm o mesmo dashboard, KPIs, diário de bordo, tabela e gráfico.
+- Pendência externa: o responsável deve (1) criar a aba de dados na planilha de Aging Devolução com o cabeçalho acima, (2) colar o script na planilha, (3) publicar como Aplicativo da Web para “Qualquer pessoa” e (4) cadastrar o `/exec` em **Admin → Planilhas por Página → Aging de Devolução**.
+
 ### Home (`pages/home.html`)
 
 - Layout moderno: mensagem central de boas-vindas (título + usuário logado + data) e as últimas notícias (`portal_news`), lidas da planilha central via `PortalDB.baseAtiva()`.
