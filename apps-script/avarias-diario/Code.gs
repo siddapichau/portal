@@ -15,12 +15,25 @@
  *
  *  Esta API NÃO cria abas, NÃO altera células e NÃO recebe upload de CSV.
  *  A planilha abaixo é a fonte única de dados da página avarias-diario.html.
+ *
+ *  ABA NECESSÁRIA NA PLANILHA (criada manualmente por quem administra):
+ *    - A aba de dados DEVE existir. O script procura nesta ordem:
+ *        1º) aba com o gid informado (abaGid = 0, a primeira aba da planilha);
+ *        2º) aba com o nome informado (abaNome);
+ *        3º) a primeira aba que existir.
+ *    - Linha 1 = cabeçalho (nomes das colunas). Dados a partir da linha 2.
+ *    - Cabeçalho recomendado:
+ *        ID do pacote | ID da avaria | Data | Semana | Lançado Por |
+ *        Descrição | Valor | Origem de dano | Resolução | Status de resolução
+ *      (a página localiza as colunas por palavras-chave, então nomes parecidos
+ *      também funcionam — desde que existam).
  * ============================================================================
  */
 
 var CONFIG_AVARIAS = {
   planilhaId: '1gpWUaprT7Av1eamHljBB8gfsdawYKoGA0wpmPOtZzbE',
   abaGid: 0,
+  abaNome: 'Avarias Diario', // fallback se o gid acima não existir (pode ser qualquer nome)
   linhaCabecalho: 1,
   node: 'poka_avarias_diario'
 };
@@ -167,11 +180,21 @@ function obterAba_() {
   var planilha = SpreadsheetApp.openById(CONFIG_AVARIAS.planilhaId);
   var abas = planilha.getSheets();
 
+  // 1º) aba pelo gid (padrão: gid=0, a primeira aba da planilha)
   for (var i = 0; i < abas.length; i++) {
     if (abas[i].getSheetId() === CONFIG_AVARIAS.abaGid) return abas[i];
   }
 
-  throw new Error('A aba com gid=' + CONFIG_AVARIAS.abaGid + ' não foi encontrada.');
+  // 2º) aba pelo nome (ajuda quando a aba foi criada/renomeada e ganhou outro gid)
+  if (CONFIG_AVARIAS.abaNome) {
+    var porNome = planilha.getSheetByName(CONFIG_AVARIAS.abaNome);
+    if (porNome) return porNome;
+  }
+
+  // 3º) primeira aba existente (último recurso — evita erro de configuração)
+  if (abas.length > 0) return abas[0];
+
+  throw new Error('A planilha de Avarias não tem nenhuma aba. Crie a aba de dados (primeira aba, gid=0).');
 }
 
 function criarHealth_() {

@@ -15,6 +15,19 @@ A migração em andamento elimina uploads manuais de CSV e bancos intermediário
 - Alterações nos dados são feitas diretamente na planilha; o portal apenas consulta e apresenta.
 - Ao migrar uma página, preserve seu comportamento visual e analítico.
 
+### Regra das abas da planilha (avisar SEMPRE)
+
+- O Apps Script **não cria abas**: quem administra cria manualmente na planilha.
+- Sempre que uma tarefa exigir criar/renomear uma aba (tab) na planilha central
+  (nosso DB de config do portal) ou na planilha de uma página, o agente **DEVE**
+  avisar o usuário **explicitamente na entrega do chat**: nome exato da aba,
+  posição (gid/primeira aba), cabeçalho (colunas) e um exemplo de linha.
+- A estrutura da aba também deve ficar documentada no `COMO_IMPLANTAR.md` da
+  página envolvida (seção "Criar a aba na planilha").
+- Ex.: Avarias — Diário precisa da aba de dados na planilha de Avarias
+  (primeira aba/gid=0, cabeçalho na linha 1) — ver
+  `apps-script/avarias-diario/COMO_IMPLANTAR.md`.
+
 ## 2. Arquitetura atual
 
 ```text
@@ -59,13 +72,14 @@ Cada planilha de reporte recebe um Apps Script pequeno e **somente leitura**. Co
 1. Leia apenas o HTML alvo e identifique nós, formato esperado, filtros e fluxo antigo de CSV.
 2. Crie `apps-script/<pagina>/Code.gs` configurado com ID da planilha, gid, linha do cabeçalho e node.
 3. Crie `apps-script/<pagina>/COMO_IMPLANTAR.md` com publicação e cadastro do `/exec` no Admin.
-4. No HTML, mantenha o dashboard e remova biblioteca, botão, permissões, listeners e gravações ligados ao CSV.
-5. Leia via `PortalDB.baseAtiva('pages/<pagina>.html')`; mantenha o node esperado para minimizar mudanças.
-6. Ofereça atualização manual se útil, além da carga ao abrir.
-7. Mostre estados claros de carregando, planilha vazia e erro, sem apagar dados já exibidos quando apenas uma atualização falhar.
-8. Teste sintaxe do JavaScript inline, procure resíduos de CSV/Firebase e valide o diff.
-9. Atualize este arquivo e `PLANO_DE_ACAO.md` com o estado da migração.
-10. Entregue PR e informe exatamente qual `Code.gs` copiar e onde cadastrar o `/exec`.
+4. Confira se a aba de dados existe na planilha da página; descreva a estrutura dela (nome/posição/cabeçalho/linha exemplo) no `COMO_IMPLANTAR.md` e **avise o usuário na entrega** (regra das abas).
+5. No HTML, mantenha o dashboard e remova biblioteca, botão, permissões, listeners e gravações ligados ao CSV.
+6. Leia via `PortalDB.baseAtiva('pages/<pagina>.html')`; mantenha o node esperado para minimizar mudanças.
+7. Ofereça atualização manual se útil, além da carga ao abrir.
+8. Mostre estados claros de carregando, planilha vazia e erro, sem apagar dados já exibidos quando apenas uma atualização falhar.
+9. Teste sintaxe do JavaScript inline, procure resíduos de CSV/Firebase e valide o diff.
+10. Atualize este arquivo e `PLANO_DE_ACAO.md` com o estado da migração.
+11. Entregue PR e informe exatamente qual `Code.gs` copiar e onde cadastrar o `/exec`.
 
 ## 5. Estado da migração por página
 
@@ -78,8 +92,16 @@ Cada planilha de reporte recebe um Apps Script pequeno e **somente leitura**. Co
 - Node: `poka_avarias_diario`.
 - Backend: `apps-script/avarias-diario/Code.gs`.
 - Instruções: `apps-script/avarias-diario/COMO_IMPLANTAR.md`.
+- **Aba necessária na planilha (criar manualmente):** a aba de dados deve existir — o script procura `gid=0` (primeira aba), depois a aba `Avarias Diario`, depois a primeira aba existente. Linha 1 = cabeçalho: `ID do pacote | ID da avaria | Data | Semana | Lançado Por | Descrição | Valor | Origem de dano | Resolução | Status de resolução` (detalhes no COMO_IMPLANTAR).
 - Situação do código: migrada para somente leitura; CSV/PapaParse/gravação removidos; carga ao abrir e botão de atualização mantêm o mesmo dashboard.
-- Pendência externa: o responsável deve colar o script na planilha, publicar como Aplicativo da Web para “Qualquer pessoa” e cadastrar o `/exec` em **Admin → Planilhas por Página → Avarias — Diário**.
+- Pendência externa: o responsável deve (1) criar a aba de dados na planilha de Avarias com o cabeçalho acima, (2) colar o script na planilha, (3) publicar como Aplicativo da Web para “Qualquer pessoa” e (4) cadastrar o `/exec` em **Admin → Planilhas por Página → Avarias — Diário**.
+
+### Home (`pages/home.html`)
+
+- Layout moderno: mensagem central de boas-vindas (título + usuário logado + data) e as últimas notícias (`portal_news`), lidas da planilha central via `PortalDB.baseAtiva()`.
+- Removidos: radar/logs, coluna de usuários logados/presença, filtro de tags e **todo o sistema de curtidas**.
+- Os logs de auditoria ficam somente na aba **Admin → Logs** (visível apenas para admin).
+- Configurações aplicáveis (Admin → Configurações do Portal): título, banner, intervalo de atualização, limite de notícias, notificações e aviso de manutenção.
 
 ### Demais reportes
 

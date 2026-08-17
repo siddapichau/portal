@@ -265,7 +265,7 @@
             <!-- ===== CABEÇALHO ===== -->
             <div class="admin-hero">
                 <h1>⚙️ Painel de Administração</h1>
-                <p>Centro de controle do Portal de Reportes: menus, usuários, mural, status, configurações do portal e as planilhas de cada página.</p>
+                <p>Centro de controle do Portal de Reportes: menus, usuários, mural, status, logs, configurações do portal e as planilhas de cada página.</p>
                 <div class="admin-hero-badges">
                     <span class="hero-badge">👤 <span id="hero-user">—</span></span>
                     <span class="hero-badge">🏷️ Versão <span id="hero-versao">—</span></span>
@@ -303,6 +303,7 @@
                 <div class="admin-tab" onclick="switchAdminTab('bigquery', this)">💻 BigQuery</div>
                 <div class="admin-tab" onclick="switchAdminTab('portal', this)">🎛️ Configurações do Portal</div>
                 <div class="admin-tab" onclick="switchAdminTab('planilhas', this)">🔗 Planilhas por Página</div>
+                <div class="admin-tab" onclick="switchAdminTab('logs', this)">📜 Logs</div>
                 <div class="admin-tab" onclick="switchAdminTab('versao', this)">🔄 Versão / Cache</div>
             </div>
 
@@ -364,7 +365,7 @@
             <!-- ABA DE NOTÍCIAS -->
             <div id="tab-news" style="display:none;">
                 <h3 class="section-title">📰 Mural de Notícias</h3>
-                <p class="section-sub">Publicações que aparecem na coluna central da Home, com tags e curtidas.</p>
+                <p class="section-sub">Publicações que aparecem na Home, com tags.</p>
                 <div class="panel-card" id="news-editor-box">
                     <h4 class="card-title" id="news-editor-title">✍️ Criar nova publicação</h4>
                     
@@ -505,23 +506,11 @@
                         </div>
                     </div>
 
-                    <!-- Blocos da Home -->
+                    <!-- Notificações -->
                     <div class="cat-card">
-                        <h4 class="section-title" style="font-size:.92rem; margin-bottom:14px;">🧩 Blocos da Home</h4>
-                        <div class="toggle-row">
-                            <div><div class="t-title">📡 Radar de Atividades</div><div class="t-desc">Coluna esquerda com os últimos logs.</div></div>
-                            <label class="switch"><input type="checkbox" id="cfg-home-radar" checked><span class="slider"></span></label>
-                        </div>
-                        <div class="toggle-row">
-                            <div><div class="t-title">👥 Equipe / Presença</div><div class="t-desc">Coluna direita com quem está online.</div></div>
-                            <label class="switch"><input type="checkbox" id="cfg-home-equipe" checked><span class="slider"></span></label>
-                        </div>
-                        <div class="toggle-row">
-                            <div><div class="t-title">🏷️ Filtro de Tags</div><div class="t-desc">Caixa de tags para filtrar as notícias.</div></div>
-                            <label class="switch"><input type="checkbox" id="cfg-home-tags" checked><span class="slider"></span></label>
-                        </div>
+                        <h4 class="section-title" style="font-size:.92rem; margin-bottom:14px;">🔔 Notificações</h4>
                         <div class="toggle-row" style="margin-bottom:0;">
-                            <div><div class="t-title">🔔 Notificações</div><div class="t-desc">Avisa quando sai notícia ou status novo.</div></div>
+                            <div><div class="t-title">Notificações do navegador</div><div class="t-desc">Avisa quando sai notícia ou status novo.</div></div>
                             <label class="switch"><input type="checkbox" id="cfg-notificacoes" checked><span class="slider"></span></label>
                         </div>
                     </div>
@@ -591,6 +580,32 @@
 
                 <div id="paginas-urls-container"></div>
                 <div id="urls-log" style="margin-top:12px; font-size:.85rem; color:var(--text-muted);"></div>
+            </div>
+
+            <!-- ================= ABA: LOGS (SOMENTE ADMIN) ================= -->
+            <div id="tab-logs" style="display:none;">
+                <h3 class="section-title">📜 Logs do Portal</h3>
+                <p class="section-sub">Auditoria das atividades gravadas na planilha central (nó <code>logs</code>). Esta aba é visível somente para administradores — o acesso é feito aqui, não na Home.</p>
+
+                <div class="header-actions">
+                    <input type="text" class="inp" id="filtro-logs" placeholder="🔎 Buscar por usuário, módulo ou ação…" style="max-width:340px;" oninput="renderLogsTable()">
+                    <select class="inp" id="filtro-modulo-logs" style="max-width:220px;" onchange="renderLogsTable()">
+                        <option value="">Todos os módulos</option>
+                    </select>
+                    <select class="inp" id="filtro-limite-logs" style="max-width:170px;" onchange="carregarLogsAdmin()">
+                        <option value="100">Últimos 100</option>
+                        <option value="300" selected>Últimos 300</option>
+                        <option value="1000">Últimos 1000</option>
+                    </select>
+                    <button class="btn btn-ghost" onclick="carregarLogsAdmin()">🔄 Recarregar</button>
+                </div>
+
+                <div class="table-wrap">
+                    <table class="user-table">
+                        <thead><tr><th>Data / Hora</th><th>Usuário</th><th>Módulo</th><th>Ação</th></tr></thead>
+                        <tbody id="logs-tbody"><tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-muted);">Carregando logs…</td></tr></tbody>
+                    </table>
+                </div>
             </div>
 
             <!-- ABA DE VERSÃO / CACHE GLOBAL -->
@@ -775,9 +790,6 @@
             document.getElementById('cfg-home-maxnews').value   = val('home_max_noticias', '0');
             document.getElementById('cfg-manutencao-msg').value = val('manutencao_msg', '');
 
-            document.getElementById('cfg-home-radar').checked   = bool('home_mostrar_radar', true);
-            document.getElementById('cfg-home-equipe').checked  = bool('home_mostrar_equipe', true);
-            document.getElementById('cfg-home-tags').checked    = bool('home_mostrar_tags', true);
             document.getElementById('cfg-notificacoes').checked = bool('notificacoes_ativas', true);
             document.getElementById('cfg-manutencao').checked   = bool('manutencao_ativa', false);
 
@@ -798,9 +810,6 @@
                 home_banner:         document.getElementById('cfg-home-banner').value.trim(),
                 home_intervalo_seg:  String(intervalo),
                 home_max_noticias:   String(maxNews),
-                home_mostrar_radar:  document.getElementById('cfg-home-radar').checked   ? '1' : '0',
-                home_mostrar_equipe: document.getElementById('cfg-home-equipe').checked  ? '1' : '0',
-                home_mostrar_tags:   document.getElementById('cfg-home-tags').checked    ? '1' : '0',
                 notificacoes_ativas: document.getElementById('cfg-notificacoes').checked ? '1' : '0',
                 manutencao_ativa:    document.getElementById('cfg-manutencao').checked   ? '1' : '0',
                 manutencao_msg:      document.getElementById('cfg-manutencao-msg').value.trim()
@@ -926,6 +935,84 @@
                 toast('❌ Erro ao salvar as URLs.', 'err');
                 if (log) log.textContent = 'Falha: ' + e;
             }
+        }
+
+        // ==========================================================
+        // ABA: LOGS (auditoria — somente admin)
+        // ==========================================================
+        let allLogs = [];
+
+        function escLog(v) {
+            return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
+        }
+
+        async function carregarLogsAdmin() {
+            const tbody = document.getElementById('logs-tbody');
+            const limiteSel = document.getElementById('filtro-limite-logs');
+            const limite = parseInt(limiteSel?.value || '300', 10) || 300;
+            if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:var(--text-muted);">Carregando logs…</td></tr>';
+            try {
+                const res = await fetch(`${FIREBASE_URL}logs.json?orderBy="timestamp"&limitToLast=${limite}&nc=1&_=${Date.now()}`);
+                const data = await res.json();
+                allLogs = [];
+                if (data) {
+                    if (Array.isArray(data)) { allLogs = data.filter(Boolean).map((v, i) => ({ ...v, key: i })); }
+                    else { allLogs = Object.keys(data).map(k => ({ ...data[k], key: k })); }
+                }
+                preencherModulosLogs();
+                renderLogsTable();
+            } catch(e) {
+                allLogs = [];
+                if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:24px; color:#FF5252;">Erro ao carregar os logs. Verifique a URL da planilha central.</td></tr>';
+            }
+        }
+
+        function preencherModulosLogs() {
+            const sel = document.getElementById('filtro-modulo-logs');
+            if (!sel) return;
+            const atual = sel.value;
+            const modulos = Array.from(new Set(allLogs
+                .map(l => String(l?.modulo || 'Sistema').trim())
+                .filter(Boolean)
+            )).sort((a, b) => a.localeCompare(b));
+            sel.innerHTML = '<option value="">Todos os módulos</option>' +
+                modulos.map(m => `<option value="${escLog(m)}">${m}</option>`).join('');
+            if (atual && modulos.indexOf(atual) !== -1) sel.value = atual;
+        }
+
+        function renderLogsTable() {
+            const tbody = document.getElementById('logs-tbody');
+            if (!tbody) return;
+            const busca = (document.getElementById('filtro-logs')?.value || '').toLowerCase().trim();
+            const fModulo = document.getElementById('filtro-modulo-logs')?.value || '';
+
+            const lista = allLogs
+                .filter(l => l && (l.acao || l.modulo || l.usuario))
+                .filter(l => {
+                    const okModulo = !fModulo || String(l.modulo || 'Sistema').trim() === fModulo;
+                    const alvo = (String(l.usuario || '') + ' ' + String(l.modulo || '') + ' ' + String(l.acao || '')).toLowerCase();
+                    return okModulo && (!busca || alvo.includes(busca));
+                })
+                .sort((a, b) => (Number(b.timestamp) || 0) - (Number(a.timestamp) || 0));
+
+            if (!lista.length) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:26px; color:var(--text-muted);">Nenhum log encontrado.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = lista.slice(0, 1000).map(l => {
+                const ts = Number(l.timestamp);
+                const data = ts ? new Date(ts).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit' }) : '—';
+                const modulo = escLog(String(l.modulo || 'Sistema'));
+                const acao = escLog(String(l.acao || ''));
+                const usuario = escLog(String(l.usuario || 'Sistema'));
+                return `<tr>
+                    <td style="white-space:nowrap; color:var(--text-muted);">${data}</td>
+                    <td><strong style="color:var(--text-title);">${usuario}</strong></td>
+                    <td><span class="chip" style="margin:0;">${modulo}</span></td>
+                    <td style="white-space:normal; color:var(--text-main);">${acao}</td>
+                </tr>`;
+            }).join('');
         }
 
         // Carrega o catálogo de cargos do cérebro (cacheado) para o select da tabela
@@ -1085,7 +1172,7 @@
             } catch(e) {}
         };
 
-        const ADMIN_TABS = ['menus','users','news','status','bigquery','portal','planilhas','versao'];
+        const ADMIN_TABS = ['menus','users','news','status','bigquery','portal','planilhas','logs','versao'];
 
         function switchAdminTab(tab, el) {
             tab = String(tab || '').replace(/^tab-/, '');
@@ -1113,6 +1200,7 @@
             if(tab === 'bigquery') carregarBQAdmin();
             if(tab === 'portal') carregarConfigPortalAdmin();
             if(tab === 'planilhas') carregarUrlsPaginas();
+            if(tab === 'logs') carregarLogsAdmin();
 
             if(tab === 'versao') carregarVersaoInfo();
         }
@@ -1422,7 +1510,7 @@
                             <div>
                                 <div style="display:flex; flex-wrap:wrap;">${tagsHtml}</div>
                                 <strong style="color:var(--text-title); font-size:1.1rem; display:block;">${n.titulo}</strong>
-                                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Por <b>${n.autor}</b> em ${d} • ${n.likes || 0} curtidas</div>
+                                <div style="font-size:0.8rem; color:var(--text-muted); margin-top:4px;">Por <b>${n.autor}</b> em ${d}</div>
                             </div>
                             <div style="display:flex; gap: 8px;">
                                 <button class="btn btn-warn" onclick="editarNoticia('${n.key}')">✏️ Editar</button>
@@ -1496,7 +1584,7 @@
                     toast("Notícia atualizada com sucesso!", 'ok');
                 } else {
                     let idNoticia = "news_" + Date.now();
-                    let novaNoticia = { id: idNoticia, autor: userName, data: Date.now(), tag: tag, titulo: titulo, corpo: corpo, likes: 0, likedBy: [] };
+                    let novaNoticia = { id: idNoticia, autor: userName, data: Date.now(), tag: tag, titulo: titulo, corpo: corpo };
                     await fetch(`${FIREBASE_URL}portal_news/${idNoticia}.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(novaNoticia) });
                     await registrarLog("Mural", `Publicou uma nova notícia: "${titulo}"`);
                     toast("Notícia publicada com sucesso!", 'ok');
