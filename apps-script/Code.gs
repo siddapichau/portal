@@ -82,7 +82,7 @@ var PREFERRED_HEADERS = {
   users: ['id', 'usuario', 'nome', 'sobrenome', 'email', 'telefone', 'cargo', 'solicitacao', 'favorito', 'avatar', 'senha'],
   cargos: ['id', 'rotulo', 'nivel', 'descricao'],
   funcoes: ['id', 'rotulo', 'descricao'],
-  portal_news: ['id', 'titulo', 'corpo', 'autor', 'tag', 'data', 'likes', 'likedBy', 'data_edit'],
+  portal_news: ['id', 'titulo', 'corpo', 'autor', 'tag', 'data', 'data_edit'],
   portal_status: ['id', 'nome', 'estado', 'descricao', 'icon', 'lastUpdate'],
   portal_bigquery: ['id', 'titulo', 'categoria', 'tags', 'descricao', 'codigo_sql', 'corpo_post', 'autor', 'data', 'data_edit'],
   logs: ['id', 'timestamp', 'usuario', 'avatar', 'modulo', 'acao', 'tipo'],
@@ -103,7 +103,7 @@ var IMPORT_NUCLEO = [
   ['portal_news', '📰 Notícias'],
   ['portal_status', '📊 Status dos reportes'],
   ['portal_bigquery', '🗄️ BigQuery'],
-  ['logs', '📜 Logs (radar de atividades)'],
+  ['logs', '📜 Logs (auditoria do portal)'],
   ['presence', '🟢 Presença (quem está online)'],
   ['user_bookmarks', '⭐ Favoritos (cofre)']
 ];

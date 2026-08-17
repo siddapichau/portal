@@ -174,6 +174,7 @@ Ver §5.
 3. O menu, login, Admin, notícias, status e logs passam a usar o cérebro central.
 
 ### 4.3 Ligar uma página de reporte
+0. **Confira se a aba de dados existe na planilha da página** (o script não cria aba). A estrutura da aba (nome, posição/gid, cabeçalho e linha de exemplo) fica documentada no `COMO_IMPLANTAR.md` da página e é **avisada ao usuário na entrega** (regra das abas do `AGENTS.md`).
 1. Na planilha da página, cole o adaptador `apps-script/<pagina>/Code.gs` em **Extensões → Apps Script**.
 2. Publique como **Aplicativo da Web**, executando como **Eu**, com acesso para **Qualquer pessoa**.
 3. Teste a URL `/exec`: o JSON de saúde deve conter `ok:true`.
@@ -210,7 +211,7 @@ Para Avarias — Diário, siga `apps-script/avarias-diario/COMO_IMPLANTAR.md`.
 - [x] GET do portal vai para `/exec?path=...` (não mais `/exec/node.json`, que pedia login).
 - [x] `/exec` sem path devolve saúde (`ok:true` + contagem por aba), não `"Rota inválida"`.
 - [x] `setupPortal` cria só o cérebro. Existe **🧹 Remover abas db_***.
-- [x] Cabeçalhos de Notícias/Status/BigQuery batem com o que o portal grava (`corpo`, `tag`, `likes`…).
+- [x] Cabeçalhos de Notícias/Status/BigQuery batem com o que o portal grava (`corpo`, `tag`, `data`…). O sistema de curtidas foi removido (sem `likes`/`likedBy` no front).
 - [ ] Após **Nova versão** da implantação, abrir `/exec` mostra `{ok:true,…}`.
 - [ ] Depois de importar o núcleo: menu, notícias, status, login e radar carregam no portal.
 
@@ -218,9 +219,19 @@ Para Avarias — Diário, siga `apps-script/avarias-diario/COMO_IMPLANTAR.md`.
 
 - [x] `avarias-diario.html` não oferece nem processa upload CSV.
 - [x] A página usa `PortalDB.baseAtiva('pages/avarias-diario.html')` e mantém o node `poka_avarias_diario`.
-- [x] O Apps Script dedicado lê a aba `gid=0` sem escrever na planilha e preserva valores exibidos.
+- [x] O Apps Script dedicado lê a aba de dados (gid=0 → nome `Avarias Diario` → primeira aba) sem escrever na planilha e preserva valores exibidos.
 - [x] O endpoint oferece health check validável pelo Admin.
+- [x] A estrutura da aba (cabeçalho da linha 1) está documentada em `apps-script/avarias-diario/COMO_IMPLANTAR.md`.
+- [ ] **Pendência do usuário:** criar a aba de dados na planilha de Avarias com o cabeçalho documentado.
 - [ ] Após a implantação pelo responsável, filtros, KPIs, tabela, gráficos, links e exportação devem ser homologados com dados reais.
+
+### Critérios de aceite — Home modernizada
+
+- [x] Home com mensagem central de boas-vindas (título + usuário + data) e últimas notícias.
+- [x] Removidos da Home: radar/logs, usuários logados (presença) e filtro de tags.
+- [x] Sistema de curtidas removido do front (Home e Admin) — sem `likes`/`likedBy` no que o portal grava.
+- [x] Logs movidos para aba **Admin → Logs** (somente admin).
+- [ ] Usuário deve publicar **Nova versão / Cache** no Admin para todos receberem a Home nova.
 
 ## 8. Rollback
 

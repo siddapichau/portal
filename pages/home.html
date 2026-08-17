@@ -19,124 +19,94 @@
     <style>
         body {
             background: transparent !important;
-            padding: 12px 15px 15px 15px;
+            padding: 18px 15px 40px 15px;
             min-height: 100vh;
             overflow-x: hidden;
         }
 
-        #home-view { width: 100%; max-width: 1500px; margin: 0 auto; display: grid; grid-template-columns: 320px 1fr 300px; gap: 20px; height: calc(100vh - 30px); }
-
-        .panel-box { background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 12px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden; }
-
-        .panel-header { background: rgba(52, 131, 250, 0.05); padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: flex; justify-content: space-between; align-items: center; }
-        .panel-header h2 { font-size: 1rem; color: var(--text-title); display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 900;}
-
-        .panel-content { flex: 1; overflow-y: auto; padding: 0; display: flex; flex-direction: column;}
-        .panel-content::-webkit-scrollbar { width: 6px; }
-        .panel-content::-webkit-scrollbar-track { background: transparent; }
-        .panel-content::-webkit-scrollbar-thumb { background: var(--border-card); border-radius: 4px; }
+        #home-view { width: 100%; max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
 
         .muted-msg { text-align: center; padding: 40px 20px; color: var(--text-muted); font-weight: 600; }
         .error-msg { text-align: center; padding: 40px 20px; color: #FF5252; font-weight: 600; }
 
         /* Aviso de manutenção (controlado no Admin) */
-        #home-aviso { display: none; grid-column: 1 / -1; background: rgba(255, 176, 0, 0.12); border: 1px solid var(--accent-warn); color: var(--text-title); border-radius: 10px; padding: 12px 18px; font-weight: 700; font-size: 0.9rem; align-items: center; gap: 10px; }
+        #home-aviso { display: none; background: rgba(255, 176, 0, 0.12); border: 1px solid var(--accent-warn); color: var(--text-title); border-radius: 12px; padding: 12px 18px; font-weight: 700; font-size: 0.9rem; align-items: center; gap: 10px; }
 
-        /* --- COLUNA 1: LOGS --- */
-        .live-indicator { width: 8px; height: 8px; background-color: var(--accent-green); border-radius: 50%; box-shadow: 0 0 8px var(--accent-green); animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } 100% { opacity: 1; transform: scale(1); } }
+        /* ============ HERO — BOAS-VINDAS ============ */
+        .hero {
+            position: relative; overflow: hidden;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 45%, #3483fa 100%);
+            border-radius: 20px; padding: 42px 34px;
+            box-shadow: 0 16px 40px rgba(30, 60, 114, 0.30);
+            text-align: center;
+        }
+        .hero::after {
+            content: ''; position: absolute; right: -80px; top: -80px; width: 260px; height: 260px;
+            background: rgba(255, 255, 255, 0.08); border-radius: 50%;
+        }
+        .hero::before {
+            content: ''; position: absolute; left: -60px; bottom: -100px; width: 220px; height: 220px;
+            background: rgba(255, 241, 89, 0.10); border-radius: 50%;
+        }
+        .hero-icon {
+            width: 72px; height: 72px; margin: 0 auto 16px; border-radius: 20px;
+            background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.28);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem; backdrop-filter: blur(4px); position: relative; z-index: 1;
+        }
+        .hero h1 { color: #fff; font-size: 1.9rem; font-weight: 900; margin: 0 0 8px; letter-spacing: -0.5px; text-transform: uppercase; position: relative; z-index: 1; }
+        .hero-welcome { color: rgba(255, 255, 255, 0.92); font-size: 1.05rem; font-weight: 700; margin: 0 0 6px; position: relative; z-index: 1; }
+        .hero-date { color: rgba(255, 255, 255, 0.70); font-size: 0.85rem; font-weight: 600; margin: 0; position: relative; z-index: 1; }
+        .hero-divider { width: 64px; height: 4px; border-radius: 2px; background: #FFF159; margin: 18px auto 0; position: relative; z-index: 1; }
 
-        .feed-list { list-style: none; padding: 0; margin: 0; }
-        .feed-item { padding: 15px 20px; border-bottom: 1px solid var(--border-card); display: grid; grid-template-columns: 36px 1fr; gap: 12px; align-items: start; transition: background 0.2s; }
-        .feed-item:hover { background: rgba(52, 131, 250, 0.05); }
-        .feed-item:last-child { border-bottom: none; }
+        /* ============ NOTÍCIAS ============ */
+        .news-panel {
+            background: var(--bg-card); border: 1px solid var(--border-card);
+            border-radius: 18px; box-shadow: var(--shadow-card); overflow: hidden;
+        }
+        .news-header {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+            padding: 18px 24px; border-bottom: 1px solid var(--border-card);
+            background: rgba(52, 131, 250, 0.05);
+        }
+        .news-header h2 { font-size: 1.05rem; color: var(--text-title); display: flex; align-items: center; gap: 9px; margin: 0; font-weight: 900; text-transform: uppercase; letter-spacing: 0.4px; }
+        .news-banner { font-size: 0.72rem; font-weight: 900; color: #2D3277; background: #FFF159; padding: 5px 12px; border-radius: 999px; letter-spacing: 0.5px; text-transform: uppercase; }
 
-        .feed-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; overflow: hidden; background: var(--bg-body); border: 1px solid var(--border-card);}
-        .feed-icon img { width: 100%; height: 100%; object-fit: cover; }
-        .feed-details { display: flex; flex-direction: column; gap: 3px; margin-top: -2px;}
-        .feed-module { font-size: 0.7rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
-        .feed-action { font-size: 0.85rem; color: var(--text-main); font-weight: 600; line-height: 1.3;}
-        .feed-meta { font-size: 0.7rem; color: var(--text-muted); font-weight: 500; display: flex; align-items: center; gap: 5px; margin-top: 4px;}
-        .feed-meta strong { color: var(--accent-blue); font-weight: 800; }
-
-        /* --- COLUNA 2: NOTÍCIAS --- */
-        .news-header-banner { background: #FFF159; color: #2D3277; padding: 10px; text-align: center; font-weight: 900; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; display: flex; justify-content: center; align-items: center; gap: 8px;}
-        .post-card { padding: 20px; border-bottom: 4px solid var(--border-card); display: flex; flex-direction: column; gap: 12px; position: relative;}
+        .post-card { padding: 22px 24px; border-bottom: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 12px; transition: background 0.2s; }
         .post-card:last-child { border-bottom: none; }
-        .post-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .post-card:hover { background: rgba(52, 131, 250, 0.04); }
+        .post-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; }
         .post-author-box { display: flex; align-items: center; gap: 10px; }
-        .author-avatar { width: 40px; height: 40px; background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; overflow: hidden;}
+        .author-avatar { width: 40px; height: 40px; background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; overflow: hidden; flex: 0 0 auto; }
         .author-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .author-info { display: flex; flex-direction: column; }
         .author-name { font-weight: 900; color: var(--text-title); font-size: 0.95rem; }
         .post-date { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
-        .post-tag { background: rgba(52, 131, 250, 0.15); color: var(--accent-blue); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; border: 1px solid rgba(52, 131, 250, 0.3);}
+        .post-tag { background: rgba(52, 131, 250, 0.15); color: var(--accent-blue); padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 900; text-transform: uppercase; border: 1px solid rgba(52, 131, 250, 0.3); }
 
-        .post-title { font-size: 1.1rem; font-weight: 900; color: var(--text-title); line-height: 1.3;}
-        .post-body { font-size: 0.9rem; color: var(--text-main); line-height: 1.5; white-space: pre-wrap; word-break: break-word;}
-        .post-body img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+        .post-title { font-size: 1.15rem; font-weight: 900; color: var(--text-title); line-height: 1.3; }
+        .post-body { font-size: 0.92rem; color: var(--text-main); line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+        .post-body img { max-width: 100%; border-radius: 10px; margin: 10px 0; }
         .post-body a { color: var(--accent-blue); font-weight: bold; text-decoration: underline; }
 
-        .post-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 15px; border-top: 1px solid var(--border-card); }
-        .ml-signature { font-size: 0.75rem; color: var(--text-muted); font-weight: 800; display: flex; align-items: center; gap: 6px; font-style: italic;}
-        .ml-signature img { height: 14px; opacity: 0.7;}
+        .post-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding-top: 14px; border-top: 1px solid var(--border-card); }
+        .ml-signature { font-size: 0.75rem; color: var(--text-muted); font-weight: 800; display: flex; align-items: center; gap: 6px; font-style: italic; }
+        .ml-signature img { height: 14px; opacity: 0.7; }
 
-        .btn-like { background: transparent; border: 1px solid var(--border-card); color: var(--text-muted); padding: 6px 12px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; font-size: 0.85rem; transition: 0.3s; position: relative; overflow: hidden;}
-        .btn-like:hover { background: rgba(52, 131, 250, 0.1); border-color: var(--accent-blue); color: var(--accent-blue); }
-        .btn-like.liked { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
+        #btn-news-refresh { padding: 7px 14px; background: var(--accent-blue); color: #fff; border: none; border-radius: 8px; font-weight: 800; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.4px; cursor: pointer; transition: 0.2s; font-family: inherit; }
+        #btn-news-refresh:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(52, 131, 250, 0.3); }
+        #btn-news-refresh:disabled { opacity: 0.55; cursor: default; transform: none; box-shadow: none; }
 
-        .like-anim-text { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); font-weight: 900; color: var(--accent-blue); font-size: 0.8rem; opacity: 0; pointer-events: none; white-space: nowrap; text-shadow: 0 2px 4px rgba(0,0,0,0.5); z-index: 10;}
-        @keyframes flyUp { 0% { bottom: 50%; opacity: 0; transform: translate(-50%, 0) scale(0.5); } 20% { opacity: 1; transform: translate(-50%, -10px) scale(1.2); } 100% { bottom: 200%; opacity: 0; transform: translate(-50%, -40px) scale(1); } }
-        .like-anim-text.animate { animation: flyUp 0.8s ease-out forwards; }
-
-        /* --- COLUNA 3: USUÁRIOS E TAGS --- */
-        .user-group-title { background: rgba(0,0,0,0.2); padding: 8px 15px; font-size: 0.75rem; font-weight: 900; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-card); border-top: 1px solid var(--border-card);}
-        [data-theme="light"] .user-group-title { background: rgba(0,0,0,0.03); }
-        .user-group-title:first-child { border-top: none; }
-
-        .user-list { list-style: none; padding: 0; margin: 0; }
-        .user-item { padding: 12px 15px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--border-card); }
-        .user-item:last-child { border-bottom: none; }
-        .user-avatar { width: 32px; height: 32px; background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.85rem; text-transform: uppercase; overflow: hidden; }
-        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-        .user-info { display: flex; flex-direction: column; gap: 2px;}
-        .user-name { font-weight: 800; font-size: 0.85rem; color: var(--text-title); display: flex; align-items: center; gap: 6px;}
-        .user-role { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;}
-
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block;}
-        .dot-online { background-color: var(--accent-green); box-shadow: 0 0 5px var(--accent-green); }
-        .dot-offline { background-color: var(--text-muted); }
-        .dot-new { background-color: var(--accent-warn); }
-
-        .tag-btn { background: var(--bg-body); border: 1px solid var(--border-card); color: var(--text-main); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 800; cursor: pointer; transition: 0.2s; white-space: nowrap;}
-        .tag-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
-        .tag-btn.active { background: var(--accent-blue); color: #fff; border-color: var(--accent-blue); }
-
-        /* ==========================================
-           RESPONSIVIDADE PARA MOBILE
-           ========================================== */
-        @media (max-width: 1100px) {
-            #home-view { grid-template-columns: 1fr 300px; height: auto; }
-            .col-news { grid-column: 1 / -1; order: -1; max-height: 600px;}
-        }
+        /* ============ RESPONSIVIDADE ============ */
         @media (max-width: 768px) {
-            #home-view { grid-template-columns: 1fr; height: auto; gap: 15px; }
-            .col-news, .panel-box { max-height: 500px; }
-            .panel-box { max-height: 400px; }
-            body { padding: 10px; }
-            .post-card { padding: 15px; }
-        }
-        @media (max-width: 480px) {
-            .feed-item { padding: 12px 15px; grid-template-columns: 30px 1fr; gap: 8px; }
-            .feed-icon { width: 30px; height: 30px; font-size: 0.9rem; }
-            .feed-action { font-size: 0.75rem; }
-            .post-title { font-size: 0.95rem; }
-            .post-body { font-size: 0.8rem; }
-            .panel-header { padding: 10px 15px; }
-            .panel-header h2 { font-size: 0.85rem; }
-            .user-item { padding: 10px 12px; }
-            .tag-btn { font-size: 0.65rem; padding: 4px 8px; }
+            body { padding: 10px 10px 30px; }
+            .hero { padding: 30px 20px; border-radius: 16px; }
+            .hero h1 { font-size: 1.35rem; }
+            .hero-welcome { font-size: 0.95rem; }
+            .news-header { padding: 14px 16px; }
+            .post-card { padding: 16px; }
+            .post-title { font-size: 1rem; }
+            .post-body { font-size: 0.85rem; }
         }
     </style>
 </head>
@@ -146,37 +116,23 @@
 
         <div id="home-aviso"></div>
 
-        <!-- COLUNA 1: LOGS -->
-        <div class="panel-box col-logs" id="col-logs">
-            <div class="panel-header"><h2><div class="live-indicator" title="Monitorando ao vivo"></div> Radar de Atividades</h2></div>
-            <div class="panel-content"><ul class="feed-list" id="feed-list"><div class="muted-msg">Conectando à Central...</div></ul></div>
+        <!-- MENSAGEM CENTRAL DE BOAS-VINDAS -->
+        <div class="hero">
+            <div class="hero-icon">📊</div>
+            <h1 id="home-titulo">Portal de Controles Internos</h1>
+            <p class="hero-welcome" id="home-welcome">Bem-vindo(a) ao portal!</p>
+            <p class="hero-date" id="home-date"></p>
+            <div class="hero-divider"></div>
         </div>
 
-        <!-- COLUNA 2: NOTÍCIAS -->
-        <div class="panel-box col-news">
-            <h1 id="home-titulo" style="text-align: center; font-size: 1.6rem; font-weight: 900; color: var(--text-title); margin: 15px 0 10px 0; text-transform: uppercase; letter-spacing: 1px;">Portal de Controles Internos</h1>
-            <div class="news-header-banner" id="home-banner">📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS</div>
-
-            <div class="panel-content" id="news-feed-container"><div class="muted-msg">Carregando mural...</div></div>
-        </div>
-
-        <!-- COLUNA 3: USUÁRIOS E TAGS -->
-        <div class="panel-box col-users" id="col-users">
-            <div class="panel-header"><h2>👥 Equipe no Portal</h2></div>
-            <div class="panel-content" id="users-feed-container" style="flex: 1 1 auto;">
-                <div class="muted-msg">Mapeando presenças...</div>
+        <!-- ÚLTIMAS NOTÍCIAS -->
+        <div class="news-panel">
+            <div class="news-header">
+                <h2>📰 Últimas Notícias</h2>
+                <span class="news-banner" id="home-banner" style="display:none;">📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS</span>
+                <button id="btn-news-refresh" onclick="carregarNoticias()" title="Atualizar notícias">🔄 Atualizar</button>
             </div>
-
-            <div class="panel-header" id="tags-header" style="border-top: 1px solid var(--border-card);"><h2>🏷️ Explorar Temas</h2></div>
-            <div class="panel-content" id="tags-box" style="flex: 0 0 auto; padding: 15px; overflow-y: visible;">
-                <div id="tags-container" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;"></div>
-                <div style="background: rgba(52, 131, 250, 0.1); border: 1px solid rgba(52, 131, 250, 0.2); border-radius: 8px; padding: 15px; text-align: center;">
-                    <div style="font-size: 0.8rem; color: var(--text-muted); font-weight: 900; text-transform: uppercase; margin-bottom: 5px;">Reconhecimento da Equipe</div>
-                    <div style="font-size: 1.5rem; font-weight: 900; color: var(--accent-blue); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        🚀 <span id="total-likes-counter">0</span> Curtidas
-                    </div>
-                </div>
-            </div>
+            <div id="news-feed-container"><div class="muted-msg">Carregando mural...</div></div>
         </div>
     </div>
 
@@ -184,7 +140,8 @@
         // ============================================================
         // HOME DO PORTAL — conteúdo padrão exibido ao entrar no site.
         // Roda dentro do iframe do index.html (shell com o menu global).
-        // 100% planilha Google Sheets via PortalDB.
+        // 100% planilha Google Sheets via PortalDB (nó portal_news).
+        // Layout moderno: boas-vindas + últimas notícias.
         // ============================================================
         const URL_BD_HOME = window.PortalDB.baseAtiva();
 
@@ -202,21 +159,15 @@
 
         let CURRENT_LOGGED_USER = null;
         try { CURRENT_LOGGED_USER = JSON.parse(localStorage.getItem('loggedUser')); } catch(e) {}
-        let currentUserStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.usuario) ? CURRENT_LOGGED_USER.usuario : 'Você';
-        let currentRoleStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.cargo) ? CURRENT_LOGGED_USER.cargo : 'Acesso Local';
+        let currentUserStr = (CURRENT_LOGGED_USER && CURRENT_LOGGED_USER.usuario) ? CURRENT_LOGGED_USER.usuario : null;
 
         let globalNewsList = [];
-        let currentNewsFilter = 'Todas';
         let userAvatarMap = {};
-        let cargosMap = {}; // catálogo dinâmico de cargos (reconhece cargos novos)
 
-        // Configurações do portal (aba "Configurações" do Painel Admin)
+        // Configurações do portal (aba "_Config" da planilha central, via Admin)
         let homeConfig = {
             portal_titulo: 'Portal de Controles Internos',
             home_banner: '📢 ÚLTIMAS NOVIDADES E ATUALIZAÇÕES LOGÍSTICAS',
-            home_mostrar_radar: true,
-            home_mostrar_equipe: true,
-            home_mostrar_tags: true,
             home_intervalo_seg: 30,
             home_max_noticias: 0,
             notificacoes_ativas: true,
@@ -237,7 +188,7 @@
             return fallback;
         }
 
-        // Lê a aba _Config da planilha (nó "config") e aplica na home
+        // Lê a aba _Config da planilha central (nó "config") e aplica na home
         async function carregarConfigPortal() {
             try {
                 const res = await fetch(`${URL_BD_HOME}config.json`);
@@ -245,9 +196,6 @@
                 if (cfg && typeof cfg === 'object') {
                     if (cfg.portal_titulo) homeConfig.portal_titulo = String(cfg.portal_titulo);
                     if (cfg.home_banner) homeConfig.home_banner = String(cfg.home_banner);
-                    homeConfig.home_mostrar_radar  = toBool(cfg.home_mostrar_radar,  true);
-                    homeConfig.home_mostrar_equipe = toBool(cfg.home_mostrar_equipe, true);
-                    homeConfig.home_mostrar_tags   = toBool(cfg.home_mostrar_tags,   true);
                     homeConfig.notificacoes_ativas = toBool(cfg.notificacoes_ativas, true);
                     homeConfig.manutencao_ativa    = toBool(cfg.manutencao_ativa,    false);
                     homeConfig.manutencao_msg      = cfg.manutencao_msg ? String(cfg.manutencao_msg) : '';
@@ -265,27 +213,13 @@
             if (elTitulo) elTitulo.innerText = homeConfig.portal_titulo;
 
             const elBanner = document.getElementById('home-banner');
-            if (elBanner) elBanner.innerText = homeConfig.home_banner;
-
-            const colLogs = document.getElementById('col-logs');
-            if (colLogs) colLogs.style.display = homeConfig.home_mostrar_radar ? 'flex' : 'none';
-
-            const colUsers = document.getElementById('col-users');
-            if (colUsers) colUsers.style.display = homeConfig.home_mostrar_equipe ? 'flex' : 'none';
-
-            const tagsHeader = document.getElementById('tags-header');
-            const tagsBox = document.getElementById('tags-box');
-            if (tagsHeader) tagsHeader.style.display = homeConfig.home_mostrar_tags ? 'flex' : 'none';
-            if (tagsBox) tagsBox.style.display = homeConfig.home_mostrar_tags ? 'flex' : 'none';
-
-            // Ajusta o grid quando alguma coluna está desligada
-            const view = document.getElementById('home-view');
-            if (view && window.innerWidth > 1100) {
-                const cols = [];
-                if (homeConfig.home_mostrar_radar) cols.push('320px');
-                cols.push('1fr');
-                if (homeConfig.home_mostrar_equipe) cols.push('300px');
-                view.style.gridTemplateColumns = cols.join(' ');
+            if (elBanner) {
+                if (homeConfig.home_banner) {
+                    elBanner.innerText = homeConfig.home_banner;
+                    elBanner.style.display = 'inline-flex';
+                } else {
+                    elBanner.style.display = 'none';
+                }
             }
 
             const aviso = document.getElementById('home-aviso');
@@ -299,6 +233,20 @@
             }
         }
 
+        // Boas-vindas personalizada com a data de hoje
+        function aplicarBoasVindas() {
+            const elWelcome = document.getElementById('home-welcome');
+            const elDate = document.getElementById('home-date');
+            if (elWelcome) {
+                elWelcome.innerText = currentUserStr
+                    ? `Bem-vindo(a), ${currentUserStr}! 👋`
+                    : 'Bem-vindo(a) ao portal! 👋';
+            }
+            if (elDate) {
+                elDate.innerText = new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+            }
+        }
+
         // Pede a permissão de notificação para o usuário
         function pedirPermissaoNotificacao() {
             if (!homeConfig.notificacoes_ativas) return;
@@ -309,7 +257,7 @@
             }
         }
 
-        // Função que escuta ativamente o banco de dados (planilha)
+        // Escuta o mural (planilha) e avisa quando sai notícia/status novo
         async function checkNotifications() {
             if (!homeConfig.notificacoes_ativas) return;
             if (!("Notification" in window) || Notification.permission !== "granted") return;
@@ -361,7 +309,7 @@
             } catch(e) { console.log("Aviso: Notificação não enviada.", e); }
         }
 
-        // Recuperador universal de Avatares
+        // Recuperador universal de Avatares (autores das notícias)
         function getAvatarHTML(username) {
             let u = username ? username.toLowerCase() : '';
             let url = userAvatarMap[u];
@@ -382,75 +330,16 @@
             } catch(e) { console.log("Aviso: Mapa de avatares não carregou."); }
         }
 
-        // Só mostra no radar as atividades de ATUALIZAÇÃO DE REPORTES.
-        // Esconde logs de dados pessoais/administrativos (login, cargo, senha, permissão…).
-        function isReportLog(log) {
-            if(!log || !log.acao) return false;
-            const m = String(log.modulo || '').toLowerCase();
-            const a = String(log.acao || '').toLowerCase();
-            const modsPessoais = ['painel admin','sistema','auth','login','registro','perfil','presença','conta'];
-            for(let i = 0; i < modsPessoais.length; i++) if(m.includes(modsPessoais[i])) return false;
-            const acoesPessoais = ['logou','log in','login','registrou','registro','alterou permiss','cargo','senha','avatar','favorito','bloqueou','aprovou','criou conta','migrou','presença'];
-            for(let j = 0; j < acoesPessoais.length; j++) if(a.includes(acoesPessoais[j])) return false;
-            return true;
-        }
-
-        async function carregarFeedAtualizacoes() {
-            if (!homeConfig.home_mostrar_radar) return;
-            const listEl = document.getElementById('feed-list');
-            try {
-                // Pede só os 40 mais recentes (menos bytes no radar)
-                const res = await fetch(`${URL_BD_HOME}logs.json?orderBy="timestamp"&limitToLast=40`);
-                const data = await res.json();
-
-                if(!data) { listEl.innerHTML = '<div class="muted-msg">Nenhuma atividade recente.</div>'; return; }
-
-                let logs = [];
-                if (Array.isArray(data)) { logs = data.filter(Boolean); } else { logs = Object.keys(data).map(key => data[key]); }
-
-                // 🔍 Radar só com atualizações de reportes (nada de dados pessoais)
-                logs = logs.filter(isReportLog);
-                logs.sort((a, b) => b.timestamp - a.timestamp); logs = logs.slice(0, 15);
-                listEl.innerHTML = '';
-
-                logs.forEach(log => {
-                    const dataFormatada = new Date(log.timestamp).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
-                    let bgStyle = 'rgba(52, 131, 250, 0.1)'; let colorStyle = 'var(--accent-blue)';
-                    const actionTxt = String(log.acao || '').toLowerCase();
-
-                    if (actionTxt.includes('adicionou') || actionTxt.includes('criou') || actionTxt.includes('publicou')) { bgStyle = 'rgba(0, 166, 80, 0.1)'; colorStyle = 'var(--accent-green)'; }
-                    else if (actionTxt.includes('removeu') || actionTxt.includes('excluiu') || actionTxt.includes('apagou')) { bgStyle = 'rgba(255, 82, 82, 0.1)'; colorStyle = 'var(--accent-red)'; }
-                    else if (actionTxt.includes('sincronizou')) { bgStyle = 'rgba(255, 176, 0, 0.1)'; colorStyle = 'var(--accent-warn)'; }
-
-                    let uName = log.usuario || 'Desconhecido';
-
-                    listEl.innerHTML += `
-                        <li class="feed-item">
-                            <div class="feed-icon" style="background: ${bgStyle}; color: ${colorStyle}; border-color: ${colorStyle};">
-                                ${getAvatarHTML(uName)}
-                            </div>
-                            <div class="feed-details">
-                                <span class="feed-module">${log.modulo || 'Sistema'}</span>
-                                <span class="feed-action">${log.acao}</span>
-                                <span class="feed-meta">Por <strong>${uName}</strong> • ${dataFormatada}</span>
-                            </div>
-                        </li>
-                    `;
-                });
-            } catch (e) {
-                if(listEl.innerHTML.includes('Conectando')) listEl.innerHTML = '<div class="error-msg">Erro ao carregar o radar de atividades.</div>';
-            }
-        }
-
         async function carregarNoticias() {
             const container = document.getElementById('news-feed-container');
+            const btn = document.getElementById('btn-news-refresh');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
             try {
                 const res = await fetch(`${URL_BD_HOME}portal_news.json?_=${Date.now()}`);
                 let data = await res.json();
 
                 if(!data) {
                     container.innerHTML = '<div class="muted-msg">Ainda não há publicações no mural.</div>';
-                    document.getElementById('total-likes-counter').innerText = '0';
                     return;
                 }
 
@@ -459,74 +348,30 @@
 
                 globalNewsList.sort((a,b) => b.data - a.data);
 
-                renderTags(globalNewsList);
                 renderNoticias();
 
             } catch (e) {
                 if(container.innerHTML.includes('Carregando')) container.innerHTML = '<div class="error-msg">Falha ao obter mural de notícias.</div>';
+            } finally {
+                if (btn) { btn.disabled = false; btn.textContent = '🔄 Atualizar'; }
             }
-        }
-
-        // LÓGICA DE TAGS (SEPARA POR VÍRGULA)
-        function renderTags(newsList) {
-            const container = document.getElementById('tags-container');
-            if(!container) return;
-
-            let tags = new Set();
-            let totalLikes = 0;
-
-            newsList.forEach(n => {
-                if(n.tag) {
-                    n.tag.split(',').forEach(t => {
-                        if(t.trim()) tags.add(t.trim());
-                    });
-                }
-                totalLikes += (parseInt(n.likes) || 0);
-            });
-
-            let tagsArray = Array.from(tags).sort();
-
-            let html = `<button class="tag-btn ${currentNewsFilter === 'Todas' ? 'active' : ''}" onclick="filtrarNoticias('Todas')">Todas</button>`;
-            tagsArray.forEach(t => {
-                html += `<button class="tag-btn ${currentNewsFilter === t ? 'active' : ''}" onclick="filtrarNoticias('${t}')">${t}</button>`;
-            });
-            container.innerHTML = html;
-
-            const totalEl = document.getElementById('total-likes-counter');
-            if(totalEl) totalEl.innerText = totalLikes;
-        }
-
-        window.filtrarNoticias = function(tag) {
-            currentNewsFilter = tag;
-            renderTags(globalNewsList);
-            renderNoticias();
         }
 
         function renderNoticias() {
             const container = document.getElementById('news-feed-container');
             container.innerHTML = '';
 
-            let filtradas = globalNewsList;
-            if(currentNewsFilter !== 'Todas') {
-                filtradas = globalNewsList.filter(n => n.tag && n.tag.split(',').map(t=>t.trim()).includes(currentNewsFilter));
-            }
-            if(homeConfig.home_max_noticias > 0) filtradas = filtradas.slice(0, homeConfig.home_max_noticias);
+            let lista = globalNewsList;
+            if(homeConfig.home_max_noticias > 0) lista = lista.slice(0, homeConfig.home_max_noticias);
 
-            if(filtradas.length === 0) {
-                container.innerHTML = `<div class="muted-msg">Nenhuma notícia encontrada com o tema "${currentNewsFilter}".</div>`;
+            if(lista.length === 0) {
+                container.innerHTML = '<div class="muted-msg">Nenhuma notícia publicada ainda.</div>';
                 return;
             }
 
-            filtradas.forEach(news => {
-                const dataFormatada = new Date(news.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+            lista.forEach(news => {
+                const dataFormatada = new Date(news.data).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
                 let authorName = news.autor || 'Admin';
-
-                let userHasLiked = false;
-                if(news.likedBy && Array.isArray(news.likedBy) && news.likedBy.includes(currentUserStr)) {
-                    userHasLiked = true;
-                }
-
-                const btnClass = userHasLiked ? 'btn-like liked' : 'btn-like';
 
                 // RENDERIZAÇÃO DE MULTIPLAS TAGS
                 let tagsHtml = '';
@@ -558,227 +403,27 @@
                             <div class="ml-signature">
                                 <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="ML"> Equipe Inventário
                             </div>
-                            <button class="${btnClass}" id="btn-like-${news.key}" onclick="darLikeNews('${news.key}')">
-                                🚀 <span id="like-count-${news.key}">${news.likes || 0}</span>
-                                <span class="like-anim-text" id="like-anim-${news.key}">Para Cima!</span>
-                            </button>
                         </div>
                     </div>
                 `;
             });
         }
 
-        window.darLikeNews = async function(newsKey) {
-            const btn = document.getElementById(`btn-like-${newsKey}`);
-            const countSpan = document.getElementById(`like-count-${newsKey}`);
-            const animSpan = document.getElementById(`like-anim-${newsKey}`);
-
-            try {
-                const res = await fetch(`${URL_BD_HOME}portal_news/${newsKey}.json`);
-                const news = await res.json();
-                if(!news) return;
-
-                let likedBy = news.likedBy || [];
-                let currentLikes = parseInt(news.likes) || 0;
-
-                if (likedBy.includes(currentUserStr)) {
-                    likedBy = likedBy.filter(u => u !== currentUserStr);
-                    currentLikes--;
-                    btn.classList.remove('liked');
-                } else {
-                    likedBy.push(currentUserStr);
-                    currentLikes++;
-                    btn.classList.add('liked');
-
-                    animSpan.classList.remove('animate');
-                    void animSpan.offsetWidth;
-                    animSpan.classList.add('animate');
-                }
-
-                countSpan.innerText = currentLikes;
-
-                await fetch(`${URL_BD_HOME}portal_news/${newsKey}.json`, {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ likes: currentLikes, likedBy: likedBy })
-                });
-
-                carregarNoticias();
-
-            } catch(e) { console.error("Erro ao computar like."); }
-        };
-
-        function formatRoleName(role) {
-            if(!role) return 'Desconhecido';
-            const r = String(role).toLowerCase();
-            const mapped = cargosMap[r];
-            if(mapped) return mapped;
-            if(r === 'view2') return 'View Plus';
-            if(r === 'view') return 'Viewer';
-            if(r === 'editor') return 'Editor';
-            if(r === 'admin') return 'Admin';
-            return role;
-        }
-
-        async function carregarCargos() {
-            // O menu global (menu.js) já carrega o catálogo no shell — reaproveita quando possível
-            try {
-                if (window.parent && window.parent !== window && window.parent.cargosMap) {
-                    cargosMap = window.parent.cargosMap;
-                    if (Object.keys(cargosMap).length) return;
-                }
-            } catch(e) { /* cross-origin: segue pelo fetch normal */ }
-
-            try {
-                const res = await fetch(`${URL_BD_HOME}cargos.json`);
-                const data = await res.json();
-                cargosMap = {};
-                if(data && typeof data === 'object') {
-                    Object.keys(data).forEach(k => {
-                        const c = data[k] || {};
-                        cargosMap[String(k).toLowerCase()] = c.rotulo || k;
-                    });
-                }
-            } catch(e) { console.log("Aviso: catálogo de cargos não carregou."); }
-        }
-
-        function registrarPresenca() {
-            if(currentUserStr !== 'Você' && currentUserStr !== 'Sistema') {
-                fetch(`${URL_BD_HOME}presence/${currentUserStr}.json`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ cargo: currentRoleStr, lastSeen: Date.now() })
-                }).catch(e => console.log(e));
-            }
-        }
-
-        async function carregarPresencaUsuarios() {
-            if (!homeConfig.home_mostrar_equipe) return;
-            const container = document.getElementById('users-feed-container');
-
-            try {
-                let presenceData = {};
-                try {
-                    const resP = await fetch(`${URL_BD_HOME}presence.json?_=${Date.now()}`);
-                    presenceData = await resP.json() || {};
-                } catch(errP) {}
-
-                const now = Date.now();
-                const onlineUsers = Object.keys(presenceData).filter(u => now - presenceData[u].lastSeen < 120000).map(u => ({ nome: u, cargo: formatRoleName(presenceData[u].cargo) }));
-
-                let allUsers = [];
-                try {
-                    const resU = await fetch(`${URL_BD_HOME}users.json?_=${Date.now()}`);
-                    const dataU = await resU.json();
-                    if(dataU) { allUsers = Object.keys(dataU).map(k => dataU[k]); }
-                } catch (errU) { console.error("Falha ao puxar usuários", errU); }
-
-                let pendentes = allUsers.filter(u => u.solicitacao === 'pendente').slice(0, 2);
-                let ultimosLogados = allUsers.filter(u => u.solicitacao === 'aprovado' && u.usuario !== currentUserStr && !onlineUsers.some(ou => ou.nome === u.usuario)).slice(0, 5);
-
-                let html = '';
-                html += `<div class="user-group-title">🟢 Agora no Portal</div><ul class="user-list">`;
-
-                if(currentUserStr !== 'Você') {
-                    html += `
-                        <li class="user-item">
-                            <div class="user-avatar" style="border-color: var(--accent-green);">
-                                ${getAvatarHTML(currentUserStr)}
-                            </div>
-                            <div class="user-info">
-                                <span class="user-name">${currentUserStr} (Você) <div class="status-dot dot-online"></div></span>
-                                <span class="user-role">${formatRoleName(currentRoleStr)}</span>
-                            </div>
-                        </li>
-                    `;
-                }
-
-                onlineUsers.forEach(ou => {
-                    if(ou.nome !== currentUserStr) {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar" style="border-color: var(--accent-blue);">
-                                    ${getAvatarHTML(ou.nome)}
-                                </div>
-                                <div class="user-info">
-                                    <span class="user-name">${ou.nome} <div class="status-dot dot-online"></div></span>
-                                    <span class="user-role">${ou.cargo}</span>
-                                </div>
-                            </li>
-                        `;
-                    }
-                });
-
-                if (onlineUsers.length === 0 && currentUserStr === 'Você') {
-                    html += `<li class="user-item"><div class="user-info"><span class="user-role" style="text-transform: none;">Ninguém online no momento.</span></div></li>`;
-                }
-                html += `</ul>`;
-
-                if(ultimosLogados.length > 0) {
-                    html += `<div class="user-group-title">⏱️ Acessos Recentes</div><ul class="user-list">`;
-                    ultimosLogados.forEach(u => {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar">
-                                    ${getAvatarHTML(u.usuario)}
-                                </div>
-                                <div class="user-info">
-                                    <span class="user-name">${u.usuario} <div class="status-dot dot-offline"></div></span>
-                                    <span class="user-role">${formatRoleName(u.cargo)}</span>
-                                </div>
-                            </li>
-                        `;
-                    });
-                    html += `</ul>`;
-                }
-
-                if(pendentes.length > 0) {
-                    html += `<div class="user-group-title">🆕 Novos Cadastros</div><ul class="user-list">`;
-                    pendentes.forEach(u => {
-                        html += `
-                            <li class="user-item">
-                                <div class="user-avatar" style="border-color: var(--accent-warn);">
-                                    ${getAvatarHTML(u.usuario)}
-                                </div>
-                                <div class="user-info">
-                                    <span class="user-name">${u.usuario} <div class="status-dot dot-new"></div></span>
-                                    <span class="user-role" style="color: var(--accent-warn);">Aguardando Aprovação</span>
-                                </div>
-                            </li>
-                        `;
-                    });
-                    html += `</ul>`;
-                }
-
-                container.innerHTML = html;
-
-            } catch (e) {
-                if(container.innerHTML.includes('Mapeando')) container.innerHTML = '<div class="error-msg">Falha ao sincronizar usuários.</div>';
-            }
-        }
-
         function atualizarTudo() {
-            prepararMapaDeAvatares().then(() => {
-                carregarFeedAtualizacoes().catch(function(){});
-                carregarNoticias().catch(function(){});
-                carregarPresencaUsuarios().catch(function(){});
-            }).catch(function(){});
+            carregarNoticias().catch(function(){});
         }
 
         window.onload = async function() {
             try { await carregarConfigPortal(); } catch(e){ aplicarConfigPortal(); }
+            aplicarBoasVindas();
 
             pedirPermissaoNotificacao();
-            try { registrarPresenca(); } catch(e){}
 
             try { await prepararMapaDeAvatares(); } catch(e){ console.warn('avatar map falhou', e); }
-            try { await carregarCargos(); } catch(e){ console.warn('cargos falhou', e); }
 
-            carregarFeedAtualizacoes().catch(function(e){ console.warn('feed', e); });
             carregarNoticias().catch(function(e){ console.warn('noticias', e); });
-            carregarPresencaUsuarios().catch(function(e){ console.warn('presenca', e); });
 
             setInterval(() => {
-                try { registrarPresenca(); } catch(e){}
                 try { checkNotifications(); } catch(e){}
                 atualizarTudo();
                 if(window.PortalDB && window.PortalDB.checkAppVersionSilently){
