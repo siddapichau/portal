@@ -145,6 +145,22 @@
     // Base do "cérebro" (menu, usuários, notícias...). Sempre a URL central.
     PortalDB.baseCentral = function () { return execBase() + '/'; };
 
+    // Versão assíncrona garantida: se a URL da página ainda não foi sincronizada
+    // no localStorage (ex.: primeiro acesso de outro usuário), faz a sincronização
+    // antes de resolver para garantir que a requisição vá para a planilha certa.
+    PortalDB.obterBaseAtiva = function (pagina) {
+        var chave = pagina || PortalDB.paginaAtual();
+        var mapa = pageUrlsMap_();
+        var achou = mapa[chave] || mapa[String(chave).replace(/^pages\//, '')] || '';
+        if (urlValida_(achou)) return Promise.resolve(String(achou).replace(/\/+$/, '') + '/');
+        return PortalDB.syncPageUrls().then(function (novoMapa) {
+            var u = (novoMapa && (novoMapa[chave] || novoMapa[String(chave).replace(/^pages\//, '')])) || '';
+            return (urlValida_(u) ? String(u).replace(/\/+$/, '') : execBase()) + '/';
+        }).catch(function () {
+            return execBase() + '/';
+        });
+    };
+
     // Grava/atualiza o espelho local das URLs por página
     PortalDB.setPageUrls = function (mapa) {
         var limpo = {};
@@ -341,7 +357,10 @@
     try {
         setTimeout(function () { checkAndClearIfVersionChanged_(true); }, 350);
     } catch (e) { }
-    // espelha as URLs /exec por página (não bloqueia nada)
+    // espelha as URLs /exec por página imediatamente e em segundo plano
+    try {
+        PortalDB.syncPageUrls();
+    } catch (e) { }
     try {
         setTimeout(function () { PortalDB.syncPageUrls(); }, 600);
     } catch (e) { }

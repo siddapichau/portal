@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aging Devolução - Dashboard</title>
-    
+
     <!-- SISTEMA ANTI-ACESSO DIRETO -->
     <script>
         if (window === window.top) {
@@ -15,9 +15,8 @@
 
     <link rel="icon" href="https://cdn.iconscout.com/icon/free/png-256/free-mercado-livre-icon-svg-download-png-14549372.png" type="image/png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
-    
+
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- CSS GLOBAL -->
@@ -34,28 +33,28 @@
         }
 
         body { padding: 10px; display: flex; flex-direction: column; gap: 10px; height: 100vh; overflow: hidden; background: transparent !important; }
-        
+
         .glass-panel { background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--border-card); border-radius: 10px; box-shadow: var(--shadow-card); transition: 0.3s; }
 
         /* CABEÇALHO ML CLEAN */
-        .top-header { 
-            position: relative; background-color: #FFF159 !important; padding: 10px 20px; 
-            display: flex; justify-content: space-between; align-items: center; gap: 20px; 
+        .top-header {
+            position: relative; background-color: #FFF159 !important; padding: 10px 20px;
+            display: flex; justify-content: space-between; align-items: center; gap: 20px;
             border-radius: 12px; box-shadow: 0 6px 25px rgba(0,0,0,0.18); flex: 0 0 auto;
             min-height: 55px; flex-wrap: wrap; width: 100%;
         }
         .header-left { display: flex; align-items: center; }
         .ml-logo { height: 28px; width: auto; object-fit: contain; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.15)); }
-        
+
         .header-center { flex: 1; text-align: center; font-size: clamp(1rem, 2vw, 1.15rem); font-weight: 900; color: #2D3277 !important; text-transform: uppercase; letter-spacing: 0.5px; }
         .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end;}
 
         /* BOTOES CLEAN MINIMALISTAS */
-        .btn { 
-            background: #ffffff !important; color: #1e293b !important; 
-            border: 1px solid #cbd5e1 !important; border-radius: 6px; 
-            width: 36px; height: 36px; font-size: 0.95rem; font-weight: 700; 
-            cursor: pointer; display: inline-flex; align-items: center; 
+        .btn {
+            background: #ffffff !important; color: #1e293b !important;
+            border: 1px solid #cbd5e1 !important; border-radius: 6px;
+            width: 36px; height: 36px; font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; display: inline-flex; align-items: center;
             justify-content: center; transition: all .2s ease-in-out;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05); flex-shrink: 0; padding: 0;
         }
@@ -63,8 +62,6 @@
         .btn svg { width: 16px; height: 16px; stroke: #1e293b; }
 
         .status-badge { font-size: .75rem; font-weight: 900; color: #2D3277; background: rgba(0,0,0,0.1); padding: 6px 12px; border-radius: 6px; white-space: nowrap; }
-        .upload-wrapper { position: relative; overflow: hidden; display: inline-flex; }
-        .upload-wrapper input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 10; }
 
         /* LAYOUT GERAL */
         .row { display: flex; gap: 10px; flex: 1; min-height: 0; width: 100%; }
@@ -73,7 +70,7 @@
 
         .chart-card, .kpi-card { padding: 15px; display: flex; flex-direction: column; }
         .chart-card { flex: 1; }
-        
+
         .kpi-card { justify-content: center; align-items: center; border-left: 4px solid var(--accent-blue); }
         .kpi-title { font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; text-align: center; font-weight: 800;}
         .kpi-value { font-size: 2.2rem; font-weight: 900; color: var(--accent-green); }
@@ -101,8 +98,8 @@
         .chart-wrapper { flex: 1; min-height: 0; width: 100%; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 0.85rem; }
 
         .exporting .header-actions { display: none !important; }
-        .exporting .table-wrapper { overflow: hidden !important; } 
-        
+        .exporting .table-wrapper { overflow: hidden !important; }
+
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
@@ -115,37 +112,34 @@
         <div class="header-left">
             <img src="https://upload.wikimedia.org/wikipedia/pt/0/04/Logotipo_MercadoLivre.png" alt="Mercado Livre" class="ml-logo">
         </div>
-        
+
         <div class="header-center" id="main-title">
             AGING DEVOLUÇÃO - CARREGANDO...
         </div>
-        
+
         <div class="header-actions">
             <span class="status-badge" id="data-status">Conectando...</span>
-            
+
             <button class="btn" id="btnExportar" onclick="baixarDashboardComoImagem()" title="Exportar Tela em Imagem UHD 4K">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
             </button>
 
-            <div class="upload-wrapper" id="btnUploadArea" style="display:none;" title="Subir Base de Dados CSV">
-                <button class="btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                </button>
-                <input type="file" id="csvFileInput" accept=".csv" />
-            </div>
+            <button class="btn" id="btnAtualizar" onclick="carregarDadosDaPlanilha()" title="Atualizar dados da planilha">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+            </button>
         </div>
     </div>
 
     <!-- LAYOUT PRINCIPAL -->
     <div class="row">
-        
+
         <!-- SIDEBAR (ESQUERDA) -->
         <div class="sidebar">
             <div class="kpi-card glass-panel">
                 <div class="kpi-title">Pacotes Pendentes</div>
                 <div class="kpi-value" id="kpi-qtd">0</div>
             </div>
-            
+
             <div class="info-card glass-panel">
                 <div class="info-title">Diário de Bordo:</div>
                 <div class="info-item" id="info-data">Devolução: --/--</div>
@@ -169,7 +163,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="5" style="text-align:center; padding: 20px;">Carregando dados na nuvem...</td></tr>
+                        <tr><td colspan="5" style="text-align:center; padding: 20px;">Carregando dados da planilha...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -183,7 +177,8 @@
     </div>
 
     <script>
-        const FIREBASE_URL = PortalDB.baseAtiva(); // 100% planilha Google Sheets
+        const PAGINA_ARQUIVO = 'pages/aging-devolucao.html';
+        const DADOS_NODE = "devolucao";
 
         let globalData = [];
         let chartInst = null;
@@ -191,27 +186,15 @@
         // ============ SINCRONIZAÇÃO DE TEMA (Pai p/ Filho) ============
         function syncTheme() { const theme = localStorage.getItem('themePreference') || 'light'; document.body.setAttribute('data-theme', theme); }
         syncTheme();
-        window.addEventListener('message', (event) => { 
-            if (event.data.type === 'THEME_CHANGED') { 
-                document.body.setAttribute('data-theme', event.data.theme); 
-                if(globalData.length > 0) renderizarDashboard(); 
-            } 
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'THEME_CHANGED') {
+                document.body.setAttribute('data-theme', event.data.theme);
+                if(globalData.length > 0) renderizarDashboard();
+            }
         });
 
-        // ============ PERMISSÕES GLOBAIS E LOGS ============
-        const currentUser = JSON.parse(localStorage.getItem('loggedUser')) || null;
-        let userName = currentUser && currentUser.usuario ? currentUser.usuario : 'Sistema';
-        
-        const paginaNome = window.location.pathname.split('/').pop() || 'aging-devolucao.html';
-        let canEdit = window.parent && typeof window.parent.verificarPermissaoUpload === 'function' ? window.parent.verificarPermissaoUpload(paginaNome) : false;
-        
-        if(canEdit) { document.getElementById('btnUploadArea').style.display = 'inline-flex'; }
-
-        async function registrarLog(modulo, acao) {
-            try {
-                const logData = { modulo: modulo, acao: acao, usuario: userName, timestamp: Date.now() };
-                await fetch(`${FIREBASE_URL}logs.json`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(logData) });
-            } catch(e) {}
+        function escapeHtml(v) {
+            return String(v ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
         }
 
         // ============ EXPORTAÇÃO 4K ============
@@ -219,7 +202,7 @@
             const btn = document.getElementById('btnExportar');
             const statusBadge = document.getElementById('data-status');
             const txtOriginal = statusBadge.innerText;
-            
+
             statusBadge.innerText = 'Processando em 4K...';
             btn.disabled = true;
             document.body.classList.add('exporting');
@@ -231,7 +214,7 @@
                     document.body.classList.remove('exporting');
                     btn.disabled = false;
                     statusBadge.innerText = txtOriginal;
-                    
+
                     const hoje = new Date();
                     const dataFormatada = `${String(hoje.getDate()).padStart(2, '0')}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${hoje.getFullYear()}`;
                     const link = document.createElement('a');
@@ -256,66 +239,73 @@
 
         const datasHoje = obterDatas();
         document.getElementById('info-data').innerText = `Devolução: ${datasHoje.curta}`;
-        document.getElementById('main-title').innerText = `AGING DEVOLUÇÃO (${datasHoje.completa}) - AGUARDANDO ARQUIVO`;
 
-        window.onload = async function() {
+        async function carregarDadosDaPlanilha() {
             const statusBadge = document.getElementById('data-status');
+            const btnAtualizar = document.getElementById('btnAtualizar');
+            if (btnAtualizar) btnAtualizar.disabled = true;
+            const tinhaDados = globalData.length > 0;
+
+            if (!tinhaDados) {
+                statusBadge.innerText = 'Carregando...';
+                document.getElementById('main-title').innerText = `AGING DEVOLUÇÃO (${datasHoje.completa}) - CARREGANDO DADOS DA PLANILHA…`;
+            }
+
             try {
-                const response = await fetch(`${FIREBASE_URL}devolucao.json`);
-                const dbData = await response.json();
-                
-                if(dbData && dbData.lista) {
-                    iniciarDashboard(dbData.lista);
+                // Obtém a base /exec configurada para esta página (sincroniza com o cérebro caso seja primeiro acesso de outro usuário)
+                const baseUrl = PortalDB.obterBaseAtiva
+                    ? await PortalDB.obterBaseAtiva(PAGINA_ARQUIVO)
+                    : PortalDB.baseAtiva(PAGINA_ARQUIVO);
+
+                const response = await fetch(`${baseUrl}${DADOS_NODE}.json?nc=1&_=${Date.now()}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                const payload = await response.json();
+                if (payload && payload.error) throw new Error(payload.error);
+
+                let lista = [];
+                if (Array.isArray(payload)) {
+                    lista = payload;
+                } else if (payload && Array.isArray(payload.lista)) {
+                    lista = payload.lista;
+                } else if (payload && Array.isArray(payload.data)) {
+                    lista = payload.data;
+                } else if (payload && typeof payload === 'object') {
+                    // Objeto de registros chaveados por ID
+                    lista = Object.keys(payload).map(k => payload[k]).filter(Boolean);
+                }
+
+                const dadosFiltrados = lista.filter(row => row && typeof row === 'object' && !Array.isArray(row));
+
+                if (dadosFiltrados.length > 0) {
+                    iniciarDashboard(dadosFiltrados);
                     statusBadge.innerText = "Online (Planilha Google)";
                 } else {
-                    definirEstadoVazio("Banco Vazio. Faça Upload.");
+                    definirEstadoVazio("PLANILHA SEM DADOS");
                 }
-            } catch(e) {
-                definirEstadoVazio("Offline (Aguardando CSV)");
+            } catch (erro) {
+                console.error('[Aging Devolução] Falha ao ler a planilha:', erro);
+                if (!tinhaDados) {
+                    definirEstadoVazio("NÃO FOI POSSÍVEL LER A PLANILHA");
+                } else {
+                    statusBadge.innerText = "Erro ao atualizar";
+                }
+            } finally {
+                if (btnAtualizar) btnAtualizar.disabled = false;
             }
-        };
+        }
+
+        window.addEventListener('load', carregarDadosDaPlanilha);
 
         function definirEstadoVazio(mensagem) {
             const statusBadge = document.getElementById('data-status');
             statusBadge.innerText = mensagem;
-            document.querySelector('#data-table tbody').innerHTML = "<tr><td colspan='5' style='text-align:center; padding: 20px;'>Nenhum dado ativo. Carregue um CSV local.</td></tr>";
+            document.getElementById('main-title').innerText = `AGING DEVOLUÇÃO (${datasHoje.completa}) - ${mensagem}`;
+            document.getElementById('kpi-qtd').innerText = "0";
+            document.querySelector('#data-table tbody').innerHTML = "<tr><td colspan='5' style='text-align:center; padding: 20px;'>Nenhum dado ativo na planilha.</td></tr>";
+            if (chartInst) { chartInst.destroy(); chartInst = null; }
+            document.getElementById('chart-substatus').innerHTML = 'Sem dados.';
         }
-
-        document.getElementById('csvFileInput').addEventListener('change', function(event) {
-            if(!canEdit) return;
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const statusBadge = document.getElementById('data-status');
-            statusBadge.innerText = 'Gravando na nuvem...';
-
-            Papa.parse(file, {
-                header: true, skipEmptyLines: true,
-                complete: async function(results) {
-                    if (results.data && results.data.length > 0) {
-                        const dadosFiltrados = results.data.filter(row => Object.values(row).some(val => val !== null && val.trim() !== ''));
-                        iniciarDashboard(dadosFiltrados);
-
-                        const dadosLimpos = dadosFiltrados.map(row => {
-                            let obj = {};
-                            for(let k in row) {
-                                let safeKey = String(k).replace(/[\.\#\$\/\[\]]/g, '_').trim();
-                                if(!safeKey) safeKey = "coluna_vazia"; 
-                                obj[safeKey] = (row[k] === null || row[k] === undefined) ? "" : String(row[k]);
-                            }
-                            return obj;
-                        });
-
-                        try {
-                            const response = await fetch(`${FIREBASE_URL}devolucao.json`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ lista: dadosLimpos }) });
-                            await registrarLog("Aging Devolução", `Atualizou a base de dados via CSV (${dadosLimpos.length} pacotes).`);
-                            if(response.ok) { statusBadge.innerText = 'Salvo com sucesso (Nuvem)!'; } 
-                        } catch(err) { statusBadge.innerText = 'Arquivo Carregado (Local)'; }
-                    }
-                }
-            });
-            event.target.value = ''; 
-        });
 
         function iniciarDashboard(dados) {
             globalData = dados;
@@ -326,24 +316,28 @@
             if(globalData.length === 0) return;
 
             let currentMode = document.body.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
-            let labelColor = currentMode === 'light' ? '#333333' : '#EBEBEB'; 
-            let chartBgColor = currentMode === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)'; 
+            let labelColor = currentMode === 'light' ? '#333333' : '#EBEBEB';
+            let chartBgColor = currentMode === 'light' ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
 
             let colunas = Object.keys(globalData[0]);
-            let colId = colunas.find(k => k.toLowerCase().includes('id do envio') || k.toLowerCase().includes('id')) || colunas[0];
+            let colId = colunas.find(k => k.toLowerCase().includes('id do envio') || k.toLowerCase().includes('id') || k.toLowerCase().includes('tracking') || k.toLowerCase().includes('pacote')) || colunas[0];
             let colSubstatus = colunas.find(k => k.toLowerCase().includes('substatus') || k.toLowerCase().includes('subtatus') || k.toLowerCase().includes('sub status'));
-            
+
             if(!colSubstatus) colSubstatus = colunas.find(k => k.toLowerCase().includes('status'));
-            if(!colSubstatus) colSubstatus = colunas[2];
-            
-            let colSort = colunas.find(k => k.toLowerCase().includes('sorting')) || colunas[1];
-            let colDev = colunas.find(k => k.toLowerCase().includes('devolu')) || colunas[3];
-            let colValor = colunas.find(k => k.toLowerCase().includes('valor')) || colunas[4];
+            if(!colSubstatus) colSubstatus = colunas[2] || colunas[1] || 'Substatus';
+
+            let colSort = colunas.find(k => k.toLowerCase().includes('sorting')) || colunas[1] || 'Aging Sorting';
+            let colDev = colunas.find(k => k.toLowerCase().includes('devolu')) || colunas[3] || 'Aging Devolução';
+            let colValor = colunas.find(k => k.toLowerCase().includes('valor')) || colunas[4] || 'Valor declarado';
             let colPrep = colunas.find(k => k.toLowerCase().includes('prep')) || colunas[11];
-            let colAna = colunas.find(k => k.toLowerCase().includes('análise') || k.toLowerCase().includes('analise')) || colunas[12];
+            let colAna = colunas.find(k => k.toLowerCase().includes('análise') || k.toLowerCase().includes('analise') || k.toLowerCase().includes('suporte')) || colunas[12];
 
             let dadosValidos = globalData.filter(row => row[colId] && row[colId].toString().trim() !== '');
-            dadosValidos.sort((a, b) => { let valA = parseInt(a[colSort]?.toString().replace(/\D/g, '')) || 0; let valB = parseInt(b[colSort]?.toString().replace(/\D/g, '')) || 0; return valB - valA; });
+            dadosValidos.sort((a, b) => {
+                let valA = parseInt(String(a[colSort] || '').replace(/\D/g, '')) || 0;
+                let valB = parseInt(String(b[colSort] || '').replace(/\D/g, '')) || 0;
+                return valB - valA;
+            });
 
             let totalPacotes = dadosValidos.length;
             document.getElementById('main-title').innerText = `AGING DEVOLUÇÃO (${datasHoje.completa}) - TOTAL: ${totalPacotes} PACOTES`;
@@ -351,24 +345,24 @@
 
             let txtPrep = (colPrep && globalData.length > 0) ? (globalData[0][colPrep] || '-') : '-';
             let txtAna = (colAna && globalData.length > 0) ? (globalData[0][colAna] || '-') : '-';
-            
-            document.getElementById('info-prep').innerHTML = `<span class="info-label">Preparação:</span><br>${txtPrep}`;
-            document.getElementById('info-sup').innerHTML = `<span class="info-label">Suporte:</span> ${txtAna}`;
-            document.getElementById('info-ana').innerHTML = `<span class="info-label">Análise:</span> ${txtAna}`;
+
+            document.getElementById('info-prep').innerHTML = `<span class="info-label">Preparação:</span><br>${escapeHtml(txtPrep)}`;
+            document.getElementById('info-sup').innerHTML = `<span class="info-label">Suporte:</span> ${escapeHtml(txtAna)}`;
+            document.getElementById('info-ana').innerHTML = `<span class="info-label">Análise:</span> ${escapeHtml(txtAna)}`;
 
             let tbodyHTML = "";
             let contagemStatus = {};
 
             dadosValidos.forEach(row => {
-                let substatus = row[colSubstatus] && row[colSubstatus].toString().trim() !== '' ? row[colSubstatus] : 'Sem Status';
-                let valorOriginal = row[colValor] || '0';
-                let idPacote = row[colId] || '';
-                
+                let substatus = row[colSubstatus] && row[colSubstatus].toString().trim() !== '' ? String(row[colSubstatus]).trim() : 'Sem Status';
+                let valorOriginal = row[colValor] !== undefined && row[colValor] !== null && String(row[colValor]).trim() !== '' ? String(row[colValor]).trim() : '0,00';
+                let idPacote = row[colId] ? String(row[colId]).trim() : '';
+
                 contagemStatus[substatus] = (contagemStatus[substatus] || 0) + 1;
 
-                let iconeLinkHTML = idPacote ? `<a href="https://envios.adminml.com/logistics/package-management/package/${idPacote}" target="_blank" class="btn-detalhes" title="Ver detalhes"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>` : '-';
+                let iconeLinkHTML = idPacote ? `<a href="https://envios.adminml.com/logistics/package-management/package/${escapeHtml(idPacote)}" target="_blank" class="btn-detalhes" title="Ver detalhes"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a>` : '-';
 
-                tbodyHTML += `<tr><td class="td-id">${idPacote || '-'}${iconeLinkHTML}</td><td>${substatus}</td><td style="text-align:center;">${row[colSort] || '-'}</td><td style="text-align:center;">${row[colDev] || '-'}</td><td class="col-valor">R$ ${valorOriginal}</td></tr>`;
+                tbodyHTML += `<tr><td class="td-id"><span>${escapeHtml(idPacote || '-')}</span>${iconeLinkHTML}</td><td>${escapeHtml(substatus)}</td><td style="text-align:center;">${escapeHtml(row[colSort] || '-')}</td><td style="text-align:center;">${escapeHtml(row[colDev] || '-')}</td><td class="col-valor">${escapeHtml(valorOriginal.startsWith('R$') ? valorOriginal : 'R$ ' + valorOriginal)}</td></tr>`;
             });
 
             document.querySelector('#data-table tbody').innerHTML = tbodyHTML || "<tr><td colspan='5' style='text-align:center;'>Nenhum dado encontrado.</td></tr>";
@@ -385,7 +379,7 @@
                 chartInst = new ApexCharts(document.querySelector("#chart-substatus"), {
                     series: [{ name: 'Pacotes', data: valores }],
                     chart: { type: 'bar', height: '100%', background: 'transparent' },
-                    colors: ['#3483FA'], 
+                    colors: ['#3483FA'],
                     plotOptions: { bar: { borderRadius: 4, columnWidth: '40%', dataLabels: { position: 'top' } } },
                     dataLabels: { enabled: true, offsetY: -20, style: { fontSize: '12px', colors: [currentMode === 'light' ? '#2D3277' : '#FFF159'] } },
                     xaxis: { categories: categorias, labels: { style: { colors: labelColor, fontSize: '12px', fontWeight: 600 } } },
